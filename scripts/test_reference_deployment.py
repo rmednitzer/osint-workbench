@@ -657,13 +657,18 @@ def enabled_http_service_acceptance(account):
             else:
                 timer_diagnostic("HTTP_TIMER_SERVICE_DID_NOT_SETTLE", network, before_trigger)
                 raise Rejected("HTTP_TIMER_SERVICE_DID_NOT_SETTLE")
-            command(["systemctl", "stop", TIMER, SERVICE])
+            # Capture runtime trigger evidence while the timer is still active.
+            # Stopping an inactive unit permits GC/unload; a later show may load
+            # a fresh object with no retained in-memory last-trigger timestamp.
             triggered = int(
                 command(
                     ["systemctl", "show", TIMER, "--property=LastTriggerUSecMonotonic", "--value"]
                 ).strip()
             )
-            require(triggered > before_trigger, "HTTP_TIMER_LAST_TRIGGER_UNCHANGED")
+            if triggered <= before_trigger:
+                timer_diagnostic("HTTP_TIMER_LAST_TRIGGER_UNCHANGED", network, before_trigger)
+                raise Rejected("HTTP_TIMER_LAST_TRIGGER_UNCHANGED")
+            command(["systemctl", "stop", TIMER, SERVICE])
             timer_result = observed(started, "complete", 0)
             require(
                 timer_result["results"][0]["status"] == "not_modified",
