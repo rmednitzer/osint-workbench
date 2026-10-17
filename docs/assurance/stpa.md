@@ -390,3 +390,23 @@ returned packet; libc/NSS work before that packet exists is still trusted and
 its internal memory allocation is not bounded by the Python answer cap. Process
 creation and cleanup have separate costs. API portability does not establish
 Windows/macOS or every Linux configuration without native execution evidence.
+
+## Offline advisory-observation refinement
+
+This allocates the existing U19/C19 and R36/R37 to the bounded offline envelope
+in [ADR-0031](../adr/0031-offline-advisory-observations.md); it introduces no new
+controller or capability-closure claim. The hazardous action remains promoting
+an attributed source claim into an unsupported operational conclusion (H2/H8).
+
+| Existing constraint concern | Bounded contract allocation | Required evidence and limits |
+| --- | --- | --- |
+| Source scores or reported exploitation appear independently verified | Each observation retains its publisher and evidence references; conflicting CVSS/EPSS/exploitation claims remain individually attributed | Round-trip conflicting observations; references do not establish existence, integrity, entailment, publisher independence or confirmed exploitation |
+| Distinct events collapse into one apparently current date or priority | Preserve publication, modification, observation, score and reported-exploitation dates; no target inventory or inferred remediation policy | Date/primitive-bound cases; CVE presence and CVSS/EPSS values cannot establish applicability, exposure or a patch deadline |
+| Untrusted normalized JSON gains authority or discloses private input through diagnostics | Bounded strict parsing, immutable nested models, duplicate/unknown-key and malformed/nonfinite/structural rejection; fixed public parser errors | Adversarial canary and deterministic canonical round-trip tests; raw model-validation diagnostics remain unsafe to publish |
+
+Authored fixtures establish only the normalized contract. Upstream acquisition,
+schema mapping, affected-version matching, evidence resolution, persistence,
+retractions and operational assessment require separate implementation and
+verification. This contributes bounded evidence toward E31; it does not close
+E31/E32 or the vulnerability-intelligence profile, nor establish source truth or
+CVSS vector/score consistency.

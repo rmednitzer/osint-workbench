@@ -33,7 +33,7 @@ concurrency and policy-gated isolated recovery. See
 [the revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
 models establish execution contracts, not pretrained semantic quality.
 
-The full programme covers 28 capability areas, 30 ADRs, 58 requirements and 51
+The full programme covers 28 capability areas, 31 ADRs, 58 requirements and 51
 acceptance scenarios. The tests in this repository currently establish only a
 foundation subset. Detailed future specifications are under `docs/`; they are not
 execution receipts. CI results are authoritative for a particular tested revision.
@@ -113,3 +113,9 @@ TLS verification bypass or system trust-store change is introduced. All 38 new
 cases passed in the revision-bound native receipt; normal JSON resolver use also
 passed the separate hardened HTTP service receipt. Public
 DNS/PKI, revocation and operational TLS acceptance remain outside these fixtures.
+
+The opt-in offline advisory envelope adds strict versioned CVE-linked observations,
+independent publisher/evidence attribution, separate dates and bounded redacted
+JSON parsing. It preserves conflicting score/exploitation observations without
+inferring exposure or remediation. Acquisition, storage, applicability and full
+vulnerability-profile acceptance remain pending; see [the bounded contract](docs/advisory-records.md).
