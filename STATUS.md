@@ -27,7 +27,7 @@ The core worker processes `document.accepted`; the explicit enrichment worker cl
 only its configured generator identity. Other job kinds remain queued.
 Character chunks preserve offsets but are not token-aware model input.
 
-The installed-wheel suite has 206 passing tests with no skips,
+The installed-wheel suite has 255 passing tests with no skips,
 including retained-state migration, direct SQL/MCP suppression, native retrieval,
 concurrency and policy-gated isolated recovery. See
 [the revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
@@ -86,5 +86,8 @@ history and the fixed outbox kind before store creation or HTTP dispatch.
 Writer credentials remain separate and are not a collection fallback. Reader
 credentials cannot carry a settable collector role. This scopes process authority;
 it does not establish per-source tenancy or filesystem evidence confidentiality.
-New native migration/role/recovery cases and the database-backed reference-service
-probe require their own revision-bound receipts before being reported as passed.
+The native migration/role/recovery cases passed in the named installed-wheel
+receipt. The database-backed reference service also passed its disabled-source
+SQL and unsafe-identity probes in [a separate receipt](docs/testing/collector-deployment.json).
+Enabled-source HTTP through systemd, timer activation and operational deployment
+acceptance remain pending.

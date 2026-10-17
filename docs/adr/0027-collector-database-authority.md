@@ -70,7 +70,9 @@ per-source tenancy, row isolation or containment of every SQL action. A collecto
 can insert evidence and the fixed outbox event for configured source identities
 and can update collection state within its grants. Its OS process can read the
 CAS files that its filesystem authority exposes; denying SQL body SELECT does
-not make that evidence confidential from the collector. Job payload contents
+not make that evidence confidential from the collector. The writable CAS is not
+an OS-enforced append-only store: a compromised filesystem owner can also remove
+objects. SQL DELETE denial does not close that separate availability boundary. Job payload contents
 remain subject to downstream validation and existing evidence/fence contracts.
 
 Privilege validation is a startup observation, not continuous attestation of all

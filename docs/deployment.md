@@ -228,3 +228,17 @@ fixture setup and deliberate negative probes; they are never a runtime fallback.
 Public reports contain booleans, with no raw journal, DSN or credential output.
 This does not establish enabled-source HTTP acquisition through systemd, timer
 activation, operational credential custody or production deployment acceptance.
+
+The scoped SQL role does not make the writable evidence directory append-only at
+the OS boundary. A compromised filesystem owner can read or unlink CAS objects;
+separate storage authority and recovery controls remain necessary. This reference
+does not claim containment of a malicious collector process.
+
+The [collector deployment receipt](testing/collector-deployment.json) records the
+successful guarded PostgreSQL/systemd probe. Its runtime source is unchanged
+from the subsequent full native suite; the intervening change fixes only a
+retirement test's retained-versus-visible counter expectation. The manual job
+did not retain its own wheel digest, so this is source-bound deployment evidence;
+the independently built native-CI wheel identities are recorded separately. The first
+failed native attempt is preserved in the verification receipt. These results do
+not expand the runtime or operational acceptance scope above.
