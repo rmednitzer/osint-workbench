@@ -10,12 +10,16 @@ from .contracts import DocumentInput
 from .errors import WorkbenchError
 from .evidence import EvidenceStore
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 
 def migrate(dsn: str) -> None:
     package = files("osint_workbench")
-    scripts = [package.joinpath("schema.sql"), package.joinpath("migrations/002_workflows.sql")]
+    scripts = [
+        package.joinpath("schema.sql"),
+        package.joinpath("migrations/002_workflows.sql"),
+        package.joinpath("migrations/003_intelligence.sql"),
+    ]
     with psycopg.connect(dsn) as conn:
         conn.execute("SELECT pg_advisory_xact_lock(418287405)")
         exists = conn.execute("SELECT to_regclass('ow.migrations')").fetchone()[0]

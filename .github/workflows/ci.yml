@@ -31,6 +31,11 @@ jobs:
       - run: uv run ruff check . && uv run ruff format --check .
       - run: uv run python scripts/check_publication.py
       - run: uv build
+      - name: Prepare pinned native CPU test dependency
+        run: |
+          uv run python scripts/prepare_native.py --output /tmp/ow-native-source
+          uv run cmake -S /tmp/ow-native-source/llama.cpp-f2f667b02dc76d675395ae3b14546c8108d26387 -B /tmp/ow-native-build -DGGML_NATIVE=OFF -DGGML_OPENMP=OFF -DLLAMA_CURL=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_OPENSSL=OFF -DLLAMA_BUILD_UI=OFF -DLLAMA_USE_PREBUILT_UI=OFF -DGGML_CCACHE=OFF -DCMAKE_BUILD_TYPE=Release
+          uv run cmake --build /tmp/ow-native-build --target llama-server -j 2
       - name: Verify the core without optional inference dependencies
         run: |
           uv venv /tmp/ow-core --python 3.12
@@ -42,6 +47,7 @@ jobs:
           /tmp/ow-core/bin/python -c 'import json; assert json.load(open("/tmp/ow-empty.json")) == {"status": "unconfigured", "sources": 0}'
       - name: Install and test the built wheel
         env:
+          OW_TEST_LLAMA_BIN: /tmp/ow-native-build/bin/llama-server
           OW_TEST_RETRIEVAL: "1"
           OW_TEST_ADMIN_DSN: postgresql://postgres:ci-fixture-only@127.0.0.1:5432/ow_test
         run: |

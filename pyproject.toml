@@ -39,6 +39,8 @@ dev = [
     "build>=1.6,<2",
     "pip-audit>=2.10,<3",
     "onnx>=1.18,<2",
+    "gguf>=0.17,<1",
+    "cmake>=3.31,<5",
 ]
 
 [tool.hatch.build.targets.wheel]

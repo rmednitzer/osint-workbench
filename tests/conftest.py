@@ -77,14 +77,16 @@ def databases(roles):
     with psycopg.connect(roles["admin"]) as conn:
         if os.environ.get("OW_TEST_RETRIEVAL") == "1":
             conn.execute(
-                "TRUNCATE ow.retrieval_active,ow.retrieval_vectors,"
+                "TRUNCATE ow.briefings,ow.assertion_reviews,ow.assertions,ow.enrichments,"
+                "ow.retrieval_active,ow.retrieval_vectors,"
                 "ow.retrieval_members,ow.retrieval_generations,ow.embedding_spaces,"
                 "ow.collection_runs,ow.job_events,ow.chunks,ow.jobs,ow.document_heads,"
                 "ow.documents,ow.snapshots,ow.sources"
             )
             return Database(roles["writer"]), Database(roles["reader"]), roles
         conn.execute(
-            "TRUNCATE ow.collection_runs,ow.job_events,ow.chunks,ow.jobs,ow.document_heads,"
+            "TRUNCATE ow.briefings,ow.assertion_reviews,ow.assertions,ow.enrichments,"
+            "ow.collection_runs,ow.job_events,ow.chunks,ow.jobs,ow.document_heads,"
             "ow.documents,ow.snapshots,ow.sources"
         )
     return Database(roles["writer"]), Database(roles["reader"]), roles
@@ -116,7 +118,9 @@ def encoder_bundle(tmp_path):
     tokenizer.normalizer = normalizers.Lowercase()
     tokenizer.pre_tokenizer = pre_tokenizers.Whitespace()
     tokenizer.post_processor = processors.TemplateProcessing(
-        single="[CLS] $A [SEP]", special_tokens=[("[CLS]", 1), ("[SEP]", 2)]
+        single="[CLS] $A [SEP]",
+        pair="[CLS] $A [SEP] $B:1 [SEP]:1",
+        special_tokens=[("[CLS]", 1), ("[SEP]", 2)],
     )
     token_bytes = tokenizer.to_str().encode()
     token_path = tmp_path / "tokenizer.json"
@@ -159,3 +163,52 @@ def encoder_bundle(tmp_path):
         output_name="tokens",
     )
     return LocalEncoder(manifest)
+
+
+@pytest.fixture
+def reranker_bundle(encoder_bundle, tmp_path):
+    import numpy as np
+    import onnx
+    from onnx import TensorProto, helper, numpy_helper
+
+    from osint_workbench.local_reranker import LocalReranker, RerankerManifest
+    from osint_workbench.text import digest
+
+    model = helper.make_model(
+        helper.make_graph(
+            [
+                helper.make_node("Gather", ["weights", "input_ids"], ["values"], axis=0),
+                helper.make_node("Cast", ["token_type_ids"], ["mask"], to=TensorProto.FLOAT),
+                helper.make_node("Mul", ["values", "mask"], ["product"]),
+                helper.make_node("ReduceSum", ["product", "axes"], ["logits"], keepdims=1),
+            ],
+            "pair-score-oracle",
+            [
+                helper.make_tensor_value_info("input_ids", TensorProto.INT64, [1, "sequence"]),
+                helper.make_tensor_value_info("token_type_ids", TensorProto.INT64, [1, "sequence"]),
+            ],
+            [helper.make_tensor_value_info("logits", TensorProto.FLOAT, [1, 1])],
+            [
+                numpy_helper.from_array(
+                    np.array([0, 0, 0, 1, 1, -1, -1, 0], dtype=np.float32), "weights"
+                ),
+                numpy_helper.from_array(np.array([1], dtype=np.int64), "axes"),
+            ],
+        ),
+        opset_imports=[helper.make_opsetid("", 17)],
+        ir_version=10,
+    )
+    onnx.checker.check_model(model)
+    data = model.SerializeToString()
+    path = tmp_path / "reranker.onnx"
+    path.write_bytes(data)
+    return LocalReranker(
+        RerankerManifest(
+            model_path=str(path),
+            model_sha256=digest(data),
+            tokenizer_path=encoder_bundle.manifest.tokenizer_path,
+            tokenizer_sha256=encoder_bundle.manifest.tokenizer_sha256,
+            max_tokens=32,
+            output_name="logits",
+        )
+    )

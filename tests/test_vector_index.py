@@ -124,3 +124,19 @@ def test_hybrid_search_through_real_mcp_transport(retrieval, tmp_path):
             assert json.loads(document.content[0].text)["text"] == "storage disk"
 
     asyncio.run(run())
+
+
+def test_actual_hybrid_rerank_integration(retrieval, reranker_bundle):
+    writer, reader, _, store, encoder = retrieval
+    index = VectorIndex(writer, encoder)
+    built = index.build(store)
+    index.activate(built["generation_id"])
+    service = ReadService(
+        reader, EvidenceStore(store.root, read_only=True), encoder=encoder, reranker=reranker_bundle
+    )
+    value = service.search("vulnerability")
+    assert value["strategy"] == "hybrid-exact-reranked"
+    assert value["results"][0]["rerank_score"] == 2.0
+    assert value["results"][1]["rerank_score"] == -2.0
+    with pytest.raises(WorkbenchError, match="INVALID_RERANK_PAGE"):
+        service.search("patch", 33)

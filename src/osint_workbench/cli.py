@@ -7,6 +7,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
+from . import intelligence
 from .collection import collect
 from .contracts import DocumentInput, SourceConfig
 from .database import SCHEMA_VERSION, Database, migrate
@@ -14,6 +15,8 @@ from .errors import WorkbenchError
 from .evidence import EvidenceStore
 from .jobs import Jobs
 from .local_encoder import EncoderManifest, LocalEncoder
+from .local_generation import GeneratorManifest, LocalGenerator
+from .local_reranker import LocalReranker, RerankerManifest
 from .mcp_server import serve
 from .service import ReadService
 from .vector_index import VectorIndex, migrate_retrieval
@@ -40,6 +43,19 @@ def main():
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("migrate")
     sub.add_parser("migrate-retrieval")
+    enrich = sub.add_parser("enrich")
+    enrich.add_argument("action", choices=["enqueue", "work-once", "reconcile"])
+    enrich.add_argument("--manifest", type=Path, required=True)
+    enrich.add_argument("--document-id")
+    rev = sub.add_parser("review")
+    rev.add_argument("assertion_id")
+    rev.add_argument("--decision", choices=["accept", "reject"], required=True)
+    rev.add_argument("--actor", required=True)
+    rev.add_argument("--rationale", required=True)
+    brief = sub.add_parser("briefing")
+    brief.add_argument("action", choices=["create", "show"])
+    brief.add_argument("--document-id", action="append")
+    brief.add_argument("--briefing-id")
     index = sub.add_parser("index")
     index.add_argument("action", choices=["build", "activate"])
     index.add_argument("--manifest", type=Path, required=True)
@@ -66,6 +82,35 @@ def main():
         elif args.command == "migrate-retrieval":
             migrate_retrieval(_dsn("OW_MIGRATION_DSN"))
             value = {"schema_version": SCHEMA_VERSION, "retrieval_schema_version": 1}
+        elif args.command == "enrich":
+            data = args.manifest.read_bytes()
+            if len(data) > 65536:
+                raise WorkbenchError("INVALID_GENERATOR_CONFIGURATION")
+            generator = LocalGenerator(GeneratorManifest.model_validate_json(data))
+            if args.action == "reconcile":
+                value = generator.reconcile()
+            else:
+                db = Database(_dsn("OW_WRITER_DSN"))
+                if args.action == "enqueue":
+                    if not args.document_id:
+                        raise WorkbenchError("DOCUMENT_ID_REQUIRED")
+                    value = {"job_id": intelligence.enqueue(db, generator, args.document_id)}
+                else:
+                    value = intelligence.enrich_once(
+                        db,
+                        EvidenceStore(Path(os.environ["OW_EVIDENCE_ROOT"]), read_only=True),
+                        generator,
+                    )
+        elif args.command == "review":
+            value = intelligence.review(
+                Database(_dsn("OW_WRITER_DSN")),
+                args.assertion_id,
+                args.decision,
+                args.actor,
+                args.rationale,
+            )
+        elif args.command == "briefing" and args.action == "create":
+            value = intelligence.create_briefing(Database(_dsn("OW_WRITER_DSN")), args.document_id)
         elif args.command == "index":
             index = VectorIndex(Database(_dsn("OW_WRITER_DSN")), _encoder(args.manifest))
             if args.action == "activate":
@@ -112,7 +157,18 @@ def main():
                 encoder=_encoder(os.environ["OW_ENCODER_MANIFEST"])
                 if os.environ.get("OW_ENCODER_MANIFEST")
                 else None,
+                reranker=LocalReranker(
+                    RerankerManifest.model_validate_json(
+                        Path(os.environ["OW_RERANKER_MANIFEST"]).read_bytes()
+                    )
+                )
+                if os.environ.get("OW_RERANKER_MANIFEST")
+                else None,
             )
+            if args.command == "briefing":
+                value = service.briefing(args.briefing_id)
+                print(json.dumps(value, ensure_ascii=False))
+                return
             if args.command == "mcp":
                 asyncio.run(serve(service))
                 return

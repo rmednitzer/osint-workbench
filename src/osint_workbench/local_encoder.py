@@ -22,7 +22,7 @@ MAX_RESULT = 16 * 1024 * 1024
 
 
 @contextmanager
-def admission():
+def admission(*, allow_uncertain=False):
     import fcntl
 
     path = os.environ.get("OW_INFERENCE_LOCK", f"/tmp/ow-inference-{os.getuid()}.lock")
@@ -35,7 +35,9 @@ def admission():
             fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             raise WorkbenchError("INFERENCE_BUSY") from None
-        yield
+        if not allow_uncertain and os.path.lexists(path + ".unknown"):
+            raise WorkbenchError("INFERENCE_OUTCOME_UNKNOWN")
+        yield path
     finally:
         os.close(fd)
 

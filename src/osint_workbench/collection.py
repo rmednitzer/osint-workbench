@@ -1,11 +1,12 @@
 import json
-import re
 import subprocess
 import sys
 import tempfile
 import uuid
 
-from .contracts import DocumentInput, Source
+from pydantic import TypeAdapter
+
+from .contracts import DocumentInput, Identifier, Source
 from .database import Database
 from .errors import WorkbenchError
 from .evidence import EvidenceStore
@@ -17,8 +18,10 @@ def feed_documents(raw: bytes, source_id: str) -> list[DocumentInput]:
     """Parse hostile input outside the long-lived collector with bounded resources."""
     if len(raw) > MAX_FEED:
         raise WorkbenchError("SOURCE_TOO_LARGE")
-    if not re.fullmatch(r"[a-z0-9][a-z0-9_-]{0,63}", source_id):
-        raise WorkbenchError("INVALID_SOURCE_ID")
+    try:
+        TypeAdapter(Identifier).validate_python(source_id)
+    except ValueError:
+        raise WorkbenchError("INVALID_SOURCE_ID") from None
     with tempfile.TemporaryFile() as output:
         try:
             result = subprocess.run(

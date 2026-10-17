@@ -119,6 +119,8 @@ def test_mcp_real_client_roundtrip(databases, tmp_path):
                 "get_evidence",
                 "list_sources",
                 "pipeline_status",
+                "list_assertions",
+                "get_briefing",
             }
             found = await session.call_tool("search_documents", {"query": "storage"})
             assert (

@@ -25,11 +25,19 @@ TOOLS = {
     "get_evidence": {"snapshot_id": ID},
     "list_sources": {},
     "pipeline_status": {},
+    "list_assertions": {
+        "document_id": ID,
+        "subject": {"type": "string", "minLength": 1, "maxLength": 200},
+        "limit": {"type": "integer", "minimum": 1, "maximum": 100},
+        "offset": PAGE,
+    },
+    "get_briefing": {"briefing_id": ID},
 }
 REQUIRED = {
     "search_documents": ["query"],
     "get_document": ["document_id"],
     "get_evidence": ["snapshot_id"],
+    "get_briefing": ["briefing_id"],
 }
 
 
@@ -50,6 +58,8 @@ def make_server(service: ReadService) -> Server:
                     "get_evidence": "Check stored evidence hashes, not factual truth.",
                     "list_sources": "List bounded source freshness metadata without source URLs.",
                     "pipeline_status": "Read aggregate corpus and schema status.",
+                    "list_assertions": "Read evidence-located graph proposals and review states.",
+                    "get_briefing": "Read a cited reviewed-assertion digest; stale citations fail.",
                 }[name],
                 inputSchema={
                     "type": "object",
@@ -84,6 +94,8 @@ def make_server(service: ReadService) -> Server:
                 "get_evidence": service.evidence,
                 "list_sources": service.db.sources,
                 "pipeline_status": service.status,
+                "list_assertions": service.assertions,
+                "get_briefing": service.briefing,
             }
             value = await asyncio.to_thread(functions[name], **arguments)
             text = json.dumps(value, default=str, ensure_ascii=False)

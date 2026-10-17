@@ -194,3 +194,8 @@ def test_disposable_parser_rejects_bad_items_and_entities():
     </item></channel></rss>"""
     with pytest.raises(WorkbenchError):
         feed_documents(hostile, "fixture")
+
+
+def test_feed_source_identity_matches_configuration_contract():
+    raw = b'<rss version="2.0"><channel/></rss>'
+    assert feed_documents(raw, "Synthetic_Source-01") == []

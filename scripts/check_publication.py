@@ -86,7 +86,12 @@ def inspect_text(name: str, content: str, private_values=()) -> list[str]:
             findings.append("invalid-url")
             continue
         allowed = (
-            host.endswith(".invalid")
+            (
+                name == "scripts/prepare_native.py"
+                and host == "codeload.github.com"
+                and parts.path == "/ggml-org/llama.cpp/tar.gz/"
+            )
+            or host.endswith(".invalid")
             or (name == "uv.lock" and host in REGISTRY_HOSTS)
             or (name == "pyproject.toml" and host == "pypi.org" and parts.path == "/simple")
             or (

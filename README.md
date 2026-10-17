@@ -15,7 +15,7 @@ APIs. Their implementation and verification status is tracked in
 - PostgreSQL migration, reader/writer role groups, immutable document versions,
   active document heads and transactional downstream work records.
 - Content-addressed evidence objects with hash checks and no-follow file access.
-- Lexical full-text search and a real MCP stdio server with five read-only tools.
+- Lexical full-text search and a real MCP stdio server with seven read-only tools.
 - Durable job leases with fencing and stale-completion rejection.
 - RSS/Atom extraction and a public-only HTTP path with DNS pinning, redirect,
   byte and absolute network deadlines. Compressed responses are rejected.
@@ -23,9 +23,10 @@ APIs. Their implementation and verification status is tracked in
   and deterministic reciprocal-rank fusion primitives.
 
 The optional retrieval profile now executes local ONNX embeddings and exact pgvector
-hybrid search with versioned generations. Reranking and semantic-quality acceptance
-remain pending. See [local retrieval](docs/local-retrieval.md).
-No model/provider is selected, downloaded or called automatically. No cloud keys
+hybrid search with versioned generations. An optional local ONNX pair reranker is also available. Pretrained semantic-quality
+acceptance remains pending. See [local retrieval](docs/local-retrieval.md).
+No model/provider is selected or downloaded automatically. Model calls require an
+explicit local profile. No cloud keys
 or operational data are required by the current code or tests.
 
 ## Development
@@ -87,6 +88,9 @@ commits the chunks, downstream work record and completion atomically. Repeat it
 under an external supervisor; it does not start a background daemon. It claims only
 job kinds it implements. Cancellation is an operator write, never an MCP tool.
 See [workflow contracts](docs/workflows.md) for retry and recovery semantics.
+
+See [local intelligence](docs/local-intelligence.md) for generation, proposal review
+and cited-digest contracts.
 
 ## Engineering and attribution
 
