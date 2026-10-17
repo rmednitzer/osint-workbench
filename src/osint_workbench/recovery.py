@@ -98,6 +98,16 @@ def _history(conn):
     return expected
 
 
+def _full_visibility(conn):
+    # A SELECT grant alone does not establish a complete backup under row filtering.
+    # This reference profile has no supported RLS policy; reject even owner bypass.
+    if conn.execute(
+        "SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace "
+        "WHERE n.nspname='ow' AND c.relrowsecurity LIMIT 1"
+    ).fetchone():
+        raise WorkbenchError("RECOVERY_ROW_SECURITY_UNSUPPORTED")
+
+
 def _columns(conn, table):
     return [
         r["attname"]
@@ -189,6 +199,7 @@ def checkpoint(db: Database, store: EvidenceStore, path: Path):
         conn.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
         conn.execute("SELECT pg_advisory_xact_lock(418287405)")
         history = _history(conn)  # Establishes the single MVCC checkpoint.
+        _full_visibility(conn)
         database = _database_identity(conn, history)
         captured = conn.execute("SELECT transaction_timestamp()::text AS t").fetchone()["t"]
         names = CORE + (RETRIEVAL if "retrieval/1" in history else ())
@@ -297,6 +308,7 @@ def restore(
     with db.connect() as conn:
         conn.execute("SELECT pg_advisory_xact_lock(418287405)")
         history = _history(conn)
+        _full_visibility(conn)
         names = CORE + (RETRIEVAL if "retrieval/1" in history else ())
         # Exact known core-v4 format-2 layout can adopt v5's empty private schedule.
         # Existing records and current independent lifecycle policy remain mandatory.

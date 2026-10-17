@@ -438,3 +438,31 @@ def test_native_http_server_to_postgresql_revalidation(databases, tmp_path, monk
         finally:
             server.shutdown()
             thread.join(timeout=5)
+
+
+@pytest.mark.integration
+def test_checkpoint_and_restore_reject_row_filtered_schema(databases, destination, tmp_path):
+    writer, _, roles = databases
+    from tests.test_recovery import _input
+
+    store = EvidenceStore(tmp_path / "objects")
+    writer.ingest(_input(), b"raw", store)
+    operator = Database(roles["admin"])
+    path = tmp_path / "backup.owcp"
+    receipt = recovery.checkpoint(operator, store, path)
+    policy = policy_arguments(roles, path)
+    try:
+        with operator.connect() as conn:
+            conn.execute("ALTER TABLE ow.collection_state ENABLE ROW LEVEL SECURITY")
+        with pytest.raises(WorkbenchError, match="RECOVERY_ROW_SECURITY_UNSUPPORTED"):
+            recovery.checkpoint(operator, store, tmp_path / "filtered.owcp")
+        assert not (tmp_path / "filtered.owcp").exists()
+    finally:
+        with operator.connect() as conn:
+            conn.execute("ALTER TABLE ow.collection_state DISABLE ROW LEVEL SECURITY")
+    target = Database(destination["admin"])
+    with target.connect() as conn:
+        conn.execute("ALTER TABLE ow.collection_state ENABLE ROW LEVEL SECURITY")
+    with pytest.raises(WorkbenchError, match="RECOVERY_ROW_SECURITY_UNSUPPORTED"):
+        recovery.restore(target, path, receipt["sha256"], tmp_path / "restored", **policy)
+    assert not (tmp_path / "restored").exists()
