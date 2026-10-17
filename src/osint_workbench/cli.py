@@ -30,12 +30,16 @@ def _dsn(name):
     return value
 
 
-def _encoder(path):
+def _manifest(path, model):
     with Path(path).open("rb") as stream:
         data = stream.read(65537)
     if len(data) > 65536:
-        raise WorkbenchError("ENCODER_CONFIGURATION_TOO_LARGE")
-    return LocalEncoder(EncoderManifest.model_validate_json(data))
+        raise WorkbenchError("MODEL_CONFIGURATION_TOO_LARGE")
+    return model.model_validate_json(data)
+
+
+def _encoder(path):
+    return LocalEncoder(_manifest(path, EncoderManifest))
 
 
 def main():
@@ -47,6 +51,7 @@ def main():
     enrich.add_argument("action", choices=["enqueue", "work-once", "reconcile"])
     enrich.add_argument("--manifest", type=Path, required=True)
     enrich.add_argument("--document-id")
+    enrich.add_argument("--operation-id", default="initial")
     rev = sub.add_parser("review")
     rev.add_argument("assertion_id")
     rev.add_argument("--decision", choices=["accept", "reject"], required=True)
@@ -83,10 +88,7 @@ def main():
             migrate_retrieval(_dsn("OW_MIGRATION_DSN"))
             value = {"schema_version": SCHEMA_VERSION, "retrieval_schema_version": 1}
         elif args.command == "enrich":
-            data = args.manifest.read_bytes()
-            if len(data) > 65536:
-                raise WorkbenchError("INVALID_GENERATOR_CONFIGURATION")
-            generator = LocalGenerator(GeneratorManifest.model_validate_json(data))
+            generator = LocalGenerator(_manifest(args.manifest, GeneratorManifest))
             if args.action == "reconcile":
                 value = generator.reconcile()
             else:
@@ -94,7 +96,11 @@ def main():
                 if args.action == "enqueue":
                     if not args.document_id:
                         raise WorkbenchError("DOCUMENT_ID_REQUIRED")
-                    value = {"job_id": intelligence.enqueue(db, generator, args.document_id)}
+                    value = {
+                        "job_id": intelligence.enqueue(
+                            db, generator, args.document_id, args.operation_id
+                        )
+                    }
                 else:
                     value = intelligence.enrich_once(
                         db,
@@ -158,9 +164,7 @@ def main():
                 if os.environ.get("OW_ENCODER_MANIFEST")
                 else None,
                 reranker=LocalReranker(
-                    RerankerManifest.model_validate_json(
-                        Path(os.environ["OW_RERANKER_MANIFEST"]).read_bytes()
-                    )
+                    _manifest(os.environ["OW_RERANKER_MANIFEST"], RerankerManifest)
                 )
                 if os.environ.get("OW_RERANKER_MANIFEST")
                 else None,

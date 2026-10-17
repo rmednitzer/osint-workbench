@@ -129,18 +129,15 @@ class LocalGenerator:
 
     def _request(self, pool, path, body=None):
         data = json.dumps(body, allow_nan=False).encode() if body is not None else b""
-        response = pool.handle_request(
-            httpcore.Request(
-                "POST" if body is not None else "GET",
-                "http://inference.invalid" + path,
-                headers=[("Content-Type", "application/json"), ("Accept-Encoding", "identity")],
-                content=data,
-                extensions={
-                    "timeout": {"connect": 5, "read": self.manifest.timeout_seconds, "write": 5}
-                },
-            )
-        )
-        try:
+        with pool.stream(
+            "POST" if body is not None else "GET",
+            "http://inference.invalid" + path,
+            headers=[("Content-Type", "application/json"), ("Accept-Encoding", "identity")],
+            content=data,
+            extensions={
+                "timeout": {"connect": 5, "read": self.manifest.timeout_seconds, "write": 5}
+            },
+        ) as response:
             if response.status != 200:
                 raise WorkbenchError("INFERENCE_HTTP_FAILURE")
             headers = {k.lower(): v for k, v in response.headers}
@@ -152,8 +149,6 @@ class LocalGenerator:
                     raise WorkbenchError("INFERENCE_RESULT_LIMIT")
                 content.extend(block)
             return json.loads(content)
-        finally:
-            response.close()
 
     def _pool(self):
         self._peer = {}
@@ -266,7 +261,8 @@ class LocalGenerator:
                 info = os.lstat(marker)
                 if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid():
                     raise WorkbenchError("INFERENCE_LOCK_UNSAFE")
-                receipt = json.loads(Path(marker).read_bytes()[:4096])
+                with Path(marker).open("rb") as stream:
+                    receipt = json.loads(stream.read(4097))
                 if receipt.get("generator_id") != self.manifest.identity():
                     raise WorkbenchError("INFERENCE_OWNER_MISMATCH")
                 if receipt.get("pid") != self._peer.get("pid") and _process_start(

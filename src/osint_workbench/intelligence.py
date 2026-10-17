@@ -7,7 +7,7 @@ from typing import Literal
 from psycopg.types.json import Jsonb
 from pydantic import Field, ValidationError
 
-from .contracts import Digest, StrictModel
+from .contracts import Digest, Identifier, StrictModel
 from .database import Database
 from .errors import WorkbenchError
 from .evidence import EvidenceStore
@@ -36,18 +36,20 @@ class EnrichmentInput(StrictModel):
     snapshot_id: Digest
     generator_id: Digest
     prompt_version: Literal["assertion-proposals/1"] = PROMPT_VERSION
+    operation_id: Identifier = "initial"
 
 
 def _kind(generator):
     return "document.enrich/" + generator.manifest.identity()
 
 
-def enqueue(db: Database, generator: LocalGenerator, document_id: str):
+def enqueue(db: Database, generator: LocalGenerator, document_id: str, operation_id="initial"):
     doc = db.document(document_id)
     payload = EnrichmentInput(
         document_id=document_id,
         snapshot_id=doc["snapshot_id"],
         generator_id=generator.manifest.identity(),
+        operation_id=operation_id,
     )
     key = digest(json.dumps(payload.model_dump(), sort_keys=True).encode())
     return db.enqueue(_kind(generator), key, payload.model_dump())
@@ -99,6 +101,8 @@ def enrich_once(db: Database, store: EvidenceStore, generator: LocalGenerator):
                 "quote": literal,
             }
             validated.append(row)
+        if len({json.dumps(row, sort_keys=True) for row in validated}) != len(validated):
+            raise WorkbenchError("DUPLICATE_MODEL_PROPOSAL")
         enrichment_id = digest(str(job["job_id"]).encode())
         with db.connect() as conn:
             locked = jobs.locked(conn, job["job_id"], job["fence"])
@@ -208,6 +212,13 @@ def assertions(db, *, document_id=None, subject=None, limit=20, offset=0):
             ORDER BY assertion_id LIMIT %s OFFSET %s""",
             (document_id, document_id, subject, subject, limit, offset),
         ).fetchall()
+    for row in rows:
+        for role in ("subject", "object"):
+            row[role + "_mention_id"] = digest(
+                json.dumps(
+                    [row["document_id"], row["start_offset"], row["end_offset"], role, row[role]]
+                ).encode()
+            )
     return {
         "ontology_version": "assertion-proposals/1",
         "entity_resolution": "source-mentions-only",

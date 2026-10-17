@@ -269,3 +269,34 @@ LocalGenerator(manifest).generate('Fixture prompt',{'type':'object'})
         with pytest.raises(WorkbenchError, match="OUTCOME_UNKNOWN"):
             generator.generate("Fixture prompt", SCHEMA)
         assert generator.reconcile()["status"] == "idle"
+
+
+def test_native_generation_to_durable_abstention_and_cited_product(
+    native_generator, databases, tmp_path
+):
+    from osint_workbench import intelligence
+    from osint_workbench.contracts import DocumentInput
+    from osint_workbench.evidence import EvidenceStore
+    from osint_workbench.service import ReadService
+
+    writer, reader, _ = databases
+    store = EvidenceStore(tmp_path / "objects")
+    identifier = writer.ingest(
+        DocumentInput(
+            source_id="fixture",
+            external_id="native",
+            title="Synthetic",
+            text="storage disk evidence",
+        ),
+        b"synthetic raw",
+        store,
+    )
+    intelligence.enqueue(writer, native_generator, identifier)
+    result = intelligence.enrich_once(writer, store, native_generator)
+    # Authored constant logits prefer closing the array; this tests actual abstention,
+    # not the ability of a pretrained model to extract facts.
+    assert result["status"] == "abstained"
+    product = intelligence.create_briefing(writer, [identifier])
+    service = ReadService(reader, EvidenceStore(store.root, read_only=True))
+    assert service.briefing(product["briefing_id"])["items"] == []
+    assert product["degraded"]

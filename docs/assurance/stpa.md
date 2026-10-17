@@ -113,3 +113,22 @@ Residuals: model truth and source completeness remain outside proof; prompt-inje
 
 
 Remote MCP extension: identity/resource-server controller CA18 authenticates caller, establishes/revokes session and authorizes scoped reads. U25 (P/T): accept a token/session issued for another resource/principal or retain revoked session authority, exposing a workspace (H1/H3/H7). C25 requires issuer/audience/expiry/scope/principal/workspace binding and revocation policy, tested E49/E50. U26 (N/P): omit per-request authorization or report SDK compatibility as actual assistant compatibility (H1/H5); C26 requires enforcement on every resource/tool read and an observed client/version evidence matrix (E49-E51). CA18 is discrete; duration N/A; stale retained session authority is a revocation/order defect. No outbound provider token is a substitute for caller authorization. These constraints allocate to R56-R58/ADR-0017.
+
+## Implemented control refinement: local intelligence
+
+This addendum maps implemented controls to the local intelligence boundary; it does
+not close the full-system STPA scenarios or semantic-quality requirements.
+
+| Unsafe control action | Implemented constraint | Executable evidence |
+| --- | --- | --- |
+| Release shared inference ownership on client timeout/crash while the daemon can still run | Fsync a private owner receipt before dispatch; retain on unknown outcome; reconcile owner/process/idle slot before release | `test_killed_generation_client_preserves_uncertain_reservation`, native wire reconciliation tests |
+| Promote a schema-valid model statement solely because some quoted text exists | Preserve typed proposals, exact source spans and polarity; require an independent operator review before cited factual products | `test_proposals_review_cited_product_rejection_and_source_updates`, invalid-result and abstention tests |
+| Accept late output after cancellation, lease loss or source replacement | Lock/recheck the fence and current source head in the transaction accepting proposals/completion | `test_abstention_and_cancelled_completion_are_distinct`, workflow fencing tests |
+| Present withdrawn/stale source-derived statements as current | Active-document views and latest append-only review state constrain reads; product reads revalidate evidence and dependencies | Product withdrawal/source update tests and real MCP cited-product test |
+| Disclose generator runtime paths, private actor/rationale or operational configuration through agent reads/errors | No generator/operator write tools in MCP; bounded error codes and product projections exclude those fields | Real MCP tool inventory/product assertions; source/package publication scans |
+
+Residuals include semantic review error, model/runtime/shared-library supply-chain
+trust, other clients bypassing local admission, cross-user/host resource contention,
+incomplete graph resolution/diversity and full recovery/retention. A checked source
+span is not semantic entailment, and an executable hash is not complete deployment
+attestation. These limits remain in STATUS.md and ADR-0019.

@@ -57,7 +57,9 @@ quotation. The ontology currently supports `mentions`, `affects`, `mitigates`, `
 and `related_to`. Claims preserve asserted, negated or uncertain polarity. Quotations
 are located in original Unicode coordinates; the actual source slice is stored. Schema
 or evidence failure rejects the whole operation rather than accepting a valid prefix.
-An empty claims list is visible abstention. Proposals and fenced job completion commit
+An empty claims list is visible abstention. A failed/cancelled job is not silently
+restarted: an operator can enqueue a new intentional `--operation-id`, preserving
+the prior operation and its outcome. Reusing an operation ID is idempotent. Proposals and fenced job completion commit
 atomically. Cancellation or expired ownership prevents late acceptance. Errors retain
 bounded codes; malformed model text is not silently repaired or stored as accepted fact.
 
@@ -66,7 +68,8 @@ proposals stay pending until an operator appends an accept/reject review with ra
 and an intentional actor label. This actor field is attribution, not a new authentication
 mechanism; the database writer credential supplies authority. MCP cannot review or
 create assertions. Different document/source mentions are not automatically merged,
-and fuzzy names do not establish common identity. Alias/merge/contradiction workflows
+and fuzzy names do not establish common identity. Read results include distinct
+subject/object mention IDs bound to the document and evidence span. Alias/merge/contradiction workflows
 remain required future work. Negated and uncertain assertions are not collapsed into
 positive facts.
 
@@ -82,7 +85,8 @@ osint-workbench enrich reconcile --manifest /private/generator.json
 A briefing is a deterministic `reviewed_assertion_digest`, not a model-written analysis.
 It contains accepted statements, polarity and exact quotations with document/snapshot
 IDs and offsets. It records a corpus cutoff and explicitly unassessed source diversity.
-No accepted assertions yields a degraded empty digest; pending claims are never promoted
+The projection is deterministic given accepted assertions and its recorded cutoff;
+a new creation records a new cutoff. No accepted assertions yields a degraded empty digest; pending claims are never promoted
 as fallback. Reads verify the content digest and evidence. Withdrawn reviews or obsolete
 source versions make a cited product stale. Private reviewer rationale and actor labels
 are excluded from MCP/products. Old source evidence and review history remain retained.

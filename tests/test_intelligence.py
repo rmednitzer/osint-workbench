@@ -96,7 +96,8 @@ def test_proposals_review_cited_product_rejection_and_source_updates(databases, 
 
 
 @pytest.mark.parametrize(
-    "claims", [[claim("Fabricated quotation")], [{**claim(), "shell": "forbidden"}]]
+    "claims",
+    [[claim("Fabricated quotation")], [{**claim(), "shell": "forbidden"}], [claim(), claim()]],
 )
 def test_invalid_models_accept_no_partial_assertions(databases, tmp_path, claims):
     writer, reader, roles, store, doc = setup(databases, tmp_path)
@@ -176,3 +177,22 @@ def test_cited_product_over_real_mcp_stdio(databases, tmp_path):
             assert not any(t.name in {"review", "generate", "enrich", "shell"} for t in tools.tools)
 
     asyncio.run(run())
+
+
+def test_explicit_resubmission_keeps_failed_operation_history(databases, tmp_path):
+    writer, reader, roles, store, doc = setup(databases, tmp_path)
+    generator = FixtureGenerator([claim("not in evidence")])
+    original = intel.enqueue(writer, generator, doc)
+    assert intel.enrich_once(writer, store, generator)["status"] == "failed"
+    generator.claims = [claim()]
+    assert intel.enqueue(writer, generator, doc) == original
+    assert intel.enrich_once(writer, store, generator)["status"] == "idle"
+    retry = intel.enqueue(writer, generator, doc, operation_id="reviewed-retry-1")
+    assert retry != original
+    assert intel.enrich_once(writer, store, generator)["status"] == "proposed"
+    with psycopg.connect(roles["admin"]) as conn:
+        assert (
+            conn.execute("SELECT status FROM ow.jobs WHERE job_id=%s", (original,)).fetchone()[0]
+            == "failed"
+        )
+    assert len(intel.assertions(reader)["results"]) == 1

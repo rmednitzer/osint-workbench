@@ -162,7 +162,7 @@ def fetch(url: str, *, timeout: float = 30, max_bytes: int = MAX_BYTES) -> bytes
             current = url
             for _ in range(6):
                 validate_url(current)
-                request = httpcore.Request(
+                with pool.stream(
                     "GET",
                     current,
                     headers=[
@@ -176,9 +176,7 @@ def fetch(url: str, *, timeout: float = 30, max_bytes: int = MAX_BYTES) -> bytes
                             "write": _remaining(deadline),
                         }
                     },
-                )
-                response = pool.handle_request(request)
-                try:
+                ) as response:
                     headers = {k.lower(): v for k, v in response.headers}
                     if response.status in {301, 302, 303, 307, 308}:
                         location = headers.get(b"location")
@@ -204,8 +202,6 @@ def fetch(url: str, *, timeout: float = 30, max_bytes: int = MAX_BYTES) -> bytes
                             raise WorkbenchError("SOURCE_TOO_LARGE")
                         body.extend(chunk)
                     return bytes(body)
-                finally:
-                    response.close()
         raise WorkbenchError("REDIRECT_LIMIT")
     except WorkbenchError:
         raise
