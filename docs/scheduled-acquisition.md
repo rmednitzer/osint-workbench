@@ -43,6 +43,8 @@ next poll after completion. Restart does not reset the delay. The next admitted
 collector marks abandoned running receipts interrupted. There is no automatic
 sleep/retry loop. `collect` without `--due-only` explicitly bypasses due times and
 makes an unconditional request, while retaining the same source exclusion lock.
+`--max-sources` applies only to `--due-only`; an explicit cap supplied to manual
+collection is rejected rather than silently ignored.
 
 Validators are restricted to bounded printable entity tags and canonical IMF-fixdate
 Last-Modified values. Unsupported or ambiguous fields fail closed. Entity tags take
@@ -52,10 +54,25 @@ and verified prior raw evidence. It records a successful HTTP-304 run with that
 same raw hash and zero new documents. This confirms representation validation,
 not correctness of the source or a new acquisition timestamp for historical items.
 
-A partial run never advances validators. It may retain already accepted items;
-the next due attempt replays against the previous complete representation and
-uses existing immutable document identities. Missing local cached evidence causes
-an unconditional fetch. Corrupt immutable files require explicit investigation;
+A partial run never advances validators. It may retain already accepted items.
+After any failed or unconfirmed attempt, the next admitted request omits both
+validators and requires a full response; an unsolicited 304 fails. This prevents
+an origin returning to the previous representation from validating its cached raw
+body while leaving partially accepted newer item heads unreconciled. Successful
+full acceptance resets this dirty state; prior validators remain private retained
+metadata until then, not permission to skip reconciliation.
+
+Under the per-source collector lock, accepting a full representation explicitly
+updates the head of each present, non-suppressed item, even when its immutable
+document version already exists. A source observed as A, then B, then exactly A
+therefore serves A again without duplicating its document or outbox event. Generic
+`ingest` replay retains its separate non-rewinding contract. Items absent from a
+feed are not deleted or retired: RSS/Atom feeds can be sliding windows. Partial
+acceptance remains visible and is recorded as partial/failure until a later full
+attempt completes; this is not an atomic feed replacement or proof of source
+truth. See [ADR-0024](adr/0024-observed-source-reconciliation.md).
+
+Missing local cached evidence causes an unconditional fetch. Corrupt immutable files require explicit investigation;
 network re-fetch does not silently overwrite them. A missing prior object must
 be recovered with its exact hash before either scheduled or manual refresh can
 report success. A different new body does not clear that observed archive gap;

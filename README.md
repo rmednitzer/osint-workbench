@@ -24,7 +24,8 @@ APIs. Their implementation and verification status is tracked in
 
 The optional retrieval profile now executes local ONNX embeddings and exact pgvector
 hybrid search with versioned generations. An optional local ONNX pair reranker is also available. Pretrained semantic-quality
-acceptance remains pending. See [local retrieval](docs/local-retrieval.md).
+acceptance remains pending. See [local retrieval](docs/local-retrieval.md) and
+[frozen local quality diagnostics](docs/local-quality.md).
 No model/provider is selected or downloaded automatically. Model calls require an
 explicit local profile. No cloud keys
 or operational data are required by the current code or tests.

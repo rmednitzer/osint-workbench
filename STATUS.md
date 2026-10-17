@@ -10,7 +10,7 @@ complete merely because its design documents or interfaces exist.
 | Jobs | Bounded retries, attempt events, cancellation, renewal and atomic chunk worker | PostgreSQL failure/concurrency tests; distributed/remote effects remain pending |
 | Collection | RSS/Atom extraction, bounded public HTTP transport and durable due/validator state | Native HTTP sockets, parser, due/304/backoff, crash/replay and recovery tests passed. Full adversarial HTTP coverage remains pending |
 | MCP | Seven stdio reads with strict schemas, reader checks and bounded errors | Real SDK client against PostgreSQL in CI |
-| Retrieval | Local ONNX embeddings, token-aware chunks, exact pgvector/RRF and generation activation/rollback | Synthetic numerical ONNX and native database/MCP tests, including actual pair scoring; pretrained semantic quality, ANN, automatic backfill and caches pending |
+| Retrieval | Local ONNX embeddings, token-aware chunks, exact pgvector/RRF and generation activation/rollback | Synthetic numerical ONNX and native database/MCP tests, including actual pair scoring; frozen offline scorer/local diagnostic added; pretrained semantic acceptance, ANN, automatic backfill and caches pending |
 | Local inference | CPU embedding/rerank runtimes, native Unix-socket generation and durable shared admission | Actual synthetic ONNX/GGUF execution and Unix transport/crash tests in CI; no GPU, pretrained quality or complete cross-host scheduler |
 | Enrichment/graph/briefings | Durable typed proposals, evidence spans, operator reviews and cited assertion digests | PostgreSQL/MCP proposal, review, withdrawal and cited-digest tests passed; pretrained semantic acceptance, aliases/merge and diversity pending |
 | Vulnerability/regulatory profiles | Target specification | No domain adapters or applicability verification yet |
@@ -33,7 +33,7 @@ concurrency and policy-gated isolated recovery. See
 [the revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
 models establish execution contracts, not pretrained semantic quality.
 
-The full programme covers 28 capability areas, 23 ADRs, 58 requirements and 51
+The full programme covers 28 capability areas, 26 ADRs, 58 requirements and 51
 acceptance scenarios. The tests in this repository currently establish only a
 foundation subset. Detailed future specifications are under `docs/`; they are not
 execution receipts. CI results are authoritative for a particular tested revision.
@@ -57,4 +57,16 @@ It never deletes retained database records or objects reachable from them.
 
 Scheduled acquisition adds an explicit bounded due-only tick and private HTTP
 validators. The core-v5 native acceptance cases passed in the named
-verification receipt. No external timer is installed or tested.
+verification receipt. A generic hardened collector service/timer and explicit disposable-runner acceptance script are provided; actual service acceptance is recorded separately from database-backed collection tests.
+
+The new offline evaluator freezes suite, ranking, baseline and encoder identities
+before inference and preserves negative gates and partial failure observations.
+The bundled English/German suite is public and authored synthetic data, including
+exposed held-out groups. It cannot establish independent semantic acceptance.
+Model artifact preparation and reference-service acceptance are explicit manual
+workflow activities; ordinary CI and imports never download pretrained weights.
+The experimental multilingual encoder does not establish EU-independent model
+lineage or an adopted sovereign production profile. See
+[local quality diagnostics](docs/local-quality.md) and
+[reference deployment](docs/deployment.md). New regression and manual-run results
+must be bound to their tested revision before replacing the baseline receipt.

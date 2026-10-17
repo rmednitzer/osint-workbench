@@ -212,10 +212,50 @@ headers remain untrusted; only an explicit external invocation starts a tick.
 
 | Unsafe control action | Constraint | Discriminating evidence |
 | --- | --- | --- |
-| U34: acknowledge an unchanged response without intact accepted local evidence, mask a detected archive gap with a new body, or advance a validator after partial acceptance | C34: bind validators to URI/profile, require exact recovery of an observed prior gap, commit validators only with completed acceptance | Real 200/304 framing, missing/different-body refusal and partial-run replay tests |
+| U34: acknowledge an unchanged response without intact accepted local evidence, mask a detected archive gap with a new body, or advance a validator after partial acceptance | C34: bind validators to URI/profile, require exact recovery of an observed prior gap, commit validators only with completed acceptance, omit validators after failed/unconfirmed work | Real 200/304 framing, missing/different-body refusal, partial-run replay and dirty unsolicited-304 tests |
 | U35: send source-specific validators to another redirect resource or retain them after configuration/restore changes | C35: strip on redirects, reset on resource change and isolated restore, deny SQL/MCP access | Redirect, changed-resource, scoped-reader and recovery tests |
 | U36: restart collection without retaining retry delay, dispatch unbounded work or hide independent sources after one failure | C36: reserve due state before dispatch, bound backoff/counter/tick size, retain per-source failure feedback | Killed collector, restart, bounded tick/backoff and independent-source tests |
 
 No timer deployment, global host quota, Retry-After enforcement or complete
 acquisition acceptance is implied. A freshness success means representation
 validation, not factual currency or independently verified content.
+
+## Source reconciliation, diagnostics and supervisor refinement
+
+CA4/CA20 additionally distinguish accepting a newly observed full representation
+from replaying previously accepted immutable input. CA21 is the operator's
+explicit local quality-diagnostic invocation; feedback includes a frozen suite
+and protocol, model/config identity, per-query observations, numeric gate results
+and distinct incomplete/completed outcomes. CA22 is the process supervisor's
+start/stop/timeout control; feedback includes process identity, effective sandbox
+settings, result state and observed child termination. These actions are discrete;
+their duration category is N/A. Sustained resource consumption and surviving
+children are controlled states, not a start command lasting too long.
+
+| UCA | Hazardous context / category | Derived constraint and allocation | Discriminating evidence |
+| --- | --- | --- | --- |
+| U37 | CA4/CA20/P or T: preserve B as current when a serialized source observation returns to retained A, or treat 304(A) as complete reconciliation after partial B | H2,H8; C37: collector-only observed-current head authority, generic non-rewinding replay, no conditional request after failed/unconfirmed work; ADR-0024 | Native A/B/A, partial B/full A, dirty-304 refusal, generic replay and outbox-count regressions |
+| U38 | CA21/CA9/P: treat a completed ranking run, synthetic labels, hash identity or a green workflow as semantic acceptance | H5,H8; C38: freeze suite/targets, bind predictions to exact suite/config, report per-split numeric gates and missing populations, separate execution completion from acceptance; ADR-0015 | Metric-oracle, wrong-suite, duplicate/unknown ranking, missing-population, explicit-abstention and negative-gate tests; public diagnostic remains synthetic |
+| U39 | CA21/P: download or activate a model implicitly, or disclose private evaluation inputs through a public diagnostic workflow | H1,H3,H7; C39: preparation requires explicit invocation, pinned artifact bytes/hashes and licence acknowledgement; public workflow dispatch binds the approved synthetic suite digest; no activation or cloud request | Preparation hash/size/destination tests, reviewed workflow trigger and hard-coded suite digest; this is not complete model or supply-chain attestation |
+| U40 | CA22/N or T: leave an overlong tick or its child running while reporting bounded service termination | H6,H9; C40: bound the service lifetime, terminate its complete control group, escalate after a grace interval, and verify result plus child identity; deployment reference | Native unit-parser checks and disposable supervisor probes; actual candidate/host execution receipt is required, not inferred from unit syntax |
+| U41 | CA21/CA9/P: overwrite a prior diagnostic, expose private text/paths in logs, or conceal partial failure behind a new result | H1,H5; C41: fresh private output directory, durable no-overwrite suite/protocol and completed observations, bounded safe errors, distinct failed/completed receipts; diagnostic CLI | Private-permission, no-overwrite, corrupt-model, cooperative-budget and later-native-query-failure tests |
+
+SC1/SC5/SC6/SC8 apply to these controls. L1/L2/L3/L4/L5 and H1/H2/H5/H6/H8/H9
+remain the relevant losses and hazards; no new quantitative risk or completeness
+claim is introduced. A completed diagnostic with unmet numeric targets exits
+distinctly from execution failure. A workflow may preserve those negative results
+while succeeding as an execution job; it cannot authorize model activation.
+
+Quality evidence remains bounded: exact normalized query/group checks cannot
+establish independently labelled holdout provenance or detect all paraphrases;
+public synthetic cases cannot establish pretrained utility. The local diagnostic
+budget is cooperative and can be exceeded by one already admitted native call's
+existing timeout. Process preparation and validation are outside that timer.
+Retained partial observations do not make an incomplete run complete.
+
+Supervisor probes on a disposable runner, when executed, cover only their observed
+properties. They do not establish operational host acceptance, timer activation,
+database/HTTP acquisition, global resource fairness, OS egress policy or full-host
+recovery. Reference deployment changes no original service. Feed-absence deletion,
+whole-feed atomic replacement, privileged writer containment and full semantic
+acceptance remain outside these implemented boundaries.

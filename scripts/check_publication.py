@@ -87,6 +87,11 @@ def inspect_text(name: str, content: str, private_values=()) -> list[str]:
             continue
         allowed = (
             (
+                name == "scripts/prepare_encoder.py"
+                and host == "huggingface.co"
+                and parts.path == "/"
+            )
+            or (
                 name == "scripts/prepare_native.py"
                 and host == "codeload.github.com"
                 and parts.path == "/ggml-org/llama.cpp/tar.gz/"

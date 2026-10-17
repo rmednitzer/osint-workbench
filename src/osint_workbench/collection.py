@@ -56,7 +56,10 @@ def feed_documents(raw: bytes, source_id: str) -> list[DocumentInput]:
             raise WorkbenchError("FEED_PARSER_UNAVAILABLE")
         if not isinstance(decoded, list) or len(decoded) > 10000:
             raise ValueError
-        return [DocumentInput.model_validate_json(json.dumps(row)) for row in decoded]
+        documents = [DocumentInput.model_validate_json(json.dumps(row)) for row in decoded]
+        if any(document.source_id != source_id for document in documents):
+            raise ValueError
+        return documents
     except (ValueError, TypeError):
         raise WorkbenchError("FEED_PARSE_FAILED") from None
 
@@ -154,7 +157,9 @@ def collect(source: Source, db: Database, store: EvidenceStore, *, due_only=Fals
             if due_only:
                 validators(state["etag"], state["last_modified"])
                 response = fetch_response(
-                    source.url, etag=state["etag"], last_modified=state["last_modified"]
+                    source.url,
+                    etag=state["etag"] if state["failures"] == 0 else None,
+                    last_modified=state["last_modified"] if state["failures"] == 0 else None,
                 )
             else:
                 response = FetchResult(200, fetch(source.url))
@@ -184,7 +189,12 @@ def collect(source: Source, db: Database, store: EvidenceStore, *, due_only=Fals
                     )
                     text_sha = store.put(document.text.encode())
                     identifier = db.ingest_stored(
-                        conn, document, raw_sha, text_sha, "feedparser-html/2"
+                        conn,
+                        document,
+                        raw_sha,
+                        text_sha,
+                        "feedparser-html/2",
+                        observed_current=True,
                     )
                 except WorkbenchError as exc:
                     if exc.code != "DOCUMENT_RETIRED_OR_EXPIRED":

@@ -2,12 +2,13 @@ import argparse
 import asyncio
 import json
 import os
+import stat
 import sys
 from pathlib import Path
 
 from pydantic import ValidationError
 
-from . import garbage_collection, intelligence, lifecycle, recovery
+from . import evaluation, garbage_collection, intelligence, lifecycle, quality, recovery
 from .collection import collect, collect_due
 from .contracts import DocumentInput, SourceConfig
 from .database import SCHEMA_VERSION, Database, migrate
@@ -42,9 +43,33 @@ def _encoder(path):
     return LocalEncoder(_manifest(path, EncoderManifest))
 
 
+def _evaluation_input(path):
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    with os.fdopen(fd, "rb") as stream:
+        info = os.fstat(stream.fileno())
+        if not stat.S_ISREG(info.st_mode) or info.st_size > evaluation.MAX_INPUT_BYTES:
+            raise WorkbenchError("EVALUATION_INPUT_INVALID")
+        data = stream.read(evaluation.MAX_INPUT_BYTES + 1)
+    if len(data) > evaluation.MAX_INPUT_BYTES:
+        raise WorkbenchError("EVALUATION_INPUT_INVALID")
+    return data
+
+
 def main():
     parser = argparse.ArgumentParser(prog="osint-workbench")
     sub = parser.add_subparsers(dest="command", required=True)
+    assess = sub.add_parser("evaluate")
+    modes = assess.add_subparsers(dest="mode", required=True)
+    replay = modes.add_parser("replay")
+    replay.add_argument("--suite", type=Path, required=True)
+    replay.add_argument("--predictions", type=Path, required=True)
+    replay.add_argument("--file", type=Path, required=True)
+    local = modes.add_parser("local")
+    local.add_argument("--suite", type=Path, required=True)
+    local.add_argument("--output", type=Path, required=True)
+    local.add_argument("--encoder-manifest", type=Path)
+    local.add_argument("--budget-seconds", type=float, default=120)
+    local.add_argument("--source-revision")
     sub.add_parser("migrate")
     sub.add_parser("migrate-retrieval")
     backup = sub.add_parser("checkpoint")
@@ -99,7 +124,7 @@ def main():
     scan = sub.add_parser("collect")
     scan.add_argument("--config", type=Path, required=True)
     scan.add_argument("--due-only", action="store_true")
-    scan.add_argument("--max-sources", type=int, default=32)
+    scan.add_argument("--max-sources", type=int)
     sub.add_parser("status")
     search = sub.add_parser("search")
     search.add_argument("query")
@@ -110,7 +135,39 @@ def main():
     job.add_argument("job_id")
     args = parser.parse_args()
     try:
-        if args.command == "gc":
+        if args.command == "evaluate":
+            suite = evaluation.parse_suite(_evaluation_input(args.suite))
+            if args.mode == "replay":
+                predictions = evaluation.parse_predictions(_evaluation_input(args.predictions))
+                value = evaluation.evaluate(suite, predictions)
+                recovery._write_new(args.file, evaluation._canonical(value))
+                passed = all(s["all_targets_met"] for s in value["payload"]["splits"].values())
+                print(
+                    json.dumps(
+                        {
+                            "sha256": value["sha256"],
+                            "all_targets_met": passed,
+                            "semantic_acceptance": "not_established",
+                        }
+                    )
+                )
+                if not passed:
+                    raise SystemExit(2)
+                return
+            value = quality.run(
+                suite,
+                args.output,
+                encoder=_encoder(args.encoder_manifest) if args.encoder_manifest else None,
+                budget_seconds=args.budget_seconds,
+                source_revision=args.source_revision,
+            )
+            print(json.dumps(value, ensure_ascii=False))
+            if value["status"] != "completed":
+                raise SystemExit(1)
+            if not value["all_targets_met"]:
+                raise SystemExit(2)
+            return
+        elif args.command == "gc":
             db = Database(_dsn("OW_GC_DSN"))
             store = EvidenceStore(Path(os.environ["OW_EVIDENCE_ROOT"]), read_only=True)
             if args.action == "plan":
@@ -232,6 +289,11 @@ def main():
             identifier = Database(_dsn("OW_WRITER_DSN")).ingest(document, raw, store)
             value = {"document_id": identifier}
         elif args.command == "collect":
+            if args.max_sources is not None:
+                if not args.due_only:
+                    raise WorkbenchError("MAX_SOURCES_REQUIRES_DUE_ONLY")
+                if not 1 <= args.max_sources <= 128:
+                    raise WorkbenchError("INVALID_COLLECTION_LIMIT")
             with args.config.open("rb") as stream:
                 encoded = stream.read(8 * 1024 * 1024 + 1)
             if len(encoded) > 8 * 1024 * 1024:
@@ -243,7 +305,12 @@ def main():
                 db = Database(_dsn("OW_WRITER_DSN"))
                 store = EvidenceStore(Path(os.environ["OW_EVIDENCE_ROOT"]))
                 if args.due_only:
-                    value = collect_due(config.sources, db, store, limit=args.max_sources)
+                    value = collect_due(
+                        config.sources,
+                        db,
+                        store,
+                        limit=32 if args.max_sources is None else args.max_sources,
+                    )
                     print(json.dumps(value, ensure_ascii=False))
                     if value["status"] == "failed":
                         raise SystemExit(1)

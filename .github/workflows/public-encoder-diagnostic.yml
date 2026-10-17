@@ -1,0 +1,71 @@
+name: Run public profile diagnostics
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
+        with:
+          version: "0.12.23"
+      - name: Install the built wheel with locked CPU dependencies
+        run: |
+          uv sync --locked --extra retrieval --no-dev --python 3.12
+          uv build
+          sha256sum uv.lock dist/*.whl
+          uv pip install --python .venv/bin/python --no-deps --reinstall dist/*.whl
+          .venv/bin/python -c 'import osint_workbench; assert "site-packages" in osint_workbench.__file__'
+      - name: Verify the frozen public inputs before explicit artifact download
+        run: |
+          .venv/bin/python -c 'from pathlib import Path; from osint_workbench.evaluation import digest,parse_suite; assert digest(parse_suite(Path("config/evaluation.example.json").read_bytes())) == "74e962126c56ae643f8d32e2dba4009c05c661a9162997c49320302b4c43b8d0"'
+          mkdir outputs
+          .venv/bin/python scripts/prepare_encoder.py --output "$RUNNER_TEMP/ow-public-model" --accept-license Apache-2.0
+      - name: Execute local CPU diagnostics and retain negative gates honestly
+        run: |
+          set +e
+          .venv/bin/osint-workbench evaluate local --suite config/evaluation.example.json --output outputs/public-diagnostic --encoder-manifest "$RUNNER_TEMP/ow-public-model/encoder.json" --budget-seconds 240 --source-revision "$GITHUB_SHA"
+          result=$?
+          set -e
+          if [ "$result" -ne 0 ] && [ "$result" -ne 2 ]; then exit "$result"; fi
+          .venv/bin/python - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path("outputs/public-diagnostic")
+          outcome = json.loads((root / "completed.json").read_text())
+          assert outcome["status"] == "completed" and "encoder" in outcome["systems"]
+          report = {"outcome": outcome, "protocol": json.loads((root / "protocol.json").read_text()), "encoder": json.loads((root / "encoder-evaluation.json").read_text()), "lexical": json.loads((root / "lexical-evaluation.json").read_text())}
+          print("PUBLIC_DIAGNOSTIC_REPORT=" + json.dumps(report, sort_keys=True))
+          PY
+      - name: Retain only the public synthetic diagnostic, never model weights
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: public-encoder-diagnostic-${{ github.sha }}
+          path: outputs/public-diagnostic/
+          if-no-files-found: warn
+          retention-days: 14
+  reference-service:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
+        with:
+          version: "0.12.23"
+      - name: Prepare an installed core wheel using the protected system Python
+        run: |
+          uv venv /tmp/ow-reference-core --python /usr/bin/python3
+          uv export --locked --no-dev --no-emit-project --output-file /tmp/ow-reference-core-requirements.txt > /dev/null
+          uv pip sync --python /tmp/ow-reference-core/bin/python --require-hashes /tmp/ow-reference-core-requirements.txt
+          uv build
+          uv pip install --python /tmp/ow-reference-core/bin/python --no-deps dist/*.whl
+      - name: Accept the actual service and sandbox on this disposable runner
+        run: sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT /usr/bin/python3 scripts/test_reference_deployment.py --core-venv /tmp/ow-reference-core --units config/systemd

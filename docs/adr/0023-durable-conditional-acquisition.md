@@ -34,8 +34,16 @@ objects force an unconditional attempt; immutable corrupt objects are not repair
 silently. A missing prior body must be recovered with its exact hash before
 scheduled or manual refresh can report success; a different new representation
 cannot hide the detected archive gap. Advance validators only with successful completion after all entries
-have been accepted or explicitly suppressed. Partial acceptance replays against
-the previous completed validator.
+have been accepted or explicitly suppressed. After a failed or unconfirmed
+attempt, retain the previous completed validator as metadata but do not send it:
+require a full representation before conditional validation can resume. Otherwise
+a source that returns to its previous representation could send 304 while partial
+newer item heads remain active. The serialized collector reconciles heads to
+observed existing versions under ADR-0024; generic immutable replay remains
+non-rewinding. No feed-absence deletion is inferred.
+
+An explicitly supplied `--max-sources` without `--due-only` is rejected. Manual
+collection does not silently disregard a requested dispatch cap.
 
 ## Recovery, consequences and evidence
 
@@ -58,5 +66,9 @@ process death, unsupported row-security refusal, detected archive-gap preservati
 replay, resource changes, missing cache, bounded fair dispatch, backoff, migration
 and isolated recovery. They do not establish public DNS/TLS interoperability,
 provider operation, deployed timer reliability or semantic source quality.
+The added reconciliation regressions distinguish A/B/A observations, a partially
+accepted B followed by full A, and an unsolicited 304 after a dirty attempt.
+Their native PostgreSQL result must be read from the candidate's verification
+receipt; local collection without that database is not execution evidence.
 Server Retry-After, shared-host quotas, jitter, cursors and broader acquisition
 formats remain explicit follow-up work; this increment does not close E05/E09–E12.

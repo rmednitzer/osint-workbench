@@ -137,7 +137,7 @@ class Database:
             return self.ingest_stored(conn, doc, raw_sha, text_sha, extractor)
 
     @staticmethod
-    def ingest_stored(conn, doc, raw_sha, text_sha, extractor):
+    def ingest_stored(conn, doc, raw_sha, text_sha, extractor, *, observed_current=False):
         """Internal transaction boundary; caller has durably verified both objects."""
         snapshot = hashlib.sha256(
             json.dumps([doc.source_id, raw_sha, text_sha, extractor]).encode()
@@ -186,13 +186,16 @@ class Database:
                 doc.published_at,
             ),
         ).fetchone()
-        if inserted:
+        # Generic immutable replay must not rewind a later head. A serialized
+        # collector may explicitly reconcile the representation it just observed.
+        if inserted or observed_current:
             conn.execute(
                 """INSERT INTO ow.document_heads(source_id,external_key,document_id)
               VALUES (%s,%s,%s) ON CONFLICT(source_id,external_key)
               DO UPDATE SET document_id=excluded.document_id""",
                 (doc.source_id, external, document),
             )
+        if inserted:
             conn.execute(
                 """INSERT INTO ow.jobs(job_id,kind,dedup_key,payload)
               VALUES (%s,'document.accepted',%s,%s) ON CONFLICT DO NOTHING""",

@@ -1,0 +1,47 @@
+[Unit]
+Description=OSINT Workbench bounded acquisition tick
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=osint-workbench
+Group=osint-workbench
+EnvironmentFile=/etc/osint-workbench/collector.env
+Environment=OW_EVIDENCE_ROOT=/var/lib/osint-workbench/evidence
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/osint-workbench/venv/bin/osint-workbench collect --config /etc/osint-workbench/sources.json --due-only --max-sources 32
+StateDirectory=osint-workbench/evidence
+StateDirectoryMode=0700
+WorkingDirectory=/var/lib/osint-workbench/evidence
+UMask=0077
+TimeoutStartSec=15min
+TimeoutStopSec=15s
+KillMode=control-group
+SendSIGKILL=yes
+Restart=no
+MemoryMax=768M
+TasksMax=32
+CPUQuota=100%
+LimitNOFILE=256
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+StandardOutput=journal
+StandardError=journal

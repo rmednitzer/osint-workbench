@@ -193,7 +193,7 @@ def test_partial_failure_does_not_advance_validator(databases, tmp_path, monkeyp
     replay = ResponseWire(body=changed, headers=[(b"etag", b'"new"')])
     install(monkeypatch, replay)
     assert collect(source(), writer, store, due_only=True)["documents"] == 2
-    assert dict(replay.request.headers)[b"if-none-match"] == b'"old"'
+    assert b"if-none-match" not in dict(replay.request.headers)
 
 
 @pytest.mark.integration
