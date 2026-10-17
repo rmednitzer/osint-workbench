@@ -285,3 +285,37 @@ def test_visible_intent_after_failed_fsync_must_be_resynced(databases, tmp_path,
             gc.apply(Database(roles["admin"]), store, plan, sha, journal)
         assert candidate.exists()
     assert gc.apply(Database(roles["admin"]), store, plan, sha, journal)["resumed"]
+
+
+@pytest.mark.integration
+def test_scoped_maintenance_principal_and_mismatched_journal(databases, tmp_path):
+    _, _, roles = databases
+    store = EvidenceStore(tmp_path / "objects")
+    _, candidate = orphan(store)
+    admin, operator = Database(roles["admin"]), Database(roles["lifecycle"])
+    tables = "ow.migrations,ow.snapshots,ow.collection_runs"
+    with admin.connect() as conn:
+        if conn.execute("SELECT to_regclass('ow.retrieval_migrations') AS t").fetchone()["t"]:
+            tables += ",ow.retrieval_migrations"
+        # Fixed fixture-owned identifiers; no user SQL or dynamic table input.
+        conn.execute("GRANT SELECT ON " + tables + " TO ow_lifecycle")
+    try:
+        path = tmp_path / "scoped.owgc"
+        receipt = gc.plan(operator, store, path, operation_id="scoped")
+        journal = tmp_path / "journal"
+        journal.mkdir()
+        (journal / "intent.json").write_text("{}")
+        with pytest.raises(WorkbenchError):
+            gc.apply(operator, store, path, receipt["sha256"], journal)
+        assert candidate.exists()
+        (journal / "intent.json").unlink()
+        journal.rmdir()
+        result = gc.apply(operator, store, path, receipt["sha256"], journal)
+        assert result["objects"] == 1 and not candidate.exists()
+        assert path.stat().st_mode & 0o777 == 0o600
+        assert journal.stat().st_mode & 0o777 == 0o700
+        assert (journal / "intent.json").stat().st_mode & 0o777 == 0o600
+        assert (journal / "complete.json").stat().st_mode & 0o777 == 0o600
+    finally:
+        with admin.connect() as conn:
+            conn.execute("REVOKE SELECT ON " + tables + " FROM ow_lifecycle")
