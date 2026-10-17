@@ -42,7 +42,37 @@ def command(argv, *, allowed=(0,), timeout=30):
     result = subprocess.run(
         argv, env=COMMAND_ENV, capture_output=True, text=True, timeout=timeout, check=False
     )
-    require(result.returncode in allowed, "NATIVE_COMMAND_FAILED")
+    if result.returncode not in allowed:
+        executable = Path(argv[0]).name
+        if executable not in {"systemctl", "journalctl", "useradd"}:
+            executable = "other"
+        action = argv[1] if len(argv) > 1 else "none"
+        if action not in {
+            "start",
+            "stop",
+            "show",
+            "daemon-reload",
+            "is-active",
+            "reset-failed",
+            "--sync",
+            "--unit",
+            "--system",
+        }:
+            action = "other"
+        print(
+            "PUBLIC_DEPLOYMENT_DIAGNOSTIC="
+            + json.dumps(
+                {
+                    "kind": "native_command_failed",
+                    "executable": executable,
+                    "action": action,
+                    "returncode": result.returncode,
+                },
+                sort_keys=True,
+            ),
+            flush=True,
+        )
+        raise Rejected("NATIVE_COMMAND_FAILED")
     return result.stdout
 
 
@@ -602,7 +632,9 @@ def enabled_http_service_acceptance(account):
             # OnUnitInactiveSec-only timer may have no retained service timestamp
             # after an inactive oneshot was unloaded. Reset probe history without
             # changing any production rate limit or timer configuration.
-            command(["systemctl", "reset-failed", SERVICE, TIMER])
+            # An inactive timer may not be loaded yet; resetting that unit would
+            # fail before its first arm. Only clear previous service probe state.
+            command(["systemctl", "reset-failed", SERVICE], allowed=(0, 1))
             started = str(time.time())
             command(["systemctl", "start", TIMER])
             deadline = time.monotonic() + 20
