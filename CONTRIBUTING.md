@@ -82,9 +82,14 @@ The [maintenance policy](docs/repository-maintenance.md) defines Renovate,
 advisory auditing, coupled build updates and observed-setting verification.
 
 The standalone Renovate validator must run in repository mode:
-`renovate-config-validator --strict --no-global renovate.json`. CI uses a
-digest-pinned official container; local tool installation is separate from the
-Python environment. Node/npm installations are not runtime dependencies.
+`renovate-config-validator --strict --no-global renovate.json`. This checks shape
+and migrations but does not establish that presets resolve. Run
+`bash scripts/check_renovate.sh` from the repository root to reproduce CI's pinned
+container checks: schema validation, actual offline preset resolution/dependency
+extraction, and a known invalid-preset negative control. Docker image preparation
+requires registry access; all three validation runs have no network or credentials.
+Local Node/npm installations are separate from the Python environment and are
+not runtime dependencies.
 
 Run publication checks on source and artifacts. Maintainers may set
 `OW_PRIVATE_DENYLIST` to an external private JSON array for additional exact-value

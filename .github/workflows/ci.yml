@@ -25,10 +25,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Validate with an immutable unprivileged offline tool
-        run: |
-          docker build --tag ow-renovate-validator --file .github/renovate.Dockerfile .github
-          docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges --user "$(id -u):$(id -g)" --tmpfs /tmp:rw,nosuid,nodev,noexec,size=64m,mode=1777 --env RENOVATE_CACHE_DIR=/tmp/renovate-cache --volume "$PWD/renovate.json:/app/renovate.json:ro" --workdir /app --entrypoint renovate-config-validator ow-renovate-validator --strict --no-global /app/renovate.json
+      - name: Validate schema, resolve presets and reject an unknown preset offline
+        run: bash scripts/check_renovate.sh
   installed-artifact-matrix:
     name: Ubuntu ${{ matrix.ubuntu }} / Python ${{ matrix.python }}
     strategy:
