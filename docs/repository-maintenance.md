@@ -46,8 +46,21 @@ configuration is not a dependency compatibility assessment.
 - No private registry credentials, external source catalog, model inventory or
   custom post-upgrade execution is included in bot configuration.
 
-A successful Renovate validator establishes configuration syntax/semantics for
-its version, not successful hosted scheduling or correctness of proposed updates.
+Use the built-in `docker:pinDigests` and `helpers:pinGitHubActionDigests` presets
+for container and action pinning; `:pinDigests` does not exist. The standalone
+schema validator does not resolve presets and previously missed that error.
+`scripts/check_renovate.sh` now runs both strict repository-mode validation and
+actual local-platform preset resolution/extraction with the pinned container.
+Its isolated input contains only public package, lock and workflow files. All
+validation containers are unprivileged, read-only and network-disabled, with no
+credentials passed. Local extract stops before dependency lookup or changes.
+`--exit-code-for-errors` is essential because the default CLI may return zero
+after a repository configuration error. A negative control must reject the original
+unknown preset with configuration-error exit 5 and the expected diagnostic; tool
+upgrades must preserve or deliberately revise that tested CLI contract.
+
+These checks establish shape and offline built-in preset resolution/extraction,
+not successful hosted scheduling or correctness of proposed updates.
 Observe the dependency dashboard and resulting PRs after activation. Hosted
 Renovate and GitHub are external control-plane dependencies for this public code;
 the JSON config, locked build and test commands remain portable to self-hosted
