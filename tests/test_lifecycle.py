@@ -428,16 +428,21 @@ def test_clock_expiry_blocks_new_model_dispatch_without_a_sweeper(databases, tmp
 
 
 @pytest.mark.integration
-def test_reader_rejects_accidental_raw_select_grants(databases):
+@pytest.mark.parametrize("privilege", ["SELECT", "SELECT(body)", "UPDATE(title)"])
+def test_reader_rejects_accidental_raw_select_grants(databases, privilege):
     _, reader, roles = databases
     with psycopg.connect(roles["admin"]) as conn:
-        conn.execute("GRANT SELECT ON ow.documents TO ow_test_reader")
+        conn.execute(
+            sql.SQL("GRANT {} ON ow.documents TO ow_test_reader").format(sql.SQL(privilege))
+        )
     try:
         with pytest.raises(WorkbenchError, match="UNSAFE_READER_IDENTITY"):
             reader.validate_reader()
     finally:
         with psycopg.connect(roles["admin"]) as conn:
-            conn.execute("REVOKE SELECT ON ow.documents FROM ow_test_reader")
+            conn.execute(
+                sql.SQL("REVOKE {} ON ow.documents FROM ow_test_reader").format(sql.SQL(privilege))
+            )
     reader.validate_reader()
 
 

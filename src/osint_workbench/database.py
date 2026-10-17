@@ -82,7 +82,7 @@ class Database:
             if conn.execute(
                 """SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
                 WHERE n.nspname='ow' AND c.relname=ANY(%s::text[])
-                AND has_table_privilege(current_user,c.oid,'SELECT') LIMIT 1""",
+                AND has_any_column_privilege(current_user,c.oid,'SELECT') LIMIT 1""",
                 (
                     [
                         "documents",
@@ -108,13 +108,15 @@ class Database:
               has_table_privilege(current_user,'ow.documents','INSERT,UPDATE,DELETE') AS docs,
               has_table_privilege(current_user,'ow.jobs','INSERT,UPDATE,DELETE') AS jobs,
               has_schema_privilege(current_user,'ow','CREATE') AS ddl,
-              pg_has_role(current_user,'ow_writer','MEMBER') AS writer""").fetchone()
+              pg_has_role(current_user,'ow_writer','MEMBER') AS writer,
+              pg_has_role(current_user,'ow_lifecycle','MEMBER') AS lifecycle""").fetchone()
             if any(row.values()):
                 raise WorkbenchError("UNSAFE_READER_IDENTITY")
             if conn.execute("""SELECT 1 FROM pg_class c JOIN pg_namespace n
               ON n.oid=c.relnamespace WHERE n.nspname IN ('ow','ow_vector')
               AND c.relkind IN ('r','p','v','m','f') AND
-              has_table_privilege(current_user,c.oid,'INSERT,UPDATE,DELETE,TRUNCATE')
+              (has_table_privilege(current_user,c.oid,'INSERT,UPDATE,DELETE,TRUNCATE') OR
+               has_any_column_privilege(current_user,c.oid,'INSERT,UPDATE'))
               LIMIT 1""").fetchone():
                 raise WorkbenchError("UNSAFE_READER_IDENTITY")
 

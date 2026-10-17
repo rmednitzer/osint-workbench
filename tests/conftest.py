@@ -1,14 +1,19 @@
 import hashlib
+import json
 import os
 import secrets
+import uuid
 from importlib.resources import files
 
 import psycopg
 import pytest
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
+from psycopg.types.json import Jsonb
 
 from osint_workbench.database import Database, migrate
+from osint_workbench.evidence import EvidenceStore
+from osint_workbench.service import ReadService
 
 
 def pytest_addoption(parser):
@@ -21,10 +26,21 @@ def pytest_configure(config):
 
 
 @pytest.fixture(scope="session")
-def roles():
+def roles(tmp_path_factory):
     dsn = os.environ.get("OW_TEST_ADMIN_DSN")
     if not dsn:
         pytest.skip("isolated PostgreSQL unavailable; integration NOT VERIFIED locally")
+    legacy_store = EvidenceStore(tmp_path_factory.mktemp("legacy-evidence"))
+    legacy_body = "Legacy storage evidence."
+    raw_sha = legacy_store.put(b"synthetic legacy raw")
+    text_sha = legacy_store.put(legacy_body.encode())
+    external = hashlib.sha256(b"legacy").hexdigest()
+    snapshot = hashlib.sha256(
+        json.dumps(["upgrade-fixture", raw_sha, text_sha, "text/1"]).encode()
+    ).hexdigest()
+    document = hashlib.sha256(
+        json.dumps(["upgrade-fixture", external, snapshot, "Legacy", None]).encode()
+    ).hexdigest()
     with psycopg.connect(dsn, autocommit=True) as conn:
         if conn.info.dbname != "ow_test":
             raise RuntimeError("tests refuse any database not named ow_test")
@@ -38,16 +54,87 @@ def roles():
             conn.execute("INSERT INTO ow.sources(source_id) VALUES ('upgrade-fixture')")
             conn.execute("""INSERT INTO ow.jobs(job_id,kind,dedup_key,payload,status,attempt)
                          VALUES (gen_random_uuid(),'upgrade-fixture','legacy','{}','ready',2)""")
+            conn.execute(
+                "INSERT INTO ow.snapshots(snapshot_id,source_id,raw_sha256,text_sha256,extractor) "
+                "VALUES (%s,'upgrade-fixture',%s,%s,'text/1')",
+                (snapshot, raw_sha, text_sha),
+            )
+            conn.execute(
+                "INSERT INTO ow.documents(document_id,source_id,external_key,"
+                "snapshot_id,title,body) "
+                "VALUES (%s,'upgrade-fixture',%s,%s,'Legacy',%s)",
+                (document, external, snapshot, legacy_body),
+            )
+            conn.execute(
+                "INSERT INTO ow.document_heads VALUES ('upgrade-fixture',%s,%s)",
+                (external, document),
+            )
     migrate(dsn)
     with psycopg.connect(dsn) as conn:
         if conn.execute("SELECT 1 FROM ow.sources WHERE source_id='upgrade-fixture'").fetchone():
             assert conn.execute(
                 "SELECT status,attempt,max_attempts FROM ow.jobs WHERE kind='upgrade-fixture'"
             ).fetchone() == ("ready", 2, 5)
+            if conn.execute(
+                "SELECT 1 FROM ow.documents WHERE document_id=%s", (document,)
+            ).fetchone():
+                assert conn.execute(
+                    "SELECT retention_class,retain_until FROM ow.lifecycle_items "
+                    "WHERE source_id='upgrade-fixture' AND external_key=%s",
+                    (external,),
+                ).fetchone() == ("manual", None)
     if os.environ.get("OW_TEST_RETRIEVAL") == "1":
         from osint_workbench.vector_index import migrate_retrieval
 
+        # Populate the published v1 profile before the real profile-v2 upgrader.
+        # The authored vector is a migration fixture, not a model-quality result.
+        with psycopg.connect(dsn) as conn:
+            if conn.execute("SELECT to_regclass('ow.retrieval_migrations')").fetchone()[0] is None:
+                script = files("osint_workbench").joinpath("retrieval.sql").read_text()
+                conn.execute(script)
+                conn.execute(
+                    "INSERT INTO ow.retrieval_migrations VALUES (1,%s)",
+                    (hashlib.sha256(script.encode()).hexdigest(),),
+                )
+                if conn.execute(
+                    "SELECT 1 FROM ow.documents WHERE document_id=%s", (document,)
+                ).fetchone():
+                    space = hashlib.sha256(b"synthetic legacy space").hexdigest()
+                    generation = uuid.uuid4()
+                    corpus = hashlib.sha256(json.dumps([document]).encode()).hexdigest()
+                    conn.execute(
+                        "INSERT INTO ow.embedding_spaces VALUES (%s,%s,3)",
+                        (space, Jsonb({"fixture": "migration-only"})),
+                    )
+                    conn.execute(
+                        "INSERT INTO ow.retrieval_generations(generation_id,space_id,dimensions,"
+                        "corpus_sha256,status) VALUES (%s,%s,3,%s,'ready')",
+                        (generation, space, corpus),
+                    )
+                    conn.execute(
+                        "INSERT INTO ow.retrieval_members VALUES (%s,%s)", (generation, document)
+                    )
+                    conn.execute(
+                        "INSERT INTO ow.retrieval_vectors VALUES (%s,%s,3,%s,0,0,%s,%s,"
+                        "'[1,0,0]'::ow_vector.vector)",
+                        (generation, space, document, len(legacy_body), text_sha),
+                    )
+                    conn.execute("INSERT INTO ow.retrieval_active VALUES (true,%s)", (generation,))
+            prior_generation = conn.execute(
+                "SELECT g.generation_id,g.space_id,g.status,g.corpus_sha256 "
+                "FROM ow.retrieval_active a JOIN ow.retrieval_generations g "
+                "USING(generation_id)"
+            ).fetchone()
         migrate_retrieval(dsn)
+        with psycopg.connect(dsn) as conn:
+            assert (
+                conn.execute(
+                    "SELECT g.generation_id,g.space_id,g.status,g.corpus_sha256 "
+                    "FROM ow.retrieval_active a JOIN ow.retrieval_generations g "
+                    "USING(generation_id)"
+                ).fetchone()
+                == prior_generation
+            )
     writer_password, reader_password = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
     with psycopg.connect(dsn, autocommit=True) as conn:
         for role, group, password in [
@@ -66,12 +153,31 @@ def roles():
             conn.execute(
                 sql.SQL("GRANT {} TO {}").format(sql.Identifier(group), sql.Identifier(role))
             )
-    return {
+    values = {
         "admin": dsn,
         "writer": make_conninfo(dsn, user="ow_test_writer", password=writer_password),
         "reader": make_conninfo(dsn, user="ow_test_reader", password=reader_password),
         "lifecycle": make_conninfo(dsn, user="ow_test_lifecycle", password=writer_password),
     }
+    with psycopg.connect(dsn) as conn:
+        has_legacy = bool(
+            conn.execute("SELECT 1 FROM ow.documents WHERE document_id=%s", (document,)).fetchone()
+        )
+    if has_legacy:
+        reader = Database(values["reader"])
+        service = ReadService(reader, EvidenceStore(legacy_store.root, read_only=True))
+        assert service.document(document)["integrity"] == "verified"
+        assert service.evidence(snapshot)["integrity"] == "verified"
+        if os.environ.get("OW_TEST_RETRIEVAL") == "1":
+            with reader.connect() as conn:
+                assert (
+                    conn.execute(
+                        "SELECT document_id FROM ow.visible_retrieval_vectors WHERE document_id=%s",
+                        (document,),
+                    ).fetchone()["document_id"]
+                    == document
+                )
+    return values
 
 
 @pytest.fixture
