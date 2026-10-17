@@ -72,7 +72,7 @@ class EvidenceStore:
     def get(self, sha: str) -> bytes:
         try:
             with self._directory(sha) as directory:
-                fd = os.open(sha, os.O_RDONLY | os.O_NOFOLLOW, dir_fd=directory)
+                fd = os.open(sha, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory)
                 with os.fdopen(fd, "rb") as stream:
                     info = os.fstat(stream.fileno())
                     if not stat.S_ISREG(info.st_mode) or info.st_size > MAX_OBJECT:

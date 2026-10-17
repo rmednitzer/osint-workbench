@@ -92,6 +92,9 @@ See [workflow contracts](docs/workflows.md) for retry and recovery semantics.
 See [local intelligence](docs/local-intelligence.md) for generation, proposal review
 and cited-digest contracts.
 
+See [private recovery](docs/recovery.md) for bounded consistent checkpoints and
+isolated restore. Checkpoints contain private records and are not public exports.
+
 ## Engineering and attribution
 
 This is AI-assisted integration work. Human responsibility includes requirements,

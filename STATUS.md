@@ -16,7 +16,7 @@ complete merely because its design documents or interfaces exist.
 | Vulnerability/regulatory profiles | Target specification | No domain adapters or applicability verification yet |
 | Cloud APIs/accounting/batches | Target specification | No credential access, native adapters, remote requests or spending |
 | Remote MCP | Target authentication design | No HTTP listener or remote client compatibility claim |
-| Export/recovery/retention | Target specification | No complete backup/restore/GC/publisher workflow yet |
+| Export/recovery/retention | Bounded private MVCC checkpoint and empty-target restore | Added native database/MCP/hybrid recovery regressions; revision-bound CI evidence required. Retention, GC, public export, publisher and full-host/PITR recovery remain pending |
 | Publication controls | Positive file selection and source/artifact scanning | Narrow scanner tests; private values are never committed |
 
 Schema v3 is additive; published v1 and v2 migrations remain byte-identical. Job cancellation
@@ -25,19 +25,21 @@ The core worker processes `document.accepted`; the explicit enrichment worker cl
 only its configured generator identity. Other job kinds remain queued.
 Character chunks preserve offsets but are not token-aware model input.
 
-The current code revision is backed by 70 installed-wheel tests with no skips,
+The prior recorded baseline is backed by 70 installed-wheel tests with no skips,
 including an actual native CPU generation-to-durable-abstention path. See
 [the revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
 models establish execution contracts, not pretrained semantic quality.
 
-The full programme covers 28 capability areas, 19 ADRs, 58 requirements and 51
+The full programme covers 28 capability areas, 20 ADRs, 58 requirements and 51
 acceptance scenarios. The tests in this repository currently establish only a
 foundation subset. Detailed future specifications are under `docs/`; they are not
 execution receipts. CI results are authoritative for a particular tested revision.
 
-Next dependency order: complete recovery tooling and retrieval quality/reranking,
-local generation, enrichment/graph/products, domain profiles, governed cloud/remote MCP,
-then integrated profile quality, failure, recovery and publication acceptance.
+Outstanding dependency groups: retention/deletion and wider recovery operations;
+pretrained retrieval/generation quality and full resource scheduling; richer graph
+and cited products; domain profiles; governed cloud and remote MCP; deployment,
+observability and integrated failure, recovery and publication acceptance. Existing
+bounded implementations do not close these programme-wide areas.
 
 Do not copy private source catalogs, generated products, original deployment files,
 or operational history to accelerate this roadmap. Prototype behaviour must be

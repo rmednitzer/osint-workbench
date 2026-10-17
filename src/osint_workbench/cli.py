@@ -7,7 +7,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from . import intelligence
+from . import intelligence, recovery
 from .collection import collect
 from .contracts import DocumentInput, SourceConfig
 from .database import SCHEMA_VERSION, Database, migrate
@@ -47,6 +47,11 @@ def main():
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("migrate")
     sub.add_parser("migrate-retrieval")
+    backup = sub.add_parser("checkpoint")
+    backup.add_argument("--file", type=Path, required=True)
+    recovered = sub.add_parser("restore")
+    recovered.add_argument("--file", type=Path, required=True)
+    recovered.add_argument("--sha256", required=True)
     enrich = sub.add_parser("enrich")
     enrich.add_argument("action", choices=["enqueue", "work-once", "reconcile"])
     enrich.add_argument("--manifest", type=Path, required=True)
@@ -81,7 +86,20 @@ def main():
     job.add_argument("job_id")
     args = parser.parse_args()
     try:
-        if args.command == "migrate":
+        if args.command == "checkpoint":
+            value = recovery.checkpoint(
+                Database(_dsn("OW_RECOVERY_DSN")),
+                EvidenceStore(Path(os.environ["OW_EVIDENCE_ROOT"]), read_only=True),
+                args.file,
+            )
+        elif args.command == "restore":
+            value = recovery.restore(
+                Database(_dsn("OW_RECOVERY_DSN")),
+                args.file,
+                args.sha256,
+                Path(os.environ["OW_EVIDENCE_ROOT"]),
+            )
+        elif args.command == "migrate":
             migrate(_dsn("OW_MIGRATION_DSN"))
             value = {"schema_version": SCHEMA_VERSION}
         elif args.command == "migrate-retrieval":

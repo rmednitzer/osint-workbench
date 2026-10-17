@@ -132,3 +132,20 @@ trust, other clients bypassing local admission, cross-user/host resource content
 incomplete graph resolution/diversity and full recovery/retention. A checked source
 span is not semantic entailment, and an executable hash is not complete deployment
 attestation. These limits remain in STATUS.md and ADR-0019.
+# Private recovery control increment
+
+The bounded checkpoint/restore path adds the following controls without closing
+the target lifecycle analysis:
+
+| Unsafe control action / loss scenario | Constraint and implemented control | Regression evidence |
+| --- | --- | --- |
+| Capture unrelated DB/object moments; declare a restore successful despite missing evidence | One read-only MVCC snapshot, all referenced immutable objects verified, document/span/product provenance checked; test actual fresh-target reads | `test_checkpoint_fresh_restore_citations_history_and_real_mcp`, `test_checkpoint_excludes_concurrent_acceptance` |
+| Restore unfinished work and repeat an external effect or accept a historical fence | Disable collection; quarantine ready/running jobs, append recovery events, invalidate fences; interrupt incomplete runs/builds | Fresh restore test verifies failed jobs and rejects the historical fence |
+| Import executable SQL or overwrite an existing installation through recovery | Fixed table names/bound JSON, matching packaged migration/profile versions, empty locked target and absent object root | Corruption/foreign-key rollback tests and populated-target rejection |
+| Publish a backup as a sanitized consumer export | Explicit private classification, file mode 0600, ignored checkpoint extension, no publisher/MCP recovery tool; encrypted storage remains operator responsibility | Atomic/no-overwrite file test; publication scanner; review of recovery CLI/tool inventory |
+| Treat capture timestamp as recovery of all subsequent accepted writes | State checkpoint boundary and excluded later writes; no PITR or zero-data-loss claim | Concurrent acceptance test demonstrates later data remains on source and is absent from restore |
+
+Retention/holds/tombstones, old-host computation ownership, source re-enablement,
+external effect reconciliation and host-level configuration recovery remain open.
+See ADR-0020 and `docs/recovery.md`; a successful file hash alone is not recovery
+evidence.
