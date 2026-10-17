@@ -57,3 +57,11 @@ network dispatch is introduced. Existing collection, storage and inference paths
 remain independent. Reverting this increment removes the envelope; future stored
 consumers must introduce explicit format compatibility before adoption. Do not
 reuse a format version for an incompatible schema.
+
+## Executed evidence
+
+At source `0d602362d65e543bc79d371ec046f3d833bac683`, the installed-wheel
+native run passed 528 tests with no skips, including 147 advisory cases. The
+[named verification receipt](../testing/verification-evidence.json) records artifact
+identity and scope; the documented synthetic JSON example also round-tripped
+against the locally installed identical wheel. E31/E32 remain open.

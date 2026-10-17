@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
-  "verified_commit": "f43d5a6ec08f60443cb344c7cea3d55a4fdbe684",
-  "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39054814024",
+  "verified_commit": "0d602362d65e543bc79d371ec046f3d833bac683",
+  "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39056829870",
   "result": "success",
   "installed_wheel_tests": {
-    "collected": 381,
-    "passed": 381,
+    "collected": 528,
+    "passed": 528,
     "failed": 0,
     "skipped": 0
   },
@@ -91,7 +91,8 @@
     "Actual PostgreSQL backend termination during HTTP advice receipt returns unconfirmed persistence, avoids private-identity rollback warnings and reconciles the last durable reservation/interrupted run without another HTTP request",
     "Nine native TLS cases: configured fixture trust, certificate hostname and expiry, untrusted issuer, SNI/Host, plaintext peer, handshake and body-read deadlines, and refused HTTPS downgrade",
     "Twenty-four resolver/transport cases: actual spawned JSON IPC, mixed/mapped-private address rejection, malformed and oversized frames, partial-frame deadline and owned cleanup, complete bounded answer validation, explicit port zero and numeric connection pinning",
-    "Five native TLS-to-PostgreSQL collector cases: scoped collector/CAS/outbox success, three certificate failures before HTTP/acceptance, and preserved validators/state with unconditional nonduplicating recovery"
+    "Five native TLS-to-PostgreSQL collector cases: scoped collector/CAS/outbox success, three certificate failures before HTTP/acceptance, and preserved validators/state with unconditional nonduplicating recovery",
+    "147 offline advisory-envelope cases: strict immutable source-qualified records and per-observation CVE/evidence binding, preserved contradictory claims and distinct dates, bounded UTF-8/JSON/depth/count parsing, redacted errors, exact decimal-to-binary64 wire admission and canonical round trips, nested-instance revalidation and unknown-field rejection"
   ],
   "limits": [
     "Synthetic weights verify execution, not pretrained language or retrieval quality",
@@ -121,13 +122,16 @@
     "Manual refresh and resource changes override due admission; successful manual refresh resets normal polling, failed manual refresh retains an older later reservation, and restore clears scheduling while disabling sources",
     "Native TLS uses a temporary authored CA added only to the fixture default context, controlled loopback socket routing and a synthetic hostname; production certificate verification remains enabled. This is not public PKI, revocation or operational TLS acceptance",
     "The resolver receive deadline covers complete bounded JSON IPC after process startup. Startup is not independently hard bounded; termination/kill/receiver cleanup can add up to three seconds. OS/libc/NSS allocation before the Python answer cap remains outside this message bound",
-    "The manual service receipt verifies normal bounded-JSON resolver use over synthetic HTTP; partial-IPC fault injection and native TLS are separate test evidence, not TLS under systemd"
+    "The manual service receipt verifies normal bounded-JSON resolver use over synthetic HTTP; partial-IPC fault injection and native TLS are separate test evidence, not TLS under systemd",
+    "The advisory module is an opt-in normalized observation envelope, not an upstream CVE/OSV/vendor adapter, database-backed domain profile, registry lookup, evidence verifier, CVSS calculator, inventory matcher or exposure/remediation decision. E31/E32 domain acceptance remains open",
+    "Advisory numeric admission uses binary64 with a conservative exact decimal-to-shortest-representation lexical rule. Original decimal spelling/offsets and arbitrary precision are not preserved; raw upstream snapshots remain external",
+    "The collector-deployment receipt retains its independently tested source revision and wheel. This module-only implementation change did not repeat systemd service acceptance; native installed-wheel regression success does not extend the older manual receipt"
   ],
-  "observed_utc": "2026-10-17T17:47:04Z",
+  "observed_utc": "2026-10-17T18:16:08Z",
   "artifact_sha256": {
     "uv.lock": "a2b7fb8e393424c0a9e409849aebb9d2858532a6a671cd86bafc670203651678",
-    "wheel": "544e9c2abba96f4b6d74bd3656725b9d5d42cc071fd89e77dc00c03904b71996",
-    "sdist": "14641b89c3823f8ab354ccd57bc67a2e2095d5e646c12a47358f6f3ded35409c"
+    "wheel": "44477d1eb719b3322ea176b79f9fbb63fc11cf0bd9caf9cae7563b304b4728cc",
+    "sdist": "8e963486805a0d5560e7b84f6484d983c285f47af462f57a80e3747b1a59d9e7"
   },
   "validation_history": [
     {
@@ -161,22 +165,22 @@
   "collector_deployment_evidence": "collector-deployment.json",
   "verification_attempts": [
     {
-      "source_revision": "f43d5a6ec08f60443cb344c7cea3d55a4fdbe684",
-      "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39054814024",
+      "source_revision": "0d602362d65e543bc79d371ec046f3d833bac683",
+      "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39056829870",
       "result": "success",
-      "passed": 381,
+      "passed": 528,
       "skipped": 0,
-      "scope": "All 38 new DNS/TLS and native collector cases passed on the first hosted candidate. Separate actual-service success is in collector-deployment.json."
+      "scope": "All 147 new advisory cases and the retained native suite passed on the first hosted candidate. Pre-integration draft findings were corrected before this revision; no deployed advisory defect is asserted."
     }
   ],
   "prior_receipt": {
     "schema_version": 1,
-    "verified_commit": "68262d42fdaa0245dae8de6021d2f69d9560fe5c",
-    "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39053216962",
+    "verified_commit": "f43d5a6ec08f60443cb344c7cea3d55a4fdbe684",
+    "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39054814024",
     "result": "success",
     "installed_wheel_tests": {
-      "collected": 343,
-      "passed": 343,
+      "collected": 381,
+      "passed": 381,
       "failed": 0,
       "skipped": 0
     },
@@ -187,7 +191,9 @@
         "ONNX Runtime CPU",
         "llama.cpp native CPU"
       ],
-      "native_source_revision": "f2f667b02dc76d675395ae3b14546c8108d26387"
+      "native_source_revision": "f2f667b02dc76d675395ae3b14546c8108d26387",
+      "openssl_cli": "OpenSSL 3.0.13 30 Jan 2024 (Library: OpenSSL 3.0.13 30 Jan 2024)",
+      "python_tls": "OpenSSL 3.0.13 30 Jan 2024"
     },
     "scope": [
       "Core storage, immutable evidence and typed configuration",
@@ -257,7 +263,10 @@
       "Three HTTP-date grammars, exact rolling fifty-year and future-century boundaries, leap-second normalization and bounded numeric parsing",
       "Scoped collector native PostgreSQL scheduling uses database time, persists maximum reservation/backoff/hint, preserves evidence and fixed-kind jobs and blocks early dispatch through a fresh collector instance",
       "Explicit seven-day cap disposition, zero/past/short advice, failed-manual preservation, successful operator override, unconditional recovery and independent due-source progress",
-      "Actual PostgreSQL backend termination during HTTP advice receipt returns unconfirmed persistence, avoids private-identity rollback warnings and reconciles the last durable reservation/interrupted run without another HTTP request"
+      "Actual PostgreSQL backend termination during HTTP advice receipt returns unconfirmed persistence, avoids private-identity rollback warnings and reconciles the last durable reservation/interrupted run without another HTTP request",
+      "Nine native TLS cases: configured fixture trust, certificate hostname and expiry, untrusted issuer, SNI/Host, plaintext peer, handshake and body-read deadlines, and refused HTTPS downgrade",
+      "Twenty-four resolver/transport cases: actual spawned JSON IPC, mixed/mapped-private address rejection, malformed and oversized frames, partial-frame deadline and owned cleanup, complete bounded answer validation, explicit port zero and numeric connection pinning",
+      "Five native TLS-to-PostgreSQL collector cases: scoped collector/CAS/outbox success, three certificate failures before HTTP/acceptance, and preserved validators/state with unconditional nonduplicating recovery"
     ],
     "limits": [
       "Synthetic weights verify execution, not pretrained language or retrieval quality",
@@ -284,13 +293,16 @@
       "Reference-service receipt separately establishes synthetic enabled HTTP acquisition, accelerated timer activation, authentication and owned cleanup; Internet DNS/TLS, production cadence and operational deployment remain pending",
       "Server advice is bounded per source to seven days with explicit SOURCE_RETRY_AFTER_CAPPED; this does not fully honour a larger requested minimum or implement shared-host governance",
       "Database/application clock correctness is not attested. A response-to-commit crash can lose uncommitted advice and an unacknowledged commit can leave an unknown outcome; only observed database state establishes persistence",
-      "Manual refresh and resource changes override due admission; successful manual refresh resets normal polling, failed manual refresh retains an older later reservation, and restore clears scheduling while disabling sources"
+      "Manual refresh and resource changes override due admission; successful manual refresh resets normal polling, failed manual refresh retains an older later reservation, and restore clears scheduling while disabling sources",
+      "Native TLS uses a temporary authored CA added only to the fixture default context, controlled loopback socket routing and a synthetic hostname; production certificate verification remains enabled. This is not public PKI, revocation or operational TLS acceptance",
+      "The resolver receive deadline covers complete bounded JSON IPC after process startup. Startup is not independently hard bounded; termination/kill/receiver cleanup can add up to three seconds. OS/libc/NSS allocation before the Python answer cap remains outside this message bound",
+      "The manual service receipt verifies normal bounded-JSON resolver use over synthetic HTTP; partial-IPC fault injection and native TLS are separate test evidence, not TLS under systemd"
     ],
-    "observed_utc": "2026-10-17T17:26:16Z",
+    "observed_utc": "2026-10-17T17:47:04Z",
     "artifact_sha256": {
       "uv.lock": "a2b7fb8e393424c0a9e409849aebb9d2858532a6a671cd86bafc670203651678",
-      "wheel": "fed5dfa75ac0cd47a2be3bce49c0b5c1b461cf408601373126be89111bbeaa6f",
-      "sdist": "cf043984cc23de807ad5fc3d07adb602605320129adf5cc9af29e3893d83001a"
+      "wheel": "544e9c2abba96f4b6d74bd3656725b9d5d42cc071fd89e77dc00c03904b71996",
+      "sdist": "14641b89c3823f8ab354ccd57bc67a2e2095d5e646c12a47358f6f3ded35409c"
     },
     "validation_history": [
       {
@@ -324,22 +336,22 @@
     "collector_deployment_evidence": "collector-deployment.json",
     "verification_attempts": [
       {
-        "source_revision": "68262d42fdaa0245dae8de6021d2f69d9560fe5c",
-        "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39053216962",
+        "source_revision": "f43d5a6ec08f60443cb344c7cea3d55a4fdbe684",
+        "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39054814024",
         "result": "success",
-        "passed": 343,
+        "passed": 381,
         "skipped": 0,
-        "scope": "All 57 new transport/parser and 15 native scheduling/fault cases passed on the first hosted candidate. Separate actual-service evidence is in collector-deployment.json."
+        "scope": "All 38 new DNS/TLS and native collector cases passed on the first hosted candidate. Separate actual-service success is in collector-deployment.json."
       }
     ],
     "prior_receipt": {
       "schema_version": 1,
-      "verified_commit": "99a5917a94efa113b902b62a3c9a6745549c7549",
-      "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39051783727",
+      "verified_commit": "68262d42fdaa0245dae8de6021d2f69d9560fe5c",
+      "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39053216962",
       "result": "success",
       "installed_wheel_tests": {
-        "collected": 271,
-        "passed": 271,
+        "collected": 343,
+        "passed": 343,
         "failed": 0,
         "skipped": 0
       },
@@ -415,7 +427,12 @@
         "Exact known core-v5 format-2 checkpoint adoption with retained assertions/jobs, newer retirement/holds and reader suppression; unknown or mixed histories rejected",
         "Collector CLI requires its distinct DSN without writer fallback; empty configuration remains database-free",
         "Native loopback HTTP fixture framing, conditional validators, changed content, malformed request bounds, expired request deadline and guard-before-listener tests; privileged namespace/service acceptance is recorded separately",
-        "Actual command and filesystem exception diagnostics exclude synthetic credentials, private path/message canaries and unallowlisted exception class names"
+        "Actual command and filesystem exception diagnostics exclude synthetic credentials, private path/message canaries and unallowlisted exception class names",
+        "Native loopback TCP/httpcore 429/503 Retry-After delta/date handling, malformed/duplicate/oversized rejection, non-retryable and redirect policy, sanitized typed errors and compatibility API propagation",
+        "Three HTTP-date grammars, exact rolling fifty-year and future-century boundaries, leap-second normalization and bounded numeric parsing",
+        "Scoped collector native PostgreSQL scheduling uses database time, persists maximum reservation/backoff/hint, preserves evidence and fixed-kind jobs and blocks early dispatch through a fresh collector instance",
+        "Explicit seven-day cap disposition, zero/past/short advice, failed-manual preservation, successful operator override, unconditional recovery and independent due-source progress",
+        "Actual PostgreSQL backend termination during HTTP advice receipt returns unconfirmed persistence, avoids private-identity rollback warnings and reconciles the last durable reservation/interrupted run without another HTTP request"
       ],
       "limits": [
         "Synthetic weights verify execution, not pretrained language or retrieval quality",
@@ -432,20 +449,23 @@
         "GC requires an initially matching database/store pair, current cooperative writers and private plan/journal custody; hostile filesystem mutation and physical media sanitization are outside scope",
         "Orphan deletion can leave a partial irreversible outcome; resume requires the matching durable intent, unchanged policy/reference set and surviving shard directories",
         "Acquisition socket tests use controlled fixture routing; public DNS/TLS interoperability and broader adversarial HTTP acceptance remain incomplete",
-        "Retry-After, shared-host quotas, jitter, cursors, broader acquisition formats and acquisition-wide acceptance remain pending",
+        "Redirect-response retry advice, shared-host quotas, jitter, cursors, broader acquisition formats and acquisition-wide acceptance remain pending",
         "Known core-v4 format-2 adoption is tested against its published table/column contract; core-v3/format-1 lineage adoption remains unavailable",
         "Native systemd parsing does not prove service sandbox operation; separately revision-bound manual profile evidence is in profile-diagnostics.json",
         "Public authored synthetic ranking cases do not establish independent semantic quality or a sovereign production model profile",
         "Collector role narrows application SQL authority, not per-source tenancy or OS evidence confidentiality; its writable CAS is not an OS-enforced append-only store",
         "Privilege admission is a startup observation; privileged concurrent grant/schema changes and trusted broad-writer Python callers remain outside containment",
         "Connection timeout applies per host/address attempt, not a strict DNS-wide or whole-command deadline",
-        "Reference-service receipt separately establishes synthetic enabled HTTP acquisition, accelerated timer activation, authentication and owned cleanup; Internet DNS/TLS, production cadence and operational deployment remain pending"
+        "Reference-service receipt separately establishes synthetic enabled HTTP acquisition, accelerated timer activation, authentication and owned cleanup; Internet DNS/TLS, production cadence and operational deployment remain pending",
+        "Server advice is bounded per source to seven days with explicit SOURCE_RETRY_AFTER_CAPPED; this does not fully honour a larger requested minimum or implement shared-host governance",
+        "Database/application clock correctness is not attested. A response-to-commit crash can lose uncommitted advice and an unacknowledged commit can leave an unknown outcome; only observed database state establishes persistence",
+        "Manual refresh and resource changes override due admission; successful manual refresh resets normal polling, failed manual refresh retains an older later reservation, and restore clears scheduling while disabling sources"
       ],
-      "observed_utc": "2026-10-17T17:06:31Z",
+      "observed_utc": "2026-10-17T17:26:16Z",
       "artifact_sha256": {
         "uv.lock": "a2b7fb8e393424c0a9e409849aebb9d2858532a6a671cd86bafc670203651678",
-        "wheel": "fd0c8d465b0ca2885e57d9baa867d2310b8390cf4c43a25a38d2215e5e4dc869",
-        "sdist": "55eebd32c2bca2475d0143ab1470398a49143099cb620da6d9620ec7a5cd6cb3"
+        "wheel": "fed5dfa75ac0cd47a2be3bce49c0b5c1b461cf408601373126be89111bbeaa6f",
+        "sdist": "cf043984cc23de807ad5fc3d07adb602605320129adf5cc9af29e3893d83001a"
       },
       "validation_history": [
         {
@@ -479,29 +499,22 @@
       "collector_deployment_evidence": "collector-deployment.json",
       "verification_attempts": [
         {
-          "source_revision": "371f8e8056caa8b404b48e1445fc692de99dd327",
-          "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39051084929",
+          "source_revision": "68262d42fdaa0245dae8de6021d2f69d9560fe5c",
+          "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39053216962",
           "result": "success",
-          "passed": 267,
+          "passed": 343,
           "skipped": 0,
-          "disposition": "Initial full native candidate passed. Its separate manual deployment harness failed; all manual attempts are retained in collector-deployment.json."
-        },
-        {
-          "source_revision": "99a5917a94efa113b902b62a3c9a6745549c7549",
-          "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39051783727",
-          "result": "success",
-          "passed": 271,
-          "skipped": 0
+          "scope": "All 57 new transport/parser and 15 native scheduling/fault cases passed on the first hosted candidate. Separate actual-service evidence is in collector-deployment.json."
         }
       ],
       "prior_receipt": {
         "schema_version": 1,
-        "verified_commit": "48205097304dfd1bc509fecf80f534e2dc0269f3",
-        "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39049897506",
+        "verified_commit": "99a5917a94efa113b902b62a3c9a6745549c7549",
+        "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39051783727",
         "result": "success",
         "installed_wheel_tests": {
-          "collected": 255,
-          "passed": 255,
+          "collected": 271,
+          "passed": 271,
           "failed": 0,
           "skipped": 0
         },
@@ -575,7 +588,9 @@
           "Exact packaged migration history, fixed outbox default and row-filtered retirement-policy startup refusal",
           "Real silent loopback PostgreSQL peers confirm both connect and migrate override a 60-second DSN with the application 5-second startup deadline",
           "Exact known core-v5 format-2 checkpoint adoption with retained assertions/jobs, newer retirement/holds and reader suppression; unknown or mixed histories rejected",
-          "Collector CLI requires its distinct DSN without writer fallback; empty configuration remains database-free"
+          "Collector CLI requires its distinct DSN without writer fallback; empty configuration remains database-free",
+          "Native loopback HTTP fixture framing, conditional validators, changed content, malformed request bounds, expired request deadline and guard-before-listener tests; privileged namespace/service acceptance is recorded separately",
+          "Actual command and filesystem exception diagnostics exclude synthetic credentials, private path/message canaries and unallowlisted exception class names"
         ],
         "limits": [
           "Synthetic weights verify execution, not pretrained language or retrieval quality",
@@ -599,13 +614,13 @@
           "Collector role narrows application SQL authority, not per-source tenancy or OS evidence confidentiality; its writable CAS is not an OS-enforced append-only store",
           "Privilege admission is a startup observation; privileged concurrent grant/schema changes and trusted broad-writer Python callers remain outside containment",
           "Connection timeout applies per host/address attempt, not a strict DNS-wide or whole-command deadline",
-          "Reference-service receipt tests disabled-source SQL admission and deliberate unsafe identities; enabled HTTP acquisition through systemd, timer activation and production deployment remain pending"
+          "Reference-service receipt separately establishes synthetic enabled HTTP acquisition, accelerated timer activation, authentication and owned cleanup; Internet DNS/TLS, production cadence and operational deployment remain pending"
         ],
-        "observed_utc": "2026-10-17T16:38:33Z",
+        "observed_utc": "2026-10-17T17:06:31Z",
         "artifact_sha256": {
           "uv.lock": "a2b7fb8e393424c0a9e409849aebb9d2858532a6a671cd86bafc670203651678",
           "wheel": "fd0c8d465b0ca2885e57d9baa867d2310b8390cf4c43a25a38d2215e5e4dc869",
-          "sdist": "0c4ff5d99feaef4f1801cb4ce76fb5c947a724866f258af6403b7a49f86fb0b1"
+          "sdist": "55eebd32c2bca2475d0143ab1470398a49143099cb620da6d9620ec7a5cd6cb3"
         },
         "validation_history": [
           {
@@ -639,25 +654,29 @@
         "collector_deployment_evidence": "collector-deployment.json",
         "verification_attempts": [
           {
-            "source_revision": "a5b1c29cc5e9ae148dddf4d34fb26d0e1e6b8202",
-            "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39049332471",
-            "result": "failure",
-            "collected": 255,
-            "passed": 254,
-            "failed": 1,
-            "failing_test": "tests/test_collector_role.py::test_collector_native_collection_conditional_and_retirement",
-            "finding": "New test incorrectly treated the aggregate retained-document count as the visible-document count. Published status counts retained rows; search applies lifecycle suppression.",
-            "correction": "Verify retired First absent from search, Second retains its expected document ID, and aggregate retained count remains 2. Runtime and migrations unchanged."
+            "source_revision": "371f8e8056caa8b404b48e1445fc692de99dd327",
+            "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39051084929",
+            "result": "success",
+            "passed": 267,
+            "skipped": 0,
+            "disposition": "Initial full native candidate passed. Its separate manual deployment harness failed; all manual attempts are retained in collector-deployment.json."
+          },
+          {
+            "source_revision": "99a5917a94efa113b902b62a3c9a6745549c7549",
+            "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39051783727",
+            "result": "success",
+            "passed": 271,
+            "skipped": 0
           }
         ],
         "prior_receipt": {
           "schema_version": 1,
-          "verified_commit": "307766ff0100f731c9246de695500089bd57fe6a",
-          "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39042415105",
+          "verified_commit": "48205097304dfd1bc509fecf80f534e2dc0269f3",
+          "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39049897506",
           "result": "success",
           "installed_wheel_tests": {
-            "collected": 206,
-            "passed": 206,
+            "collected": 255,
+            "passed": 255,
             "failed": 0,
             "skipped": 0
           },
@@ -757,11 +776,11 @@
             "Connection timeout applies per host/address attempt, not a strict DNS-wide or whole-command deadline",
             "Reference-service receipt tests disabled-source SQL admission and deliberate unsafe identities; enabled HTTP acquisition through systemd, timer activation and production deployment remain pending"
           ],
-          "observed_utc": "2026-10-17T14:56:03Z",
+          "observed_utc": "2026-10-17T16:38:33Z",
           "artifact_sha256": {
             "uv.lock": "a2b7fb8e393424c0a9e409849aebb9d2858532a6a671cd86bafc670203651678",
-            "wheel": "ae3a8ebf3846558083cd6d2dcf4639d863f4d8d522744941958c165f1d80dee5",
-            "sdist": "897eab247e414b44f13a27c3bc2380378186e146d2757dd64320b39bfe341e4f"
+            "wheel": "fd0c8d465b0ca2885e57d9baa867d2310b8390cf4c43a25a38d2215e5e4dc869",
+            "sdist": "0c4ff5d99feaef4f1801cb4ce76fb5c947a724866f258af6403b7a49f86fb0b1"
           },
           "validation_history": [
             {
@@ -787,14 +806,33 @@
             }
           ],
           "profile_evidence": "profile-diagnostics.json",
+          "schema_versions": {
+            "core": 6,
+            "retrieval_profile": 2,
+            "checkpoint_format": 2
+          },
+          "collector_deployment_evidence": "collector-deployment.json",
+          "verification_attempts": [
+            {
+              "source_revision": "a5b1c29cc5e9ae148dddf4d34fb26d0e1e6b8202",
+              "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39049332471",
+              "result": "failure",
+              "collected": 255,
+              "passed": 254,
+              "failed": 1,
+              "failing_test": "tests/test_collector_role.py::test_collector_native_collection_conditional_and_retirement",
+              "finding": "New test incorrectly treated the aggregate retained-document count as the visible-document count. Published status counts retained rows; search applies lifecycle suppression.",
+              "correction": "Verify retired First absent from search, Second retains its expected document ID, and aggregate retained count remains 2. Runtime and migrations unchanged."
+            }
+          ],
           "prior_receipt": {
             "schema_version": 1,
-            "verified_commit": "4c79686cd3c814c25e6828e8290d88e84bb3571f",
-            "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39041849452",
+            "verified_commit": "307766ff0100f731c9246de695500089bd57fe6a",
+            "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39042415105",
             "result": "success",
             "installed_wheel_tests": {
-              "collected": 205,
-              "passed": 205,
+              "collected": 206,
+              "passed": 206,
               "failed": 0,
               "skipped": 0
             },
@@ -860,7 +898,15 @@
               "Parser child source-ID binding refusal",
               "Model artifact hash/size/no-overwrite and redirect policy tests with synthetic bytes only",
               "Native systemd reference-unit parsing, including unsupported-directive refusal",
-              "Exact observed public artifact CDN admission with all fixed hashes and resource bounds retained; no test download"
+              "Exact observed public artifact CDN admission with all fixed hashes and resource bounds retained; no test download",
+              "Core v5 validator, due and failure state preserved through additive v6 role/default migration; published v1-v5 unchanged",
+              "Scoped collector full/conditional acceptance, fixed-kind outbox, partial failure/replay and retirement suppression under native SQL grants",
+              "Direct SQL denials and startup refusal of broadened/missing columns, PUBLIC grants, maintenance, sequences, object ownership, definer escapes, grant/admin delegation and unsafe reachable roles",
+              "Actual current/session role mismatch and reader non-inherited collector membership refusal",
+              "Exact packaged migration history, fixed outbox default and row-filtered retirement-policy startup refusal",
+              "Real silent loopback PostgreSQL peers confirm both connect and migrate override a 60-second DSN with the application 5-second startup deadline",
+              "Exact known core-v5 format-2 checkpoint adoption with retained assertions/jobs, newer retirement/holds and reader suppression; unknown or mixed histories rejected",
+              "Collector CLI requires its distinct DSN without writer fallback; empty configuration remains database-free"
             ],
             "limits": [
               "Synthetic weights verify execution, not pretrained language or retrieval quality",
@@ -880,13 +926,17 @@
               "Retry-After, shared-host quotas, jitter, cursors, broader acquisition formats and acquisition-wide acceptance remain pending",
               "Known core-v4 format-2 adoption is tested against its published table/column contract; core-v3/format-1 lineage adoption remains unavailable",
               "Native systemd parsing does not prove service sandbox operation; separately revision-bound manual profile evidence is in profile-diagnostics.json",
-              "Public authored synthetic ranking cases do not establish independent semantic quality or a sovereign production model profile"
+              "Public authored synthetic ranking cases do not establish independent semantic quality or a sovereign production model profile",
+              "Collector role narrows application SQL authority, not per-source tenancy or OS evidence confidentiality; its writable CAS is not an OS-enforced append-only store",
+              "Privilege admission is a startup observation; privileged concurrent grant/schema changes and trusted broad-writer Python callers remain outside containment",
+              "Connection timeout applies per host/address attempt, not a strict DNS-wide or whole-command deadline",
+              "Reference-service receipt tests disabled-source SQL admission and deliberate unsafe identities; enabled HTTP acquisition through systemd, timer activation and production deployment remain pending"
             ],
-            "observed_utc": "2026-10-17T14:48:01Z",
+            "observed_utc": "2026-10-17T14:56:03Z",
             "artifact_sha256": {
               "uv.lock": "a2b7fb8e393424c0a9e409849aebb9d2858532a6a671cd86bafc670203651678",
-              "wheel": "6d6ef7947b8dea0800770237fc0d116d2ba1cf6efa1faecc2cb914b5bffebc37",
-              "sdist": "7465222bf2e8cb116061aebbb953719039f31e2526e7c849c88dca269ddb534a"
+              "wheel": "ae3a8ebf3846558083cd6d2dcf4639d863f4d8d522744941958c165f1d80dee5",
+              "sdist": "897eab247e414b44f13a27c3bc2380378186e146d2757dd64320b39bfe341e4f"
             },
             "validation_history": [
               {
@@ -911,14 +961,15 @@
                 "skipped": 0
               }
             ],
+            "profile_evidence": "profile-diagnostics.json",
             "prior_receipt": {
               "schema_version": 1,
-              "verified_commit": "cd4e0a65030ed3a7d25aed3e25bb7882580eb0c2",
-              "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39040190403",
+              "verified_commit": "4c79686cd3c814c25e6828e8290d88e84bb3571f",
+              "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39041849452",
               "result": "success",
               "installed_wheel_tests": {
-                "collected": 138,
-                "passed": 138,
+                "collected": 205,
+                "passed": 205,
                 "failed": 0,
                 "skipped": 0
               },
@@ -983,7 +1034,8 @@
                 "Actual synthetic ONNX local quality execution with private no-overwrite protocol, bounded calls and durable partial observations",
                 "Parser child source-ID binding refusal",
                 "Model artifact hash/size/no-overwrite and redirect policy tests with synthetic bytes only",
-                "Native systemd reference-unit parsing, including unsupported-directive refusal"
+                "Native systemd reference-unit parsing, including unsupported-directive refusal",
+                "Exact observed public artifact CDN admission with all fixed hashes and resource bounds retained; no test download"
               ],
               "limits": [
                 "Synthetic weights verify execution, not pretrained language or retrieval quality",
@@ -1000,24 +1052,48 @@
                 "GC requires an initially matching database/store pair, current cooperative writers and private plan/journal custody; hostile filesystem mutation and physical media sanitization are outside scope",
                 "Orphan deletion can leave a partial irreversible outcome; resume requires the matching durable intent, unchanged policy/reference set and surviving shard directories",
                 "Acquisition socket tests use controlled fixture routing; public DNS/TLS interoperability and broader adversarial HTTP acceptance remain incomplete",
-                "No host timer is installed or verified; ticks are sequential with per-source bounds and require external runtime supervision",
                 "Retry-After, shared-host quotas, jitter, cursors, broader acquisition formats and acquisition-wide acceptance remain pending",
-                "Known core-v4 format-2 adoption is tested against its published table/column contract; core-v3/format-1 lineage adoption remains unavailable"
+                "Known core-v4 format-2 adoption is tested against its published table/column contract; core-v3/format-1 lineage adoption remains unavailable",
+                "Native systemd parsing does not prove service sandbox operation; separately revision-bound manual profile evidence is in profile-diagnostics.json",
+                "Public authored synthetic ranking cases do not establish independent semantic quality or a sovereign production model profile"
               ],
-              "observed_utc": "2026-10-17T14:24:34Z",
+              "observed_utc": "2026-10-17T14:48:01Z",
               "artifact_sha256": {
                 "uv.lock": "a2b7fb8e393424c0a9e409849aebb9d2858532a6a671cd86bafc670203651678",
-                "wheel": "cdc0800ac54f6f29582021e542fb2a36b25ccc0c08f7fbe85b83b0740064a250",
-                "sdist": "b923e6b88e6d40271968a0a854eca865599eee4f6c93418de78b8990cbaf7bd1"
+                "wheel": "6d6ef7947b8dea0800770237fc0d116d2ba1cf6efa1faecc2cb914b5bffebc37",
+                "sdist": "7465222bf2e8cb116061aebbb953719039f31e2526e7c849c88dca269ddb534a"
               },
+              "validation_history": [
+                {
+                  "commit": "78868b730b8a1f23fef99ccf1198057c3e946b53",
+                  "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39039718186",
+                  "passed": 134,
+                  "failed": 0,
+                  "skipped": 0
+                },
+                {
+                  "commit": "bc71f9512997ca0fe6749ac7c47453e4eaef7e1c",
+                  "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39039819303",
+                  "passed": 135,
+                  "failed": 0,
+                  "skipped": 0
+                },
+                {
+                  "commit": "43a86f86fbb069ca55f7267cdd58b46615448fb6",
+                  "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39040091018",
+                  "passed": 136,
+                  "failed": 0,
+                  "skipped": 0
+                }
+              ],
               "prior_receipt": {
                 "schema_version": 1,
-                "verified_commit": "2a7a14495dbfdf802ba3e9111712d910499b3bed",
-                "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39038650954",
+                "verified_commit": "cd4e0a65030ed3a7d25aed3e25bb7882580eb0c2",
+                "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39040190403",
                 "result": "success",
                 "installed_wheel_tests": {
-                  "collected": 120,
-                  "passed": 120,
+                  "collected": 138,
+                  "passed": 138,
                   "failed": 0,
                   "skipped": 0
                 },
@@ -1051,7 +1127,7 @@
                   "Concurrent post-checkpoint acceptance exclusion, preserved event/review sequences and stale-fence rejection",
                   "Core-only CLI checkpoint/restore and corruption, constraint, compatibility and durability failure rollback",
                   "Bounded atomic private file promotion and non-regular evidence rejection",
-                  "Core v1-to-v4 migration with retained synthetic raw/text evidence and optional profile v1-to-v2 active-generation preservation",
+                  "Core v1-to-v5 migration with retained synthetic raw/text evidence and optional profile v1-to-v2 active-generation preservation",
                   "Operator retention, multiple preservation holds, permanent logical-key tombstones and operation replay/conflict",
                   "Direct SQL content grant revocation, security-barrier predicates, column-level privilege rejection and real MCP suppression",
                   "Native pgvector/rerank exclusion and stale-generation activation refusal after retirement",
@@ -1066,7 +1142,23 @@
                   "Stale references/holds, changed store/files, symlink/hardlink/corruption and missing-object refusals",
                   "Durable intent before unlink, post-unlink fsync failure, killed-process restart and visible-but-unsynced intent refusal",
                   "Explicit scoped maintenance grants, reader/writer denial, malformed-journal rejection and private receipt modes",
-                  "Reference-table row-security and bounded inventory fail-closed checks"
+                  "Reference-table row-security and bounded inventory fail-closed checks",
+                  "Durable bounded due-only acquisition with persisted retry reservations, restart and killed-collector reconciliation",
+                  "Actual HTTP/1.1 conditional request/304, validator precedence, mismatched/duplicate field and redirect isolation tests",
+                  "Actual disposable local HTTP sockets through framing, parser, immutable evidence and PostgreSQL acceptance with fixture routing",
+                  "Partial-run validator preservation, changed-resource reset and exact recovery of detected cached-evidence gaps across manual/scheduled refresh",
+                  "Independent-source failure continuation, dispatch caps, new-source fairness and bounded exponential backoff",
+                  "Private validator SQL grant denial and reader refusal of accidental column grants",
+                  "Core-v4 collection receipt preservation during v5 migration and exact known v4 format-2 checkpoint-layout adoption",
+                  "Checkpoint/restore refusal of row-filtered schemas, restored validator reset and standalone cache-pointer reachability in GC/checkpoints",
+                  "Collector-only A/B/A current-head reconciliation without duplicate jobs; generic historical replay remains non-rewinding",
+                  "Partial failed collection omits validators, reconciles full returned representations and refuses dirty unsolicited 304",
+                  "CLI explicit manual cap and invalid due-cap refusal before configuration or dispatch",
+                  "Frozen offline relevance scorer with metric oracles, complete judgments, split leakage checks and negative gates",
+                  "Actual synthetic ONNX local quality execution with private no-overwrite protocol, bounded calls and durable partial observations",
+                  "Parser child source-ID binding refusal",
+                  "Model artifact hash/size/no-overwrite and redirect policy tests with synthetic bytes only",
+                  "Native systemd reference-unit parsing, including unsupported-directive refusal"
                 ],
                 "limits": [
                   "Synthetic weights verify execution, not pretrained language or retrieval quality",
@@ -1081,22 +1173,26 @@
                   "Offline recovery cannot detect joint rollback of policy, digest and trusted minimum-revision receipts",
                   "Lifecycle barriers are cooperative and database-scoped; old binaries and privileged direct writers are outside that enforcement claim",
                   "GC requires an initially matching database/store pair, current cooperative writers and private plan/journal custody; hostile filesystem mutation and physical media sanitization are outside scope",
-                  "Orphan deletion can leave a partial irreversible outcome; resume requires the matching durable intent, unchanged policy/reference set and surviving shard directories"
+                  "Orphan deletion can leave a partial irreversible outcome; resume requires the matching durable intent, unchanged policy/reference set and surviving shard directories",
+                  "Acquisition socket tests use controlled fixture routing; public DNS/TLS interoperability and broader adversarial HTTP acceptance remain incomplete",
+                  "No host timer is installed or verified; ticks are sequential with per-source bounds and require external runtime supervision",
+                  "Retry-After, shared-host quotas, jitter, cursors, broader acquisition formats and acquisition-wide acceptance remain pending",
+                  "Known core-v4 format-2 adoption is tested against its published table/column contract; core-v3/format-1 lineage adoption remains unavailable"
                 ],
-                "observed_utc": "2026-10-17T14:02:47Z",
+                "observed_utc": "2026-10-17T14:24:34Z",
                 "artifact_sha256": {
                   "uv.lock": "a2b7fb8e393424c0a9e409849aebb9d2858532a6a671cd86bafc670203651678",
-                  "wheel": "c92137c9b3b9720369123ce2c78b5dd3bdb80d0e6c9bf4f6c43de4c92213b58f",
-                  "sdist": "56a50bf7d7ec6fe3a4259622e9a09de370d4d5f5a9ddcfe8369967683d94c80d"
+                  "wheel": "cdc0800ac54f6f29582021e542fb2a36b25ccc0c08f7fbe85b83b0740064a250",
+                  "sdist": "b923e6b88e6d40271968a0a854eca865599eee4f6c93418de78b8990cbaf7bd1"
                 },
                 "prior_receipt": {
                   "schema_version": 1,
-                  "verified_commit": "adf2f244e207a18cb3168090df23040339358405",
-                  "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39037306958",
+                  "verified_commit": "2a7a14495dbfdf802ba3e9111712d910499b3bed",
+                  "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39038650954",
                   "result": "success",
                   "installed_wheel_tests": {
-                    "collected": 103,
-                    "passed": 103,
+                    "collected": 120,
+                    "passed": 120,
                     "failed": 0,
                     "skipped": 0
                   },
@@ -1139,7 +1235,13 @@
                     "Clock expiry blocks new enrichment dispatch without a sweeper",
                     "Admission before repeatable-read snapshots and serialization against admitted runtime transactions",
                     "Older-checkpoint/newer-policy restore; stale, wrong-lineage, corrupt and missing-tombstone policy refusal",
-                    "Cross-role UTC and semantically equivalent row timestamp offsets with changed-instant rejection"
+                    "Cross-role UTC and semantically equivalent row timestamp offsets with changed-instant rejection",
+                    "Reviewed bounded orphan-CAS plans and real CLI application with immutable private receipts",
+                    "All-version/retired/held snapshot and failed shared-feed reachability preservation",
+                    "Stale references/holds, changed store/files, symlink/hardlink/corruption and missing-object refusals",
+                    "Durable intent before unlink, post-unlink fsync failure, killed-process restart and visible-but-unsynced intent refusal",
+                    "Explicit scoped maintenance grants, reader/writer denial, malformed-journal rejection and private receipt modes",
+                    "Reference-table row-security and bounded inventory fail-closed checks"
                   ],
                   "limits": [
                     "Synthetic weights verify execution, not pretrained language or retrieval quality",
@@ -1149,25 +1251,27 @@
                     "This receipt applies to the named code commit; later documentation does not expand its scope",
                     "Checkpoint files contain private data and require operator-managed encrypted storage and independent digest custody",
                     "Restored unfinished jobs require reconciliation; disabled source rows are not an external-supervisor interlock",
-                    "Logical suppression only: physical bytes, shared feeds, backups and previously disclosed copies are retained; no GC/erasure or full E48 acceptance",
+                    "Orphan cleanup only: all retained records and their evidence, shared feeds, backups and previously disclosed copies remain; no full erasure or E48 acceptance",
                     "Format-1 checkpoints need the previous isolated tool/schema pair; automatic adoption into an existing lifecycle dataset is not implemented",
                     "Offline recovery cannot detect joint rollback of policy, digest and trusted minimum-revision receipts",
-                    "Lifecycle barriers are cooperative and database-scoped; old binaries and privileged direct writers are outside that enforcement claim"
+                    "Lifecycle barriers are cooperative and database-scoped; old binaries and privileged direct writers are outside that enforcement claim",
+                    "GC requires an initially matching database/store pair, current cooperative writers and private plan/journal custody; hostile filesystem mutation and physical media sanitization are outside scope",
+                    "Orphan deletion can leave a partial irreversible outcome; resume requires the matching durable intent, unchanged policy/reference set and surviving shard directories"
                   ],
-                  "observed_utc": "2026-10-17T13:41:50.255474+00:00",
+                  "observed_utc": "2026-10-17T14:02:47Z",
                   "artifact_sha256": {
                     "uv.lock": "a2b7fb8e393424c0a9e409849aebb9d2858532a6a671cd86bafc670203651678",
-                    "wheel": "0331d548c98f5894752f3655ae48f8d7ed18a265460670bad14b5b637a3ce565",
-                    "sdist": "fc3c0b6834d48e1dff519f63c3566a69309d60fb6850eb5a11876e02d3fc2856"
+                    "wheel": "c92137c9b3b9720369123ce2c78b5dd3bdb80d0e6c9bf4f6c43de4c92213b58f",
+                    "sdist": "56a50bf7d7ec6fe3a4259622e9a09de370d4d5f5a9ddcfe8369967683d94c80d"
                   },
                   "prior_receipt": {
                     "schema_version": 1,
-                    "verified_commit": "90fc2ce66ccc3eb967331b6dfe646cf90d70b06e",
-                    "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39034048684",
+                    "verified_commit": "adf2f244e207a18cb3168090df23040339358405",
+                    "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39037306958",
                     "result": "success",
                     "installed_wheel_tests": {
-                      "collected": 84,
-                      "passed": 84,
+                      "collected": 103,
+                      "passed": 103,
                       "failed": 0,
                       "skipped": 0
                     },
@@ -1200,7 +1304,17 @@
                       "Actual MCP reader, reviewed product and native ONNX/pgvector reads after recovery",
                       "Concurrent post-checkpoint acceptance exclusion, preserved event/review sequences and stale-fence rejection",
                       "Core-only CLI checkpoint/restore and corruption, constraint, compatibility and durability failure rollback",
-                      "Bounded atomic private file promotion and non-regular evidence rejection"
+                      "Bounded atomic private file promotion and non-regular evidence rejection",
+                      "Core v1-to-v4 migration with retained synthetic raw/text evidence and optional profile v1-to-v2 active-generation preservation",
+                      "Operator retention, multiple preservation holds, permanent logical-key tombstones and operation replay/conflict",
+                      "Direct SQL content grant revocation, security-barrier predicates, column-level privilege rejection and real MCP suppression",
+                      "Native pgvector/rerank exclusion and stale-generation activation refusal after retirement",
+                      "Document-linked job cancellation with preserved fence receipts and unrelated-work preservation",
+                      "Collector suppression receipts with continued acceptance of unrelated entries",
+                      "Clock expiry blocks new enrichment dispatch without a sweeper",
+                      "Admission before repeatable-read snapshots and serialization against admitted runtime transactions",
+                      "Older-checkpoint/newer-policy restore; stale, wrong-lineage, corrupt and missing-tombstone policy refusal",
+                      "Cross-role UTC and semantically equivalent row timestamp offsets with changed-instant rejection"
                     ],
                     "limits": [
                       "Synthetic weights verify execution, not pretrained language or retrieval quality",
@@ -1208,19 +1322,27 @@
                       "Runtime executable/model hashes do not attest all libraries or source-to-binary provenance",
                       "Privacy scans are a backstop, not an exhaustive anonymity guarantee",
                       "This receipt applies to the named code commit; later documentation does not expand its scope",
-                      "Bounded logical application checkpoint only; no WAL/PITR, full-host recovery, retention/holds/tombstones or public-export acceptance",
                       "Checkpoint files contain private data and require operator-managed encrypted storage and independent digest custody",
-                      "Restored unfinished jobs require reconciliation; disabled source rows are not an external-supervisor interlock"
+                      "Restored unfinished jobs require reconciliation; disabled source rows are not an external-supervisor interlock",
+                      "Logical suppression only: physical bytes, shared feeds, backups and previously disclosed copies are retained; no GC/erasure or full E48 acceptance",
+                      "Format-1 checkpoints need the previous isolated tool/schema pair; automatic adoption into an existing lifecycle dataset is not implemented",
+                      "Offline recovery cannot detect joint rollback of policy, digest and trusted minimum-revision receipts",
+                      "Lifecycle barriers are cooperative and database-scoped; old binaries and privileged direct writers are outside that enforcement claim"
                     ],
-                    "observed_utc": "2026-10-17T12:55:41.680364+00:00",
+                    "observed_utc": "2026-10-17T13:41:50.255474+00:00",
+                    "artifact_sha256": {
+                      "uv.lock": "a2b7fb8e393424c0a9e409849aebb9d2858532a6a671cd86bafc670203651678",
+                      "wheel": "0331d548c98f5894752f3655ae48f8d7ed18a265460670bad14b5b637a3ce565",
+                      "sdist": "fc3c0b6834d48e1dff519f63c3566a69309d60fb6850eb5a11876e02d3fc2856"
+                    },
                     "prior_receipt": {
                       "schema_version": 1,
-                      "verified_commit": "d3330a0e50896a43f13313b617da1e7eeb0790c0",
-                      "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39031820491",
+                      "verified_commit": "90fc2ce66ccc3eb967331b6dfe646cf90d70b06e",
+                      "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39034048684",
                       "result": "success",
                       "installed_wheel_tests": {
-                        "collected": 70,
-                        "passed": 70,
+                        "collected": 84,
+                        "passed": 84,
                         "failed": 0,
                         "skipped": 0
                       },
@@ -1248,31 +1370,43 @@
                         "Evidence-located proposals, append-only reviews, withdrawal and source invalidation",
                         "Real MCP stdio reads for reviewed cited products",
                         "HTTP/1.1 framing and bounded streaming regressions",
-                        "Core installation without optional inference dependencies"
+                        "Core installation without optional inference dependencies",
+                        "Private one-snapshot checkpoint and fresh isolated database/object restore",
+                        "Actual MCP reader, reviewed product and native ONNX/pgvector reads after recovery",
+                        "Concurrent post-checkpoint acceptance exclusion, preserved event/review sequences and stale-fence rejection",
+                        "Core-only CLI checkpoint/restore and corruption, constraint, compatibility and durability failure rollback",
+                        "Bounded atomic private file promotion and non-regular evidence rejection"
                       ],
                       "limits": [
                         "Synthetic weights verify execution, not pretrained language or retrieval quality",
                         "No GPU, full entity resolution/diversity, live cloud provider or remote MCP verification",
-                        "No complete backup/restore/retention or full roadmap acceptance claim",
                         "Runtime executable/model hashes do not attest all libraries or source-to-binary provenance",
                         "Privacy scans are a backstop, not an exhaustive anonymity guarantee",
-                        "This receipt applies to the named code commit; later documentation does not expand its scope"
+                        "This receipt applies to the named code commit; later documentation does not expand its scope",
+                        "Bounded logical application checkpoint only; no WAL/PITR, full-host recovery, retention/holds/tombstones or public-export acceptance",
+                        "Checkpoint files contain private data and require operator-managed encrypted storage and independent digest custody",
+                        "Restored unfinished jobs require reconciliation; disabled source rows are not an external-supervisor interlock"
                       ],
+                      "observed_utc": "2026-10-17T12:55:41.680364+00:00",
                       "prior_receipt": {
                         "schema_version": 1,
-                        "verified_commit": "249a4c3c1aa61b79ccb1be2b0df87e30ba7398b3",
-                        "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39029907428",
+                        "verified_commit": "d3330a0e50896a43f13313b617da1e7eeb0790c0",
+                        "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39031820491",
                         "result": "success",
                         "installed_wheel_tests": {
-                          "collected": 54,
-                          "passed": 54,
+                          "collected": 70,
+                          "passed": 70,
                           "failed": 0,
                           "skipped": 0
                         },
                         "environment": {
-                          "python": "3.12",
+                          "python": "3.12.3",
                           "database": "PostgreSQL 18 with pgvector",
-                          "inference": "ONNX Runtime CPU"
+                          "inference": [
+                            "ONNX Runtime CPU",
+                            "llama.cpp native CPU"
+                          ],
+                          "native_source_revision": "f2f667b02dc76d675395ae3b14546c8108d26387"
                         },
                         "scope": [
                           "Core storage, immutable evidence and typed configuration",
@@ -1281,38 +1415,96 @@
                           "Synthetic ONNX numerical oracle, token spans, admission and artifact integrity",
                           "Native pgvector generations, switching, rollback, failed builds and corpus drift",
                           "Real MCP SDK client over stdio for lexical and hybrid reads",
-                          "Lint and source/wheel/sdist publication scans"
+                          "Lint and source/wheel/sdist publication scans",
+                          "Actual ONNX pair reranking with an independent numerical oracle",
+                          "Actual native constrained generation with synthetic constant GGUF weights",
+                          "Native generation to fenced durable abstention and degraded cited product",
+                          "Owner-checked Unix socket protocol and killed-client ownership reconciliation",
+                          "Evidence-located proposals, append-only reviews, withdrawal and source invalidation",
+                          "Real MCP stdio reads for reviewed cited products",
+                          "HTTP/1.1 framing and bounded streaming regressions",
+                          "Core installation without optional inference dependencies"
                         ],
                         "limits": [
-                          "Synthetic model weights verify numerical execution, not pretrained semantic quality",
-                          "No GPU, local text generation, reranker, cloud provider or remote MCP verification",
+                          "Synthetic weights verify execution, not pretrained language or retrieval quality",
+                          "No GPU, full entity resolution/diversity, live cloud provider or remote MCP verification",
                           "No complete backup/restore/retention or full roadmap acceptance claim",
-                          "Privacy scanning is a backstop, not an exhaustive anonymity guarantee",
-                          "This receipt applies to the named commit, not automatically to later changes"
-                        ]
+                          "Runtime executable/model hashes do not attest all libraries or source-to-binary provenance",
+                          "Privacy scans are a backstop, not an exhaustive anonymity guarantee",
+                          "This receipt applies to the named code commit; later documentation does not expand its scope"
+                        ],
+                        "prior_receipt": {
+                          "schema_version": 1,
+                          "verified_commit": "249a4c3c1aa61b79ccb1be2b0df87e30ba7398b3",
+                          "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39029907428",
+                          "result": "success",
+                          "installed_wheel_tests": {
+                            "collected": 54,
+                            "passed": 54,
+                            "failed": 0,
+                            "skipped": 0
+                          },
+                          "environment": {
+                            "python": "3.12",
+                            "database": "PostgreSQL 18 with pgvector",
+                            "inference": "ONNX Runtime CPU"
+                          },
+                          "scope": [
+                            "Core storage, immutable evidence and typed configuration",
+                            "Workflow retries, cancellation, concurrency, killed claimant and transactional rollback",
+                            "Collection exclusion, partial replay and disposable feed parsing",
+                            "Synthetic ONNX numerical oracle, token spans, admission and artifact integrity",
+                            "Native pgvector generations, switching, rollback, failed builds and corpus drift",
+                            "Real MCP SDK client over stdio for lexical and hybrid reads",
+                            "Lint and source/wheel/sdist publication scans"
+                          ],
+                          "limits": [
+                            "Synthetic model weights verify numerical execution, not pretrained semantic quality",
+                            "No GPU, local text generation, reranker, cloud provider or remote MCP verification",
+                            "No complete backup/restore/retention or full roadmap acceptance claim",
+                            "Privacy scanning is a backstop, not an exhaustive anonymity guarantee",
+                            "This receipt applies to the named commit, not automatically to later changes"
+                          ]
+                        }
                       }
-                    }
+                    },
+                    "validation_history": [
+                      {
+                        "commit": "5a1cc91c74c5d1119652d842502dab85755da615",
+                        "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39036284625",
+                        "passed": 98,
+                        "failed": 1,
+                        "skipped": 0,
+                        "disposition": "Fixture assertion expected unrelated generic jobs to be document-scoped; corrected fixture and verified unrelated jobs remain untouched."
+                      },
+                      {
+                        "commit": "5e3c4b946840ea01b18ab18c3f7646aaa3b3abea",
+                        "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39036778175",
+                        "passed": 100,
+                        "failed": 0,
+                        "skipped": 0
+                      },
+                      {
+                        "commit": "3c468fa10da04808ce2c3f7f0322446e5ea028f5",
+                        "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39037119593",
+                        "passed": 102,
+                        "failed": 0,
+                        "skipped": 0
+                      }
+                    ]
                   },
                   "validation_history": [
                     {
-                      "commit": "5a1cc91c74c5d1119652d842502dab85755da615",
-                      "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39036284625",
-                      "passed": 98,
-                      "failed": 1,
-                      "skipped": 0,
-                      "disposition": "Fixture assertion expected unrelated generic jobs to be document-scoped; corrected fixture and verified unrelated jobs remain untouched."
-                    },
-                    {
-                      "commit": "5e3c4b946840ea01b18ab18c3f7646aaa3b3abea",
-                      "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39036778175",
-                      "passed": 100,
+                      "commit": "89a9a986eb31580c04c70ebe2e3157cfb6719f01",
+                      "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39038414291",
+                      "passed": 118,
                       "failed": 0,
                       "skipped": 0
                     },
                     {
-                      "commit": "3c468fa10da04808ce2c3f7f0322446e5ea028f5",
-                      "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39037119593",
-                      "passed": 102,
+                      "commit": "2bb2e34e96421f1b3a9a3dec88bc0ea72c07380b",
+                      "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39038458047",
+                      "passed": 119,
                       "failed": 0,
                       "skipped": 0
                     }
@@ -1320,61 +1512,56 @@
                 },
                 "validation_history": [
                   {
-                    "commit": "89a9a986eb31580c04c70ebe2e3157cfb6719f01",
-                    "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39038414291",
-                    "passed": 118,
+                    "commit": "78868b730b8a1f23fef99ccf1198057c3e946b53",
+                    "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39039718186",
+                    "passed": 134,
                     "failed": 0,
                     "skipped": 0
                   },
                   {
-                    "commit": "2bb2e34e96421f1b3a9a3dec88bc0ea72c07380b",
-                    "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39038458047",
-                    "passed": 119,
+                    "commit": "bc71f9512997ca0fe6749ac7c47453e4eaef7e1c",
+                    "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39039819303",
+                    "passed": 135,
+                    "failed": 0,
+                    "skipped": 0
+                  },
+                  {
+                    "commit": "43a86f86fbb069ca55f7267cdd58b46615448fb6",
+                    "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39040091018",
+                    "passed": 136,
                     "failed": 0,
                     "skipped": 0
                   }
                 ]
-              },
-              "validation_history": [
-                {
-                  "commit": "78868b730b8a1f23fef99ccf1198057c3e946b53",
-                  "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39039718186",
-                  "passed": 134,
-                  "failed": 0,
-                  "skipped": 0
-                },
-                {
-                  "commit": "bc71f9512997ca0fe6749ac7c47453e4eaef7e1c",
-                  "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39039819303",
-                  "passed": 135,
-                  "failed": 0,
-                  "skipped": 0
-                },
-                {
-                  "commit": "43a86f86fbb069ca55f7267cdd58b46615448fb6",
-                  "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39040091018",
-                  "passed": 136,
-                  "failed": 0,
-                  "skipped": 0
-                }
-              ]
+              }
             }
           }
-        }
+        },
+        "evidence_successor_policy": "This receipt identifies tested code and its measured artifacts. A later documentation-only evidence commit does not change the installed wheel; source-distribution hashes remain bound to the named CI revision."
       },
       "evidence_successor_policy": "This receipt identifies tested code and its measured artifacts. A later documentation-only evidence commit does not change the installed wheel; source-distribution hashes remain bound to the named CI revision."
     },
-    "evidence_successor_policy": "This receipt identifies tested code and its measured artifacts. A later documentation-only evidence commit does not change the installed wheel; source-distribution hashes remain bound to the named CI revision."
+    "evidence_successor_policy": "This receipt identifies tested code and its measured artifacts. A later documentation-only evidence commit does not change the installed wheel; source-distribution hashes remain bound to the named CI revision.",
+    "local_counterexamples": [
+      {
+        "baseline_revision": "e69d21f5cbed0f107321adb284b1c0b81a63bd1d",
+        "observation": "Native negative TLS fixtures exposed AttributeError from an exception class not exported by the pinned HTTP library. Actual public exception families now map these failures to SOURCE_UNAVAILABLE."
+      },
+      {
+        "baseline_revision": "e69d21f5cbed0f107321adb284b1c0b81a63bd1d",
+        "observation": "Controlled resolver child wrote a frame length and partial payload, then closed after 1.5 seconds. A nominal 0.5-second receive deadline returned OSError after approximately 1.603 seconds. This is local fault injection, not an observed publisher attack. The complete receive now has a deadline and explicit cleanup regression."
+      }
+    ]
   },
   "evidence_successor_policy": "This receipt identifies tested code and its measured artifacts. A later documentation-only evidence commit does not change the installed wheel; source-distribution hashes remain bound to the named CI revision.",
-  "local_counterexamples": [
-    {
-      "baseline_revision": "e69d21f5cbed0f107321adb284b1c0b81a63bd1d",
-      "observation": "Native negative TLS fixtures exposed AttributeError from an exception class not exported by the pinned HTTP library. Actual public exception families now map these failures to SOURCE_UNAVAILABLE."
-    },
-    {
-      "baseline_revision": "e69d21f5cbed0f107321adb284b1c0b81a63bd1d",
-      "observation": "Controlled resolver child wrote a frame length and partial payload, then closed after 1.5 seconds. A nominal 0.5-second receive deadline returned OSError after approximately 1.603 seconds. This is local fault injection, not an observed publisher attack. The complete receive now has a deadline and explicit cleanup regression."
-    }
-  ]
+  "advisory_contract_evidence": {
+    "format_version": 1,
+    "tests": 147,
+    "scope": "Offline normalized observation contract only; no complete E31/E32 acceptance",
+    "local_installed_wheel_tests": 147,
+    "local_nonintegration_tests": 377,
+    "local_integration_deselected": 151,
+    "documentation_examples_round_tripped": 1,
+    "schema_migrations_added": 0
+  }
 }

@@ -27,7 +27,7 @@ The core worker processes `document.accepted`; the explicit enrichment worker cl
 only its configured generator identity. Other job kinds remain queued.
 Character chunks preserve offsets but are not token-aware model input.
 
-The installed-wheel suite has 381 passing tests with no skips,
+The installed-wheel suite has 528 passing tests with no skips,
 including retained-state migration, direct SQL/MCP suppression, native retrieval,
 concurrency and policy-gated isolated recovery. See
 [the revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
@@ -119,3 +119,6 @@ independent publisher/evidence attribution, separate dates and bounded redacted
 JSON parsing. It preserves conflicting score/exploitation observations without
 inferring exposure or remediation. Acquisition, storage, applicability and full
 vulnerability-profile acceptance remain pending; see [the bounded contract](docs/advisory-records.md).
+The installed-wheel run passed all 147 advisory cases and the retained native
+suite in the named verification receipt. No upstream interoperability or semantic
+intelligence-quality acceptance follows from these authored contract fixtures.
