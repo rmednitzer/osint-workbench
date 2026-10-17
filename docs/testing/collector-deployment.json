@@ -1,13 +1,13 @@
 {
   "format": 2,
-  "source_revision": "f43d5a6ec08f60443cb344c7cea3d55a4fdbe684",
-  "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39054814525",
+  "source_revision": "f860e1ca77f877fa3fac61cbb49c3aa3fc8e6b48",
+  "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39059730644",
   "workflow_result": "success",
   "selected_profile": "reference-service",
   "inference_profile_selected": false,
   "database_fixture": "Disposable PostgreSQL 18; explicit SCRAM over a shared filesystem Unix socket",
   "http_fixture": "Loopback-only disconnected Linux network namespace with a synthetic fixed address and hosts mapping; unchanged production HTTP policy",
-  "core_schema": 6,
+  "core_schema": 7,
   "retrieval_profile_installed": false,
   "report": {
     "accepted": true,
@@ -47,7 +47,7 @@
   },
   "artifact_sha256": {
     "uv.lock": "a2b7fb8e393424c0a9e409849aebb9d2858532a6a671cd86bafc670203651678",
-    "wheel": "544e9c2abba96f4b6d74bd3656725b9d5d42cc071fd89e77dc00c03904b71996"
+    "wheel": "49bf74db1ad92e361b10fe80d9f299a66e658654951ccf9cca64145886614c74"
   },
   "manual_wheel_digest_recorded": true,
   "limits": [
@@ -59,26 +59,33 @@
     "Cleanup is observed for owned units, namespace and HTTP process; runner disposal removes the remaining synthetic database, account and state. This is not reusable operational rollback evidence.",
     "This manual run tests a 120-second delta hint on HTTP 503. Date, malformed/capped hints, restart/manual-policy and connection-loss cases belong to the separate native CI receipt.",
     "The bounded profile caps a server hint at seven days and reports that disposition; it does not fully honour a longer requested minimum, provide shared-host quotas or preserve uncommitted advice across a kill.",
-    "This repeat verifies normal bounded-JSON resolver operation inside the hardened HTTP collector service. It does not inject partial IPC or establish TLS under systemd; native TLS/configured-trust and resolver fault tests are recorded separately."
+    "This repeat verifies normal bounded-JSON resolver operation inside the hardened HTTP collector service. It does not inject partial IPC or establish TLS under systemd; native TLS/configured-trust and resolver fault tests are recorded separately.",
+    "This repeat accepts the unchanged synthetic HTTP collector process with core7 and a provisioned but unassigned purge group. It does not test purge under systemd, operational deletion or TLS in that service. Native SQL purge and recovery checks are separately revision-bound."
   ],
   "verification_attempts": [
     {
-      "source_revision": "f43d5a6ec08f60443cb344c7cea3d55a4fdbe684",
-      "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39054814525",
+      "source_revision": "f860e1ca77f877fa3fac61cbb49c3aa3fc8e6b48",
+      "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39059730644",
       "result": "success",
-      "scope": "Normal resolver and all existing isolated HTTP/service/timer/Retry-After/sandbox/cleanup probes passed on the first hosted candidate. Prior attempts remain preserved."
+      "scope": "Core7 scoped collector and all existing synthetic HTTP/timer/Retry-After/sandbox/cleanup probes passed with the current wheel. Purge and TLS execution are separate native evidence."
+    },
+    {
+      "source_revision": "4a8e7d9b2d9cdae50eb8e3d64977c04133b1c0cc",
+      "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39058518157",
+      "result": "success",
+      "scope": "Core7 scoped collector, normal resolver and all existing synthetic HTTP/timer/Retry-After/sandbox/cleanup probes passed; purge execution is not this service profile."
     }
   ],
   "prior_receipt": {
     "format": 2,
-    "source_revision": "68262d42fdaa0245dae8de6021d2f69d9560fe5c",
-    "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39053217368",
+    "source_revision": "4a8e7d9b2d9cdae50eb8e3d64977c04133b1c0cc",
+    "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39058518157",
     "workflow_result": "success",
     "selected_profile": "reference-service",
     "inference_profile_selected": false,
     "database_fixture": "Disposable PostgreSQL 18; explicit SCRAM over a shared filesystem Unix socket",
     "http_fixture": "Loopback-only disconnected Linux network namespace with a synthetic fixed address and hosts mapping; unchanged production HTTP policy",
-    "core_schema": 6,
+    "core_schema": 7,
     "retrieval_profile_installed": false,
     "report": {
       "accepted": true,
@@ -118,7 +125,7 @@
     },
     "artifact_sha256": {
       "uv.lock": "a2b7fb8e393424c0a9e409849aebb9d2858532a6a671cd86bafc670203651678",
-      "wheel": "fed5dfa75ac0cd47a2be3bce49c0b5c1b461cf408601373126be89111bbeaa6f"
+      "wheel": "0c2aff33db0c4981345d76c13c45d42caeea1b3f393314266aadac809ff4a5f4"
     },
     "manual_wheel_digest_recorded": true,
     "limits": [
@@ -129,20 +136,22 @@
       "No pretrained model, provider inference, operational endpoint, private source configuration or original host was used.",
       "Cleanup is observed for owned units, namespace and HTTP process; runner disposal removes the remaining synthetic database, account and state. This is not reusable operational rollback evidence.",
       "This manual run tests a 120-second delta hint on HTTP 503. Date, malformed/capped hints, restart/manual-policy and connection-loss cases belong to the separate native CI receipt.",
-      "The bounded profile caps a server hint at seven days and reports that disposition; it does not fully honour a longer requested minimum, provide shared-host quotas or preserve uncommitted advice across a kill."
+      "The bounded profile caps a server hint at seven days and reports that disposition; it does not fully honour a longer requested minimum, provide shared-host quotas or preserve uncommitted advice across a kill.",
+      "This repeat verifies normal bounded-JSON resolver operation inside the hardened HTTP collector service. It does not inject partial IPC or establish TLS under systemd; native TLS/configured-trust and resolver fault tests are recorded separately.",
+      "This repeat accepts the unchanged synthetic HTTP collector process with core7 and a provisioned but unassigned purge group. It does not test purge under systemd, operational deletion or TLS in that service. Native SQL purge and recovery checks are separately revision-bound."
     ],
     "verification_attempts": [
       {
-        "source_revision": "68262d42fdaa0245dae8de6021d2f69d9560fe5c",
-        "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39053217368",
+        "source_revision": "4a8e7d9b2d9cdae50eb8e3d64977c04133b1c0cc",
+        "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39058518157",
         "result": "success",
-        "scope": "Enhanced actual-service fixture passed on its first hosted attempt; prior fixture failures remain in the preserved receipt."
+        "scope": "Core7 scoped collector, normal resolver and all existing synthetic HTTP/timer/Retry-After/sandbox/cleanup probes passed; purge execution is not this service profile."
       }
     ],
     "prior_receipt": {
       "format": 2,
-      "source_revision": "99a5917a94efa113b902b62a3c9a6745549c7549",
-      "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39051783857",
+      "source_revision": "f43d5a6ec08f60443cb344c7cea3d55a4fdbe684",
+      "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39054814525",
       "workflow_result": "success",
       "selected_profile": "reference-service",
       "inference_profile_selected": false,
@@ -171,6 +180,7 @@
         "enabled_http_tick": true,
         "conditional_304_no_duplicates": true,
         "http_failure_backoff": true,
+        "retry_after_seconds_persisted": true,
         "not_due_no_http": true,
         "changed_feed_immutable_versions": true,
         "job_and_cas_evidence_verified": true,
@@ -187,7 +197,7 @@
       },
       "artifact_sha256": {
         "uv.lock": "a2b7fb8e393424c0a9e409849aebb9d2858532a6a671cd86bafc670203651678",
-        "wheel": "fd0c8d465b0ca2885e57d9baa867d2310b8390cf4c43a25a38d2215e5e4dc869"
+        "wheel": "544e9c2abba96f4b6d74bd3656725b9d5d42cc071fd89e77dc00c03904b71996"
       },
       "manual_wheel_digest_recorded": true,
       "limits": [
@@ -196,64 +206,28 @@
         "The fixture adds a one-second activation arm and accelerates recurring inactivity scheduling. Production cadence, full-duration timeouts, load and host sizing are unverified.",
         "Synthetic credentials and scoped SQL do not establish operational secret custody, per-source tenancy or containment of a compromised filesystem owner.",
         "No pretrained model, provider inference, operational endpoint, private source configuration or original host was used.",
-        "Cleanup is observed for owned units, namespace and HTTP process; runner disposal removes the remaining synthetic database, account and state. This is not reusable operational rollback evidence."
+        "Cleanup is observed for owned units, namespace and HTTP process; runner disposal removes the remaining synthetic database, account and state. This is not reusable operational rollback evidence.",
+        "This manual run tests a 120-second delta hint on HTTP 503. Date, malformed/capped hints, restart/manual-policy and connection-loss cases belong to the separate native CI receipt.",
+        "The bounded profile caps a server hint at seven days and reports that disposition; it does not fully honour a longer requested minimum, provide shared-host quotas or preserve uncommitted advice across a kill.",
+        "This repeat verifies normal bounded-JSON resolver operation inside the hardened HTTP collector service. It does not inject partial IPC or establish TLS under systemd; native TLS/configured-trust and resolver fault tests are recorded separately."
       ],
       "verification_attempts": [
         {
-          "source_revision": "371f8e8056caa8b404b48e1445fc692de99dd327",
-          "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39051085307",
-          "result": "failure",
-          "observed_error": "HTTP_TIMER_TICK_NOT_OBSERVED",
-          "scope": "Initial enabled-source HTTP 200 and database/CAS checks completed before the timer wait failed. No successful full acceptance report was emitted.",
-          "manual_wheel_sha256": "fd0c8d465b0ca2885e57d9baa867d2310b8390cf4c43a25a38d2215e5e4dc869"
-        },
-        {
-          "source_revision": "21d83b407330fb5358a90e76e300a670217fd17b",
-          "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39051281363",
-          "result": "failure",
-          "observed_error": "NATIVE_COMMAND_FAILED",
-          "scope": "No successful full acceptance report was emitted; the generic native-command error did not identify the failing command.",
-          "manual_wheel_sha256": "fd0c8d465b0ca2885e57d9baa867d2310b8390cf4c43a25a38d2215e5e4dc869"
-        },
-        {
-          "source_revision": "8514f44d2ac16807b3e4853cedc23743fc52141d",
-          "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39051384520",
-          "result": "failure",
-          "observed_error": "HTTP_TIMER_LAST_TRIGGER_UNCHANGED",
-          "scope": "The second collection run was admitted and settled, but timer trigger progress was checked only after stopping the timer. No successful full acceptance report was emitted.",
-          "manual_wheel_sha256": "fd0c8d465b0ca2885e57d9baa867d2310b8390cf4c43a25a38d2215e5e4dc869"
-        },
-        {
-          "source_revision": "f002410f414b160da96ffe440a3c745598afc0be",
-          "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39051497795",
-          "result": "failure",
-          "observed_error": "ACCEPTANCE_OPERATION_FAILED",
-          "scope": "No successful full acceptance report was emitted; the sanitized unexpected-exception handler did not retain a harness location.",
-          "manual_wheel_sha256": "fd0c8d465b0ca2885e57d9baa867d2310b8390cf4c43a25a38d2215e5e4dc869"
-        },
-        {
-          "source_revision": "808a3a4e5919704d005e511157bfa9a5ddb51723",
-          "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39051646324",
-          "result": "failure",
-          "observed_error": "ACCEPTANCE_OPERATION_FAILED",
-          "diagnostic": {
-            "exception_type": "ValueError",
-            "frame_file": "test_reference_deployment.py",
-            "frame_line": 706,
-            "kind": "unexpected_exception"
-          },
-          "disposition": "The harness parsed the human-formatted nonzero systemctl monotonic timestamp as an integer. Replace this with the raw D-Bus unsigned integer property; preserve the active-unit observation window.",
-          "manual_wheel_sha256": "fd0c8d465b0ca2885e57d9baa867d2310b8390cf4c43a25a38d2215e5e4dc869"
+          "source_revision": "f43d5a6ec08f60443cb344c7cea3d55a4fdbe684",
+          "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39054814525",
+          "result": "success",
+          "scope": "Normal resolver and all existing isolated HTTP/service/timer/Retry-After/sandbox/cleanup probes passed on the first hosted candidate. Prior attempts remain preserved."
         }
       ],
       "prior_receipt": {
-        "format": 1,
-        "source_revision": "a5b1c29cc5e9ae148dddf4d34fb26d0e1e6b8202",
-        "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39049333139",
+        "format": 2,
+        "source_revision": "68262d42fdaa0245dae8de6021d2f69d9560fe5c",
+        "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39053217368",
         "workflow_result": "success",
         "selected_profile": "reference-service",
         "inference_profile_selected": false,
-        "database_fixture": "Disposable PostgreSQL 18; fixed public synthetic loopback configuration",
+        "database_fixture": "Disposable PostgreSQL 18; explicit SCRAM over a shared filesystem Unix socket",
+        "http_fixture": "Loopback-only disconnected Linux network namespace with a synthetic fixed address and hosts mapping; unchanged production HTTP policy",
         "core_schema": 6,
         "retrieval_profile_installed": false,
         "report": {
@@ -274,21 +248,199 @@
           "writer_identity_refused": true,
           "admin_identity_refused": true,
           "unsafe_identity_no_source_or_evidence_writes": true,
+          "enabled_http_tick": true,
+          "conditional_304_no_duplicates": true,
+          "http_failure_backoff": true,
+          "retry_after_seconds_persisted": true,
+          "not_due_no_http": true,
+          "changed_feed_immutable_versions": true,
+          "job_and_cas_evidence_verified": true,
+          "accelerated_timer_triggered": true,
+          "enabled_http_journal_service_uid": true,
+          "disconnected_namespace_fixture": true,
+          "unix_socket_scram_verified": true,
           "external_sources_tested": false,
           "synthetic_database_tested": true,
-          "timer_activation_tested": false,
+          "timer_activation_tested": true,
+          "production_timer_durations_tested": false,
+          "https_tls_tested": false,
           "owned_units_removed": true
         },
+        "artifact_sha256": {
+          "uv.lock": "a2b7fb8e393424c0a9e409849aebb9d2858532a6a671cd86bafc670203651678",
+          "wheel": "fed5dfa75ac0cd47a2be3bce49c0b5c1b461cf408601373126be89111bbeaa6f"
+        },
+        "manual_wheel_digest_recorded": true,
         "limits": [
-          "Hosted-runner markers are environmental preconditions, not cryptographic host attestation.",
-          "Disabled-source SQL admission is exercised through actual systemd; enabled HTTP collection through systemd and timer activation are not established.",
-          "Synthetic fixture credentials do not establish operational secret custody, source-level tenancy or host/network isolation.",
-          "No pretrained model download, inference call, operational endpoint or private source configuration was used.",
-          "The manual job installs its own built wheel but did not print or retain its digest; its deployment evidence is source-revision-bound, not a measured manual-artifact digest attestation."
+          "Hosted-runner markers are cooperative admission guards, not cryptographic host attestation.",
+          "Only the named synthetic RSS HTTP path is accepted. Internet DNS, external sources and HTTPS/TLS are unverified.",
+          "The fixture adds a one-second activation arm and accelerates recurring inactivity scheduling. Production cadence, full-duration timeouts, load and host sizing are unverified.",
+          "Synthetic credentials and scoped SQL do not establish operational secret custody, per-source tenancy or containment of a compromised filesystem owner.",
+          "No pretrained model, provider inference, operational endpoint, private source configuration or original host was used.",
+          "Cleanup is observed for owned units, namespace and HTTP process; runner disposal removes the remaining synthetic database, account and state. This is not reusable operational rollback evidence.",
+          "This manual run tests a 120-second delta hint on HTTP 503. Date, malformed/capped hints, restart/manual-policy and connection-loss cases belong to the separate native CI receipt.",
+          "The bounded profile caps a server hint at seven days and reports that disposition; it does not fully honour a longer requested minimum, provide shared-host quotas or preserve uncommitted advice across a kill."
         ],
-        "runtime_source_equivalence": "The subsequent native-CI revision 48205097304dfd1bc509fecf80f534e2dc0269f3 changes only a test assertion. The independently built wheels in the initial and corrected native CI runs have the same digest.",
-        "separately_built_ci_wheel_sha256": "fd0c8d465b0ca2885e57d9baa867d2310b8390cf4c43a25a38d2215e5e4dc869",
-        "manual_wheel_digest_recorded": false
+        "verification_attempts": [
+          {
+            "source_revision": "68262d42fdaa0245dae8de6021d2f69d9560fe5c",
+            "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39053217368",
+            "result": "success",
+            "scope": "Enhanced actual-service fixture passed on its first hosted attempt; prior fixture failures remain in the preserved receipt."
+          }
+        ],
+        "prior_receipt": {
+          "format": 2,
+          "source_revision": "99a5917a94efa113b902b62a3c9a6745549c7549",
+          "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39051783857",
+          "workflow_result": "success",
+          "selected_profile": "reference-service",
+          "inference_profile_selected": false,
+          "database_fixture": "Disposable PostgreSQL 18; explicit SCRAM over a shared filesystem Unix socket",
+          "http_fixture": "Loopback-only disconnected Linux network namespace with a synthetic fixed address and hosts mapping; unchanged production HTTP policy",
+          "core_schema": 6,
+          "retrieval_profile_installed": false,
+          "report": {
+            "accepted": true,
+            "empty_config_tick": true,
+            "journal_service_uid": true,
+            "state_write": true,
+            "capabilities_zero": true,
+            "code_mount_read_only": true,
+            "writable_executable_denied": true,
+            "supervisor_timeout": true,
+            "timeout_child_stopped": true,
+            "synthetic_database_tick": true,
+            "collector_scope_validated": true,
+            "disabled_source_persisted": true,
+            "disabled_source_no_work": true,
+            "database_journal_service_uid": true,
+            "writer_identity_refused": true,
+            "admin_identity_refused": true,
+            "unsafe_identity_no_source_or_evidence_writes": true,
+            "enabled_http_tick": true,
+            "conditional_304_no_duplicates": true,
+            "http_failure_backoff": true,
+            "not_due_no_http": true,
+            "changed_feed_immutable_versions": true,
+            "job_and_cas_evidence_verified": true,
+            "accelerated_timer_triggered": true,
+            "enabled_http_journal_service_uid": true,
+            "disconnected_namespace_fixture": true,
+            "unix_socket_scram_verified": true,
+            "external_sources_tested": false,
+            "synthetic_database_tested": true,
+            "timer_activation_tested": true,
+            "production_timer_durations_tested": false,
+            "https_tls_tested": false,
+            "owned_units_removed": true
+          },
+          "artifact_sha256": {
+            "uv.lock": "a2b7fb8e393424c0a9e409849aebb9d2858532a6a671cd86bafc670203651678",
+            "wheel": "fd0c8d465b0ca2885e57d9baa867d2310b8390cf4c43a25a38d2215e5e4dc869"
+          },
+          "manual_wheel_digest_recorded": true,
+          "limits": [
+            "Hosted-runner markers are cooperative admission guards, not cryptographic host attestation.",
+            "Only the named synthetic RSS HTTP path is accepted. Internet DNS, external sources and HTTPS/TLS are unverified.",
+            "The fixture adds a one-second activation arm and accelerates recurring inactivity scheduling. Production cadence, full-duration timeouts, load and host sizing are unverified.",
+            "Synthetic credentials and scoped SQL do not establish operational secret custody, per-source tenancy or containment of a compromised filesystem owner.",
+            "No pretrained model, provider inference, operational endpoint, private source configuration or original host was used.",
+            "Cleanup is observed for owned units, namespace and HTTP process; runner disposal removes the remaining synthetic database, account and state. This is not reusable operational rollback evidence."
+          ],
+          "verification_attempts": [
+            {
+              "source_revision": "371f8e8056caa8b404b48e1445fc692de99dd327",
+              "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39051085307",
+              "result": "failure",
+              "observed_error": "HTTP_TIMER_TICK_NOT_OBSERVED",
+              "scope": "Initial enabled-source HTTP 200 and database/CAS checks completed before the timer wait failed. No successful full acceptance report was emitted.",
+              "manual_wheel_sha256": "fd0c8d465b0ca2885e57d9baa867d2310b8390cf4c43a25a38d2215e5e4dc869"
+            },
+            {
+              "source_revision": "21d83b407330fb5358a90e76e300a670217fd17b",
+              "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39051281363",
+              "result": "failure",
+              "observed_error": "NATIVE_COMMAND_FAILED",
+              "scope": "No successful full acceptance report was emitted; the generic native-command error did not identify the failing command.",
+              "manual_wheel_sha256": "fd0c8d465b0ca2885e57d9baa867d2310b8390cf4c43a25a38d2215e5e4dc869"
+            },
+            {
+              "source_revision": "8514f44d2ac16807b3e4853cedc23743fc52141d",
+              "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39051384520",
+              "result": "failure",
+              "observed_error": "HTTP_TIMER_LAST_TRIGGER_UNCHANGED",
+              "scope": "The second collection run was admitted and settled, but timer trigger progress was checked only after stopping the timer. No successful full acceptance report was emitted.",
+              "manual_wheel_sha256": "fd0c8d465b0ca2885e57d9baa867d2310b8390cf4c43a25a38d2215e5e4dc869"
+            },
+            {
+              "source_revision": "f002410f414b160da96ffe440a3c745598afc0be",
+              "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39051497795",
+              "result": "failure",
+              "observed_error": "ACCEPTANCE_OPERATION_FAILED",
+              "scope": "No successful full acceptance report was emitted; the sanitized unexpected-exception handler did not retain a harness location.",
+              "manual_wheel_sha256": "fd0c8d465b0ca2885e57d9baa867d2310b8390cf4c43a25a38d2215e5e4dc869"
+            },
+            {
+              "source_revision": "808a3a4e5919704d005e511157bfa9a5ddb51723",
+              "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39051646324",
+              "result": "failure",
+              "observed_error": "ACCEPTANCE_OPERATION_FAILED",
+              "diagnostic": {
+                "exception_type": "ValueError",
+                "frame_file": "test_reference_deployment.py",
+                "frame_line": 706,
+                "kind": "unexpected_exception"
+              },
+              "disposition": "The harness parsed the human-formatted nonzero systemctl monotonic timestamp as an integer. Replace this with the raw D-Bus unsigned integer property; preserve the active-unit observation window.",
+              "manual_wheel_sha256": "fd0c8d465b0ca2885e57d9baa867d2310b8390cf4c43a25a38d2215e5e4dc869"
+            }
+          ],
+          "prior_receipt": {
+            "format": 1,
+            "source_revision": "a5b1c29cc5e9ae148dddf4d34fb26d0e1e6b8202",
+            "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39049333139",
+            "workflow_result": "success",
+            "selected_profile": "reference-service",
+            "inference_profile_selected": false,
+            "database_fixture": "Disposable PostgreSQL 18; fixed public synthetic loopback configuration",
+            "core_schema": 6,
+            "retrieval_profile_installed": false,
+            "report": {
+              "accepted": true,
+              "empty_config_tick": true,
+              "journal_service_uid": true,
+              "state_write": true,
+              "capabilities_zero": true,
+              "code_mount_read_only": true,
+              "writable_executable_denied": true,
+              "supervisor_timeout": true,
+              "timeout_child_stopped": true,
+              "synthetic_database_tick": true,
+              "collector_scope_validated": true,
+              "disabled_source_persisted": true,
+              "disabled_source_no_work": true,
+              "database_journal_service_uid": true,
+              "writer_identity_refused": true,
+              "admin_identity_refused": true,
+              "unsafe_identity_no_source_or_evidence_writes": true,
+              "external_sources_tested": false,
+              "synthetic_database_tested": true,
+              "timer_activation_tested": false,
+              "owned_units_removed": true
+            },
+            "limits": [
+              "Hosted-runner markers are environmental preconditions, not cryptographic host attestation.",
+              "Disabled-source SQL admission is exercised through actual systemd; enabled HTTP collection through systemd and timer activation are not established.",
+              "Synthetic fixture credentials do not establish operational secret custody, source-level tenancy or host/network isolation.",
+              "No pretrained model download, inference call, operational endpoint or private source configuration was used.",
+              "The manual job installs its own built wheel but did not print or retain its digest; its deployment evidence is source-revision-bound, not a measured manual-artifact digest attestation."
+            ],
+            "runtime_source_equivalence": "The subsequent native-CI revision 48205097304dfd1bc509fecf80f534e2dc0269f3 changes only a test assertion. The independently built wheels in the initial and corrected native CI runs have the same digest.",
+            "separately_built_ci_wheel_sha256": "fd0c8d465b0ca2885e57d9baa867d2310b8390cf4c43a25a38d2215e5e4dc869",
+            "manual_wheel_digest_recorded": false
+          }
+        }
       }
     }
   }

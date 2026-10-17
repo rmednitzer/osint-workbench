@@ -1,6 +1,6 @@
 # ADR-0032: Commit retired-record purge and its durable decision together
 
-Status: ACCEPTED for implementation; revision-bound execution evidence pending.
+Status: ACCEPTED and implemented within the bounded SQL profile. Native execution: [572 passing tests](../testing/verification-evidence.json), source `f860e1ca77f877fa3fac61cbb49c3aa3fc8e6b48`, [run 39059730243](https://github.com/rmednitzer/osint-workbench/actions/runs/39059730243).
 Owner: maintainer. Date: 2026-10-17.
 
 ## Context and requirements
@@ -42,7 +42,7 @@ A bounded private impact plan binds operation identity and digest, dataset UUID,
 policy revision, exact supported schema/profile history, target identity and the
 affected record/dependency set. Counts alone cannot identify a changed plan.
 Apply recomputes the relevant state before mutation and refuses stale or
-unsupported dependencies. Plans and receipts use private restricted files,
+unsupported dependencies. Plans use private restricted files; exported receipt/policy copies require private custody,
 no-overwrite publication and safe public errors; they are not public exports,
 signed attestations or protection against replacement of both file and trusted
 digest.
@@ -134,5 +134,4 @@ job fences, concurrent retrieval building/activation, direct SQL/MCP absence and
 suppressed reingestion. Exercise core-only and retrieval installations, retained
 schema upgrades, exact historical adoption, post-purge checkpoint restore and
 pre-purge rejection before object acceptance. Private plans/receipts and public
-diagnostics need failure/redaction tests. Until a revision-bound receipt records
-execution, these are acceptance obligations rather than verified completion.
+diagnostics need failure/redaction tests. The named revision-bound receipt records these native checks and their limits. Full-copy erasure remains a separate acceptance obligation.

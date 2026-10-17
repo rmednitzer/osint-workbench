@@ -5,7 +5,7 @@ complete merely because its design documents or interfaces exist.
 
 | Area | Current implementation | Verification boundary |
 | --- | --- | --- |
-| Configuration/package | Typed JSON, empty sources, src layout, packaged migrations | Installed-wheel CI covers retained core migrations and active profile upgrade state; the new core7/profile3 candidate requires its own receipt |
+| Configuration/package | Typed JSON, empty sources, src layout, packaged migrations | Installed-wheel CI covers retained core migrations and active profile upgrade state; core7/profile3 upgrade, purge and recovery cases passed in the named receipt |
 | Evidence/core storage | Hashed immutable objects, PostgreSQL records/version heads | Local object tests; native PostgreSQL tests in CI |
 | Jobs | Bounded retries, attempt events, cancellation, renewal and atomic chunk worker | PostgreSQL failure/concurrency tests; distributed/remote effects remain pending |
 | Collection | RSS/Atom extraction, bounded public HTTP transport and durable due/validator state | Native HTTP sockets, parser, due/304/backoff, crash/replay and recovery tests passed. Full adversarial HTTP coverage remains pending |
@@ -16,7 +16,7 @@ complete merely because its design documents or interfaces exist.
 | Vulnerability/regulatory profiles | Offline advisory observation envelope; broader domain specifications | Authored strict-contract tests; no upstream adapters or applicability verification yet |
 | Cloud APIs/accounting/batches | Target specification | No credential access, native adapters, remote requests or spending |
 | Remote MCP | Target authentication design | No HTTP listener or remote client compatibility claim |
-| Export/recovery/retention | Bounded private checkpoint, empty-target restore, operator retention/holds/logical tombstones and mandatory current-policy reconciliation | Native SQL-reader, job/fence, inference, collector and restored-policy regressions passed in installed-wheel CI. Reviewed orphan-object GC passed native failure/restart and scoped-role tests. Full record erasure, legacy format-1 adoption, public export, publisher and full-host/PITR remain pending |
+| Export/recovery/retention | Bounded private checkpoint, empty-target restore, operator retention/holds/logical tombstones and mandatory current-policy reconciliation | Native SQL-reader, job/fence, inference, collector and restored-policy regressions passed in installed-wheel CI. Reviewed orphan-object GC and transactional retired-record SQL purge passed native failure/restart, recovery and scoped-role tests. Full record erasure, legacy format-1 adoption, public export, publisher and full-host/PITR remain pending |
 | Publication controls | Positive file selection and source/artifact scanning | Narrow scanner tests; private values are never committed |
 
 Core schema v7 and retrieval-profile v3 are additive; earlier published migrations
@@ -27,7 +27,7 @@ The core worker processes `document.accepted`; the explicit enrichment worker cl
 only its configured generator identity. Other job kinds remain queued.
 Character chunks preserve offsets but are not token-aware model input.
 
-The installed-wheel suite has 528 passing tests with no skips,
+The installed-wheel suite has 572 passing tests with no skips,
 including retained-state migration, direct SQL/MCP suppression, native retrieval,
 concurrency and policy-gated isolated recovery. See
 [the revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
@@ -128,5 +128,4 @@ scoped purge credentials and an atomic durable lifecycle decision. It removes
 known SQL derivatives, preserves shared/held dependencies and refuses historical
 restore content covered by current purge policy. CAS, feeds, backups, WAL and media
 erasure remain outside its scope; [the operator procedure](docs/retired-record-purge.md)
-describes irreversible effects and retrieval rebuild requirements. Execution
-evidence for this candidate must be read from its named revision receipt.
+describes irreversible effects and retrieval rebuild requirements. All 44 additional purge, race and compatibility cases passed in the named installed-wheel receipt; the current wheel also passed the separate synthetic collector-service run.
