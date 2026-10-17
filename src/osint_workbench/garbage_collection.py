@@ -182,10 +182,25 @@ def _journal(path, plan_sha):
             path / "intent.json", _json({"payload": expected, "sha256": digest(_json(expected))})
         )
     directory = os.open(path, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
-    os.close(directory)
-    actual = _read_envelope(path / "intent.json", digest(_json(expected)), limit=4096)
-    if actual != expected:
-        raise WorkbenchError("GC_JOURNAL_MISMATCH")
+    try:
+        actual = _read_envelope(path / "intent.json", digest(_json(expected)), limit=4096)
+        if actual != expected:
+            raise WorkbenchError("GC_JOURNAL_MISMATCH")
+        # A previous promotion may be visible after a failed directory fsync.
+        # Re-establish intent durability on resume before authorizing any unlink.
+        intent = os.open("intent.json", os.O_RDONLY | os.O_NOFOLLOW, dir_fd=directory)
+        try:
+            os.fsync(intent)
+        finally:
+            os.close(intent)
+        os.fsync(directory)
+        parent = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+        try:
+            os.fsync(parent)
+        finally:
+            os.close(parent)
+    finally:
+        os.close(directory)
     return existed
 
 

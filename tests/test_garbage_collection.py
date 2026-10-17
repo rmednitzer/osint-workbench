@@ -259,3 +259,29 @@ def test_row_security_and_inventory_bound_fail_closed(databases, tmp_path, monke
     with pytest.raises(WorkbenchError, match="GC_LIMIT_EXCEEDED"):
         prepare(roles, tmp_path, store)
     assert candidate.exists() and not (tmp_path / "cleanup.owgc").exists()
+
+
+@pytest.mark.integration
+def test_visible_intent_after_failed_fsync_must_be_resynced(databases, tmp_path, monkeypatch):
+    _, _, roles = databases
+    store = EvidenceStore(tmp_path / "objects")
+    _, candidate = orphan(store)
+    plan, sha = prepare(roles, tmp_path, store)
+    journal = tmp_path / "journal"
+    real_fsync = os.fsync
+
+    def fail_journal_fsync(fd):
+        if journal.exists() and os.fstat(fd).st_ino == journal.stat().st_ino:
+            raise OSError("synthetic intent directory persistence failure")
+        real_fsync(fd)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(gc.os, "fsync", fail_journal_fsync)
+        with pytest.raises(OSError):
+            gc.apply(Database(roles["admin"]), store, plan, sha, journal)
+        assert (journal / "intent.json").exists() and candidate.exists()
+        # A visible file alone is insufficient: retry must persist the intent first.
+        with pytest.raises(OSError):
+            gc.apply(Database(roles["admin"]), store, plan, sha, journal)
+        assert candidate.exists()
+    assert gc.apply(Database(roles["admin"]), store, plan, sha, journal)["resumed"]
