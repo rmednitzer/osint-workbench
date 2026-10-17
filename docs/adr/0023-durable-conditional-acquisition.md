@@ -31,7 +31,9 @@ validators to redirect hops. Redirected full responses do not seed the configure
 URI's validators. A 304 is a successful validation of already accepted local raw
 evidence, never a new document or proof of factual currency. Lost/corrupt cached
 objects force an unconditional attempt; immutable corrupt objects are not repaired
-silently. Advance validators only with successful completion after all entries
+silently. A missing prior body must be recovered with its exact hash before
+scheduled or manual refresh can report success; a different new representation
+cannot hide the detected archive gap. Advance validators only with successful completion after all entries
 have been accepted or explicitly suppressed. Partial acceptance replays against
 the previous completed validator.
 
@@ -51,7 +53,8 @@ an upgraded database or silently roll the database schema back. Restore into an
 isolated compatible target and reconcile current policy before reuse.
 
 Tests use actual HTTP/1.1 framing over an in-memory transport, the real parser,
-PostgreSQL transactions/roles, collector restart and process death, partial-run
+native local HTTP sockets, PostgreSQL transactions/roles, collector restart and
+process death, unsupported row-security refusal, detected archive-gap preservation, partial-run
 replay, resource changes, missing cache, bounded fair dispatch, backoff, migration
 and isolated recovery. They do not establish public DNS/TLS interoperability,
 provider operation, deployed timer reliability or semantic source quality.

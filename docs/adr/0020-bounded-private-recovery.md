@@ -42,3 +42,7 @@ withdrawal. These address R14 and a bounded subset of E13. Consumer export under
 R22/E17, publishing under R51/E47 and retention/deletion under R29/R54/E48 remain
 open; private recovery is not evidence of those effects. Published migrations
 remain unchanged. The revision-bound CI receipt determines verified scope.
+
+Follow-up: ADR-0021/0022 now coordinate current application checkpoints and orphan
+cleanup through shared/exclusive lifecycle admission and retained reachability.
+This does not expand the evidence of the original recovery revision.

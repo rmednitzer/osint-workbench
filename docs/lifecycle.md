@@ -2,8 +2,9 @@
 
 This reference increment controls visibility and future processing. It does not
 erase database rows, vectors, evidence objects, checkpoints, model memory or copies
-already returned to a client. Physical reachability-based garbage collection,
-backup expiry and erasure validation remain unimplemented. No legal compliance or
+already returned to a client. Full retained-record purge, backup expiry and erasure validation remain
+unimplemented. Reviewed orphan-object cleanup preserves every retained reference;
+see [its separate contract](garbage-collection.md). No legal compliance or
 global-erasure claim follows from these controls.
 
 ## State and authority
@@ -23,8 +24,9 @@ complete after the expiry boundary.
 A preservation hold protects records without extending serving authorization.
 Multiple holds can coexist and each has a unique, non-reusable ID. Explicit
 retirement is refused while any hold is active. Releasing a hold never makes
-expired content visible. Holds currently preserve data because no physical purge
-exists; future GC must enforce them independently.
+expired content visible. All held records and their evidence references remain retained. Orphan cleanup
+preserves those references; future record-graph purge must enforce holds before
+removing any record or derivative.
 
 Retirement appends a permanent tombstone for the logical identity, cancels its
 ready/running document jobs and revokes their fences in the same transaction.
@@ -113,7 +115,7 @@ envelope, just like checkpoint receipts. A raw-file checksum is a separate value
 
 ## Recovery policy and compatibility
 
-Schema v4 and retrieval-profile v2 are additive migrations; published earlier
+Core schema v5 and retrieval-profile v2 are additive migrations; published earlier
 migration bytes remain unchanged. Provision the lifecycle login separately and
 run `migrate-retrieval` when that optional profile is installed. Core-only migration
 does not claim an old optional profile is upgraded. An unsafe reader configuration
@@ -142,6 +144,10 @@ lifecycle policy of an existing dataset. Automated legacy adoption/reconciliatio
 is not implemented. If current format-2 recovery is unavailable, preserve the
 legacy pair and resolve dataset/policy lineage explicitly before serving it.
 
-See [the recovery procedure](recovery.md) and ADR-0021. Physical GC, restored
-deletion of bytes, remote copies, context/cache profiles not yet implemented and
+Known core-v4 format-2 checkpoints may adopt core v5 with an empty collection
+schedule and unknown historical HTTP status, retaining their existing dataset UUID
+and mandatory current-policy reconciliation.
+
+See [the recovery procedure](recovery.md) and ADR-0021. Full retained-record purge,
+backup expiry, restored deletion of bytes, remote copies, context/cache profiles not yet implemented and
 complete E39/E45/E48 acceptance remain outstanding.

@@ -212,7 +212,7 @@ headers remain untrusted; only an explicit external invocation starts a tick.
 
 | Unsafe control action | Constraint | Discriminating evidence |
 | --- | --- | --- |
-| U34: acknowledge an unchanged response without intact accepted local evidence, or advance a validator after partial acceptance | C34: bind validators to URI/profile, verify retained raw evidence, commit validators only with completed acceptance | Real 200/304 framing, lost-cache fallback and partial-run replay tests |
+| U34: acknowledge an unchanged response without intact accepted local evidence, mask a detected archive gap with a new body, or advance a validator after partial acceptance | C34: bind validators to URI/profile, require exact recovery of an observed prior gap, commit validators only with completed acceptance | Real 200/304 framing, missing/different-body refusal and partial-run replay tests |
 | U35: send source-specific validators to another redirect resource or retain them after configuration/restore changes | C35: strip on redirects, reset on resource change and isolated restore, deny SQL/MCP access | Redirect, changed-resource, scoped-reader and recovery tests |
 | U36: restart collection without retaining retry delay, dispatch unbounded work or hide independent sources after one failure | C36: reserve due state before dispatch, bound backoff/counter/tick size, retain per-source failure feedback | Killed collector, restart, bounded tick/backoff and independent-source tests |
 

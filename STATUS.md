@@ -8,7 +8,7 @@ complete merely because its design documents or interfaces exist.
 | Configuration/package | Typed JSON, empty sources, src layout, packaged migrations | Installed-wheel CI covers retained core v1-to-v5 and active profile v1-to-v2 upgrade state |
 | Evidence/core storage | Hashed immutable objects, PostgreSQL records/version heads | Local object tests; native PostgreSQL tests in CI |
 | Jobs | Bounded retries, attempt events, cancellation, renewal and atomic chunk worker | PostgreSQL failure/concurrency tests; distributed/remote effects remain pending |
-| Collection | RSS/Atom extraction, bounded public HTTP transport and durable due/validator state | Existing parser/exclusion/replay tests pass; new due/304/backoff/recovery tests await revision-bound native CI. Full adversarial HTTP coverage remains pending |
+| Collection | RSS/Atom extraction, bounded public HTTP transport and durable due/validator state | Native HTTP sockets, parser, due/304/backoff, crash/replay and recovery tests passed. Full adversarial HTTP coverage remains pending |
 | MCP | Seven stdio reads with strict schemas, reader checks and bounded errors | Real SDK client against PostgreSQL in CI |
 | Retrieval | Local ONNX embeddings, token-aware chunks, exact pgvector/RRF and generation activation/rollback | Synthetic numerical ONNX and native database/MCP tests, including actual pair scoring; pretrained semantic quality, ANN, automatic backfill and caches pending |
 | Local inference | CPU embedding/rerank runtimes, native Unix-socket generation and durable shared admission | Actual synthetic ONNX/GGUF execution and Unix transport/crash tests in CI; no GPU, pretrained quality or complete cross-host scheduler |
@@ -27,7 +27,7 @@ The core worker processes `document.accepted`; the explicit enrichment worker cl
 only its configured generator identity. Other job kinds remain queued.
 Character chunks preserve offsets but are not token-aware model input.
 
-The lifecycle implementation is backed by 120 installed-wheel tests with no skips,
+The installed-wheel suite has 138 passing tests with no skips,
 including retained-state migration, direct SQL/MCP suppression, native retrieval,
 concurrency and policy-gated isolated recovery. See
 [the revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
@@ -56,5 +56,5 @@ native failure/restart and scoped-principal tests passed in the named CI receipt
 It never deletes retained database records or objects reachable from them.
 
 Scheduled acquisition adds an explicit bounded due-only tick and private HTTP
-validators. The new core-v5 native acceptance cases remain pending until the
-verification receipt is updated. No external timer is installed or tested.
+validators. The core-v5 native acceptance cases passed in the named
+verification receipt. No external timer is installed or tested.

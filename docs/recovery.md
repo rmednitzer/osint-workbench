@@ -19,19 +19,23 @@ reported by `sha256sum`.
 
 `checkpoint` uses one PostgreSQL repeatable-read, read-only transaction. Migration
 history must match packaged migrations and every application table must be
-classified. A migration advisory lock excludes application migrations. Records
+classified. Row-level security on any application table is unsupported and causes
+checkpoint or restore to fail before publishing a file or accepting target data,
+even when the maintenance owner could bypass that filtering. A migration advisory lock excludes application migrations. Records
 committed after the MVCC snapshot are excluded; this is not zero-data-loss backup
 or WAL/PITR. A timestamp identifies capture transaction start, not completion or
 the last accepted source event. See PostgreSQL's
 [transaction isolation contract](https://www.postgresql.org/docs/18/transaction-iso.html).
 
-All raw/text evidence referenced by snapshots and collection runs is read through
+All raw/text evidence referenced by snapshots, collection runs and private cached-body
+pointers is read through
 the integrity-checking store. Unreferenced files are excluded. Accepted ingestion
 already makes objects durable before committing metadata, so the snapshot cannot
 include a partially accepted document. Document bodies, chunk/vector coordinates,
 assertion quotes and stored briefing hashes are checked. A concurrent deletion or
-damaged object makes capture fail; no final file is published. Retention/GC must
-coordinate with future checkpoints before either feature is enabled.
+damaged object makes capture fail; no final file is published. Current runtime/checkpoint sessions share lifecycle admission; reviewed orphan
+cleanup takes exclusive admission and rechecks every retained reference. Independent
+SQL/filesystem writers and old binaries remain outside this cooperative contract.
 
 Limits are 100,000 rows across all application tables, 32 MiB row metadata, 64 MiB
 referenced object bytes and 128 MiB total file. This in-memory reference profile
@@ -121,7 +125,7 @@ effects and additional deployment-specific policy before enabling sources or
 submitting explicit new operations. Keep external supervisors stopped: an explicit
 `collect` with an enabled private configuration updates the source row and can
 re-enable collection. Disabled restored rows are not a fleet-wide interlock.
-This increment has no overall deployment readiness gate or physical GC,
+There is no overall deployment readiness gate, full record-graph purge,
 cross-host reconciliation or general operator command to resume quarantined work.
 
 ## Verification boundary

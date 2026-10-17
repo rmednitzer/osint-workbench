@@ -4,7 +4,9 @@ Core schema v5 adds a private durable schedule; retrieval-profile v2 is unchange
 Run the explicit migration before using this version. No sources, URLs, network
 calls, host timers or model downloads are supplied or enabled by package import.
 
-Provide your private source configuration outside Git. Each enabled source may
+Provide one canonical private source configuration outside Git. Removing an entry
+does not delete or automatically disable its historical source row; explicitly
+set `enabled` false when that is the intended operator disposition. Each enabled source may
 set `poll_seconds` (60–86400, default 900) independently of its freshness threshold.
 A changed interval affects the next completed attempt; it does not override an
 already stored due time. URI/profile changes invalidate prior validators and
@@ -54,7 +56,10 @@ A partial run never advances validators. It may retain already accepted items;
 the next due attempt replays against the previous complete representation and
 uses existing immutable document identities. Missing local cached evidence causes
 an unconditional fetch. Corrupt immutable files require explicit investigation;
-network re-fetch does not silently overwrite them.
+network re-fetch does not silently overwrite them. A missing prior object must
+be recovered with its exact hash before either scheduled or manual refresh can
+report success. A different new body does not clear that observed archive gap;
+the prior validator/pointer and failure remain for operator recovery.
 
 The state contains potentially sensitive validators, URI/profile fingerprints
 and raw-body references. Readers/MCP cannot select it; reader identity validation
@@ -68,3 +73,7 @@ Remaining acquisition work includes Retry-After policy, shared-host rate limits,
 jitter, durable cursors, conditional article fetches and additional formats. Real
 DNS/TLS adversarial cases, deployed timer behaviour and larger-corpus operation
 need separate evidence. See ADR-0023 and the implementation backlog.
+
+The native acceptance suite also routes a disposable local HTTP server through
+the real socket/framing/parser/database path. Fixture routing does not establish
+public DNS, TLS or address-policy interoperability.
