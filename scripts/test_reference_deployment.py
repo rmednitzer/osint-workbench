@@ -451,6 +451,71 @@ def enabled_http_service_acceptance(account):
             str(path.relative_to(STATE / "evidence")) for path in (STATE / "evidence").rglob("*")
         )
 
+    def timer_diagnostic(reason, network, before_trigger):
+        # Report only bounded states/counts; never print raw journals or properties.
+        diagnostic = {"reason": reason}
+        try:
+            states = {"active", "inactive", "failed", "activating", "deactivating", "unknown"}
+            substates = {
+                "waiting",
+                "elapsed",
+                "dead",
+                "running",
+                "start",
+                "start-pre",
+                "start-post",
+                "stop",
+                "stop-sigterm",
+                "stop-sigkill",
+                "failed",
+            }
+            results = {
+                "success",
+                "exit-code",
+                "signal",
+                "timeout",
+                "start-limit-hit",
+                "resources",
+                "oom-kill",
+                "protocol",
+                "condition",
+            }
+            for label, name in (("timer", TIMER), ("service", SERVICE)):
+                values = command(
+                    [
+                        "systemctl",
+                        "show",
+                        name,
+                        "--property=ActiveState",
+                        "--property=SubState",
+                        "--property=Result",
+                    ]
+                ).splitlines()
+                observed_values = dict(line.split("=", 1) for line in values if "=" in line)
+                for field, accepted in (
+                    ("ActiveState", states),
+                    ("SubState", substates),
+                    ("Result", results),
+                ):
+                    value = observed_values.get(field)
+                    diagnostic[label + "_" + field] = value if value in accepted else "other"
+            trigger = command(
+                ["systemctl", "show", TIMER, "--property=LastTriggerUSecMonotonic", "--value"]
+            ).strip()
+            diagnostic["timer_trigger_advanced"] = (
+                trigger.isdecimal() and int(trigger) > before_trigger
+            )
+            timers = command(["systemctl", "show", TIMER, "--property=TimersMonotonic", "--value"])
+            diagnostic["initial_active_arm_present"] = "OnActiveUSec" in timers
+            diagnostic["recurring_inactive_arm_present"] = "OnUnitInactiveUSec" in timers
+            current = state()
+            diagnostic["collection_run_count"] = min(len(current[1]), 100)
+            diagnostic["http_request_count"] = min(len(network.observations()), 100)
+            diagnostic["sql_due"] = current[0] is not None and not current[0]["future"]
+        except Exception:
+            diagnostic["diagnostic_incomplete"] = True
+        print("PUBLIC_DEPLOYMENT_DIAGNOSTIC=" + json.dumps(diagnostic, sort_keys=True), flush=True)
+
     def stop_owned_units():
         command(["systemctl", "stop", TIMER, SERVICE], allowed=(0, 5), timeout=30)
         for name in (SERVICE, TIMER):
@@ -481,7 +546,8 @@ def enabled_http_service_acceptance(account):
             write_private(
                 timer_override,
                 "[Timer]\nOnBootSec=\nOnUnitInactiveSec=\n"
-                "OnUnitInactiveSec=1s\nRandomizedDelaySec=0\nAccuracySec=100ms\n",
+                "OnActiveSec=1s\nOnUnitInactiveSec=1s\n"
+                "RandomizedDelaySec=0\nAccuracySec=100ms\n",
                 mode=0o644,
             )
             (CONFIG / "collector.env").write_text("OW_COLLECTOR_DSN=" + FIXTURE_UNIX_DSN + "\n")
@@ -532,6 +598,11 @@ def enabled_http_service_acceptance(account):
                 ).strip()
             )
             force_due()
+            # The fixture's initial arm is relative to timer activation. An
+            # OnUnitInactiveSec-only timer may have no retained service timestamp
+            # after an inactive oneshot was unloaded. Reset probe history without
+            # changing any production rate limit or timer configuration.
+            command(["systemctl", "reset-failed", SERVICE, TIMER])
             started = str(time.time())
             command(["systemctl", "start", TIMER])
             deadline = time.monotonic() + 20
@@ -541,6 +612,7 @@ def enabled_http_service_acceptance(account):
                     break
                 time.sleep(0.2)
             else:
+                timer_diagnostic("HTTP_TIMER_TICK_NOT_OBSERVED", network, before_trigger)
                 raise Rejected("HTTP_TIMER_TICK_NOT_OBSERVED")
             # Wait for the admitted oneshot to emit its result before stopping scheduling.
             while time.monotonic() < deadline:
@@ -551,6 +623,7 @@ def enabled_http_service_acceptance(account):
                     break
                 time.sleep(0.1)
             else:
+                timer_diagnostic("HTTP_TIMER_SERVICE_DID_NOT_SETTLE", network, before_trigger)
                 raise Rejected("HTTP_TIMER_SERVICE_DID_NOT_SETTLE")
             command(["systemctl", "stop", TIMER, SERVICE])
             triggered = int(
