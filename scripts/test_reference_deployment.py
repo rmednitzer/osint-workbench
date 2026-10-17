@@ -76,6 +76,49 @@ def command(argv, *, allowed=(0,), timeout=30):
     return result.stdout
 
 
+def exception_diagnostic(error):
+    """Expose bounded exception location only, never exception values or paths."""
+    accepted_types = {
+        "OSError",
+        "PermissionError",
+        "FileNotFoundError",
+        "FileExistsError",
+        "ValueError",
+        "KeyError",
+        "TypeError",
+        "IndexError",
+        "TimeoutExpired",
+        "CalledProcessError",
+        "OperationalError",
+        "InterfaceError",
+        "ProgrammingError",
+        "RuntimeError",
+        "WorkbenchError",
+        "AssertionError",
+        "JSONDecodeError",
+    }
+    name = type(error).__name__
+    diagnostic = {
+        "kind": "unexpected_exception",
+        "exception_type": name if name in accepted_types else "other",
+    }
+    script = Path(__file__).resolve()
+    known = {
+        script: "test_reference_deployment.py",
+        script.with_name("reference_network.py"): "reference_network.py",
+    }
+    frame = error.__traceback__
+    for _ in range(32):
+        if frame is None:
+            break
+        path = Path(frame.tb_frame.f_code.co_filename).resolve()
+        if path in known:
+            diagnostic["frame_file"] = known[path]
+            diagnostic["frame_line"] = max(1, min(frame.tb_lineno, 20000))
+        frame = frame.tb_next
+    print("PUBLIC_DEPLOYMENT_DIAGNOSTIC=" + json.dumps(diagnostic, sort_keys=True), flush=True)
+
+
 def write_private(path, content, *, mode=0o600):
     with path.open("x", encoding="utf-8") as stream:
         stream.write(content)
@@ -995,10 +1038,19 @@ def main():
         )
     except Rejected as exc:
         failure = str(exc)
-    except (OSError, ValueError, KeyError, TypeError, IndexError, subprocess.SubprocessError):
+    except (
+        OSError,
+        ValueError,
+        KeyError,
+        TypeError,
+        IndexError,
+        subprocess.SubprocessError,
+    ) as exc:
+        exception_diagnostic(exc)
         failure = "ACCEPTANCE_OPERATION_FAILED"
-    except Exception:
+    except Exception as exc:
         # Driver failures must not print connection strings or raw backend messages.
+        exception_diagnostic(exc)
         failure = "ACCEPTANCE_OPERATION_FAILED"
     finally:
         if installed_units:
