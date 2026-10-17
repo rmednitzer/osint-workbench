@@ -28,7 +28,7 @@ jobs:
       - name: Validate with an immutable unprivileged offline tool
         run: |
           docker build --tag ow-renovate-validator --file .github/renovate.Dockerfile .github
-          docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges --user "$(id -u):$(id -g)" --tmpfs /tmp:rw,nosuid,nodev,noexec,size=64m,mode=1777 --env HOME=/tmp --env RENOVATE_CACHE_DIR=/tmp/renovate-cache --volume "$PWD/renovate.json:/app/renovate.json:ro" --workdir /app --entrypoint renovate-config-validator ow-renovate-validator --strict --no-global /app/renovate.json
+          docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges --user "$(id -u):$(id -g)" --tmpfs /tmp:rw,nosuid,nodev,noexec,size=64m,mode=1777 --env RENOVATE_CACHE_DIR=/tmp/renovate-cache --volume "$PWD/renovate.json:/app/renovate.json:ro" --workdir /app --entrypoint renovate-config-validator ow-renovate-validator --strict --no-global /app/renovate.json
   installed-artifact:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
