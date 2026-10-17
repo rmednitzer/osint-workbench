@@ -27,7 +27,7 @@ The core worker processes `document.accepted`; the explicit enrichment worker cl
 only its configured generator identity. Other job kinds remain queued.
 Character chunks preserve offsets but are not token-aware model input.
 
-The installed-wheel suite has 138 passing tests with no skips,
+The installed-wheel suite has 205 passing tests with no skips,
 including retained-state migration, direct SQL/MCP suppression, native retrieval,
 concurrency and policy-gated isolated recovery. See
 [the revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
@@ -68,5 +68,5 @@ workflow activities; ordinary CI and imports never download pretrained weights.
 The experimental multilingual encoder does not establish EU-independent model
 lineage or an adopted sovereign production profile. See
 [local quality diagnostics](docs/local-quality.md) and
-[reference deployment](docs/deployment.md). New regression and manual-run results
-must be bound to their tested revision before replacing the baseline receipt.
+[reference deployment](docs/deployment.md). Native regression evidence is bound to the tested revision in the verification
+receipt; manual profile results are recorded separately.

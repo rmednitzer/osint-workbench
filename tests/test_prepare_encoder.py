@@ -85,3 +85,7 @@ def test_artifact_hash_byte_bounds_and_private_promotion(tmp_path, failure):
 def test_artifact_destination_policy_fails_closed(url):
     with pytest.raises(preparation.PreparationError):
         preparation.check_url(url)
+
+
+def test_observed_public_artifact_cdn_is_explicitly_permitted():
+    preparation.check_url("https:" + "//us.aws.cdn.hf.co/model")

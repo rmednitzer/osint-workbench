@@ -43,6 +43,7 @@ ALLOWED_HOSTS = frozenset(
         "cdn-lfs-us-1.hf.co",
         "cdn-lfs-eu-1.hf.co",
         "cas-bridge.xethub.hf.co",
+        "us.aws.cdn.hf.co",
     }
 )
 FILE_TIMEOUT = 180

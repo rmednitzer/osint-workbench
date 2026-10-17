@@ -1,0 +1,37 @@
+{
+  "format": 1,
+  "attempts": [
+    {
+      "source_revision": "4c79686cd3c814c25e6828e8290d88e84bb3571f",
+      "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39042316920",
+      "workflow_result": "failure",
+      "encoder": {
+        "stage": "artifact_preparation",
+        "result": "failed",
+        "error": "DOWNLOAD_DESTINATION_REFUSED",
+        "inference_reached": false,
+        "diagnostic_targets_changed": false
+      },
+      "reference_service": {
+        "accepted": true,
+        "empty_config_tick": true,
+        "journal_service_uid": true,
+        "state_write": true,
+        "capabilities_zero": true,
+        "code_mount_read_only": true,
+        "writable_executable_denied": true,
+        "supervisor_timeout": true,
+        "timeout_child_stopped": true,
+        "real_sources_or_database_tested": false,
+        "timer_activation_tested": false,
+        "owned_units_removed": true
+      },
+      "follow_up": "A separate no-follow HEAD request to the immutable public model URL observed us.aws.cdn.hf.co; add only that exact HTTPS CDN hostname, retaining all artifact hashes and limits."
+    }
+  ],
+  "limits": [
+    "Disposable hosted-runner markers are environmental guards, not cryptographic host attestation.",
+    "The service probe does not test production installation, timer activation, database-backed acquisition, memory/task exhaustion, reader isolation or recovery.",
+    "No operational source URLs, credentials, model inventory or host data were used."
+  ]
+}

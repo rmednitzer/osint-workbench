@@ -1,7 +1,7 @@
 # ADR-0026: Bound acquisition with an external process supervisor
 
-Status: ACCEPTED for the reference collector units; runtime acceptance remains
-pending a revision-bound hosted-runner execution. Date: 2026-10-17.
+Status: ACCEPTED for the reference collector units; bounded disposable-runner
+execution passed in the [profile receipt](../testing/profile-diagnostics.json). Date: 2026-10-17.
 
 ## Context and drivers
 
@@ -70,8 +70,8 @@ removed; disposable runner destruction removes the test account and application
 state. Runner markers are admission guards, not cryptographic attestation of the
 host. Never set them manually to run this on a persistent machine.
 
-These checks have not yet produced a hosted runtime receipt at this ADR's creation.
-Even after passing they establish only the tested runner/kernel/systemd boundary.
+These checks passed in the separately revision-bound profile receipt.
+They establish only the tested runner/kernel/systemd boundary.
 They do not validate actual feed/database credentials, timer activation, full
 15 min timeout duration, memory pressure, target-host sizing, production egress,
 operational alerts, policy custody, backup/restore or full-host rebuild. Those

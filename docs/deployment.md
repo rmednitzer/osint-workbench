@@ -116,9 +116,10 @@ The ordinary suite's `tests/test_deployment.py` performs only native unit parsin
 The separate manually dispatched
 [public diagnostic workflow](../.github/workflows/public-encoder-diagnostic.yml)
 can additionally run the collector acceptance script on a disposable GitHub-hosted
-runner. This scope is implemented but has not yet produced a hosted runtime
-receipt in this change. A workflow definition or local guard rejection is not
-proof that the service runs successfully.
+runner. The actual empty-config service, sandbox and accelerated timeout probes passed
+on the named disposable runner; see [the profile receipt](testing/profile-diagnostics.json).
+This is separate from native unit parsing and does not establish operational
+database-backed deployment acceptance.
 
 The job must create a core installed-wheel virtual environment using the runner's
 `/usr/bin/python3`, not a home-directory-managed Python hidden by `ProtectHome`.

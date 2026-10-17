@@ -189,3 +189,13 @@ terminal receipt from becoming durable; inspect all existing outputs and start a
 new run directory after resolving the fault. Preserve original receipts when
 comparing changes. Cancellation, retries, downloads or production index activation
 are not implied by these commands.
+
+## Recorded attempts
+
+[Profile diagnostic evidence](testing/profile-diagnostics.json) preserves attempts
+separately from native regression CI. The first pretrained attempt stopped before
+inference with `DOWNLOAD_DESTINATION_REFUSED`. A no-follow HEAD request to the
+immutable model URL identified the exact public artifact CDN `us.aws.cdn.hf.co`.
+The follow-up admits only that hostname, retaining the original revision, byte
+limits, hashes, suite, targets and runtime constraints. No inference or quality
+result is inferred from artifact metadata or preparation failure.

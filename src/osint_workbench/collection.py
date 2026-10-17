@@ -247,7 +247,7 @@ def collect(source: Source, db: Database, store: EvidenceStore, *, due_only=Fals
                     (code, run_id),
                 )
                 # Validators advance only in the same transaction as successful
-                # completion; a partial run must be replayed using its prior validator.
+                # completion; failed or unconfirmed work requires a full unconditional replay.
                 conn.execute(
                     "UPDATE ow.collection_state SET next_attempt=greatest(next_attempt,"
                     "clock_timestamp()+make_interval(secs=>%s)) WHERE source_id=%s",
