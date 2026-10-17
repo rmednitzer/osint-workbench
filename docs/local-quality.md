@@ -218,3 +218,7 @@ equivalence or population performance. Encoder execution does not validate
 production chunking, pgvector, hybrid RRF, reranking, briefing or citation quality.
 An independently designed answerability policy, independent labels, representative
 resources and an adopted model/sovereignty decision remain open.
+
+The workflow now defaults to the separate `reference-service` profile. Select
+`public-encoder` or `both` explicitly when repeating the artifact/inference
+experiment; a deployment-only dispatch does not download or rerun the encoder.

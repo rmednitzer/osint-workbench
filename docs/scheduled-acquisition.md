@@ -13,7 +13,7 @@ already stored due time. URI/profile changes invalidate prior validators and
 freshness, and make the resource immediately eligible. Use distinct source IDs
 for unrelated logical collections; changing a URI does not delete historical data.
 
-With `OW_WRITER_DSN` and `OW_EVIDENCE_ROOT` configured privately, invoke:
+With a scoped `OW_COLLECTOR_DSN` and `OW_EVIDENCE_ROOT` configured privately, invoke:
 
 ```sh
 osint-workbench collect --config private/sources.json --due-only --max-sources 32
@@ -94,3 +94,9 @@ need separate evidence. See ADR-0023 and the implementation backlog.
 The native acceptance suite also routes a disposable local HTTP server through
 the real socket/framing/parser/database path. Fixture routing does not establish
 public DNS, TLS or address-policy interoperability.
+
+CLI acquisition requires the dedicated collector identity after core migration 6.
+The startup check rejects broadened or missing application privileges before
+creating an evidence store or dispatching HTTP. `OW_WRITER_DSN` remains for trusted
+import/worker code; it is not a collection fallback. An empty source list still
+returns `unconfigured` without connecting. See [ADR-0027](adr/0027-collector-database-authority.md).

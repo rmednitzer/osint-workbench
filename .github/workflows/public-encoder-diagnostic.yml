@@ -1,10 +1,21 @@
 name: Run public profile diagnostics
 on:
   workflow_dispatch:
+    inputs:
+      profile:
+        description: Explicit disposable diagnostic profile
+        type: choice
+        required: true
+        default: reference-service
+        options:
+          - reference-service
+          - public-encoder
+          - both
 permissions:
   contents: read
 jobs:
   public-diagnostic:
+    if: ${{ inputs.profile == 'public-encoder' || inputs.profile == 'both' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -51,8 +62,22 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
   reference-service:
+    if: ${{ inputs.profile == 'reference-service' || inputs.profile == 'both' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 8
+    services:
+      postgres:
+        image: pgvector/pgvector:pg18@sha256:2358fcba361ed2233a5ed81b5fe4ca779ccb304120ce531a3bf51c0ed7e2bc11
+        env:
+          POSTGRES_DB: ow_test
+          POSTGRES_USER: postgres
+          # Public disposable-runner fixture only; never operational credentials.
+          POSTGRES_PASSWORD: ci-fixture-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d ow_test"
+          --health-interval 5s --health-timeout 3s --health-retries 12
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -68,4 +93,4 @@ jobs:
           uv build
           uv pip install --python /tmp/ow-reference-core/bin/python --no-deps dist/*.whl
       - name: Accept the actual service and sandbox on this disposable runner
-        run: sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT /usr/bin/python3 scripts/test_reference_deployment.py --core-venv /tmp/ow-reference-core --units config/systemd
+        run: sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT /tmp/ow-reference-core/bin/python scripts/test_reference_deployment.py --core-venv /tmp/ow-reference-core --units config/systemd --database-fixture

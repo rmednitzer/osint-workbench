@@ -259,3 +259,34 @@ database/HTTP acquisition, global resource fairness, OS egress policy or full-ho
 recovery. Reference deployment changes no original service. Feed-absence deletion,
 whole-feed atomic replacement, privileged writer containment and full semantic
 acceptance remain outside these implemented boundaries.
+
+## Collector database-authority refinement
+
+CA3/CA4/CA20 now include selecting and validating the CLI/reference collector's
+database principal before a nonempty acquisition tick. The controlled state is
+effective SQL authority, its credential source, the fixed acceptance outbox kind
+and connection admission. Feedback includes privilege/schema refusal, explicit
+unconfigured status, connection failure and normal durable source/run receipts.
+SC3/SC5/SC6 and H1/H3/H4/H5/H6/H9 apply. These are discrete selections/checks;
+duration-type UCAs are N/A.
+
+| UCA | Hazardous context / category | Derived constraint and allocation | Discriminating evidence |
+| --- | --- | --- | --- |
+| U42 | CA3/CA20/P: collect using a general worker, administrative, owner or unexpectedly privileged principal | C42: dedicated collector group and effective column-grant/role/ownership validation before HTTP; missing or excessive authority fails closed; ADR-0027 | Native scoped-login acquisition plus deliberate extra-grant, broad-role and dangerous-identity rejection before dispatch |
+| U43 | CA20/N or T: omit principal validation, silently fall back to a broad writer credential, or present empty-config success as acquisition readiness | C43: nonempty CLI configuration requires explicit collector DSN and validation; empty configuration performs no database/HTTP work and claims only non-execution | Missing-DSN and privilege-failure CLI tests, zero-dispatch checks, retained empty-config contract |
+| U44 | CA4/P: acquisition can choose an arbitrary workflow kind or overwrite job authority instead of emitting the fixed document-acceptance event | C44: INSERT default fixes `document.accepted`; collector cannot insert `kind` or update job state; no elevated stored function | Direct SQL arbitrary-kind/job-update denials and scoped native ingestion/outbox tests; generic writer workflow remains separately tested |
+| U45 | CA20/N or T: connection admission remains unresolved while an operator interprets HTTP deadlines as a bound on the entire tick | C45: finite driver connection timeout, explicit failures and external whole-process supervision; disclose DNS/multi-host and startup-validation limits | Native connection configuration/error checks and observed supervisor timeout; one timeout setting does not establish global tick latency |
+
+C42–C45 reduce SQL authority at the CLI/reference-process boundary. They do not
+establish per-source tenancy, filesystem evidence confidentiality, continuous
+grant attestation or containment of a privileged direct writer. The trusted
+Python API may still receive a broader writer explicitly. A collector retains
+acquisition-state mutation and fixed-event payload authority; downstream workers
+must preserve evidence validation, fencing and lifecycle checks.
+
+Consider the alternative cause of a denied query: incompatible migration or a
+missing required grant, rather than a reason to attach an administrator account.
+Stop and reconcile credential/schema changes, then repeat synthetic native
+acceptance. Published migrations are immutable. No original service or source
+configuration changes are implied by this repository increment. The candidate
+verification receipt, not this control allocation, establishes executed evidence.

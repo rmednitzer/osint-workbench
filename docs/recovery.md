@@ -146,3 +146,10 @@ validators, cache pointers and failure/due state before acceptance and leaves
 sources disabled. Exact core-v4/profile-v2 format-2 layouts may adopt an empty
 schedule and unknown historical HTTP status; unknown migrations/layouts still
 fail closed. This does not enable core-v3/format-1 adoption.
+
+Core v6 adds a collector role and a fixed `document.accepted` outbox default,
+without changing checkpoint table layouts. Exact published core-v5 format-2
+migration/profile hashes can be adopted under the same independent current-policy
+checks; exact v4 normalization remains supported. Mixed, modified or incomplete
+histories are rejected. Restore does not provision an operational login or enable
+sources. Provision and validate the separate collector principal after recovery.

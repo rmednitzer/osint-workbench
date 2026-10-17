@@ -1,8 +1,9 @@
 """Explicit acceptance on disposable GitHub-hosted Linux runners; never imported by tests.
 
 Requires sudo while preserving only the two GitHub runner marker variables. No
-sources, database credentials or network requests are supplied. Guard rejection
-occurs before mutation. Ephemeral runner disposal removes application state/user;
+external sources or inference requests are supplied. An explicit database fixture
+uses only a fixed synthetic loopback PostgreSQL endpoint. Guard rejection occurs
+before mutation. Ephemeral runner disposal removes application state/user;
 finally stops our units and removes only unit files created by this invocation.
 """
 
@@ -99,6 +100,203 @@ def preflight(venv, units):
     )
 
 
+# Public disposable-runner credentials only. No DSN or network endpoint is accepted
+# from a command-line argument or environment variable for this optional fixture.
+FIXTURE_PASSWORD = "ci-fixture-only"
+FIXTURE_ADMIN_DSN = (
+    "host=127.0.0.1 port=5432 dbname=ow_test user=postgres "
+    "password=ci-fixture-only connect_timeout=5 sslmode=disable"
+)
+FIXTURE_COLLECTOR_DSN = (
+    "host=127.0.0.1 port=5432 dbname=ow_test user=ow_reference_collector "
+    "password=ci-fixture-only connect_timeout=5 sslmode=disable"
+)
+FIXTURE_WRITER_DSN = (
+    "host=127.0.0.1 port=5432 dbname=ow_test user=ow_reference_writer "
+    "password=ci-fixture-only connect_timeout=5 sslmode=disable"
+)
+
+
+def prepare_database_fixture(venv):
+    # Called only after every root/hosted-runner/PID1/owned-target preflight guard.
+    require(venv == Path("/tmp/ow-reference-core"), "FIXTURE_VENV_REFUSED")
+    require(
+        Path(sys.executable).resolve() == (venv / "bin/python").resolve()
+        and Path(sys.prefix).resolve() == venv,
+        "FIXTURE_PYTHON_REFUSED",
+    )
+    for name in tuple(os.environ):
+        if name.startswith("PG"):
+            del os.environ[name]
+    import psycopg
+
+    from osint_workbench.database import Database, migrate
+    from osint_workbench.errors import WorkbenchError
+
+    with psycopg.connect(FIXTURE_ADMIN_DSN, autocommit=True) as conn:
+        identity = conn.execute(
+            "SELECT current_database(),current_user,current_setting('server_version_num')::int"
+        ).fetchone()
+        require(
+            identity[0] == "ow_test" and identity[1] == "postgres" and identity[2] // 10000 == 18,
+            "FIXTURE_DATABASE_IDENTITY_REFUSED",
+        )
+        require(
+            conn.execute("SELECT to_regnamespace('ow')").fetchone()[0] is None,
+            "FIXTURE_SCHEMA_ALREADY_EXISTS",
+        )
+        require(
+            not conn.execute(
+                "SELECT 1 FROM pg_roles WHERE rolname IN "
+                "('ow_reference_collector','ow_reference_writer')"
+            ).fetchone(),
+            "FIXTURE_LOGIN_ALREADY_EXISTS",
+        )
+    migrate(FIXTURE_ADMIN_DSN)
+    with psycopg.connect(FIXTURE_ADMIN_DSN) as conn:
+        from psycopg import sql
+
+        for name, group in (
+            ("ow_reference_collector", "ow_collector"),
+            ("ow_reference_writer", "ow_writer"),
+        ):
+            conn.execute(
+                sql.SQL(
+                    "CREATE ROLE {} LOGIN INHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE "
+                    "NOREPLICATION NOBYPASSRLS PASSWORD {}"
+                ).format(sql.Identifier(name), sql.Literal(FIXTURE_PASSWORD))
+            )
+            conn.execute(
+                sql.SQL("GRANT {} TO {}").format(sql.Identifier(group), sql.Identifier(name))
+            )
+        require(
+            conn.execute("SELECT max(version) FROM ow.migrations").fetchone()[0] == 6,
+            "FIXTURE_SCHEMA_VERSION_MISMATCH",
+        )
+    Database(FIXTURE_COLLECTOR_DSN).validate_collector()
+    for dsn in (FIXTURE_WRITER_DSN, FIXTURE_ADMIN_DSN):
+        try:
+            Database(dsn).validate_collector()
+        except WorkbenchError as exc:
+            require(exc.code == "UNSAFE_COLLECTOR_IDENTITY", "FIXTURE_UNSAFE_CODE_MISMATCH")
+        else:
+            raise Rejected("FIXTURE_BROAD_IDENTITY_ACCEPTED")
+
+
+def journal_observed(since, account, expected):
+    command(["journalctl", "--sync"])
+    logs = command(
+        ["journalctl", "--unit", SERVICE, f"--since=@{since}", "--output=json", "--no-pager"]
+    )
+    for line in logs.splitlines():
+        row = json.loads(line)
+        try:
+            value = json.loads(row.get("MESSAGE", ""))
+        except (ValueError, TypeError):
+            continue
+        if value == expected:
+            require(row.get("_UID") == str(account.pw_uid), "JOURNAL_UID_MISMATCH")
+            return True
+    return False
+
+
+def database_service_acceptance(account):
+    import psycopg
+
+    def configure(identifier, dsn):
+        (CONFIG / "collector.env").write_text("OW_COLLECTOR_DSN=" + dsn + "\n")
+        (CONFIG / "sources.json").write_text(
+            json.dumps(
+                {
+                    "sources": [
+                        {
+                            "source_id": identifier,
+                            "url": "https://fixture.invalid/disabled",
+                            "enabled": False,
+                        }
+                    ]
+                }
+            )
+        )
+
+    identifier = "reference-disabled"
+    configure(identifier, FIXTURE_COLLECTOR_DSN)
+    started = str(time.time())
+    command(["systemctl", "start", SERVICE], timeout=30)
+    require(
+        command(["systemctl", "show", SERVICE, "--property=ExecMainStatus", "--value"]).strip()
+        == "0",
+        "DATABASE_TICK_FAILED",
+    )
+    require(
+        journal_observed(
+            started,
+            account,
+            {
+                "status": "complete",
+                "results": [{"source_id": identifier, "status": "disabled", "documents": 0}],
+                "deferred_sources": 0,
+            },
+        ),
+        "DATABASE_DISABLED_RESULT_NOT_OBSERVED",
+    )
+    evidence = STATE / "evidence"
+    before = sorted(str(path.relative_to(evidence)) for path in evidence.rglob("*"))
+    with psycopg.connect(FIXTURE_ADMIN_DSN) as conn:
+        require(
+            conn.execute("SELECT source_id,enabled FROM ow.sources").fetchall()
+            == [(identifier, False)],
+            "DATABASE_DISABLED_SOURCE_MISMATCH",
+        )
+        for table in ("collection_runs", "jobs", "documents", "snapshots"):
+            from psycopg import sql
+
+            require(
+                conn.execute(
+                    sql.SQL("SELECT count(*) FROM ow.{}").format(sql.Identifier(table))
+                ).fetchone()[0]
+                == 0,
+                "DATABASE_UNEXPECTED_WORK",
+            )
+    for label, dsn in (("writer", FIXTURE_WRITER_DSN), ("admin", FIXTURE_ADMIN_DSN)):
+        rejected_identifier = "reference-rejected-" + label
+        configure(rejected_identifier, dsn)
+        started = str(time.time())
+        command(["systemctl", "start", SERVICE], allowed=(1,), timeout=30)
+        require(
+            command(["systemctl", "show", SERVICE, "--property=ExecMainStatus", "--value"]).strip()
+            == "1",
+            "BROAD_IDENTITY_EXIT_MISMATCH",
+        )
+        require(
+            journal_observed(started, account, {"error": "UNSAFE_COLLECTOR_IDENTITY"}),
+            "BROAD_IDENTITY_REJECTION_NOT_OBSERVED",
+        )
+        with psycopg.connect(FIXTURE_ADMIN_DSN) as conn:
+            require(
+                not conn.execute(
+                    "SELECT 1 FROM ow.sources WHERE source_id=%s", (rejected_identifier,)
+                ).fetchone(),
+                "BROAD_IDENTITY_MUTATED_SOURCE",
+            )
+        require(
+            before == sorted(str(path.relative_to(evidence)) for path in evidence.rglob("*")),
+            "BROAD_IDENTITY_MUTATED_EVIDENCE",
+        )
+        command(["systemctl", "reset-failed", SERVICE])
+    configure(identifier, FIXTURE_COLLECTOR_DSN)
+    return {
+        "synthetic_database_tick": True,
+        "collector_scope_validated": True,
+        "disabled_source_persisted": True,
+        "disabled_source_no_work": True,
+        "database_journal_service_uid": True,
+        "writer_identity_refused": True,
+        "admin_identity_refused": True,
+        "unsafe_identity_no_source_or_evidence_writes": True,
+    }
+
+
 PROBE = r"""
 import errno
 import json
@@ -151,7 +349,7 @@ else:
 """
 
 
-def acceptance(venv, units, installed_units, dropins):
+def acceptance(venv, units, installed_units, dropins, *, database_fixture=False):
     command(
         [
             "useradd",
@@ -207,6 +405,7 @@ def acceptance(venv, units, installed_units, dropins):
             require(row.get("_UID") == str(account.pw_uid), "JOURNAL_UID_MISMATCH")
             observed = True
     require(observed, "UNCONFIGURED_RESULT_NOT_OBSERVED")
+    database_result = database_service_acceptance(account) if database_fixture else {}
     probe_dir = APP / "writable-probe"
     probe_dir.mkdir(mode=0o700)
     os.chown(probe_dir, account.pw_uid, account.pw_gid)
@@ -255,7 +454,9 @@ def acceptance(venv, units, installed_units, dropins):
         **result,
         "supervisor_timeout": True,
         "timeout_child_stopped": True,
-        "real_sources_or_database_tested": False,
+        **database_result,
+        "external_sources_tested": False,
+        "synthetic_database_tested": database_fixture,
         "timer_activation_tested": False,
     }
 
@@ -264,18 +465,28 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--core-venv", type=Path, required=True)
     parser.add_argument("--units", type=Path, required=True)
+    parser.add_argument("--database-fixture", action="store_true")
     args = parser.parse_args()
     installed_units, dropins = [], []
     outcome = None
     failure = None
     try:
         preflight(args.core_venv.resolve(), args.units.resolve())
+        if args.database_fixture:
+            prepare_database_fixture(args.core_venv.resolve())
         outcome = acceptance(
-            args.core_venv.resolve(), args.units.resolve(), installed_units, dropins
+            args.core_venv.resolve(),
+            args.units.resolve(),
+            installed_units,
+            dropins,
+            database_fixture=args.database_fixture,
         )
     except Rejected as exc:
         failure = str(exc)
     except (OSError, ValueError, KeyError, TypeError, IndexError, subprocess.SubprocessError):
+        failure = "ACCEPTANCE_OPERATION_FAILED"
+    except Exception:
+        # Driver failures must not print connection strings or raw backend messages.
         failure = "ACCEPTANCE_OPERATION_FAILED"
     finally:
         if installed_units:

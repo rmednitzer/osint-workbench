@@ -98,15 +98,50 @@ def roles(tmp_path_factory):
                 "VALUES (gen_random_uuid(),'upgrade-fixture','succeeded',%s)",
                 (raw_sha,),
             )
+    # Pause again at exact published v5: preserve real private validator/due
+    # state across the collector-authority migration, not just an empty schema.
+    prior_collection_state = None
+    with psycopg.connect(dsn) as conn:
+        if not conn.execute("SELECT 1 FROM ow.migrations WHERE version=5").fetchone():
+            script = (
+                files("osint_workbench")
+                .joinpath("migrations/005_collection_schedule.sql")
+                .read_text()
+            )
+            conn.execute(script)
+            conn.execute(
+                "INSERT INTO ow.migrations(version,sha256) VALUES (5,%s)",
+                (hashlib.sha256(script.encode()).hexdigest(),),
+            )
+        if (
+            conn.execute("SELECT 1 FROM ow.sources WHERE source_id='upgrade-fixture'").fetchone()
+            and not conn.execute("SELECT 1 FROM ow.migrations WHERE version=6").fetchone()
+        ):
+            assert conn.execute("SELECT max(version) FROM ow.migrations").fetchone() == (5,)
+            conn.execute(
+                "INSERT INTO ow.collection_state(source_id,resource_sha256,next_attempt,"
+                "failures,etag,last_modified,raw_sha256) "
+                "VALUES ('upgrade-fixture',%s,'2040-01-01T00:00:00Z',2,"
+                "'\"synthetic-upgrade-validator\"','Wed, 01 Jan 2025 00:00:00 GMT',%s)",
+                (hashlib.sha256(b"synthetic-upgrade-resource").hexdigest(), raw_sha),
+            )
+            prior_collection_state = conn.execute(
+                "SELECT * FROM ow.collection_state WHERE source_id='upgrade-fixture'"
+            ).fetchone()
     migrate(dsn)
     with psycopg.connect(dsn) as conn:
         if conn.execute("SELECT 1 FROM ow.sources WHERE source_id='upgrade-fixture'").fetchone():
             assert conn.execute(
                 "SELECT http_status FROM ow.collection_runs WHERE source_id='upgrade-fixture'"
             ).fetchone() == (None,)
-            assert not conn.execute(
-                "SELECT 1 FROM ow.collection_state WHERE source_id='upgrade-fixture'"
-            ).fetchone()
+            if prior_collection_state is not None:
+                assert conn.execute("SELECT max(version) FROM ow.migrations").fetchone() == (6,)
+                assert (
+                    conn.execute(
+                        "SELECT * FROM ow.collection_state WHERE source_id='upgrade-fixture'"
+                    ).fetchone()
+                    == prior_collection_state
+                )
     with psycopg.connect(dsn) as conn:
         if conn.execute("SELECT 1 FROM ow.sources WHERE source_id='upgrade-fixture'").fetchone():
             assert conn.execute(
@@ -172,12 +207,17 @@ def roles(tmp_path_factory):
                 ).fetchone()
                 == prior_generation
             )
-    writer_password, reader_password = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
+    writer_password, reader_password, collector_password = (
+        secrets.token_urlsafe(32),
+        secrets.token_urlsafe(32),
+        secrets.token_urlsafe(32),
+    )
     with psycopg.connect(dsn, autocommit=True) as conn:
         for role, group, password in [
             ("ow_test_writer", "ow_writer", writer_password),
             ("ow_test_reader", "ow_reader", reader_password),
             ("ow_test_lifecycle", "ow_lifecycle", writer_password),
+            ("ow_test_collector", "ow_collector", collector_password),
         ]:
             exists = conn.execute("SELECT 1 FROM pg_roles WHERE rolname=%s", (role,)).fetchone()
             if not exists:
@@ -195,6 +235,7 @@ def roles(tmp_path_factory):
         "writer": make_conninfo(dsn, user="ow_test_writer", password=writer_password),
         "reader": make_conninfo(dsn, user="ow_test_reader", password=reader_password),
         "lifecycle": make_conninfo(dsn, user="ow_test_lifecycle", password=writer_password),
+        "collector": make_conninfo(dsn, user="ow_test_collector", password=collector_password),
     }
     with psycopg.connect(dsn) as conn:
         has_legacy = bool(

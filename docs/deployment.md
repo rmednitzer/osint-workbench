@@ -18,10 +18,15 @@ no model, GPU, cloud provider or runtime download is needed. Installing packages
 still requires a separately controlled dependency supply chain.
 
 Provision a dedicated non-login `osint-workbench` OS account and group. Its
-collector database login inherits only `ow_writer`, with no administrative,
-reader, lifecycle, GC, recovery or migration identity attached. The application
-writer is broader than a collector-specific SQL role: compromise can mutate
-application workflow state within that role. These units do not close that gap.
+collector database login inherits only `ow_collector`, without ADMIN OPTION and
+with no administrative, reader, writer, lifecycle, GC, recovery or migration
+identity attached. Core migration 6 supplies column-scoped collection grants.
+Startup validation rejects missing/extra application privileges, delegation,
+unsafe memberships, ownership, filtered schemas and mismatched schema/defaults.
+The principal can insert accepted evidence and fixed-kind outbox jobs, but cannot
+update worker job state or read retained document bodies through SQL. This does
+not hide the evidence store from its filesystem owner or provide per-source
+tenancy. PUBLIC temporary-object privileges are outside the application-DDL check.
 Database permissions and isolation remain essential even with OS confinement.
 
 Root owns `/etc/osint-workbench` with mode 0700. Keep the private canonical
@@ -33,7 +38,7 @@ Do not grant write access. Verify access as the actual service account.
 The tracked empty `config/sources.example.json` is a safe initial source file;
 real URLs stay outside Git.
 
-Set `OW_WRITER_DSN` in `collector.env`. Prefer a libpq service descriptor and
+Set `OW_COLLECTOR_DSN` in `collector.env`; the CLI has no writer fallback. Prefer a libpq service descriptor and
 separately protected password file over a password embedded in the DSN; provision
 their read permissions for this account and set `PGSERVICEFILE`/`PGPASSFILE`
 explicitly when used. Never put any administrative DSN in this file. Environment
@@ -126,7 +131,7 @@ The job must create a core installed-wheel virtual environment using the runner'
 The explicit privileged invocation is:
 
 ```sh
-sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT /usr/bin/python3 scripts/test_reference_deployment.py --core-venv /tmp/ow-reference-core --units config/systemd
+sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT /tmp/ow-reference-core/bin/python scripts/test_reference_deployment.py --core-venv /tmp/ow-reference-core --units config/systemd --database-fixture
 ```
 
 Do not invoke this on persistent infrastructure or manually forge the runner
@@ -205,3 +210,21 @@ minimum policy revision. Reconcile divergence and explicitly re-enable approved
 sources before switching. An old checkpoint alone is not a safe rollback of
 retirement or holds. See [recovery](recovery.md), [lifecycle](lifecycle.md) and
 [scheduled acquisition](scheduled-acquisition.md) for the implemented boundaries.
+
+Database connection startup uses a fixed 5 s libpq timeout, overriding a longer
+DSN value. It applies per host/address attempt; it is not a DNS-wide or whole-tick
+deadline. The systemd process timeout remains the aggregate runtime boundary.
+The native startup tests use a silent loopback PostgreSQL protocol peer, not a
+mock connection. See the revision-bound CI receipt before claiming a tested build.
+
+The manual workflow defaults to `reference-service`; choose `public-encoder` or
+`both` explicitly to run the separate pretrained diagnostic. The reference job
+adds a fixed disposable PostgreSQL 18 fixture. It refuses existing application
+schema/login targets, applies the packaged migrations, and tests a disabled-source
+SQL tick under the real service account. It then supplies deliberately broad
+synthetic writer/admin identities and requires explicit refusal before source or
+evidence writes. Database creation/migration credentials remain in the guarded
+fixture setup and deliberate negative probes; they are never a runtime fallback.
+Public reports contain booleans, with no raw journal, DSN or credential output.
+This does not establish enabled-source HTTP acquisition through systemd, timer
+activation, operational credential custody or production deployment acceptance.

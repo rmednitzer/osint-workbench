@@ -10,20 +10,22 @@ from .contracts import DocumentInput
 from .errors import WorkbenchError
 from .evidence import EvidenceStore
 
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 LIFECYCLE_LOCK = 418287408
+MIGRATIONS = (
+    "schema.sql",
+    "migrations/002_workflows.sql",
+    "migrations/003_intelligence.sql",
+    "migrations/004_lifecycle.sql",
+    "migrations/005_collection_schedule.sql",
+    "migrations/006_collector_role.sql",
+)
 
 
 def migrate(dsn: str) -> None:
     package = files("osint_workbench")
-    scripts = [
-        package.joinpath("schema.sql"),
-        package.joinpath("migrations/002_workflows.sql"),
-        package.joinpath("migrations/003_intelligence.sql"),
-        package.joinpath("migrations/004_lifecycle.sql"),
-        package.joinpath("migrations/005_collection_schedule.sql"),
-    ]
-    with psycopg.connect(dsn) as conn:
+    scripts = [package.joinpath(name) for name in MIGRATIONS]
+    with psycopg.connect(dsn, connect_timeout=5) as conn:
         conn.execute("SELECT pg_advisory_xact_lock(%s)", (LIFECYCLE_LOCK,))
         conn.execute("SELECT pg_advisory_xact_lock(418287405)")
         exists = conn.execute("SELECT to_regclass('ow.migrations')").fetchone()[0]
@@ -52,6 +54,7 @@ class Database:
     def connect(self, *, lifecycle_exclusive=False):
         conn = psycopg.connect(
             self._dsn,
+            connect_timeout=5,
             row_factory=dict_row,
             options="-c statement_timeout=10000 -c lock_timeout=5000 -c timezone=UTC",
         )
@@ -76,7 +79,8 @@ class Database:
 
     def validate_reader(self) -> None:
         with self.connect() as conn:
-            row = conn.execute("""SELECT rolsuper,rolcreaterole,rolcreatedb,rolbypassrls
+            row = conn.execute("""SELECT rolsuper,rolcreaterole,rolcreatedb,rolbypassrls,
+              session_user<>current_user AS changed_identity
               FROM pg_roles WHERE rolname=current_user""").fetchone()
             if any(row.values()):
                 raise WorkbenchError("UNSAFE_READER_IDENTITY")
@@ -111,16 +115,161 @@ class Database:
               has_table_privilege(current_user,'ow.jobs','INSERT,UPDATE,DELETE') AS jobs,
               has_schema_privilege(current_user,'ow','CREATE') AS ddl,
               pg_has_role(current_user,'ow_writer','MEMBER') AS writer,
-              pg_has_role(current_user,'ow_lifecycle','MEMBER') AS lifecycle""").fetchone()
+              pg_has_role(current_user,'ow_lifecycle','MEMBER') AS lifecycle,
+              pg_has_role(current_user,'ow_collector','MEMBER') AS collector""").fetchone()
             if any(row.values()):
                 raise WorkbenchError("UNSAFE_READER_IDENTITY")
             if conn.execute("""SELECT 1 FROM pg_class c JOIN pg_namespace n
               ON n.oid=c.relnamespace WHERE n.nspname IN ('ow','ow_vector')
               AND c.relkind IN ('r','p','v','m','f') AND
-              (has_table_privilege(current_user,c.oid,'INSERT,UPDATE,DELETE,TRUNCATE') OR
+              (has_table_privilege(current_user,c.oid,'INSERT,UPDATE,DELETE,TRUNCATE,MAINTAIN') OR
                has_any_column_privilege(current_user,c.oid,'INSERT,UPDATE'))
               LIMIT 1""").fetchone():
                 raise WorkbenchError("UNSAFE_READER_IDENTITY")
+
+    def validate_collector(self) -> None:
+        """Refuse broadened application authority before source/network dispatch.
+
+        Checks effective grants and SET ROLE reachability, not just the login's
+        direct ACL. Database PUBLIC TEMP is deliberately outside this app-DDL
+        boundary. This is process authority, not source-level row isolation.
+        """
+        permissions = {
+            "migrations": {"SELECT": "version sha256"},
+            "sources": {
+                "SELECT": "source_id enabled freshness_seconds",
+                "INSERT": "source_id enabled freshness_seconds",
+                "UPDATE": "enabled freshness_seconds last_attempt last_success last_error",
+            },
+            "snapshots": {"INSERT": "snapshot_id source_id raw_sha256 text_sha256 extractor"},
+            "documents": {
+                "SELECT": "document_id",
+                "INSERT": "document_id source_id external_key snapshot_id title body published_at",
+            },
+            "document_heads": {
+                "SELECT": "source_id external_key document_id",
+                "INSERT": "source_id external_key document_id",
+                "UPDATE": "document_id",
+            },
+            "jobs": {"INSERT": "job_id dedup_key payload"},
+            "lifecycle_items": {
+                "SELECT": "source_id external_key retain_until",
+                "INSERT": "source_id external_key",
+            },
+            "lifecycle_tombstones": {"SELECT": "source_id external_key"},
+            "collection_runs": {
+                "SELECT": "run_id source_id status accepted_documents suppressed_documents",
+                "INSERT": "run_id source_id status",
+                "UPDATE": "status error_code finished_at accepted_documents "
+                "suppressed_documents raw_sha256 http_status",
+            },
+            "collection_state": {
+                "SELECT": "source_id resource_sha256 next_attempt failures etag "
+                "last_modified raw_sha256",
+                "INSERT": "source_id resource_sha256",
+                "UPDATE": "resource_sha256 next_attempt failures etag last_modified raw_sha256",
+            },
+        }
+        allowed = {
+            ("ow", table, column, privilege)
+            for table, grants in permissions.items()
+            for privilege, columns in grants.items()
+            for column in columns.split()
+        }
+        with self.connect() as conn:
+            unsafe = conn.execute("""SELECT
+              NOT pg_has_role(current_user,'ow_collector','USAGE') AS no_collector,
+              session_user<>current_user AS changed_identity,
+              EXISTS(SELECT 1 FROM pg_roles r
+                WHERE pg_has_role(current_user,r.oid,'MEMBER') AND
+                  (r.rolsuper OR r.rolcreaterole OR r.rolcreatedb OR r.rolbypassrls
+                   OR r.rolreplication OR r.rolname NOT IN (current_user,'ow_collector')))
+                AS unsafe_roles,
+              EXISTS(SELECT 1 FROM pg_roles WHERE rolname='ow_collector' AND rolcanlogin)
+                AS login_group,
+              EXISTS(SELECT 1 FROM pg_auth_members m
+                WHERE m.admin_option AND pg_has_role(current_user,m.member,'MEMBER'))
+                AS role_delegation,
+              EXISTS(SELECT 1 FROM pg_namespace n WHERE n.nspname IN ('ow','ow_vector')
+                AND has_schema_privilege(current_user,n.oid,'USAGE WITH GRANT OPTION'))
+                AS schema_delegation,
+              EXISTS(SELECT 1 FROM pg_database WHERE datname=current_database() AND
+                (pg_has_role(current_user,datdba,'MEMBER') OR
+                 has_database_privilege(current_user,oid,'CREATE'))) AS database_authority,
+              EXISTS(SELECT 1 FROM pg_namespace n WHERE n.nspname IN ('ow','ow_vector','public')
+                AND (pg_has_role(current_user,n.nspowner,'MEMBER') OR
+                     has_schema_privilege(current_user,n.oid,'CREATE'))) AS schema_authority,
+              EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+                WHERE n.nspname IN ('ow','ow_vector') AND
+                pg_has_role(current_user,c.relowner,'MEMBER')) AS owned_relations,
+              EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+                WHERE n.nspname IN ('ow','ow_vector') AND
+                pg_has_role(current_user,p.proowner,'MEMBER')) AS owned_functions,
+              EXISTS(SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace
+                WHERE n.nspname IN ('ow','ow_vector') AND
+                pg_has_role(current_user,t.typowner,'MEMBER')) AS owned_types,
+              EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+                WHERE n.nspname IN ('ow','ow_vector') AND p.prosecdef
+                AND has_schema_privilege(current_user,n.oid,'USAGE')
+                AND has_function_privilege(current_user,p.oid,'EXECUTE')) AS definer_functions,
+              EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+                WHERE n.nspname IN ('ow','ow_vector') AND c.relkind='S'
+                AND has_sequence_privilege(current_user,c.oid,'USAGE,SELECT,UPDATE'))
+                AS sequence_authority,
+              EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+                WHERE n.nspname IN ('ow','ow_vector') AND c.relkind IN ('r','p','v','m','f')
+                AND has_table_privilege(current_user,c.oid,
+                  'DELETE,TRUNCATE,TRIGGER,REFERENCES,MAINTAIN'))
+                AS table_authority""").fetchone()
+            if any(unsafe.values()):
+                raise WorkbenchError("UNSAFE_COLLECTOR_IDENTITY")
+            if conn.execute(
+                """SELECT 1 FROM pg_class c JOIN pg_namespace n
+              ON n.oid=c.relnamespace WHERE n.nspname='ow' AND c.relname=ANY(%s::text[])
+              AND (c.relrowsecurity OR c.relforcerowsecurity) LIMIT 1""",
+                (list(permissions),),
+            ).fetchone():
+                raise WorkbenchError("UNSAFE_COLLECTOR_IDENTITY")
+            granted = conn.execute("""SELECT n.nspname,c.relname,a.attname,p.privilege
+              FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+              JOIN pg_attribute a ON a.attrelid=c.oid AND a.attnum>0 AND NOT a.attisdropped
+              CROSS JOIN (VALUES ('SELECT'),('INSERT'),('UPDATE'),('REFERENCES')) p(privilege)
+              WHERE n.nspname IN ('ow','ow_vector') AND c.relkind IN ('r','p','v','m','f')
+              AND has_column_privilege(current_user,c.oid,a.attnum,p.privilege)""").fetchall()
+            actual = {(r["nspname"], r["relname"], r["attname"], r["privilege"]) for r in granted}
+            if actual != allowed:
+                raise WorkbenchError("UNSAFE_COLLECTOR_IDENTITY")
+            if conn.execute("""SELECT 1
+              FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+              JOIN pg_attribute a ON a.attrelid=c.oid AND a.attnum>0 AND NOT a.attisdropped
+              CROSS JOIN (VALUES ('SELECT'),('INSERT'),('UPDATE'),('REFERENCES')) p(privilege)
+              WHERE n.nspname IN ('ow','ow_vector') AND c.relkind IN ('r','p','v','m','f')
+              AND has_column_privilege(current_user,c.oid,a.attnum,
+                p.privilege || ' WITH GRANT OPTION') LIMIT 1""").fetchone():
+                raise WorkbenchError("UNSAFE_COLLECTOR_IDENTITY")
+            history = conn.execute(
+                "SELECT version,sha256 FROM ow.migrations ORDER BY version LIMIT %s",
+                (SCHEMA_VERSION + 1,),
+            ).fetchall()
+            expected = [
+                {
+                    "version": version,
+                    "sha256": hashlib.sha256(
+                        files("osint_workbench").joinpath(name).read_text().encode()
+                    ).hexdigest(),
+                }
+                for version, name in enumerate(MIGRATIONS, 1)
+            ]
+            default = conn.execute("""SELECT pg_get_expr(d.adbin,d.adrelid) AS expression
+              FROM pg_attrdef d JOIN pg_attribute a
+                ON a.attrelid=d.adrelid AND a.attnum=d.adnum
+              WHERE d.adrelid='ow.jobs'::regclass AND a.attname='kind'""").fetchone()
+            if (
+                history != expected
+                or not default
+                or default["expression"] != "'document.accepted'::text"
+            ):
+                raise WorkbenchError("UNSAFE_COLLECTOR_IDENTITY")
 
     def ingest(
         self, doc: DocumentInput, raw: bytes, store: EvidenceStore, extractor: str = "text/1"
@@ -197,8 +346,8 @@ class Database:
             )
         if inserted:
             conn.execute(
-                """INSERT INTO ow.jobs(job_id,kind,dedup_key,payload)
-              VALUES (%s,'document.accepted',%s,%s) ON CONFLICT DO NOTHING""",
+                """INSERT INTO ow.jobs(job_id,dedup_key,payload)
+              VALUES (%s,%s,%s) ON CONFLICT DO NOTHING""",
                 (
                     uuid.uuid4(),
                     document,

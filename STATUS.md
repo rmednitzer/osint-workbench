@@ -5,7 +5,7 @@ complete merely because its design documents or interfaces exist.
 
 | Area | Current implementation | Verification boundary |
 | --- | --- | --- |
-| Configuration/package | Typed JSON, empty sources, src layout, packaged migrations | Installed-wheel CI covers retained core v1-to-v5 and active profile v1-to-v2 upgrade state |
+| Configuration/package | Typed JSON, empty sources, src layout, packaged migrations | Installed-wheel CI covers retained core v1-to-v6 and active profile v1-to-v2 upgrade state |
 | Evidence/core storage | Hashed immutable objects, PostgreSQL records/version heads | Local object tests; native PostgreSQL tests in CI |
 | Jobs | Bounded retries, attempt events, cancellation, renewal and atomic chunk worker | PostgreSQL failure/concurrency tests; distributed/remote effects remain pending |
 | Collection | RSS/Atom extraction, bounded public HTTP transport and durable due/validator state | Native HTTP sockets, parser, due/304/backoff, crash/replay and recovery tests passed. Full adversarial HTTP coverage remains pending |
@@ -19,7 +19,7 @@ complete merely because its design documents or interfaces exist.
 | Export/recovery/retention | Bounded private checkpoint, empty-target restore, operator retention/holds/logical tombstones and mandatory current-policy reconciliation | Native SQL-reader, job/fence, inference, collector and restored-policy regressions passed in installed-wheel CI. Reviewed orphan-object GC passed native failure/restart and scoped-role tests. Full record erasure, legacy adoption, public export, publisher and full-host/PITR remain pending |
 | Publication controls | Positive file selection and source/artifact scanning | Narrow scanner tests; private values are never committed |
 
-Core schema v5 and retrieval-profile v2 are additive; earlier published migrations
+Core schema v6 and retrieval-profile v2 are additive; earlier published migrations
 remain byte-identical. Checkpoint format 2 requires separate policy receipts;
 legacy format-1 restore/adoption is not silently accepted. Job cancellation
 revokes acceptance authority; it does not prove a running computation has stopped.
@@ -33,7 +33,7 @@ concurrency and policy-gated isolated recovery. See
 [the revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
 models establish execution contracts, not pretrained semantic quality.
 
-The full programme covers 28 capability areas, 26 ADRs, 58 requirements and 51
+The full programme covers 28 capability areas, 27 ADRs, 58 requirements and 51
 acceptance scenarios. The tests in this repository currently establish only a
 foundation subset. Detailed future specifications are under `docs/`; they are not
 execution receipts. CI results are authoritative for a particular tested revision.
@@ -78,3 +78,13 @@ both failed unsupported-query abstention. The installed core service also passed
 its bounded non-root sandbox and accelerated timeout/child-stop probes. See
 [separate profile receipts and preserved observations](docs/testing/profile-diagnostics.json).
 Neither result closes semantic-quality adoption or operational deployment acceptance.
+
+Collector authority adds a dedicated column-scoped SQL group and required
+`OW_COLLECTOR_DSN` for nonempty CLI collection. Startup checks effective grants,
+reachable/delegating roles, object ownership, row security, exact migration
+history and the fixed outbox kind before store creation or HTTP dispatch.
+Writer credentials remain separate and are not a collection fallback. Reader
+credentials cannot carry a settable collector role. This scopes process authority;
+it does not establish per-source tenancy or filesystem evidence confidentiality.
+New native migration/role/recovery cases and the database-backed reference-service
+probe require their own revision-bound receipts before being reported as passed.

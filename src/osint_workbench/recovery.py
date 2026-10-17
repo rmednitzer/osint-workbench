@@ -60,6 +60,7 @@ def _history(conn):
         "migrations/003_intelligence.sql",
         "migrations/004_lifecycle.sql",
         "migrations/005_collection_schedule.sql",
+        "migrations/006_collector_role.sql",
     ]
     expected = {
         str(i): digest(files("osint_workbench").joinpath(p).read_bytes())
@@ -289,6 +290,22 @@ def _read(path, expected_sha):
     return payload
 
 
+def _known_legacy_history(observed, current, version):
+    """Only exact published core4/core5 and identical optional-profile digests.
+
+    The current target history has already been checked against every packaged
+    migration. Do not treat an arbitrary prefix, missing profile or unknown hash
+    as proof of a compatible earlier data contract.
+    """
+    if version not in (4, 5):
+        return False
+    keys = {str(i) for i in range(1, version + 1)}
+    expected = {
+        key: value for key, value in current.items() if key in keys or key.startswith("retrieval/")
+    }
+    return observed == expected
+
+
 def restore(
     db: Database,
     path: Path,
@@ -310,11 +327,15 @@ def restore(
         history = _history(conn)
         _full_visibility(conn)
         names = CORE + (RETRIEVAL if "retrieval/1" in history else ())
-        # Exact known core-v4 format-2 layout can adopt v5's empty private schedule.
-        # Existing records and current independent lifecycle policy remain mandatory.
-        adopted_v4 = payload["migrations"] == {
-            k: v for k, v in history.items() if k != "5"
-        } and set(tables) == set(names) - {"collection_state"}
+        # V6 changes only a jobs.kind default and grants. Exact known v5 has
+        # the same data layout; v4 additionally needs an empty private schedule.
+        # No schema3/format1 inference or mixed migration history is accepted.
+        adopted_v4 = _known_legacy_history(payload["migrations"], history, 4) and set(
+            tables
+        ) == set(names) - {"collection_state"}
+        adopted_v5 = _known_legacy_history(payload["migrations"], history, 5) and set(
+            tables
+        ) == set(names)
         if adopted_v4:
             tables["collection_state"] = []
             if any("http_status" in row for row in tables["collection_runs"]):
@@ -322,7 +343,7 @@ def restore(
             for row in tables["collection_runs"]:
                 row["http_status"] = None
         if (
-            (history != payload["migrations"] and not adopted_v4)
+            (history != payload["migrations"] and not adopted_v4 and not adopted_v5)
             or set(tables) != set(names)
             or _database_identity(conn, history) != payload["database"]
         ):
@@ -423,4 +444,5 @@ def restore(
         "policy_sha256": policy_sha,
         "policy_revision": policy["control"]["revision"],
         "adopted_core_v4": adopted_v4,
+        "adopted_core_v5": adopted_v5,
     }

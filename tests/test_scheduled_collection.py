@@ -272,6 +272,7 @@ def test_restore_resets_http_state_and_adopts_known_v4_layout(
     # Reconstruct the exact published v4 table/column contract with its original hashes.
     bundle = json.loads(path.read_text())
     bundle["payload"]["migrations"].pop("5")
+    bundle["payload"]["migrations"].pop("6")
     bundle["payload"]["tables"].pop("collection_state")
     for row in bundle["payload"]["tables"]["collection_runs"]:
         row.pop("http_status")

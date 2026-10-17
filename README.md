@@ -57,8 +57,10 @@ tests it against a disposable PostgreSQL service rather than importing a checkou
 ## Operator interfaces
 
 `OW_MIGRATION_DSN` is used by `migrate` and `migrate-retrieval`. Provision separate
-login identities inheriting `ow_writer` and `ow_reader`, then provide their private
-DSNs as `OW_WRITER_DSN` and `OW_READER_DSN`. The MCP server rejects a privileged
+login identities inheriting only `ow_collector`, `ow_writer` or `ow_reader`, then
+provide their private DSNs as `OW_COLLECTOR_DSN`, `OW_WRITER_DSN` and
+`OW_READER_DSN` for those distinct processes. Collection validates its effective
+SQL authority before dispatch and never falls back to writer credentials. The MCP server rejects a privileged
 reader or one that also belongs to the writer role. Mount evidence read-only for
 reader processes; the Python flag alone is not an OS permission boundary.
 

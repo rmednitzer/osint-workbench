@@ -302,7 +302,8 @@ def main():
             if not config.sources:
                 value = {"status": "unconfigured", "sources": 0}
             else:
-                db = Database(_dsn("OW_WRITER_DSN"))
+                db = Database(_dsn("OW_COLLECTOR_DSN"))
+                db.validate_collector()
                 store = EvidenceStore(Path(os.environ["OW_EVIDENCE_ROOT"]))
                 if args.due_only:
                     value = collect_due(

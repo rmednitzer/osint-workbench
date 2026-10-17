@@ -393,3 +393,140 @@ def test_non_regular_objects_and_oversize_bundles_fail_without_blocking(tmp_path
     monkeypatch.setattr(recovery, "MAX_BUNDLE", 1)
     with pytest.raises(WorkbenchError, match="INVALID_RECOVERY_BUNDLE"):
         recovery._read(large, "0" * 64)
+
+
+@pytest.mark.parametrize("version", [4, 5])
+def test_legacy_checkpoint_history_requires_complete_exact_known_pair(version):
+    current = {str(i): digest(f"published migration {i}".encode()) for i in range(1, 7)}
+    current.update({"retrieval/1": "a" * 64, "retrieval/2": "b" * 64})
+    known = {
+        key: value
+        for key, value in current.items()
+        if key.startswith("retrieval/") or int(key) <= version
+    }
+    assert recovery._known_legacy_history(known, current, version)
+    assert not recovery._known_legacy_history({**known, "2": "f" * 64}, current, version)
+    assert not recovery._known_legacy_history({**known, "6": current["6"]}, current, version)
+    assert not recovery._known_legacy_history({**known, "retrieval/2": "f" * 64}, current, version)
+    missing_profile = {key: value for key, value in known.items() if key != "retrieval/2"}
+    assert not recovery._known_legacy_history(missing_profile, current, version)
+    assert not recovery._known_legacy_history(known, current, 3)
+
+
+@pytest.mark.integration
+def test_known_v5_checkpoint_restores_retained_data_with_current_policy(
+    databases, destination, tmp_path
+):
+    writer, _, roles = databases
+    store = EvidenceStore(tmp_path / "objects")
+    doc, assertion, brief, pending, leased, _ = _fixture(writer, store)
+    second = writer.ingest(_input("Retained separate storage report.", "two"), b"second raw", store)
+    path = tmp_path / "known-v5.owcp"
+    recovery.checkpoint(Database(roles["admin"]), store, path)
+    # V6 changes only grants and a default: a V5 format2 record layout is identical.
+    sha = _rewrite(path, lambda payload: payload["migrations"].pop("6"))
+    operator = Database(roles["lifecycle"])
+    lifecycle.apply(
+        operator,
+        lifecycle.Change(
+            action="retire",
+            document_id=doc,
+            operation_id="v5-post-backup-retire",
+            actor="synthetic-reviewer",
+            rationale="Synthetic newer policy must survive adoption",
+        ),
+    )
+    lifecycle.apply(
+        operator,
+        lifecycle.Change(
+            action="hold",
+            document_id=second,
+            operation_id="v5-post-backup-hold",
+            hold_id="hold-v5",
+            actor="synthetic-reviewer",
+            rationale="Synthetic preservation decision",
+        ),
+    )
+    policy_args = policy_arguments(roles, path)
+    restored_root = tmp_path / "v5-restored"
+    result = recovery.restore(
+        Database(destination["admin"]), path, sha, restored_root, **policy_args
+    )
+    assert result["adopted_core_v5"] is True
+    assert result["adopted_core_v4"] is False
+    assert result["policy_revision"] == 2
+    service = ReadService(
+        Database(destination["reader"]), EvidenceStore(restored_root, read_only=True)
+    )
+    assert service.document(second)["integrity"] == "verified"
+    assert service.search("storage")["results"][0]["document_id"] == second
+    with pytest.raises(WorkbenchError, match="DOCUMENT_NOT_FOUND"):
+        service.document(doc)
+    with pytest.raises(WorkbenchError):
+        service.briefing(brief)
+    with Database(destination["admin"]).connect() as conn:
+        assert conn.execute("SELECT count(*) AS n FROM ow.documents").fetchone()["n"] == 2
+        assert (
+            conn.execute("SELECT assertion_id FROM ow.assertions").fetchone()["assertion_id"]
+            == assertion
+        )
+        assert (
+            conn.execute("SELECT hold_id FROM ow.lifecycle_holds").fetchone()["hold_id"]
+            == "hold-v5"
+        )
+        assert conn.execute("SELECT max(version) AS v FROM ow.migrations").fetchone()["v"] == 6
+        jobs = conn.execute(
+            "SELECT status FROM ow.jobs WHERE job_id=ANY(%s::uuid[])", ([pending, leased],)
+        ).fetchall()
+        assert len(jobs) == 2 and all(row["status"] == "failed" for row in jobs)
+    assert restored_root.exists()
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("corruption", ["old-hash", "mixed-core", "missing-profile"])
+def test_unknown_v5_history_refused_before_object_or_metadata_acceptance(
+    databases, destination, tmp_path, corruption
+):
+    writer, _, roles = databases
+    store = EvidenceStore(tmp_path / "objects")
+    writer.ingest(_input(), b"raw", store)
+    path = tmp_path / "v5-invalid.owcp"
+    recovery.checkpoint(Database(roles["admin"]), store, path)
+    policy_args = policy_arguments(roles, path)
+
+    def corrupt(payload):
+        payload["migrations"].pop("6")
+        if corruption == "old-hash":
+            payload["migrations"]["1"] = "f" * 64
+        elif corruption == "mixed-core":
+            payload["migrations"]["6"] = "f" * 64
+        else:
+            if "retrieval/2" in payload["migrations"]:
+                payload["migrations"].pop("retrieval/2")
+            else:
+                payload["migrations"]["retrieval/2"] = "f" * 64
+
+    sha = _rewrite(path, corrupt)
+    restored_root = tmp_path / "refused"
+    with pytest.raises(WorkbenchError, match="RECOVERY_SCHEMA_MISMATCH"):
+        recovery.restore(Database(destination["admin"]), path, sha, restored_root, **policy_args)
+    assert not restored_root.exists()
+    with Database(destination["admin"]).connect() as conn:
+        assert conn.execute("SELECT count(*) AS n FROM ow.documents").fetchone()["n"] == 0
+        assert conn.execute("SELECT revision FROM ow.lifecycle_control").fetchone()["revision"] == 0
+
+
+def test_format1_checkpoint_remains_explicitly_unsupported(tmp_path):
+    path = tmp_path / "legacy-format1.owcp"
+    payload = {
+        "format": 1,
+        "captured_at": "2026-01-01T00:00:00Z",
+        "migrations": {},
+        "database": {},
+        "tables": {},
+        "objects": {},
+    }
+    sha = digest(recovery._json(payload))
+    path.write_bytes(recovery._json({"payload": payload, "sha256": sha}))
+    with pytest.raises(WorkbenchError, match="INVALID_RECOVERY_BUNDLE"):
+        recovery._read(path, sha)

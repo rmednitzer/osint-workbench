@@ -141,3 +141,22 @@ def test_parser_response_cannot_expand_configured_source_authority(monkeypatch):
     monkeypatch.setattr("osint_workbench.collection.subprocess.run", different_source)
     with pytest.raises(WorkbenchError, match="FEED_PARSE_FAILED"):
         feed_documents(b"synthetic child protocol fixture", "configured-source")
+
+
+def test_collection_requires_separate_collector_dsn_without_writer_fallback(tmp_path):
+    config = tmp_path / "sources.json"
+    config.write_text(
+        json.dumps({"sources": [{"source_id": "fixture", "url": "https://example.invalid/feed"}]})
+    )
+    result = subprocess.run(
+        [sys.executable, "-m", "osint_workbench.cli", "collect", "--config", str(config)],
+        capture_output=True,
+        text=True,
+        env={
+            **{k: v for k, v in os.environ.items() if not k.startswith("OW_")},
+            "OW_WRITER_DSN": "invalid-not-used",
+        },
+        timeout=10,
+    )
+    assert result.returncode == 1 and result.stdout == ""
+    assert json.loads(result.stderr) == {"error": "DATABASE_CONFIGURATION_REQUIRED"}
