@@ -290,3 +290,36 @@ Stop and reconcile credential/schema changes, then repeat synthetic native
 acceptance. Published migrations are immutable. No original service or source
 configuration changes are implied by this repository increment. The candidate
 verification receipt, not this control allocation, establishes executed evidence.
+
+## Isolated enabled-source service refinement
+
+CA23 is the guarded acceptance harness's creation, validation and removal of its
+owned fixture network namespace, HTTP process and service overrides. Its feedback
+includes namespace identity, interface/address/route inventory, authentication
+negative controls, observed HTTP requests, raw CAS identities, heads/outbox/run
+state, service UID and cleanup outcomes. CA20/CA22 continue to govern acquisition
+and timer/process lifecycle. SC1/SC3/SC4/SC5/SC6 and H1/H3/H4/H5/H6 apply. Creation
+and deletion are discrete actions; duration is N/A for those commands. Surviving
+processes and persistent network authority are states requiring observed cleanup.
+
+| UCA | Hazardous context / category | Derived constraint and allocation | Discriminating evidence |
+| --- | --- | --- | --- |
+| U46 | CA23/P or T: bind a public-classified fixture address or launch acquisition in the host namespace, or with an external interface/route | C46: fixed owned namespace, distinct namespace identity, loopback-only interfaces and explicit address/route checks before binding/dispatch; no veth or external route; ADR-0028 | Native isolation inventory and fail-closed preflight controls; unsupported namespace capability cannot be counted as a passing run |
+| U47 | CA20/CA23/P: make enabled acquisition pass by disabling production DNS/address policy or injecting a fixture-only application override | C47: unchanged HTTP resolver/address/transport code; read-only fixed hosts mapping and service namespace supply the fixture; no runtime bypass flag or monkeypatch | Actual installed service requests to the isolated synthetic endpoint and retained fixture identities; no Internet DNS or TLS claim |
+| U48 | CA23/CA9/P: report scoped password-authenticated database integration although local trust or a wrong endpoint bypasses credentials | C48: explicit SCRAM local/host configuration, valid scoped login and wrong-password rejection at the same Unix endpoint before acceptance | Positive connection plus authentication-specific negative control; connection unavailability alone is not authentication evidence |
+| U49 | CA20/CA22/CA9/P or T: report enabled scheduling/recovery from a process exit while requests, current heads, evidence, outbox or due state disagree | C49: observe 200, real accelerated-timer 304, 503/backoff, non-due no-dispatch and unconditional changed-body recovery; cross-check requests, CAS, PostgreSQL and journal UID | Candidate-specific manual enabled-source receipt; synthetic acceleration is not validation of production intervals or load |
+| U50 | CA23/N or T: remove a namespace or report cleanup while owned service/HTTP children still hold resources, or delete a preexisting resource | C50: reject preexisting fixed targets, record ownership after each creation, stop/observe owned processes before removal and report cleanup failure explicitly | Failure-path/cleanup postconditions and controlled child/process identity; disposable runner removal is not a reusable host rollback procedure |
+
+These controls prevent the acceptance fixture from introducing a new operational
+network exception. They do not prove every kernel, runtime or privileged actor
+preserves isolation; the harness itself is trusted administrative code. A public
+address string being classified as global is neither Internet ownership nor a
+reason to route real traffic to it. The isolated namespace must remain without an
+external path for the complete enabled-source run.
+
+The run is explicitly synthetic and manual. No original data, source endpoint or
+host configuration is required. Linux namespace/systemd/capability availability,
+password authentication, actual timer activation and cleanup require observed
+candidate execution; syntax, disabled-source probes or fixture setup alone do
+not establish them. No TLS, source truth, production reliability, independent
+semantic acceptance, reader tenancy or full E2E programme closure is implied.

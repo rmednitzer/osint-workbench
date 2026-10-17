@@ -2,7 +2,8 @@
 
 Requires sudo while preserving only the two GitHub runner marker variables. No
 external sources or inference requests are supplied. An explicit database fixture
-uses only a fixed synthetic loopback PostgreSQL endpoint. Guard rejection occurs
+uses only a fixed synthetic PostgreSQL endpoint; the optional HTTP fixture is
+disconnected from external networks. Guard rejection occurs
 before mutation. Ephemeral runner disposal removes application state/user;
 finally stops our units and removes only unit files created by this invocation.
 """
@@ -116,8 +117,17 @@ FIXTURE_WRITER_DSN = (
     "password=ci-fixture-only connect_timeout=5 sslmode=disable"
 )
 
+FIXTURE_UNIX_ADMIN_DSN = (
+    "host=/run/ow-reference-postgres port=5432 dbname=ow_test user=postgres "
+    "password=ci-fixture-only connect_timeout=5 sslmode=disable"
+)
+FIXTURE_UNIX_DSN = (
+    "host=/run/ow-reference-postgres port=5432 dbname=ow_test user=ow_reference_collector "
+    "password=ci-fixture-only connect_timeout=5 sslmode=disable"
+)
 
-def prepare_database_fixture(venv):
+
+def prepare_database_fixture(venv, *, enabled_http_fixture=False):
     # Called only after every root/hosted-runner/PID1/owned-target preflight guard.
     require(venv == Path("/tmp/ow-reference-core"), "FIXTURE_VENV_REFUSED")
     require(
@@ -173,6 +183,24 @@ def prepare_database_fixture(venv):
             conn.execute("SELECT max(version) FROM ow.migrations").fetchone()[0] == 6,
             "FIXTURE_SCHEMA_VERSION_MISMATCH",
         )
+    if enabled_http_fixture:
+        with psycopg.connect(FIXTURE_UNIX_ADMIN_DSN) as conn:
+            require(
+                conn.execute("SELECT current_database(),current_user").fetchone()
+                == ("ow_test", "postgres"),
+                "FIXTURE_UNIX_IDENTITY_REFUSED",
+            )
+        try:
+            psycopg.connect(
+                FIXTURE_UNIX_ADMIN_DSN, password="wrong-public-fixture-password"
+            ).close()
+        except psycopg.OperationalError as exc:
+            require(
+                "password authentication failed" in str(exc).lower(),
+                "FIXTURE_UNIX_AUTH_FAILURE_MISMATCH",
+            )
+        else:
+            raise Rejected("FIXTURE_UNIX_AUTH_NOT_ENFORCED")
     Database(FIXTURE_COLLECTOR_DSN).validate_collector()
     for dsn in (FIXTURE_WRITER_DSN, FIXTURE_ADMIN_DSN):
         try:
@@ -297,6 +325,366 @@ def database_service_acceptance(account):
     }
 
 
+def enabled_http_service_acceptance(account):
+    import psycopg
+    from psycopg.rows import dict_row
+    from reference_network import FEED_V1, FEED_V2, ReferenceNetwork
+
+    from osint_workbench.evidence import EvidenceStore
+
+    source_id = "reference-enabled"
+    service_dir = UNIT_ROOT / f"{SERVICE}.d"
+    timer_dir = UNIT_ROOT / f"{TIMER}.d"
+    owned = []
+
+    def connect():
+        return psycopg.connect(FIXTURE_ADMIN_DSN, row_factory=dict_row)
+
+    def force_due():
+        with connect() as conn:
+            conn.execute(
+                "UPDATE ow.collection_state SET next_attempt=clock_timestamp()-interval '1 second' "
+                "WHERE source_id=%s",
+                (source_id,),
+            )
+
+    def observed(since, status, documents=None):
+        command(["journalctl", "--sync"])
+        logs = command(
+            ["journalctl", "--unit", SERVICE, f"--since=@{since}", "--output=json", "--no-pager"]
+        )
+        for line in logs.splitlines():
+            row = json.loads(line)
+            try:
+                value = json.loads(row.get("MESSAGE", ""))
+            except (ValueError, TypeError):
+                continue
+            if not isinstance(value, dict) or value.get("status") != status:
+                continue
+            items = value.get("results")
+            if not isinstance(items, list):
+                continue
+            if documents is None:
+                matched = items == []
+            else:
+                matched = len(items) == 1 and items[0].get("source_id") == source_id
+                matched = matched and (documents < 0 or items[0].get("documents") == documents)
+            if matched:
+                require(row.get("_UID") == str(account.pw_uid), "HTTP_JOURNAL_UID_MISMATCH")
+                return value
+        raise Rejected("HTTP_JOURNAL_RESULT_NOT_OBSERVED")
+
+    def state():
+        with connect() as conn:
+            policy = conn.execute(
+                "SELECT *,next_attempt>clock_timestamp() AS future "
+                "FROM ow.collection_state WHERE source_id=%s",
+                (source_id,),
+            ).fetchone()
+            runs = conn.execute(
+                "SELECT * FROM ow.collection_runs WHERE source_id=%s ORDER BY started_at,run_id",
+                (source_id,),
+            ).fetchall()
+            docs = conn.execute(
+                "SELECT * FROM ow.documents WHERE source_id=%s ORDER BY document_id", (source_id,)
+            ).fetchall()
+            heads = conn.execute(
+                "SELECT d.document_id,d.title,d.body FROM ow.document_heads h JOIN ow.documents d "
+                "USING(document_id) WHERE h.source_id=%s ORDER BY d.title",
+                (source_id,),
+            ).fetchall()
+            jobs = conn.execute("SELECT kind,status,payload,dedup_key FROM ow.jobs").fetchall()
+            snapshots = conn.execute(
+                "SELECT * FROM ow.snapshots WHERE source_id=%s", (source_id,)
+            ).fetchall()
+            source = conn.execute(
+                "SELECT enabled,last_error,last_success FROM ow.sources WHERE source_id=%s",
+                (source_id,),
+            ).fetchone()
+        return policy, runs, docs, heads, jobs, snapshots, source
+
+    def validate_evidence(current, expected_raws, expected_documents):
+        policy, runs, docs, heads, jobs, snapshots, source = current
+        require(
+            len(docs) == expected_documents and len(jobs) == expected_documents,
+            "HTTP_DOCUMENT_JOB_COUNT_MISMATCH",
+        )
+        require(len(heads) == 2 and source["enabled"], "HTTP_HEAD_OR_SOURCE_MISMATCH")
+        doc_ids = {row["document_id"] for row in docs}
+        doc_by_id = {row["document_id"]: row for row in docs}
+        require(
+            {row["payload"]["document_id"] for row in jobs} == doc_ids, "HTTP_JOB_DOCUMENT_MISMATCH"
+        )
+        require(
+            all(
+                row["kind"] == "document.accepted"
+                and row["status"] == "ready"
+                and row["dedup_key"] == row["payload"]["document_id"]
+                and row["payload"]["snapshot_id"]
+                == doc_by_id[row["payload"]["document_id"]]["snapshot_id"]
+                for row in jobs
+            ),
+            "HTTP_JOB_CONTRACT_MISMATCH",
+        )
+        store = EvidenceStore(STATE / "evidence", read_only=True)
+        snapshot_by_id = {row["snapshot_id"]: row for row in snapshots}
+        raw_values = set()
+        for row in docs:
+            snapshot = snapshot_by_id[row["snapshot_id"]]
+            raw_values.add(store.get(snapshot["raw_sha256"]))
+            require(
+                store.get(snapshot["text_sha256"]) == row["body"].encode(),
+                "HTTP_TEXT_EVIDENCE_MISMATCH",
+            )
+        require(raw_values == expected_raws, "HTTP_RAW_EVIDENCE_MISMATCH")
+        require(
+            all(
+                path.stat().st_uid == account.pw_uid
+                for path in (STATE / "evidence").rglob("*")
+                if path.is_file()
+            ),
+            "HTTP_EVIDENCE_UID_MISMATCH",
+        )
+
+    def entries():
+        return sorted(
+            str(path.relative_to(STATE / "evidence")) for path in (STATE / "evidence").rglob("*")
+        )
+
+    def stop_owned_units():
+        command(["systemctl", "stop", TIMER, SERVICE], allowed=(0, 5), timeout=30)
+        for name in (SERVICE, TIMER):
+            require(
+                command(["systemctl", "is-active", name], allowed=(0, 3, 4)).strip()
+                in ("inactive", "failed", "unknown"),
+                "HTTP_UNIT_STILL_ACTIVE",
+            )
+
+    with ReferenceNetwork(before_close=stop_owned_units) as network:
+        try:
+            for directory in (service_dir, timer_dir):
+                directory.mkdir(mode=0o755)
+                owned.append(directory)
+            override = service_dir / "enabled-http.conf"
+            owned.append(override)
+            write_private(
+                override,
+                "[Service]\nNetworkNamespacePath="
+                + str(network.namespace_path)
+                + "\nBindReadOnlyPaths="
+                + str(network.hosts_file)
+                + ":/etc/hosts\n",
+                mode=0o644,
+            )
+            timer_override = timer_dir / "accelerated-fixture.conf"
+            owned.append(timer_override)
+            write_private(
+                timer_override,
+                "[Timer]\nOnBootSec=\nOnUnitInactiveSec=\n"
+                "OnUnitInactiveSec=1s\nRandomizedDelaySec=0\nAccuracySec=100ms\n",
+                mode=0o644,
+            )
+            (CONFIG / "collector.env").write_text("OW_COLLECTOR_DSN=" + FIXTURE_UNIX_DSN + "\n")
+            (CONFIG / "sources.json").write_text(
+                json.dumps(
+                    {
+                        "sources": [
+                            {
+                                "source_id": source_id,
+                                "url": network.url,
+                                "enabled": True,
+                                "poll_seconds": 60,
+                            }
+                        ]
+                    }
+                )
+            )
+            command(["systemctl", "daemon-reload"])
+            network.set_phase("v1")
+            started = str(time.time())
+            command(["systemctl", "start", SERVICE], timeout=30)
+            first_result = observed(started, "complete", 2)
+            require(first_result["results"][0]["status"] == "success", "HTTP_FIRST_RESULT_FAILED")
+            first = state()
+            validate_evidence(first, {FEED_V1}, 2)
+            require(
+                len(first[1]) == 1
+                and first[1][0]["http_status"] == 200
+                and first[1][0]["status"] == "succeeded",
+                "HTTP_FIRST_RUN_MISMATCH",
+            )
+            require(
+                [(r["title"], r["body"]) for r in first[3]]
+                == [("One", "First evidence"), ("Two", "Second evidence")],
+                "HTTP_FIRST_CONTENT_MISMATCH",
+            )
+            require(
+                network.observations()
+                == [
+                    {"phase": "v1", "status": 200, "if_none_match": None, "if_modified_since": None}
+                ],
+                "HTTP_FIRST_REQUEST_MISMATCH",
+            )
+            original_entries = entries()
+            before_trigger = int(
+                command(
+                    ["systemctl", "show", TIMER, "--property=LastTriggerUSecMonotonic", "--value"]
+                ).strip()
+            )
+            force_due()
+            started = str(time.time())
+            command(["systemctl", "start", TIMER])
+            deadline = time.monotonic() + 20
+            while time.monotonic() < deadline:
+                current = state()
+                if len(current[1]) == 2 and current[1][-1]["status"] == "succeeded":
+                    break
+                time.sleep(0.2)
+            else:
+                raise Rejected("HTTP_TIMER_TICK_NOT_OBSERVED")
+            # Wait for the admitted oneshot to emit its result before stopping scheduling.
+            while time.monotonic() < deadline:
+                if (
+                    command(["systemctl", "is-active", SERVICE], allowed=(0, 3)).strip()
+                    == "inactive"
+                ):
+                    break
+                time.sleep(0.1)
+            else:
+                raise Rejected("HTTP_TIMER_SERVICE_DID_NOT_SETTLE")
+            command(["systemctl", "stop", TIMER, SERVICE])
+            triggered = int(
+                command(
+                    ["systemctl", "show", TIMER, "--property=LastTriggerUSecMonotonic", "--value"]
+                ).strip()
+            )
+            require(triggered > before_trigger, "HTTP_TIMER_LAST_TRIGGER_UNCHANGED")
+            timer_result = observed(started, "complete", 0)
+            require(
+                timer_result["results"][0]["status"] == "not_modified",
+                "HTTP_TIMER_304_RESULT_MISMATCH",
+            )
+            second = state()
+            validate_evidence(second, {FEED_V1}, 2)
+            require(
+                len(second[1]) == 2
+                and second[1][-1]["http_status"] == 304
+                and entries() == original_entries,
+                "HTTP_304_DUPLICATED_ARTIFACTS",
+            )
+            requests = network.observations()
+            require(
+                len(requests) == 2
+                and requests[-1]["status"] == 304
+                and requests[-1]["if_none_match"] == '"v1"',
+                "HTTP_CONDITIONAL_REQUEST_MISMATCH",
+            )
+            network.set_phase("fail")
+            force_due()
+            started = str(time.time())
+            command(["systemctl", "start", SERVICE], allowed=(1,), timeout=30)
+            failure_result = observed(started, "failed", -1)
+            require(
+                failure_result["results"][0]["error"] == "SOURCE_HTTP_ERROR",
+                "HTTP_FAILURE_CODE_MISMATCH",
+            )
+            failed = state()
+            validate_evidence(failed, {FEED_V1}, 2)
+            require(
+                len(failed[1]) == 3
+                and failed[1][-1]["status"] == "failed"
+                and failed[1][-1]["error_code"] == "SOURCE_HTTP_ERROR"
+                and failed[0]["failures"] == 1
+                and failed[0]["future"]
+                and failed[6]["last_error"] == "SOURCE_HTTP_ERROR",
+                "HTTP_FAILURE_BACKOFF_MISMATCH",
+            )
+            require(
+                all(
+                    failed[0][key] == second[0][key]
+                    for key in ("etag", "last_modified", "raw_sha256")
+                )
+                and entries() == original_entries,
+                "HTTP_FAILURE_ADVANCED_ARTIFACTS",
+            )
+            require(
+                len(network.observations()) == 3 and network.observations()[-1]["status"] == 503,
+                "HTTP_503_NOT_OBSERVED",
+            )
+            command(["systemctl", "reset-failed", SERVICE])
+            started = str(time.time())
+            command(["systemctl", "start", SERVICE], timeout=30)
+            observed(started, "complete")
+            require(
+                len(network.observations()) == 3 and len(state()[1]) == 3, "HTTP_NOT_DUE_DISPATCHED"
+            )
+            network.set_phase("v2")
+            force_due()
+            started = str(time.time())
+            command(["systemctl", "start", SERVICE], timeout=30)
+            changed_result = observed(started, "complete", 2)
+            require(
+                changed_result["results"][0]["status"] == "success", "HTTP_CHANGED_RESULT_FAILED"
+            )
+            changed = state()
+            validate_evidence(changed, {FEED_V1, FEED_V2}, 4)
+            require(
+                len(changed[1]) == 4
+                and changed[1][-1]["http_status"] == 200
+                and changed[0]["failures"] == 0
+                and changed[6]["last_error"] is None,
+                "HTTP_CHANGED_RUN_MISMATCH",
+            )
+            require(
+                [(r["title"], r["body"]) for r in changed[3]]
+                == [("One", "First evidence"), ("Two", "Changed evidence")],
+                "HTTP_CHANGED_HEAD_CONTENT_MISMATCH",
+            )
+            requests = network.observations()
+            require(
+                len(requests) == 4
+                and requests[-1]["phase"] == "v2"
+                and requests[-1]["status"] == 200
+                and requests[-1]["if_none_match"] is None
+                and requests[-1]["if_modified_since"] is None,
+                "HTTP_FAILURE_REPLAY_NOT_UNCONDITIONAL",
+            )
+            return {
+                "enabled_http_tick": True,
+                "conditional_304_no_duplicates": True,
+                "http_failure_backoff": True,
+                "not_due_no_http": True,
+                "changed_feed_immutable_versions": True,
+                "job_and_cas_evidence_verified": True,
+                "accelerated_timer_triggered": True,
+                "enabled_http_journal_service_uid": True,
+                "disconnected_namespace_fixture": True,
+                "unix_socket_scram_verified": True,
+            }
+        finally:
+            stop_owned_units()
+            for path in reversed(owned):
+                path.rmdir() if path.is_dir() else path.unlink(missing_ok=True)
+            command(["systemctl", "daemon-reload"])
+            command(["systemctl", "reset-failed", SERVICE], allowed=(0, 1, 5))
+            (CONFIG / "collector.env").write_text(
+                "OW_COLLECTOR_DSN=" + FIXTURE_COLLECTOR_DSN + "\n"
+            )
+            (CONFIG / "sources.json").write_text(
+                json.dumps(
+                    {
+                        "sources": [
+                            {
+                                "source_id": "reference-disabled",
+                                "url": "https://fixture.invalid/disabled",
+                                "enabled": False,
+                            }
+                        ]
+                    }
+                )
+            )
+
+
 PROBE = r"""
 import errno
 import json
@@ -349,7 +737,9 @@ else:
 """
 
 
-def acceptance(venv, units, installed_units, dropins, *, database_fixture=False):
+def acceptance(
+    venv, units, installed_units, dropins, *, database_fixture=False, enabled_http_fixture=False
+):
     command(
         [
             "useradd",
@@ -406,6 +796,7 @@ def acceptance(venv, units, installed_units, dropins, *, database_fixture=False)
             observed = True
     require(observed, "UNCONFIGURED_RESULT_NOT_OBSERVED")
     database_result = database_service_acceptance(account) if database_fixture else {}
+    http_result = enabled_http_service_acceptance(account) if enabled_http_fixture else {}
     probe_dir = APP / "writable-probe"
     probe_dir.mkdir(mode=0o700)
     os.chown(probe_dir, account.pw_uid, account.pw_gid)
@@ -455,9 +846,12 @@ def acceptance(venv, units, installed_units, dropins, *, database_fixture=False)
         "supervisor_timeout": True,
         "timeout_child_stopped": True,
         **database_result,
+        **http_result,
         "external_sources_tested": False,
         "synthetic_database_tested": database_fixture,
-        "timer_activation_tested": False,
+        "timer_activation_tested": enabled_http_fixture,
+        "production_timer_durations_tested": False,
+        "https_tls_tested": False,
     }
 
 
@@ -466,20 +860,28 @@ def main():
     parser.add_argument("--core-venv", type=Path, required=True)
     parser.add_argument("--units", type=Path, required=True)
     parser.add_argument("--database-fixture", action="store_true")
+    parser.add_argument("--enabled-http-fixture", action="store_true")
     args = parser.parse_args()
     installed_units, dropins = [], []
     outcome = None
     failure = None
     try:
         preflight(args.core_venv.resolve(), args.units.resolve())
+        require(
+            not args.enabled_http_fixture or args.database_fixture,
+            "HTTP_FIXTURE_REQUIRES_DATABASE_FIXTURE",
+        )
         if args.database_fixture:
-            prepare_database_fixture(args.core_venv.resolve())
+            prepare_database_fixture(
+                args.core_venv.resolve(), enabled_http_fixture=args.enabled_http_fixture
+            )
         outcome = acceptance(
             args.core_venv.resolve(),
             args.units.resolve(),
             installed_units,
             dropins,
             database_fixture=args.database_fixture,
+            enabled_http_fixture=args.enabled_http_fixture,
         )
     except Rejected as exc:
         failure = str(exc)

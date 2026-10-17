@@ -73,8 +73,11 @@ jobs:
           POSTGRES_USER: postgres
           # Public disposable-runner fixture only; never operational credentials.
           POSTGRES_PASSWORD: ci-fixture-only
+          POSTGRES_INITDB_ARGS: --auth-local=scram-sha-256 --auth-host=scram-sha-256
         ports:
           - 5432:5432
+        volumes:
+          - /run/ow-reference-postgres:/var/run/postgresql
         options: >-
           --health-cmd "pg_isready -U postgres -d ow_test"
           --health-interval 5s --health-timeout 3s --health-retries 12
@@ -91,6 +94,7 @@ jobs:
           uv export --locked --no-dev --no-emit-project --output-file /tmp/ow-reference-core-requirements.txt > /dev/null
           uv pip sync --python /tmp/ow-reference-core/bin/python --require-hashes /tmp/ow-reference-core-requirements.txt
           uv build
+          sha256sum uv.lock dist/*.whl
           uv pip install --python /tmp/ow-reference-core/bin/python --no-deps dist/*.whl
       - name: Accept the actual service and sandbox on this disposable runner
-        run: sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT /tmp/ow-reference-core/bin/python scripts/test_reference_deployment.py --core-venv /tmp/ow-reference-core --units config/systemd --database-fixture
+        run: sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT /tmp/ow-reference-core/bin/python scripts/test_reference_deployment.py --core-venv /tmp/ow-reference-core --units config/systemd --database-fixture --enabled-http-fixture
