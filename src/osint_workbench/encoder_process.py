@@ -4,7 +4,13 @@ import json
 import sys
 
 from .errors import WorkbenchError
-from .local_encoder import MAX_INPUT, MAX_RESULT, EncoderManifest, verified_file
+from .local_encoder import (
+    MAX_PACKET_BYTES,
+    MAX_RESULT,
+    EncoderManifest,
+    parse_packet,
+    verified_file,
+)
 from .text import digest
 
 
@@ -135,18 +141,12 @@ def main():
         resource.setrlimit(resource.RLIMIT_CPU, (40, 40))
         resource.setrlimit(resource.RLIMIT_AS, (4 * 1024 * 1024 * 1024,) * 2)
         resource.setrlimit(resource.RLIMIT_FSIZE, (MAX_RESULT,) * 2)
-        packet = json.loads(sys.stdin.buffer.read(2 * 1024 * 1024))
-        manifest = EncoderManifest.model_validate(packet["manifest"])
-        text, operation = packet["text"], packet["operation"]
-        if not isinstance(text, str) or not text.strip() or len(text) > MAX_INPUT:
-            raise WorkbenchError("INVALID_ENCODER_INPUT")
+        manifest, text, operation = parse_packet(sys.stdin.buffer.read(MAX_PACKET_BYTES + 1))
         runtime = Runtime(manifest)
         if operation == "chunks":
             results = runtime.chunks(text)
         elif operation in {"query", "document"}:
             results = [{"vector": runtime.vector(text, query=operation == "query")}]
-        else:
-            raise WorkbenchError("INVALID_ENCODER_INPUT")
         data = json.dumps(
             {"encoder_id": manifest.identity(), "results": results}, allow_nan=False
         ).encode()

@@ -81,9 +81,15 @@ def run_once(db: Database, store: EvidenceStore) -> dict:
         code = exc.code if isinstance(exc, WorkbenchError) else "INVALID_JOB_PAYLOAD"
         if code == "STALE_JOB_LEASE":
             return {"status": "superseded", "job_id": str(job["job_id"])}
-        # Integrity/provenance failures need operator review, not automatic retries.
+        # Temporary lifecycle admission contention retains bounded job retry.
+        # Integrity/provenance failures still require operator review.
         try:
-            jobs.fail(job["job_id"], job["fence"], code, retryable=False)
+            jobs.fail(
+                job["job_id"],
+                job["fence"],
+                code,
+                retryable=code in {"LIFECYCLE_BUSY", "EVIDENCE_STORE_BUSY"},
+            )
         except WorkbenchError as failure:
             if failure.code != "STALE_JOB_LEASE":
                 raise

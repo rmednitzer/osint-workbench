@@ -254,7 +254,7 @@ def test_native_http_uses_validated_numeric_pin_and_original_host(monkeypatch):
             # production backend must pass its validated numeric pin here, never
             # the original DNS label for another resolver lookup.
             targets.append((host, port))
-            assert host == "8.8.8.8" and port == 80
+            assert host == "93.184.216.34" and port == 80
             return original_connect(self, "127.0.0.1", listener.getsockname()[1], **kwargs)
 
         monkeypatch.setattr(acquisition, "_resolve_child", authored_resolver_child)
@@ -267,7 +267,7 @@ def test_native_http_uses_validated_numeric_pin_and_original_host(monkeypatch):
             thread.join(timeout=4)
             assert not thread.is_alive(), "synthetic DNS-pin peer failed to stop"
         assert not errors and result.status == 200 and result.body == b"fixture!"
-        assert targets == [("8.8.8.8", 80)]
+        assert targets == [("93.184.216.34", 80)]
         assert len(requests) == 1 and requests[0].startswith(b"GET /feed HTTP/1.1\r\n")
         assert b"\r\nHost: pin.fixture.invalid\r\n" in requests[0]
-        assert b"\r\nHost: 8.8.8.8\r\n" not in requests[0]
+        assert b"\r\nHost: 93.184.216.34\r\n" not in requests[0]

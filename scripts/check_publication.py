@@ -30,6 +30,7 @@ ALLOWED_FILES = {
     ".dockerignore",
     "pyproject.toml",
     "uv.lock",
+    "build-constraints.txt",
     "LICENSE",
     "README.md",
     "STATUS.md",
@@ -56,6 +57,7 @@ DOCUMENTATION_HOSTS = {
     "onnxruntime.ai",
     "huggingface.co",
     "apache.org",
+    "man7.org",
 }
 REGISTRY_HOSTS = {"pypi.org", "files.pythonhosted.org"}
 URLS = re.compile(r'https?://[^\s"\x27<>),]+')

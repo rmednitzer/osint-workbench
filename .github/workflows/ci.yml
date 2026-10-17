@@ -36,7 +36,7 @@ jobs:
       - run: uv run python scripts/check_publication.py
       - name: Build and identify artifacts
         run: |
-          uv build
+          uv build --build-constraints build-constraints.txt --require-hashes
           sha256sum uv.lock dist/*.whl dist/*.tar.gz
       - name: Prepare pinned native CPU test dependency
         run: |

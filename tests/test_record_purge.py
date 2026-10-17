@@ -673,7 +673,7 @@ def test_post_purge_checkpoint_restores_but_older_data_cannot_be_reintroduced(co
     result = apply(context, document)
     old_policy = policy_arguments(context["roles"], old_path)
     restored_root = context["tmp"] / "forbidden-old"
-    with pytest.raises(WorkbenchError):
+    with pytest.raises(WorkbenchError, match="^RECOVERY_PURGED_CONTENT_PRESENT$"):
         recovery.restore(
             Database(destination["admin"]),
             old_path,

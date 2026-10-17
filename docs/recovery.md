@@ -37,6 +37,14 @@ damaged object makes capture fail; no final file is published. Current runtime/c
 cleanup takes exclusive admission and rechecks every retained reference. Independent
 SQL/filesystem writers and old binaries remain outside this cooperative contract.
 
+Checkpoint holds shared store-inode admission while reading its objects. Restore
+holds it from the new root's first object write through metadata commit and
+connection close, including failed commit cleanup. GC takes exclusive admission
+before its final reference snapshot. The consistent order is database, then store;
+never reconnect or reacquire database admission while holding a store barrier.
+This local Linux cooperative protocol depends on the matching database/store pair
+and current binaries; see [ADR-0033](adr/0033-durable-store-admission.md).
+
 Limits are 100,000 rows across all application tables, 32 MiB row metadata, 64 MiB
 referenced object bytes and 128 MiB total file. This in-memory reference profile
 rejects larger datasets; it is not a streaming large-corpus backup. Output uses a

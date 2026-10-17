@@ -375,9 +375,7 @@ def test_policy_revision_is_bounded_before_allocating_history():
         "control": {"singleton": True, "dataset_id": str(uuid.uuid4()), "revision": 10**18},
         "tables": {n: [] for n in lifecycle.POLICY_TABLES},
     }
-    from pydantic import ValidationError
-
-    with pytest.raises(ValidationError):
+    with pytest.raises(WorkbenchError, match="^INVALID_LIFECYCLE_POLICY$"):
         lifecycle.validate_policy(policy)
     bad = copy.deepcopy(policy)
     bad["control"]["revision"] = 0

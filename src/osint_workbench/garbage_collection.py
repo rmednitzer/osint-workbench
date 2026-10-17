@@ -80,7 +80,7 @@ def _state(conn):
 
 
 def _open_root(store):
-    return os.open(store.root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    return os.dup(store.admitted_root())
 
 
 def _check_file(directory, obj):
@@ -101,7 +101,7 @@ def plan(db, store: EvidenceStore, path: Path, *, operation_id, minimum_age_seco
     IdentifierCheck.model_validate(
         {"operation_id": operation_id, "minimum_age_seconds": minimum_age_seconds}
     )
-    with db.connect(lifecycle_exclusive=True) as conn:
+    with store.transaction(db, lifecycle_exclusive=True, exclusive=True) as conn:
         dataset, revision, refs = _state(conn)
         root = _open_root(store)
         try:
@@ -219,7 +219,7 @@ def apply(db, store: EvidenceStore, path: Path, expected_sha: str, journal: Path
     ):
         raise WorkbenchError("GC_INVALID_PLAN")
     # A plan is data, never filesystem authority outside fixed digest/shard paths.
-    with db.connect(lifecycle_exclusive=True) as conn:
+    with store.transaction(db, lifecycle_exclusive=True, exclusive=True) as conn:
         dataset, revision, refs = _state(conn)
         if (dataset, revision, digest(_json(sorted(refs)))) != (
             value.dataset_id,

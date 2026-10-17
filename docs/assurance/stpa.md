@@ -449,3 +449,37 @@ Refusing an unsupported or held closure leaves records retained and suppressed;
 operators must see that incomplete disposition instead of assuming deletion.
 These controls contribute to E39/E48 without closing full retained-data erasure,
 backup expiry, remote-copy disposal or whole-host recovery.
+
+## Store admission after database-backend loss
+
+[ADR-0033](../adr/0033-durable-store-admission.md) refines CA17 orphan deletion
+and CA3/CA8 evidence publication/restore against H4 and SC4. The GC controller's
+process model can incorrectly retain "exclusive admission owned" after the SQL
+backend disappears. The controlled filesystem is still active, and a cooperative
+database writer can be admitted before GC observes that feedback loss. A prior
+SQL snapshot or heartbeat does not atomically authorize a later unlink.
+
+| UCA | Hazardous context / category | Derived constraint and allocation | Required discriminating evidence |
+| --- | --- | --- | --- |
+| U72 | CA17/P or T: unlink a formerly unreferenced object after backend loss admits a writer that reuses it | C72: retain independent exclusive store-root inode admission across final reference validation, unlink and directory fsync; producers retain shared admission through acceptance commit | Actual backend termination after validation, cross-process reuse attempt and evidence/reference postconditions |
+| U73 | CA3/CA8/P or T: release filesystem admission after put but before metadata commit, or accept a cached raw pointer without new put | C73: shared admission covers the complete ingest/collection/restore transaction lifetime, including 304 reuse and collector intermediate/final commits; standalone put is not a future acceptance token | Commit-boundary, cached-304, multi-commit and restore interleavings with real processes/SQL |
+| U74 | CA17/P or T: validate SQL references before waiting for filesystem exclusion, then use that stale snapshot after ownership loss | C74: database admission then filesystem admission then final state; reject failed validation before deletion; never reverse the lock order | Backend loss during admission wait and writer-before-validation cases; bounded refusal without unlink |
+| U75 | CA17/CA3/P: lock one inode but mutate a substituted root, or let nested/thread contexts release another operation's ownership | C75: anchored no-follow directory identity, explicit active ownership and deterministic descriptor lifetime; unsupported locking fails closed | Symlink/root-identity, independent instance/process, nesting, timeout and cleanup cases |
+| U76 | CA9/P: report advisory local filesystem admission as protection from old binaries, another database's references or arbitrary privileged writers | C76: one authoritative dataset/store pairing, local-Linux evidence scope, old-process quiescence and explicit nonparticipant exclusion; suspend GC when protocol compatibility is uncertain | Deployment/rollback review and stated filesystem/UID/process assumptions; no universal or cross-host guarantee |
+
+Causal sequence S-GC1: GC validates a candidate, its SQL backend terminates, a
+writer is admitted and commits reuse, then GC deletes the object using its old
+reference set (U72). S-GC2: a put-level lock is released before the surrounding
+connection context commits, leaving the same interval despite apparently locked
+publication (U73). S-GC3: GC waits for filesystem ownership after validating SQL;
+its backend dies and an intervening writer commits before GC acquires the lock
+(U74). Prevent these sequences by ordering and retaining both admissions, rather
+than treating a live caller or recent heartbeat as ownership evidence.
+
+Purge/deletion commands are discrete; the concerns above are provision and
+ordering, not a command "held too long." Delayed lock acquisition is instead an
+observable bounded maintenance/acceptance failure. Suspending GC safely retains
+orphan bytes while this integrity boundary is unverified. Actual native execution
+and revision-bound receipts are required before describing the counterexample as
+closed; storage media erasure, distributed-lock correctness and whole-host
+recovery remain outside this refinement.

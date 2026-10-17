@@ -23,6 +23,23 @@ and identity/hash checks do not make unlink atomic against such an actor.
 The operator must select the matching database/store pair. Dataset and inode
 binding detect substitution after planning, not an initially misconfigured pair.
 
+GC now also takes an exclusive `flock` on the opened store-root directory inode
+before its final reference capture. Current ingestion, collection (including 304
+reuse) and restore retain shared store admission through metadata commit and
+connection close. The fixed acquisition order is database admission, then store
+admission. A dead database backend cannot release the process's filesystem lock;
+a waiting writer proceeds only after GC releases it, recreating any needed bytes
+before accepting metadata. The filesystem wait is bounded to 5 s and reports
+`EVIDENCE_STORE_BUSY`. Nested operations reuse only the same instance/thread's
+anchored admission; another thread or process must acquire its own lock.
+
+This protocol requires all producers to run the new code and a single authoritative
+database/store pair on the supported local Linux filesystem. There is no unlocked
+fallback, independent remote-filesystem acceptance or protection from a privileged
+writer bypassing admission. Quiesce old processes before upgrade; downgrade while
+GC or new acceptance is active is unsupported. See
+[ADR-0033](adr/0033-durable-store-admission.md) for the failure model and rollback.
+
 ## Review and apply
 
 Set `OW_EVIDENCE_ROOT` externally. Keep plans and journal directories outside the

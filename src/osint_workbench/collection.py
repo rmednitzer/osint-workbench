@@ -3,6 +3,7 @@ import subprocess
 import sys
 import tempfile
 import uuid
+from contextlib import contextmanager
 from datetime import timedelta
 
 from pydantic import TypeAdapter
@@ -72,10 +73,31 @@ def feed_documents(raw: bytes, source_id: str) -> list[DocumentInput]:
         raise WorkbenchError("FEED_PARSE_FAILED") from None
 
 
+@contextmanager
+def _collection_connection(db, store=None):
+    """Normalize failures before run admission as well as inside acquisition."""
+    try:
+        admission = store.transaction(db) if store is not None else db.connect()
+        with admission as conn:
+            try:
+                yield conn
+            except WorkbenchError:
+                raise
+            except Exception:
+                # Closing rolls back the uncommitted setup without a second
+                # driver rollback warning containing a private connection identity.
+                conn.close()
+                raise WorkbenchError("COLLECT_BACKEND_FAILURE") from None
+    except WorkbenchError:
+        raise
+    except Exception:
+        raise WorkbenchError("COLLECT_BACKEND_FAILURE") from None
+
+
 def collect(source: Source, db: Database, store: EvidenceStore, *, due_only=False) -> dict:
     # Hold the session lock on the same connection that accepts records. If it
     # disconnects, acceptance fails rather than continuing after lock loss.
-    with db.connect() as conn:
+    with _collection_connection(db, store) as conn:
         locked = conn.execute(
             "SELECT pg_try_advisory_lock(hashtextextended(%s,418287406)) AS locked",
             (source.source_id,),
@@ -203,6 +225,7 @@ def collect(source: Source, db: Database, store: EvidenceStore, *, due_only=Fals
                         raw_sha,
                         text_sha,
                         "feedparser-html/2",
+                        store=store,
                         observed_current=True,
                     )
                 except WorkbenchError as exc:
@@ -299,7 +322,7 @@ def collect_due(sources, db, store, *, limit=32):
         raise WorkbenchError("INVALID_COLLECTION_LIMIT")
     if len({s.source_id for s in sources}) != len(sources):
         raise WorkbenchError("DUPLICATE_SOURCE_ID")
-    with db.connect() as conn:
+    with _collection_connection(db) as conn:
         rows = conn.execute(
             "SELECT source_id,resource_sha256,next_attempt,"
             "next_attempt<=clock_timestamp() AS due FROM ow.collection_state "

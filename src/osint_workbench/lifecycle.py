@@ -348,6 +348,13 @@ def inspect(db, document_id):
 
 
 def validate_policy(payload):
+    try:
+        return _parse_policy(payload)
+    except (ValueError, TypeError, KeyError, AttributeError, RecursionError):
+        raise WorkbenchError("INVALID_LIFECYCLE_POLICY") from None
+
+
+def _parse_policy(payload):
     if (
         not isinstance(payload, dict)
         or set(payload) != {"format", "kind", "control", "tables"}

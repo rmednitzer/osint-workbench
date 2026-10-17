@@ -23,6 +23,7 @@ import httpcore
 from .errors import SourceHTTPError, WorkbenchError
 
 MAX_BYTES = 10 * 1024 * 1024
+MAX_CONNECT_ATTEMPTS = 8
 MAX_DNS_ADDRESSES = 64
 MAX_DNS_PACKET = 4096
 MAX_DNS_ADDRESS = 64
@@ -111,7 +112,9 @@ def parse_retry_after(value: bytes, *, now: datetime | None = None):
 
 
 def validate_url(url: str) -> tuple[str, int]:
-    if not isinstance(url, str) or len(url) > 4096 or any(ord(c) < 33 for c in url):
+    if not isinstance(url, str) or len(url) > 4096 or any(ord(c) < 33 or ord(c) > 126 for c in url):
+        # Configuration must supply explicit ASCII IDNA/percent encoding. Do not
+        # silently change the configured resource identity or leak encode errors.
         raise WorkbenchError("INVALID_SOURCE_URL")
     try:
         part = urlsplit(url)
@@ -132,6 +135,7 @@ def validate_url(url: str) -> tuple[str, int]:
 
 
 def public_addresses(addresses: list[str]) -> list[str]:
+    addresses = _bounded_dns_addresses(addresses)
     if not addresses:
         raise WorkbenchError("DNS_EMPTY")
     result = []
@@ -151,8 +155,10 @@ def public_addresses(addresses: list[str]) -> list[str]:
             or value.is_link_local
         ):
             raise WorkbenchError("DESTINATION_BLOCKED")
-        result.append(str(value))
-    return sorted(set(result))
+        canonical = str(value)
+        if canonical not in result:
+            result.append(canonical)
+    return result
 
 
 def _bounded_dns_addresses(addresses):
@@ -301,16 +307,31 @@ class _PublicBackend(httpcore.SyncBackend):
     def connect_tcp(self, host, port, timeout=None, local_address=None, socket_options=None):
         if isinstance(host, bytes):
             host = host.decode("ascii")
-        addresses = resolve(host, port, self.deadline)
-        # Validate the entire answer set before connecting to any address.
-        stream = super().connect_tcp(
-            addresses[0],
-            port,
-            timeout=_remaining(self.deadline),
-            local_address=local_address,
-            socket_options=socket_options,
-        )
-        return _Stream(stream, self.deadline)
+        connect_deadline = self.deadline
+        if timeout is not None:
+            connect_deadline = min(connect_deadline, time.monotonic() + timeout)
+        # Validate every answer before selecting a bounded attempt set. Preserve
+        # resolver family/order preference; never discard a later private answer.
+        addresses = public_addresses(resolve(host, port, connect_deadline))
+        selected = addresses[:MAX_CONNECT_ATTEMPTS]
+        for index, address in enumerate(selected):
+            # One failed family/address cannot consume the next one's budget.
+            # The last attempt may use the remainder; TLS and response streaming
+            # still share the original absolute operation deadline.
+            allocation = _remaining(connect_deadline) / (len(selected) - index)
+            try:
+                stream = super().connect_tcp(
+                    address,
+                    port,
+                    timeout=allocation,
+                    local_address=local_address,
+                    socket_options=socket_options,
+                )
+            except (httpcore.ConnectError, httpcore.ConnectTimeout):
+                continue
+            return _Stream(stream, self.deadline)
+        _remaining(connect_deadline)
+        raise httpcore.ConnectError("PUBLIC_CONNECT_FAILED") from None
 
 
 @dataclass(frozen=True)

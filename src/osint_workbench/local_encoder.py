@@ -18,6 +18,7 @@ from .retrieval import EmbeddingSpace
 from .text import digest
 
 MAX_INPUT = 200000
+MAX_PACKET_BYTES = 2 * 1024 * 1024
 MAX_RESULT = 16 * 1024 * 1024
 
 
@@ -83,11 +84,7 @@ class LocalEncoder:
         self.manifest = manifest
 
     def invoke(self, text: str, *, operation: Literal["query", "document", "chunks"]):
-        if not isinstance(text, str) or not text.strip() or len(text) > MAX_INPUT:
-            raise WorkbenchError("INVALID_ENCODER_INPUT")
-        packet = json.dumps(
-            {"manifest": self.manifest.model_dump(), "text": text, "operation": operation}
-        ).encode()
+        packet = encode_packet(self.manifest, text, operation)
         # No credentials, DSNs, hub tokens or ambient proxy configuration enter the child.
         env = {
             "PYTHONIOENCODING": "utf-8",
@@ -127,6 +124,9 @@ class LocalEncoder:
                     "INVALID_EMBEDDING_NORM",
                     "TOKEN_OFFSETS_UNSUPPORTED",
                     "ENCODER_CHUNK_LIMIT",
+                    "INVALID_ENCODER_INPUT",
+                    "INVALID_ENCODER_PACKET",
+                    "ENCODER_PACKET_TOO_LARGE",
                 }:
                     code = "ENCODER_UNAVAILABLE"
                 raise WorkbenchError(code)
@@ -143,6 +143,71 @@ class LocalEncoder:
 
     def chunks(self, text):
         return self.invoke(text, operation="chunks")
+
+
+def _validate_input(text, operation):
+    if (
+        not isinstance(text, str)
+        or not text.strip()
+        or len(text) > MAX_INPUT
+        or operation not in ("query", "document", "chunks")
+    ):
+        raise WorkbenchError("INVALID_ENCODER_INPUT")
+
+
+def encode_packet(manifest, text, operation):
+    """Encode the shared UTF-8 byte contract before taking inference authority."""
+    _validate_input(text, operation)
+    try:
+        raw = json.dumps(
+            {"manifest": manifest.model_dump(), "text": text, "operation": operation},
+            ensure_ascii=False,
+            allow_nan=False,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    except (ValueError, TypeError, UnicodeError):
+        raise WorkbenchError("INVALID_ENCODER_PACKET") from None
+    if len(raw) > MAX_PACKET_BYTES:
+        raise WorkbenchError("ENCODER_PACKET_TOO_LARGE")
+    return raw
+
+
+def _packet_pairs(pairs):
+    values = {}
+    for key, value in pairs:
+        if key in values:
+            raise ValueError("duplicate packet key")
+        values[key] = value
+    return values
+
+
+def _packet_constant(value):
+    raise ValueError("nonfinite packet number")
+
+
+def parse_packet(raw):
+    """Validate a complete bounded packet before model files/runtime admission."""
+    if not isinstance(raw, bytes) or not raw:
+        raise WorkbenchError("INVALID_ENCODER_PACKET")
+    if len(raw) > MAX_PACKET_BYTES:
+        raise WorkbenchError("ENCODER_PACKET_TOO_LARGE")
+    try:
+        packet = json.loads(
+            raw.decode("utf-8"),
+            object_pairs_hook=_packet_pairs,
+            parse_constant=_packet_constant,
+        )
+        if not isinstance(packet, dict) or set(packet) != {"manifest", "text", "operation"}:
+            raise ValueError("invalid packet envelope")
+        # JSON escapes must not smuggle isolated surrogates into a UTF-8-only
+        # contract; this also checks manifest strings, rather than only text.
+        json.dumps(packet, ensure_ascii=False, allow_nan=False).encode("utf-8")
+        manifest = EncoderManifest.model_validate(packet["manifest"])
+    except (ValueError, TypeError, UnicodeError, RecursionError):
+        raise WorkbenchError("INVALID_ENCODER_PACKET") from None
+    text, operation = packet["text"], packet["operation"]
+    _validate_input(text, operation)
+    return manifest, text, operation
 
 
 def verified_file(path: str, sha: str, maximum: int, code: str) -> bytes:

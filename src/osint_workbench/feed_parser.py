@@ -4,6 +4,7 @@ import calendar
 import json
 import sys
 from datetime import UTC, datetime
+from io import BytesIO
 
 from .contracts import DocumentInput
 from .errors import WorkbenchError
@@ -16,9 +17,13 @@ MAX_RESULT = 16 * 1024 * 1024
 def parse(raw: bytes, source_id: str) -> list[DocumentInput]:
     import feedparser
 
+    if not isinstance(raw, bytes):
+        raise WorkbenchError("FEED_PARSE_FAILED")
     if len(raw) > MAX_FEED:
         raise WorkbenchError("SOURCE_TOO_LARGE")
-    parsed = feedparser.parse(raw)
+    # feedparser overloads strings/bytes as URLs or filenames. An in-memory
+    # stream makes fetched content data even when it resembles another resource.
+    parsed = feedparser.parse(BytesIO(raw))
     if not parsed.version or parsed.bozo:
         raise WorkbenchError("FEED_PARSE_FAILED")
     if len(parsed.entries) > 10000:

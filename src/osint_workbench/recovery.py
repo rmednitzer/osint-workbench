@@ -6,6 +6,7 @@ import os
 import re
 import stat
 import uuid
+from contextlib import closing
 from importlib.resources import files
 from pathlib import Path
 
@@ -151,6 +152,13 @@ def _references(tables):
 
 
 def _provenance(tables, objects):
+    try:
+        _check_provenance(tables, objects)
+    except (ValueError, TypeError, KeyError, AttributeError, IndexError, RecursionError):
+        raise WorkbenchError("INVALID_RECOVERY_BUNDLE") from None
+
+
+def _check_provenance(tables, objects):
     snapshots = {r["snapshot_id"]: r for r in tables["snapshots"]}
     documents = {r["document_id"]: r["body"] for r in tables["documents"]}
     for row in tables["documents"]:
@@ -201,10 +209,10 @@ def _write_new(path, data):
 
 def checkpoint(db: Database, store: EvidenceStore, path: Path):
     tables, rows, size = {}, 0, 0
-    with db.connect() as conn:
+    with store.transaction(db) as conn:
         conn.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
         conn.execute("SELECT pg_advisory_xact_lock(418287405)")
-        history = _history(conn)  # Establishes the single MVCC checkpoint.
+        history = _history(conn)  # Validate the already-established MVCC snapshot.
         _full_visibility(conn)
         database = _database_identity(conn, history)
         captured = conn.execute("SELECT transaction_timestamp()::text AS t").fetchone()["t"]
@@ -331,7 +339,7 @@ def restore(
     tables = lifecycle.reconcile_policy(tables, policy, minimum_revision)
     lifecycle.assert_no_purged_documents(tables, policy)
     _provenance(tables, objects)
-    with db.connect() as conn:
+    with closing(db.connect()) as conn:
         conn.execute("SELECT pg_advisory_xact_lock(418287405)")
         history = _history(conn)
         _full_visibility(conn)
@@ -399,58 +407,59 @@ def restore(
         finally:
             os.close(parent)
         store, total = EvidenceStore(root), 0
-        for sha, encoded in objects.items():
-            data = base64.b64decode(encoded, validate=True)
-            total += len(data)
-            if total > MAX_OBJECT_BYTES:
-                raise WorkbenchError("RECOVERY_LIMIT_EXCEEDED")
-            if digest(data) != sha or store.put(data) != sha:
-                raise WorkbenchError("RECOVERY_OBJECT_INTEGRITY_MISMATCH")
-        for name in names:
-            if name == "lifecycle_control":
-                control = tables[name][0]
+        with store.acceptance(conn):
+            for sha, encoded in objects.items():
+                data = base64.b64decode(encoded, validate=True)
+                total += len(data)
+                if total > MAX_OBJECT_BYTES:
+                    raise WorkbenchError("RECOVERY_LIMIT_EXCEEDED")
+                if digest(data) != sha or store.put(data) != sha:
+                    raise WorkbenchError("RECOVERY_OBJECT_INTEGRITY_MISMATCH")
+            for name in names:
+                if name == "lifecycle_control":
+                    control = tables[name][0]
+                    conn.execute(
+                        "UPDATE ow.lifecycle_control SET dataset_id=%s,revision=%s",
+                        (control["dataset_id"], control["revision"]),
+                    )
+                    continue
+                columns = sql.SQL(",").join(map(sql.Identifier, _columns(conn, name)))
+                query = sql.SQL(
+                    "INSERT INTO ow.{} ({}) OVERRIDING SYSTEM VALUE "
+                    "SELECT {} FROM jsonb_populate_record(NULL::ow.{},%s)"
+                ).format(sql.Identifier(name), columns, columns, sql.Identifier(name))
+                for row in tables[name]:
+                    conn.execute(query, (Jsonb(row),))
+            # Do not revive work or external effects from a historical checkpoint.
+            quarantined = conn.execute("""UPDATE ow.jobs SET status='failed',fence=NULL,
+                lease_until=NULL,last_error='RECOVERY_RECONCILIATION_REQUIRED',
+                updated_at=clock_timestamp() WHERE status IN ('ready','running') RETURNING job_id,
+                attempt""").fetchall()
+            for name, column in SEQUENCES.items():
                 conn.execute(
-                    "UPDATE ow.lifecycle_control SET dataset_id=%s,revision=%s",
-                    (control["dataset_id"], control["revision"]),
+                    sql.SQL(
+                        "SELECT setval(pg_get_serial_sequence(%s,%s),"
+                        "coalesce(max({}),1),max({}) IS NOT NULL) FROM ow.{}"
+                    ).format(sql.Identifier(column), sql.Identifier(column), sql.Identifier(name)),
+                    ("ow." + name, column),
                 )
-                continue
-            columns = sql.SQL(",").join(map(sql.Identifier, _columns(conn, name)))
-            query = sql.SQL(
-                "INSERT INTO ow.{} ({}) OVERRIDING SYSTEM VALUE "
-                "SELECT {} FROM jsonb_populate_record(NULL::ow.{},%s)"
-            ).format(sql.Identifier(name), columns, columns, sql.Identifier(name))
-            for row in tables[name]:
-                conn.execute(query, (Jsonb(row),))
-        # Do not revive work or external effects from a historical checkpoint.
-        quarantined = conn.execute("""UPDATE ow.jobs SET status='failed',fence=NULL,
-            lease_until=NULL,last_error='RECOVERY_RECONCILIATION_REQUIRED',
-            updated_at=clock_timestamp() WHERE status IN ('ready','running') RETURNING job_id,
-            attempt""").fetchall()
-        for name, column in SEQUENCES.items():
+            for row in quarantined:
+                conn.execute(
+                    "INSERT INTO ow.job_events(job_id,attempt,event,code) "
+                    "VALUES (%s,%s,'failed','RECOVERY_RECONCILIATION_REQUIRED')",
+                    (row["job_id"], row["attempt"]),
+                )
+            conn.execute("UPDATE ow.sources SET enabled=false")
             conn.execute(
-                sql.SQL(
-                    "SELECT setval(pg_get_serial_sequence(%s,%s),"
-                    "coalesce(max({}),1),max({}) IS NOT NULL) FROM ow.{}"
-                ).format(sql.Identifier(column), sql.Identifier(column), sql.Identifier(name)),
-                ("ow." + name, column),
+                "UPDATE ow.collection_state SET etag=NULL,last_modified=NULL,"
+                "raw_sha256=NULL,failures=0,next_attempt=clock_timestamp()"
             )
-        for row in quarantined:
-            conn.execute(
-                "INSERT INTO ow.job_events(job_id,attempt,event,code) "
-                "VALUES (%s,%s,'failed','RECOVERY_RECONCILIATION_REQUIRED')",
-                (row["job_id"], row["attempt"]),
-            )
-        conn.execute("UPDATE ow.sources SET enabled=false")
-        conn.execute(
-            "UPDATE ow.collection_state SET etag=NULL,last_modified=NULL,"
-            "raw_sha256=NULL,failures=0,next_attempt=clock_timestamp()"
-        )
-        conn.execute("""UPDATE ow.collection_runs SET status='interrupted',
-            error_code='RECOVERY_RECONCILIATION_REQUIRED',finished_at=clock_timestamp()
-            WHERE status='running'""")
-        if "retrieval/1" in history:
-            conn.execute("""UPDATE ow.retrieval_generations SET status='failed',
-                error_code='RECOVERY_RECONCILIATION_REQUIRED' WHERE status='building'""")
+            conn.execute("""UPDATE ow.collection_runs SET status='interrupted',
+                error_code='RECOVERY_RECONCILIATION_REQUIRED',finished_at=clock_timestamp()
+                WHERE status='running'""")
+            if "retrieval/1" in history:
+                conn.execute("""UPDATE ow.retrieval_generations SET status='failed',
+                    error_code='RECOVERY_RECONCILIATION_REQUIRED' WHERE status='building'""")
     return {
         "sha256": expected_sha,
         "rows": count,

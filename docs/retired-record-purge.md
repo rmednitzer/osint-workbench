@@ -68,6 +68,13 @@ A replay reports the recorded decision; it is not a new deletion. Keep the priva
 plan and independently export/custody the latest lifecycle policy and its digest.
 Never infer completion from missing rows or a pre-commit external completion file.
 
+Replay still requires the current supported authority, schema, policy and bounded
+inventory, including absence of reintroduced purged content. Unrelated growth
+beyond this profile or changed admission can prevent the replay command from
+reaching the stored event. Preserve the uncertain outcome and reconcile the
+durable event with trusted maintenance authority; do not bypass those checks or
+infer rollback. A separate bounded historical-receipt query remains future work.
+
 ## Deletion closure and retained data
 
 The command removes target heads/documents/chunks, associated enrichments,

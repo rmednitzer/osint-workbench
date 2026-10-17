@@ -278,18 +278,19 @@ class Database:
     ) -> str:
         # Objects are durable before accepted metadata. DB failure may leave an
         # orphan; it must not create accepted records pointing at missing bytes.
-        with self.connect() as conn:
+        with store.transaction(self) as conn:
             from .lifecycle import assert_key_visible
 
             assert_key_visible(
                 conn, doc.source_id, hashlib.sha256(doc.external_id.encode()).hexdigest()
             )
             raw_sha, text_sha = store.put(raw), store.put(doc.text.encode())
-            return self.ingest_stored(conn, doc, raw_sha, text_sha, extractor)
+            return self.ingest_stored(conn, doc, raw_sha, text_sha, extractor, store=store)
 
     @staticmethod
-    def ingest_stored(conn, doc, raw_sha, text_sha, extractor, *, observed_current=False):
+    def ingest_stored(conn, doc, raw_sha, text_sha, extractor, *, store, observed_current=False):
         """Internal transaction boundary; caller has durably verified both objects."""
+        store.require_transaction(conn)
         snapshot = hashlib.sha256(
             json.dumps([doc.source_id, raw_sha, text_sha, extractor]).encode()
         ).hexdigest()

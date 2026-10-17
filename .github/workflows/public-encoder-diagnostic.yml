@@ -28,7 +28,7 @@ jobs:
       - name: Install the built wheel with locked CPU dependencies
         run: |
           uv sync --locked --extra retrieval --no-dev --python 3.12
-          uv build
+          uv build --build-constraints build-constraints.txt --require-hashes
           sha256sum uv.lock dist/*.whl
           uv pip install --python .venv/bin/python --no-deps --reinstall dist/*.whl
           .venv/bin/python -c 'import osint_workbench; assert "site-packages" in osint_workbench.__file__'
@@ -93,7 +93,7 @@ jobs:
           uv venv /tmp/ow-reference-core --python /usr/bin/python3
           uv export --locked --no-dev --no-emit-project --output-file /tmp/ow-reference-core-requirements.txt > /dev/null
           uv pip sync --python /tmp/ow-reference-core/bin/python --require-hashes /tmp/ow-reference-core-requirements.txt
-          uv build
+          uv build --build-constraints build-constraints.txt --require-hashes
           sha256sum uv.lock dist/*.whl
           uv pip install --python /tmp/ow-reference-core/bin/python --no-deps dist/*.whl
       - name: Accept the actual service and sandbox on this disposable runner

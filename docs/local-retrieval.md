@@ -41,7 +41,7 @@ osint-workbench index activate --manifest /private/encoder.json --generation GEN
 Set private `OW_ENCODER_MANIFEST` for CLI/MCP hybrid search. If it is absent, the core
 search remains lexical. If supplied but broken or mismatched, the call fails visibly;
 there is no silent fallback. A query does not build an index or call a remote provider.
-MCP still exposes five read tools; operator indexing, switching and cancellation are
+MCP exposes seven read tools; operator indexing, switching and cancellation are
 not agent tools. Hybrid search accepts offsets 0–200 over two bounded candidate pools
 of at most 100 documents each. Scores are reciprocal-rank fusion values, not confidence.
 
@@ -57,6 +57,11 @@ wall deadline. Expired children are killed/reaped. Files are bounded to 512 MiB 
 and 16 MiB tokenizer. Unsupported shapes, zero/nonfinite vectors and oversize query
 inputs fail. Tokenizer truncation is disabled; chunk fitting rechecks the templated
 input budget and stores exact original Unicode offsets and slice hashes.
+
+Parent and child share a 2 MiB complete UTF-8 JSON packet limit. The parent checks
+serialized bytes before admission; the child reads one extra byte to detect an
+oversized valid prefix and rejects malformed, duplicate-key or truncated packets
+before model session creation. Character, token and result bounds remain separate.
 
 Index builds are explicit operator operations, bounded to 1000 current documents,
 2 million code points in aggregate, 200000 per document, 512 chunks per document
@@ -92,9 +97,10 @@ and admission release. `tests/test_vector_index.py` uses native pgvector and a r
 MCP client to test build/switch/rollback, corpus drift, failed-build isolation and
 reader permissions. CI installs the built wheel with hash-locked dependencies and
 a digest-pinned disposable PostgreSQL/pgvector service. This is not a pretrained
-English/German relevance evaluation or GPU test. Reranking, model calibration,
-held-out quality, ANN scaling, automatic backfill/caches and text generation remain
-open in the full roadmap.
+English/German relevance evaluation or GPU test. Bounded synthetic reranking and
+native text generation also ship; see local-intelligence.md. Pretrained model
+adoption/calibration, held-out quality, ANN scaling and automatic backfill/caches
+remain open in the full roadmap.
 
 API references: [ONNX Runtime](https://onnxruntime.ai/docs/api/python/api_summary.html),
 [Tokenizers](https://huggingface.co/docs/tokenizers/python/latest/api/reference.html),
