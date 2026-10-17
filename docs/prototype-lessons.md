@@ -34,6 +34,36 @@ These are transfer lessons and bounded review findings. They are not a claim tha
 the public baseline contains the same defects, nor an instruction to modify the
 operational prototype as part of this repository change.
 
+### Additional graph and postcondition review
+
+- PL07: a reviewed evidence locator uses a case-folded string's character offset
+  directly against the original string. A pure-function synthetic probe with
+  `Straße Alpha` and quote `alpha` returned `[8, 13]`, whose original slice is
+  `lpha`. Its caller persists the slice at the returned coordinates. This is a
+  reproduced coordinate defect; it does not establish which operational claims
+  were affected. Preserve original-text coordinates or an explicit normalization
+  map. The public implementation must retain its stronger span contract.
+- PL08: the reviewed graph worker checks document currentness before computation
+  and marks completion by queue identity without an attempt token. This is a
+  conditional ownership/late-acceptance concern, not a claim that all prototype
+  recovery paths were reviewed or an operational race was observed. Preserve the
+  public worker's fencing and revalidate input version, lifecycle and policy in
+  the acceptance transaction.
+- PL09: the reviewed embedding repair selects and locks documents, computes
+  embeddings and then commits vectors in one transaction. This protects input
+  consistency but holds locks across expensive computation. Compare it with
+  bounded selection, out-of-transaction inference and conditional acceptance of
+  unchanged input identity; measure contention before claiming a performance
+  defect. The final choice must preserve late-result and retirement protections.
+
+A useful counterexample to purely model-judged output is the reviewed correlation
+postcondition: it requires exact equality with a deterministic rendering of
+captured source rows. Preserve that integrity pattern, while evaluating whether
+the correlation itself is meaningful separately. Several extraction paths also
+use explicit document prefixes; record bounded coverage and omitted sections
+rather than interpreting process completion as full-document analysis. These
+additional reads/probes involved no live model or data mutation.
+
 ## Useful behavior to generalize
 
 | Area | Reviewed prototype mechanism | Public implementation decision and proof needed |

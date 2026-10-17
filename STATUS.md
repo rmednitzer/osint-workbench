@@ -27,10 +27,11 @@ The core worker processes `document.accepted`; the explicit enrichment worker cl
 only its configured generator identity. Other job kinds remain queued.
 Character chunks preserve offsets but are not token-aware model input.
 
-The installed-wheel suite has 630 passing tests with no skips,
+The latest installed-wheel suite has 645 passing tests with no skips,
 including retained-state migration, direct SQL/MCP suppression, native retrieval,
 concurrency and policy-gated isolated recovery. See
-[the revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
+[the latest coalescing receipt](docs/testing/query-coalescing.json) and
+[the earlier revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
 models establish execution contracts, not pretrained semantic quality.
 
 The full programme covers 28 capability areas, 34 ADRs, 58 requirements and 51
@@ -139,3 +140,10 @@ contention retry also passed. Isolated workflow builds enforce a frozen hashed
 backend closure; runtime dependencies and published SQL migrations are unchanged.
 See [scope, acceptance and open audit dispositions](docs/testing/audit-remediation.md).
 These checks do not close the wider semantic, cloud, deployment or erasure roadmap.
+
+Bounded instance-scoped in-flight query sharing preserves one verified native
+embedding computation for identical overlapping query packets. Distinct contracts,
+waiters, failures and fork ownership are explicit; completed results are not cached.
+All 15 additional regressions and the retained native suite passed in the named
+645-test receipt. This does not close persistent caches, incremental backfill,
+fair cross-process inference scheduling or pretrained semantic-quality acceptance.

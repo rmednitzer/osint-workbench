@@ -15,6 +15,9 @@ proof of implemented or tested behaviour. Keep the full roadmap intact.
   and native disposable dependencies; do not substitute mocks or source assertions.
 - Run lint, relevant tests and publication checks before proposing/pushing changes.
   Report skipped/unavailable integration, hardware and live-provider evidence honestly.
+- Keep installed-artifact verification environments dedicated to that run. Concurrent
+  reviewers must use an existing interpreter directly; `uv run`, synchronization or
+  package installation can replace a shared environment during another test run.
 - Never change or remove a published migration silently. Add a versioned migration
   with recovery and compatibility evidence.
 - Keep core, ML and cloud authority separate. Optional profiles may be disabled at

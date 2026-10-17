@@ -1,7 +1,9 @@
 # ADR-0034: Share only in-flight identical embedding queries
 
-Status: implementation candidate; native installed-wheel verification required
-before promotion. Date: 2026-10-17.
+Status: ACCEPTED and implemented. Date: 2026-10-17.
+Native evidence: source `79a167b90bdf53a4df291ab21adf8fe6e01a50b5`,
+[run 39065399248](https://github.com/rmednitzer/osint-workbench/actions/runs/39065399248),
+[645-test receipt](../testing/query-coalescing.json).
 
 ## Context and alternatives
 
@@ -22,13 +24,13 @@ controls here. Preserve the optimization without importing that wider lifecycle.
 `LocalEncoder.query` snapshots and validates the complete manifest, validates the
 query packet before admission, and keys sharing by the SHA-256 of the exact UTF-8
 packet. This includes model/tokenizer expected hashes and paths, templates,
-dimensions, numerical contract and runtime settings. Path changes deliberately
+dimensions, numerical contract and manifest runtime settings. Path changes deliberately
 do not share, even though the durable encoder identity is path-independent.
 Documents/chunks and direct `invoke` calls do not join query flights.
 
 Each encoder instance owns its flights. Do not reuse an instance across unrelated
 security scopes; there is no process-global registry or cross-process sharing.
-Forked instances explicitly refuse before touching inherited synchronization;
+Inherited query flights explicitly refuse before touching inherited synchronization;
 construct a fresh instance in the child. Configuration/model replacement must
 use normal operator coordination. Sharing is not an artifact-rotation protocol.
 
