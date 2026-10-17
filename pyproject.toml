@@ -7,7 +7,7 @@ name = "osint-workbench"
 version = "0.1.0.dev1"
 description = "A self-hosted integration workbench for collecting, preserving and searching open-source information."
 readme = "README.md"
-requires-python = ">=3.12,<3.14"
+requires-python = ">=3.12,<3.15"
 license = "Apache-2.0"
 dependencies = [
   "psycopg[binary]>=3.3.6,<4",

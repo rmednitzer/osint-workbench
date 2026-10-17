@@ -13,22 +13,26 @@ on:
           - both
 permissions:
   contents: read
+concurrency:
+  group: public-diagnostic-${{ github.ref }}-${{ inputs.profile }}
+  cancel-in-progress: false
 jobs:
   public-diagnostic:
     if: ${{ inputs.profile == 'public-encoder' || inputs.profile == 'both' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
-          version: "0.12.23"
+          version: "0.13.1"
+          prune-cache: true
       - name: Install the built wheel with locked CPU dependencies
         run: |
           uv sync --locked --extra retrieval --no-dev --python 3.12
-          uv build --build-constraints build-constraints.txt --require-hashes
+          uv build --python .venv/bin/python --build-constraints build-constraints.txt --require-hashes
           sha256sum uv.lock dist/*.whl
           uv pip install --python .venv/bin/python --no-deps --reinstall dist/*.whl
           .venv/bin/python -c 'import osint_workbench; assert "site-packages" in osint_workbench.__file__'
@@ -55,7 +59,7 @@ jobs:
           PY
       - name: Retain only the public synthetic diagnostic, never model weights
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: public-encoder-diagnostic-${{ github.sha }}
           path: outputs/public-diagnostic/
@@ -63,7 +67,18 @@ jobs:
           retention-days: 14
   reference-service:
     if: ${{ inputs.profile == 'reference-service' || inputs.profile == 'both' }}
-    runs-on: ubuntu-24.04
+    name: Reference service / Ubuntu ${{ matrix.ubuntu }} / system Python ${{ matrix.python }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            ubuntu: "24.04"
+            python: "3.12"
+          - runner: ubuntu-26.04
+            ubuntu: "26.04"
+            python: "3.14"
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 8
     services:
       postgres:
@@ -82,18 +97,27 @@ jobs:
           --health-cmd "pg_isready -U postgres -d ow_test"
           --health-interval 5s --health-timeout 3s --health-retries 12
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
-          version: "0.12.23"
+          version: "0.13.1"
+          prune-cache: true
+      - name: Assert the selected OS and protected distro Python
+        env:
+          EXPECTED_UBUNTU: ${{ matrix.ubuntu }}
+          EXPECTED_PYTHON: ${{ matrix.python }}
+        run: |
+          . /etc/os-release
+          test "$ID" = ubuntu && test "$VERSION_ID" = "$EXPECTED_UBUNTU"
+          /usr/bin/python3 -c 'import os,platform,sys; assert platform.python_implementation() == "CPython"; assert f"{sys.version_info.major}.{sys.version_info.minor}" == os.environ["EXPECTED_PYTHON"]; print(sys.version)'
       - name: Prepare an installed core wheel using the protected system Python
         run: |
           uv venv /tmp/ow-reference-core --python /usr/bin/python3
           uv export --locked --no-dev --no-emit-project --output-file /tmp/ow-reference-core-requirements.txt > /dev/null
           uv pip sync --python /tmp/ow-reference-core/bin/python --require-hashes /tmp/ow-reference-core-requirements.txt
-          uv build --build-constraints build-constraints.txt --require-hashes
+          uv build --python /usr/bin/python3 --build-constraints build-constraints.txt --require-hashes
           sha256sum uv.lock dist/*.whl
           uv pip install --python /tmp/ow-reference-core/bin/python --no-deps dist/*.whl
       - name: Accept the actual service and sandbox on this disposable runner

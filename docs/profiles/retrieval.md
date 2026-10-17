@@ -14,7 +14,7 @@ Use a registry-driven local encoder contract with embedding_documents and embedd
 
 ## Index and search
 
-Use PostgreSQL FTS/exact identifier matching and pgvector exact search as the initial correctness oracle. Add HNSW/other ANN indexes only after filtering, recall and update behaviour is benchmarked against exact search. pgvector documents post-index filtering effects [S7]; authorisation/source/workspace filtering and query plan choice must not silently drop all relevant candidates. Isolate incompatible spaces and prevent cross-workspace leakage before fusion/rerank/graph expansion.
+Use PostgreSQL FTS/exact identifier matching and pgvector exact search as the initial correctness oracle. Add HNSW/other ANN indexes only after filtering, recall and update behaviour is benchmarked against exact search. pgvector documents post-index filtering effects [S7](../references.md#s7); authorisation/source/workspace filtering and query plan choice must not silently drop all relevant candidates. Isolate incompatible spaces and prevent cross-workspace leakage before fusion/rerank/graph expansion.
 
 One application query API supports lexical, vector and hybrid strategies. Apply deterministic reciprocal-rank fusion with documented rank convention and tie-breakers; do not compare raw scores from unrelated models. Optional multi-encoder fusion is supported by configuration and evaluated against one-encoder/no-change alternatives. Return strategy, contributing ranks, generation, snapshot IDs and degradation reasons. Graph expansion returns separately attributed context; it cannot change an unsupported graph edge into evidence.
 

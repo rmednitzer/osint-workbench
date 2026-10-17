@@ -1,0 +1,53 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":pinDigests"],
+  "timezone": "Europe/Vienna",
+  "schedule": ["before 6am on monday"],
+  "enabledManagers": ["pep621", "github-actions", "dockerfile"],
+  "dependencyDashboard": true,
+  "dependencyDashboardTitle": "Dependency maintenance",
+  "prConcurrentLimit": 3,
+  "prHourlyLimit": 1,
+  "rebaseWhen": "behind-base-branch",
+  "automerge": false,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on monday"]
+  },
+  "packageRules": [
+    {
+      "description": "Runtime support is an explicit compatibility decision, not a dependency upgrade.",
+      "matchManagers": ["pep621"],
+      "matchDepTypes": ["requires-python"],
+      "enabled": false
+    },
+    {
+      "description": "Update Hatchling and the complete hashed build closure together using the maintenance procedure.",
+      "matchManagers": ["pep621"],
+      "matchDepTypes": ["build-system.requires"],
+      "enabled": false
+    },
+    {
+      "description": "Keep the tested runner explicit; upgrades require native-runtime review.",
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["ubuntu"],
+      "enabled": false
+    },
+    {
+      "matchManagers": ["pep621"],
+      "matchDepTypes": ["project.dependencies", "project.optional-dependencies", "dependency-groups"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Python dependencies (non-major)",
+      "minimumReleaseAge": "3 days"
+    },
+    {
+      "matchManagers": ["github-actions", "dockerfile"],
+      "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
+      "groupName": "CI actions and images (non-major)"
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
+    }
+  ]
+}

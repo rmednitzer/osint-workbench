@@ -124,7 +124,9 @@ Core migration v3 adds these tables and grants without editing published v1/v2 S
 Reader credentials cannot write proposals/reviews/products or read private review
 rationale. Preserve tables and history on rollback; disable optional manifests and
 workers to return to core reads. Do not downgrade schemas destructively. Complete
-backup/restore, lifecycle deletion/holds, autonomous quality gates, GPU resource
+operational backup/restore and all-copy erasure remain open beyond the implemented
+[bounded recovery](recovery.md), [lifecycle/holds](lifecycle.md) and separate
+[SQL purge](retired-record-purge.md). Autonomous quality gates, full GPU resource
 ownership and remote/cloud support remain unimplemented roadmap work.
 
 Native API reference: [llama.cpp server](https://github.com/ggml-org/llama.cpp/blob/f2f667b02dc76d675395ae3b14546c8108d26387/tools/server/README.md).

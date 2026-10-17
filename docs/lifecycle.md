@@ -2,8 +2,10 @@
 
 This reference increment controls visibility and future processing. It does not
 erase database rows, vectors, evidence objects, checkpoints, model memory or copies
-already returned to a client. Full retained-record purge, backup expiry and erasure validation remain
-unimplemented. Reviewed orphan-object cleanup preserves every retained reference;
+already returned to a client. A separate [transactional SQL purge](retired-record-purge.md)
+now removes eligible retired records under its own authority and acceptance
+contract. Backup expiry and all-copy erasure remain unimplemented.
+Reviewed orphan-object cleanup preserves every retained reference;
 see [its separate contract](garbage-collection.md). No legal compliance or
 global-erasure claim follows from these controls.
 
@@ -25,7 +27,7 @@ A preservation hold protects records without extending serving authorization.
 Multiple holds can coexist and each has a unique, non-reusable ID. Explicit
 retirement is refused while any hold is active. Releasing a hold never makes
 expired content visible. All held records and their evidence references remain retained. Orphan cleanup
-preserves those references; future record-graph purge must enforce holds before
+preserves those references; the separate SQL purge enforces holds before
 removing any record or derivative.
 
 Retirement appends a permanent tombstone for the logical identity, cancels its
@@ -115,7 +117,10 @@ envelope, just like checkpoint receipts. A raw-file checksum is a separate value
 
 ## Recovery policy and compatibility
 
-Core schema v5 and retrieval-profile v2 are additive migrations; published earlier
+The current compatibility pair is core schema v7 and retrieval-profile v3, with
+checkpoint format 2. Core v5 introduced collection scheduling; subsequent v6/v7
+and profile-v3 migrations add scoped collector/purge authority. These are additive;
+published earlier
 migration bytes remain unchanged. Provision the lifecycle login separately and
 run `migrate-retrieval` when that optional profile is installed. Core-only migration
 does not claim an old optional profile is upgraded. An unsafe reader configuration
@@ -144,10 +149,12 @@ lifecycle policy of an existing dataset. Automated legacy adoption/reconciliatio
 is not implemented. If current format-2 recovery is unavailable, preserve the
 legacy pair and resolve dataset/policy lineage explicitly before serving it.
 
-Known core-v4 format-2 checkpoints may adopt core v5 with an empty collection
-schedule and unknown historical HTTP status, retaining their existing dataset UUID
-and mandatory current-policy reconciliation.
+Supported core-v4/v5/v6 format-2 history adoption is explicitly validated by the
+current recovery command. Historical missing scheduling state adopts empty values
+and unknown HTTP status where permitted. The dataset UUID and mandatory current
+policy reconciliation remain required. See the exact schema/profile and purge
+history conditions in [recovery](recovery.md) and [SQL purge](retired-record-purge.md).
 
-See [the recovery procedure](recovery.md) and ADR-0021. Full retained-record purge,
-backup expiry, restored deletion of bytes, remote copies, context/cache profiles not yet implemented and
+See [the recovery procedure](recovery.md) and ADR-0021. Beyond the bounded SQL purge,
+backup expiry, restored deletion of bytes, remote copies, future context/cache profiles and
 complete E39/E45/E48 acceptance remain outstanding.

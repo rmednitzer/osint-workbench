@@ -13,7 +13,9 @@ service accounts, source catalogs or credentials are supplied.
 Install a reviewed wheel and locked dependencies under
 `/opt/osint-workbench/venv`; root owns this installation and the service cannot
 modify it. Retain the wheel, dependency lock, receipt and migration hashes used.
-The CLI requires Python 3.12 or 3.13. This profile uses only core dependencies:
+The CLI supports CPython 3.12–3.14. Use the system Python in a dedicated venv
+on Ubuntu 24.04 (3.12) or 26.04 (3.14), with the
+[runtime verification limits](runtime-support.md). This profile uses only core dependencies:
 no model, GPU, cloud provider or runtime download is needed. Installing packages
 still requires a separately controlled dependency supply chain.
 

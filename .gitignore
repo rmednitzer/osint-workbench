@@ -21,3 +21,6 @@ models/
 *.owcp
 *.owpolicy
 *.owgc
+*.owpurge
+CLAUDE.local.md
+.claude/settings.local.json

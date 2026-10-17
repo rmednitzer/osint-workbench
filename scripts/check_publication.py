@@ -39,6 +39,7 @@ ALLOWED_FILES = {
     "CLAUDE.md",
     "SECURITY.md",
     "CONTRIBUTING.md",
+    "renovate.json",
 }
 DOCUMENTATION_HOSTS = {
     "github.com",
@@ -58,6 +59,10 @@ DOCUMENTATION_HOSTS = {
     "huggingface.co",
     "apache.org",
     "man7.org",
+    "docs.github.com",
+    "docs.renovatebot.com",
+    "code.claude.com",
+    "developers.openai.com",
 }
 REGISTRY_HOSTS = {"pypi.org", "files.pythonhosted.org"}
 URLS = re.compile(r'https?://[^\s"\x27<>),]+')
@@ -76,7 +81,15 @@ def inspect_text(name: str, content: str, private_values=()) -> list[str]:
         findings.append("private-identifier")
     if any(pattern.search(content) for pattern in SECRETS):
         findings.append("credential-pattern")
-    if re.search(r"\b[\w.-]+\.(?:internal|lan|local)\b", content):
+    domain_text = "\n".join(
+        line
+        for line in content.splitlines()
+        if not (
+            name == ".gitignore"
+            and line in {"CLAUDE." + "local.md", ".claude/settings." + "local.json"}
+        )
+    )
+    if re.search(r"\b[\w.-]+\.(?:internal|lan|local)\b", domain_text):
         findings.append("internal-domain")
     for email in EMAILS.findall(content):
         if not email.endswith((".invalid", "@noreply.github.com")) and not (
@@ -92,6 +105,10 @@ def inspect_text(name: str, content: str, private_values=()) -> list[str]:
             continue
         allowed = (
             (
+                name == "renovate.json"
+                and url == "https:" + "//docs.renovatebot.com/renovate-schema.json"
+            )
+            or (
                 name == "scripts/prepare_encoder.py"
                 and host == "huggingface.co"
                 and parts.path == "/"

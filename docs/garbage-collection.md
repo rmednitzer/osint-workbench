@@ -99,5 +99,6 @@ already irreversible and do not affect retained database evidence.
 
 Never remove journals merely because an invocation failed. A completion receipt
 is historical evidence of the checked operation, not a continuous absence monitor.
-Full record purge, backup expiry, staging-file recovery, distributed coordination,
+The separate [SQL purge](retired-record-purge.md) removes eligible retired records;
+it does not extend GC authority. All-copy erasure, backup expiry, staging-file recovery, distributed coordination,
 physical storage sanitization and automatic scheduling remain outstanding.

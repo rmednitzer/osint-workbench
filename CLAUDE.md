@@ -1,5 +1,8 @@
-# Repository guidance
+@AGENTS.md
 
-Follow [AGENTS.md](AGENTS.md), [STATUS.md](STATUS.md) and the versioned security,
-requirements and architecture documents. They are the shared guidance for all
-coding assistants; no separate contradictory coding policy is maintained here.
+# Claude Code entry point
+
+The import loads the shared repository instructions. Keep engineering policy in
+AGENTS.md; do not maintain a second contradictory copy here. Use CONTRIBUTING.md
+for verification and STATUS.md for implementation claims. Do not add local
+credentials, MCP connections, hooks or permissive tool settings as setup shortcuts.

@@ -2,7 +2,7 @@
 
 # Complete requirements and traceability register
 
-Revision 2. R01-R58 are proposed mandatory requirements for their enabled supported profiles. Core-only installation is supported, but all planned profile implementations must be accounted for before full programme completion. No requirement is proved by this table. Except for the isolated prototype reproduction, application tests are NOT RUN.
+Revision 2. R01-R58 are proposed mandatory requirements for their enabled supported profiles. Core-only installation is supported, but all planned profile implementations must be accounted for before full programme completion. No requirement is proved by this table. Implemented subsets have revision-bound evidence in [STATUS](../../STATUS.md) and the named receipts; full target acceptance remains open. Scenario-level NOT RUN markers describe incomplete full scenarios, not an absence of application testing.
 
 Need/source: user request for the complete generalized setup, critical redesign rather than prototype copying, secure coding, STPA/ADRs, full integration testing and no private-data/source-URL disclosure. Owner: maintainer accepts scope/targets, implementer supplies evidence. SC identifiers are derived constraints in STPA, not external legal mandates. Verification environments and oracles are in the E01-E51 matrix; E01-E18 supersede earlier E01-E18 descriptions as amended for full profiles.
 

@@ -4,7 +4,7 @@
 
 ## Purpose, boundary and method
 
-Analyze loss of privacy, evidence integrity, service utility and operator trust during extraction, operation and publication. This is a proposed system-level analysis for an information-processing reference implementation, not a physical safety certification or a quantitative risk assessment. Method reference: Leveson and Thomas, STPA Handbook, March 2018, chapters 2-3 [S1]. Complement it with STRIDE threats at trust boundaries rather than treating STPA as a substitute for code security review.
+Analyze loss of privacy, evidence integrity, service utility and operator trust during extraction, operation and publication. This is a proposed system-level analysis for an information-processing reference implementation, not a physical safety certification or a quantitative risk assessment. Method reference: Leveson and Thomas, STPA Handbook, March 2018, chapters 2-3 [S1](../references.md#s1). Complement it with STRIDE threats at trust boundaries rather than treating STPA as a substitute for code security review.
 
 Inside the boundary: maintainer/release decisions, extraction and build process, collector, storage/index, application read services, MCP adapter and operator feedback. Outside: source publishers, package registries, hosting provider and the selected AI client/model. Their effects still enter the analysis as external inputs and disclosure recipients.
 

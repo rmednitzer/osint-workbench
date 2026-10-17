@@ -19,3 +19,4 @@ Block before push on findings. After disclosure, rotate secrets first and assess
 
 ## Verification
 R16, R18; E16, E18. All acceptance evidence remains NOT RUN until implementation. Revisit this ADR if these assumptions fail or scope changes.
+> Planning-baseline note (2026-10-17): NOT RUN statements in this ADR describe the original planning state. Current bounded implementation evidence is indexed by [STATUS](../../STATUS.md); it does not close the full programme.

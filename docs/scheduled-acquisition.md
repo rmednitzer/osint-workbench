@@ -1,7 +1,8 @@
 # Scheduled RSS/Atom acquisition
 
-Core schema v5 adds a private durable schedule; retrieval-profile v2 is unchanged.
-Run the explicit migration before using this version. No sources, URLs, network
+Core schema v5 introduced the private durable schedule. The current supported
+layout is core v7 and, when enabled, retrieval-profile v3. Run the explicit
+migrations before using the current code. No sources, URLs, network
 calls, host timers or model downloads are supplied or enabled by package import.
 
 Provide one canonical private source configuration outside Git. Removing an entry
@@ -126,7 +127,7 @@ Core-v3/format-1 adoption remains unavailable.
 
 Remaining acquisition work includes redirect-response retry advice, shared-host rate limits,
 jitter, durable cursors, conditional article fetches and additional formats. Real
-DNS/TLS adversarial cases, production timer cadence and larger-corpus operation
+public-DNS/public-PKI interoperability, production timer cadence and larger-corpus operation
 need separate evidence. Synthetic installed-service/timer results are recorded
 separately in the collector deployment receipt. See ADR-0023 and the implementation backlog.
 

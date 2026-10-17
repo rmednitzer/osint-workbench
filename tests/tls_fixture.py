@@ -58,6 +58,14 @@ def generate_certificates(directory):
         "ca.pem",
         "-subj",
         "/CN=Synthetic TLS Fixture CA",
+        "-addext",
+        "basicConstraints=critical,CA:true,pathlen:0",
+        "-addext",
+        "keyUsage=critical,keyCertSign,cRLSign",
+        "-addext",
+        "subjectKeyIdentifier=hash",
+        "-addext",
+        "authorityKeyIdentifier=keyid:always",
     )
     (directory / "index.txt").write_text("")
     (directory / "serial").write_text("01\n")
@@ -100,6 +108,8 @@ commonName=supplied
 basicConstraints=critical,CA:false
 keyUsage=critical,digitalSignature,keyEncipherment
 extendedKeyUsage=serverAuth
+subjectKeyIdentifier=hash
+authorityKeyIdentifier=keyid:always
 subjectAltName=DNS:{name}
 """
         (directory / f"{kind}.cnf").write_text(config)

@@ -44,3 +44,4 @@ post-unlink fsync failure, killed-process resume, row-security refusal, inventor
 bounds and the real CLI. Revision-bound receipts identify which tests have passed;
 this decision itself is not test evidence. Full record erasure, backup expiry and
 operational recovery/custody remain separate unfinished workstreams.
+> Implementation follow-up (2026-10-17): [ADR-0032](0032-transactional-retired-record-purge.md) adds separate retired-record SQL purge. GC still preserves retained references; neither operation proves all-copy erasure.

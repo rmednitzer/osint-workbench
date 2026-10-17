@@ -19,3 +19,4 @@ Keep lexical operation while restoring previous model/index generation. Change m
 
 ## Verification
 R10,R28-R31,R40-R42; E04,E21-E24,E34-E36. Local CPU execution, token spans, exact pgvector/RRF and explicit generation changes are implemented; see docs/local-retrieval.md and tests/test_encoder.py / tests/test_vector_index.py. ANN, reranking, caches, automatic backfill and pretrained quality acceptance remain pending.
+> Implementation follow-up (2026-10-17): bounded local pair reranking now ships under [ADR-0019](0019-proposals-and-local-generation.md), and in-flight query sharing under [ADR-0034](0034-bounded-query-coalescing.md). The original full-profile decision remains proposed; ANN, persistent caches/backfill and pretrained quality acceptance remain open.

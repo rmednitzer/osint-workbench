@@ -36,10 +36,12 @@ Resource limits are not a filesystem/network sandbox. Linux is the supported tes
 platform. Parser results cross a strict typed JSON boundary. Normalized data remains
 untrusted. A parser failure does not overwrite last success or erase partial evidence.
 
-Migration v1 is immutable. The migration runner verifies every applied digest, refuses
-unknown/gapped histories, applies v2 additively under one transaction/advisory lock,
-and leaves existing data in place. Roll forward after application; do not run an older
-worker against the newer schema or silently delete workflow history. Before a deployment,
-back up database and objects together and validate restore in isolation. Complete backup,
-restore, retention and operator recovery tooling remain unimplemented; this increment
-establishes workflow crash/replay behavior, not a complete disaster-recovery claim.
+Published migrations are immutable. The runner verifies applied digests, refuses
+unknown/gapped histories and applies additive versions under its transaction and
+advisory lock. The current supported pair is core v7/retrieval v3. Roll forward;
+do not run an older worker against newer state or silently delete workflow history.
+Before deployment, preserve the database/object pair and verify isolated restore.
+Bounded [recovery](recovery.md), [lifecycle](lifecycle.md), [GC](garbage-collection.md)
+and [SQL purge](retired-record-purge.md) are implemented with separate contracts.
+Full-host/PITR recovery, all-copy erasure and complete operational acceptance remain
+open; workflow crash/replay tests alone do not establish disaster recovery.

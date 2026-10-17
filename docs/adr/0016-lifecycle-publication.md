@@ -23,3 +23,4 @@ retention/hold/tombstone and restore-policy subset. ADR-0022 adds reviewed orpha
 cleanup. Full retained-record purge, backup expiry and outbound publication remain
 proposed; its revision-bound evidence does not close this ADR's
 whole target scope.
+> Implementation follow-up (2026-10-17): [ADR-0032](0032-transactional-retired-record-purge.md) implements bounded retired-record SQL purge, while [recovery](../recovery.md) and [lifecycle](../lifecycle.md) have bounded implementations. Full erasure, public export/publishing and operational recovery remain open.

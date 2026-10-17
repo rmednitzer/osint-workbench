@@ -1,12 +1,51 @@
 name: Verify foundation
 on:
   push:
+    branches: [main]
   pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: foundation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
-  installed-artifact:
+  repository-policy:
     runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: python3 scripts/check_repository.py
+  renovate-policy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate with an immutable unprivileged offline tool
+        run: |
+          docker build --tag ow-renovate-validator --file .github/renovate.Dockerfile .github
+          docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges --user "$(id -u):$(id -g)" --tmpfs /tmp:rw,nosuid,nodev,noexec,size=64m,mode=1777 --env RENOVATE_CACHE_DIR=/tmp/renovate-cache --volume "$PWD/renovate.json:/app/renovate.json:ro" --workdir /app --entrypoint renovate-config-validator ow-renovate-validator --strict --no-global /app/renovate.json
+  installed-artifact-matrix:
+    name: Ubuntu ${{ matrix.ubuntu }} / Python ${{ matrix.python }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            ubuntu: "24.04"
+            python: "3.12"
+          - runner: ubuntu-24.04
+            ubuntu: "24.04"
+            python: "3.13"
+          - runner: ubuntu-26.04
+            ubuntu: "26.04"
+            python: "3.14"
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
     services:
       postgres:
         image: pgvector/pgvector:pg18@sha256:2358fcba361ed2233a5ed81b5fe4ca779ccb304120ce531a3bf51c0ed7e2bc11
@@ -21,31 +60,40 @@ jobs:
           --health-cmd "pg_isready -U postgres -d ow_test"
           --health-interval 5s --health-timeout 3s --health-retries 12
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
-          version: "0.12.23"
-      - run: uv sync --locked --extra retrieval --python 3.12
-      - run: uv run ruff check . && uv run ruff format --check .
+          version: "0.13.1"
+          prune-cache: true
+      - run: uv sync --locked --extra retrieval --python "${{ matrix.python }}"
+      - name: Assert the selected OS and Python runtime
+        env:
+          EXPECTED_UBUNTU: ${{ matrix.ubuntu }}
+          EXPECTED_PYTHON: ${{ matrix.python }}
+        run: |
+          . /etc/os-release
+          test "$ID" = ubuntu && test "$VERSION_ID" = "$EXPECTED_UBUNTU"
+          .venv/bin/python -c 'import os,platform,sys; assert platform.python_implementation() == "CPython"; assert f"{sys.version_info.major}.{sys.version_info.minor}" == os.environ["EXPECTED_PYTHON"]; print(sys.version)'
+      - run: .venv/bin/ruff check . && .venv/bin/ruff format --check .
       - name: Identify native TLS prerequisites
         run: |
           openssl version
-          uv run python -c 'import ssl; print("PYTHON_TLS=" + ssl.OPENSSL_VERSION)'
-      - run: uv run python scripts/check_publication.py
+          .venv/bin/python -c 'import ssl; print("PYTHON_TLS=" + ssl.OPENSSL_VERSION)'
+      - run: .venv/bin/python scripts/check_publication.py
       - name: Build and identify artifacts
         run: |
-          uv build --build-constraints build-constraints.txt --require-hashes
+          uv build --python "${{ matrix.python }}" --build-constraints build-constraints.txt --require-hashes
           sha256sum uv.lock dist/*.whl dist/*.tar.gz
       - name: Prepare pinned native CPU test dependency
         run: |
-          uv run python scripts/prepare_native.py --output /tmp/ow-native-source
-          uv run cmake -S /tmp/ow-native-source/llama.cpp-f2f667b02dc76d675395ae3b14546c8108d26387 -B /tmp/ow-native-build -DGGML_NATIVE=OFF -DGGML_OPENMP=OFF -DLLAMA_CURL=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_OPENSSL=OFF -DLLAMA_BUILD_UI=OFF -DLLAMA_USE_PREBUILT_UI=OFF -DGGML_CCACHE=OFF -DCMAKE_BUILD_TYPE=Release
-          uv run cmake --build /tmp/ow-native-build --target llama-server -j 2
+          .venv/bin/python scripts/prepare_native.py --output /tmp/ow-native-source
+          .venv/bin/cmake -S /tmp/ow-native-source/llama.cpp-f2f667b02dc76d675395ae3b14546c8108d26387 -B /tmp/ow-native-build -DGGML_NATIVE=OFF -DGGML_OPENMP=OFF -DLLAMA_CURL=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_OPENSSL=OFF -DLLAMA_BUILD_UI=OFF -DLLAMA_USE_PREBUILT_UI=OFF -DGGML_CCACHE=OFF -DCMAKE_BUILD_TYPE=Release
+          .venv/bin/cmake --build /tmp/ow-native-build --target llama-server -j 2
       - name: Verify the core without optional inference dependencies
         run: |
-          uv venv /tmp/ow-core --python 3.12
+          uv venv /tmp/ow-core --python "${{ matrix.python }}"
           uv export --locked --no-dev --no-emit-project --output-file /tmp/ow-core-requirements.txt > /dev/null
           uv pip sync --python /tmp/ow-core/bin/python --require-hashes /tmp/ow-core-requirements.txt
           uv pip install --python /tmp/ow-core/bin/python --no-deps dist/*.whl
@@ -58,11 +106,22 @@ jobs:
           OW_TEST_RETRIEVAL: "1"
           OW_TEST_ADMIN_DSN: postgresql://postgres:ci-fixture-only@127.0.0.1:5432/ow_test
         run: |
-          uv venv /tmp/ow-installed --python 3.12
+          uv venv /tmp/ow-installed --python "${{ matrix.python }}"
           uv export --locked --extra retrieval --no-emit-project --output-file /tmp/ow-test-requirements.txt > /dev/null
           uv pip sync --python /tmp/ow-installed/bin/python --require-hashes /tmp/ow-test-requirements.txt
           uv pip install --python /tmp/ow-installed/bin/python --no-deps dist/*.whl
           /tmp/ow-installed/bin/python -c 'import osint_workbench; assert "site-packages" in osint_workbench.__file__'
           /tmp/ow-installed/bin/python -m pytest --require-integration --import-mode=importlib
       - name: Verify packaged file selection
-        run: uv run python scripts/check_publication.py --artifacts dist
+        run: .venv/bin/python scripts/check_publication.py --artifacts dist
+  # Keep the required check stable while requiring every matrix leg to succeed.
+  installed-artifact:
+    if: ${{ always() }}
+    needs: installed-artifact-matrix
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Require every installed artifact test job
+        env:
+          MATRIX_RESULT: ${{ needs.installed-artifact-matrix.result }}
+        run: test "$MATRIX_RESULT" = success

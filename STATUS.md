@@ -27,14 +27,14 @@ The core worker processes `document.accepted`; the explicit enrichment worker cl
 only its configured generator identity. Other job kinds remain queued.
 Character chunks preserve offsets but are not token-aware model input.
 
-The latest installed-wheel suite has 645 passing tests with no skips,
+The query-coalescing installed-wheel receipt records 645 passing tests with no skips,
 including retained-state migration, direct SQL/MCP suppression, native retrieval,
 concurrency and policy-gated isolated recovery. See
-[the latest coalescing receipt](docs/testing/query-coalescing.json) and
+[the coalescing receipt](docs/testing/query-coalescing.json) and
 [the earlier revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
 models establish execution contracts, not pretrained semantic quality.
 
-The full programme covers 28 capability areas, 34 ADRs, 58 requirements and 51
+The full programme covers 28 capability areas, 35 ADRs, 58 requirements and 51
 acceptance scenarios. The tests in this repository currently establish only a
 foundation subset. Detailed future specifications are under `docs/`; they are not
 execution receipts. CI results are authoritative for a particular tested revision.
@@ -147,3 +147,22 @@ waiters, failures and fork ownership are explicit; completed results are not cac
 All 15 additional regressions and the retained native suite passed in the named
 645-test receipt. This does not close persistent caches, incremental backfill,
 fair cross-process inference scheduling or pretrained semantic-quality acceptance.
+
+Repository maintenance adds canonical AGENTS guidance with native Claude/Copilot
+entry points, offline Markdown/link/action checks, strict Renovate validation,
+bounded CI and weekly/manual locked-runtime advisory auditing. The
+[maintenance policy](docs/repository-maintenance.md) and
+[dated settings receipt](docs/testing/repository-settings.json) distinguish selected
+configuration from observed API state. The added tooling does not establish all
+secure-development, licence, SBOM, provenance or full release gates. Exact current
+source/test results remain bound to their CI revision rather than a global count.
+
+Runtime compatibility now declares standard CPython 3.12–3.14, with required
+installed/native CI profiles for Ubuntu 24.04/3.12, 24.04/3.13 and 26.04/3.14.
+Timestamp admission explicitly bounds clock and offset components; synthetic TLS
+fixtures retain strict verification with conforming CA extensions. These controls
+and the separate two-LTS service diagnostic are defined in
+[runtime support](docs/runtime-support.md) and
+[ADR-0035](docs/adr/0035-python-ubuntu-runtime-support.md). Passing results remain
+revision-bound; these additions do not relabel earlier receipts or establish
+operational deployment, GPU or pretrained quality acceptance.

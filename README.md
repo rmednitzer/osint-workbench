@@ -9,7 +9,7 @@ graph assertions, vulnerability/regulatory intelligence and optional governed cl
 APIs. Their implementation and verification status is tracked in
 [STATUS.md](STATUS.md). Installing a small core does not satisfy the full roadmap.
 
-## Implemented in this increment
+## Implemented foundation
 
 - Python package and CLI with explicit configuration and no bundled source list.
 - PostgreSQL migration, reader/writer role groups, immutable document versions,
@@ -32,13 +32,17 @@ or operational data are required by the current code or tests.
 
 ## Development
 
-Python 3.12 is the primary tested runtime. PostgreSQL integration targets version 18.
+CPython 3.12–3.14 is supported. Required CI covers Ubuntu 24.04/Python 3.12 and
+3.13, plus Ubuntu 26.04/Python 3.14; PostgreSQL integration targets version 18.
+See [runtime support](docs/runtime-support.md) for deployment and evidence limits.
 
 ```sh
 uv sync --locked --extra retrieval
 uv run ruff check .
+uv run ruff format --check .
+uv run python scripts/check_repository.py
 uv run pytest -m 'not integration'
-uv build
+uv build --build-constraints build-constraints.txt --require-hashes
 ```
 
 The mandatory database/MCP suite uses an isolated database named `ow_test`:
@@ -53,6 +57,9 @@ create and drop their own randomly named `ow_test_restore_` databases using the
 disposable administrator; that identity requires database creation privileges.
 Never point this suite at operational storage. CI installs the built wheel and
 tests it against a disposable PostgreSQL service rather than importing a checkout.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the complete installed-artifact and
+native dependency procedure. Do not resynchronize an environment during its
+installed-wheel test run.
 
 ## Operator interfaces
 
@@ -101,7 +108,9 @@ See [private recovery](docs/recovery.md) for bounded consistent checkpoints and
 isolated restore. Checkpoints contain private records and are not public exports.
 See [lifecycle controls](docs/lifecycle.md) for operator-only retention, holds and
 permanent logical retirement. Restore requires a separately trusted current policy
-receipt; physical erasure/GC remains pending.
+receipt. Reviewed orphan GC and transactional retired-record SQL purge are
+implemented; [SQL purge](docs/retired-record-purge.md) has separate credentials and
+irreversible effects. Shared copies, backup expiry and all-copy erasure remain open.
 
 ## Engineering and attribution
 
