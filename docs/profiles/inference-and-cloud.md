@@ -1,6 +1,10 @@
+> Target specification. See STATUS.md for implemented and verified scope.
+
 # Local inference, cloud APIs and governance
 
-Scope: C12-C17 and C21. Cloud integration code is included; external activation is optional and denied by default. No paid call was performed for planning.
+Scope: C12-C17 and C21. Cloud integration remains in the implementation scope;
+adapters are not implemented yet. External activation will be optional and denied
+by default. No paid call was performed for planning.
 
 ## Provider-independent task contract
 

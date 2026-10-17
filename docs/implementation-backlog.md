@@ -1,0 +1,58 @@
+# Remaining implementation and acceptance work
+
+The goal remains a self-hostable, source-configurable workbench that can acquire,
+preserve, enrich and retrieve evidence, produce qualified cited intelligence and
+expose it through scoped MCP reads. Local inference must be useful and measured;
+cloud support must be optional, policy-controlled and accountable. A new install
+must reproduce the documented supported profile without private prototype files.
+This is integration engineering, not a claim of original model research.
+
+This ledger records unfinished work after the bounded private recovery increment.
+STATUS.md describes current code; the named CI receipt establishes tested scope.
+The 51 full acceptance scenarios remain the release programme. More regression
+tests do not automatically close a complete scenario or make the project ready
+for operational use. The prototype is a source of feature intent, never a
+correctness oracle or a source of public fixtures/configuration.
+
+## Delivery order and closure evidence
+
+| Workstream | Concrete outstanding implementation | Evidence required to close the workstream |
+| --- | --- | --- |
+| Recovery and lifecycle | Retention classes/holds, deletion events and tombstone propagation through documents, graph, jobs, vectors, context and products; reachability-based GC; larger-corpus/deployment recovery and external policy reconciliation | E13/E39/E45/E48: real deletion/hold cases, restored tombstones applied before serving, failure/restart and accepted-write recovery boundary; no held/referenced object removed |
+| Acquisition and parsing | Scheduled acquisition/prerequisites, cursors, conditional requests, bounded rate/backoff; article/XML/ZIP/PDF and generic specialist adapters; explicit partial/schema-drift outcomes; broader adversarial HTTP/DNS/redirect coverage | E05/E09/E10/E12/E19/E20/E40: synthetic hostile inputs through the installed actual transport/parser path, bounded resources and preserved raw versions; no operational endpoint catalogue |
+| Retrieval at scale | Resumable backfill, incremental scheduling, cache identities/invalidation, scoped filtering and optional ANN with an exact oracle; index readiness/rollback across upgrades | E21–E24/E39/E45: restart during backfill, compatible atomic activation, filtered candidate isolation, measured exact-vs-ANN recall and frozen relevance cases |
+| Useful local models and resource operations | Select licensed pinned pretrained encoder/reranker/generator artifacts; capability/upgrade probes, complete stream/incomplete/refusal contracts where supported; measured memory/queue admission, OOM/drain/shutdown and a declared acceleration profile | E23/E24/E34–E36/E41: actual held-out CPU inference and declared GPU hardware evidence, independent expected outputs, no implicit downloads/custom model code, old worker ownership resolved before replacement |
+| Enrichment, graph and context | Durable prerequisite/checkpoint workflows beyond the current bounded workers; source-aware entity aliases and reversible merges; contradictions; explicit workspace notes/decisions/deadlines with sensitivity, provenance and retirement | E25–E28/E30/E39/E44: killed/retried workers, alias reversal, contradiction preservation, late-result rejection and retired context absent from future retrieval/model packets |
+| Briefings and semantic quality | Topic/importance selection, source-family independence, diversity/MMR, deeper supported analysis and explicit omissions; freeze development/held-out English/German cases and numerical acceptance targets before model/prompt selection | E24/E27/E29/E30/E41: independently labelled citation support/refutation, relevance, abstention, omission/recall and source diversity; synthetic constant-model execution or LLM self-grading alone cannot pass |
+| Vulnerability intelligence | Generic CVE/vendor/OS advisory, KEV/EPSS and OSV/dependency records; revisions/retractions; local package/SBOM applicability with ecosystem-specific range semantics; explicit prioritization policy | E31/E32/E40: known positive/negative/unknown applicability cases, conflicting/revised upstream facts, source/time/score lineage; catalogue presence never automatically means exposure |
+| Regulatory intelligence | Versioned instruments/articles/annexes, consolidations/corrigenda, procedures, publication families and jurisdictions; distinct legal status and date types; qualified evidence dossiers and uncertain mappings | E20/E33/E40: synthetic multilingual instruments and transitions, changed dates/text, partial sources and national/EU differences; no automated compliance conclusion |
+| Governed cloud routes | Native and declared-compatible adapters; classified release packets, capability/data/sovereignty policy, explicit fallback graph and route audit; external credentials/configuration | E37/E38/E41/E44: actual adapter-to-fixture-server tests, denied/unconfigured routes with zero dispatch, no silent escalation, bounded streams and honest incomplete/refusal outcomes; real provider smoke evidence is a separate explicitly enabled activity |
+| Usage, budgets and batch operations | Durable reservations/settlement, native token categories, dated price/currency records, unknown outcome accounting; batch submit/poll/cancel/retrieve/import with reconciliation | E38/E42/E43/E45: concurrent reservation limits, crashes and ambiguous remote acceptance, duplicate/missing/late results, no invented zero usage or blind chargeable replay |
+| Remote MCP and authorization | Maintained authenticated HTTP transport, issuer/audience/scope/origin checks, principal/workspace/session binding, expiry/revocation and explicit disable behaviour; profile-aware read tools for implemented domains | E08/E49–E51: real independent clients, positive and negative authorization, cross-session attacks and matching authorized stdio/HTTP semantics; no default unauthenticated listener |
+| Consumer export and publication | Versioned selected-field export with explicit URL/content disclosure; validated staged outbound bundles and separately scoped immutable publication receipts | E17/E18/E47: consumer schema round trip, disclosure canaries, receipt reconciliation and unknown publishing outcome; private checkpoints are not this feature |
+| Deployment, observability and reliability | Generic non-root reference deployment, narrower process/write authorities, readiness/dependency states, bounded aggregate metrics, dashboards/alerts and failure/recovery procedures | E08/E14/E15/E45/E46: clean installed profiles, permission-negative tests, mixed workloads, unavailable dependencies and representative recovered queries; no private host/service inventories |
+| Secure development and release assurance | Select applicable versioned secure-coding controls and evidence; complete type/static analysis, dependency/license/SBOM dispositions, build provenance, reviewed repository/release protection and scoped vulnerability response | E13/E14/E16/E18/E44/E45: revision/artifact-bound evidence, all required checks run without unexpected skips, actual enforcement observed; adopted references are not formal conformance |
+
+Within these groups, establish deletion/recovery and permission boundaries before
+adding effects that depend on them. Acquisition hardening, deterministic domain
+contracts and held-out quality design can proceed independently. Remote dispatch
+must wait for enforced release policy and durable accounting. Public publishing
+must wait for selected-field disclosure controls. Do not drop local, cloud, domain
+or optional profiles merely to simplify completion claims.
+
+## Privacy and acceptance limits still open
+
+Every future commit, package, fixture, model manifest, release receipt and log
+needs publication review against the private identifiers kept outside Git.
+Source URLs, hostnames, operational prompts/configuration and private inventories
+must remain external. Pattern scans cannot prove arbitrary document content is
+anonymous. An external MCP client is a separate disclosure boundary.
+
+Pre-existing public Git author metadata is unchanged; clean new commits and file
+scans do not erase historical metadata. History remediation is a separate deliberate
+repository change, not something this implementation performs implicitly.
+
+The current native tests use authored synthetic model weights. Useful pretrained
+semantic quality, GPU behaviour, actual provider operation, remote MCP compatibility,
+full-host recovery and the complete acceptance programme remain unverified. A
+workstream closes only when its implementation and specified evidence both exist.

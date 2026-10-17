@@ -1,3 +1,5 @@
+> Target specification. See STATUS.md for implemented and verified scope.
+
 # Enrichment, graph, briefings and domain profiles
 
 ## Durable enrichment and analyst workflows

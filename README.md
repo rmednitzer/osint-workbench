@@ -47,13 +47,15 @@ The mandatory database/MCP suite uses an isolated database named `ow_test`:
 uv run pytest --require-integration
 ```
 
-Tests refuse any other database name and truncate only the test schema's tables.
-Do not point this suite at operational storage. CI installs the built wheel and
+The base fixture refuses any other database name. Recovery tests additionally
+create and drop their own randomly named `ow_test_restore_` databases using the
+disposable administrator; that identity requires database creation privileges.
+Never point this suite at operational storage. CI installs the built wheel and
 tests it against a disposable PostgreSQL service rather than importing a checkout.
 
 ## Operator interfaces
 
-`OW_MIGRATION_DSN` is used only by `osint-workbench migrate`. Provision separate
+`OW_MIGRATION_DSN` is used by `migrate` and `migrate-retrieval`. Provision separate
 login identities inheriting `ow_writer` and `ow_reader`, then provide their private
 DSNs as `OW_WRITER_DSN` and `OW_READER_DSN`. The MCP server rejects a privileged
 reader or one that also belongs to the writer role. Mount evidence read-only for

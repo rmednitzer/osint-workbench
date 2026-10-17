@@ -16,7 +16,7 @@ complete merely because its design documents or interfaces exist.
 | Vulnerability/regulatory profiles | Target specification | No domain adapters or applicability verification yet |
 | Cloud APIs/accounting/batches | Target specification | No credential access, native adapters, remote requests or spending |
 | Remote MCP | Target authentication design | No HTTP listener or remote client compatibility claim |
-| Export/recovery/retention | Bounded private MVCC checkpoint and empty-target restore | Added native database/MCP/hybrid recovery regressions; revision-bound CI evidence required. Retention, GC, public export, publisher and full-host/PITR recovery remain pending |
+| Export/recovery/retention | Bounded private MVCC checkpoint and empty-target restore | Fresh isolated database/MCP/hybrid restore and failure rollback passed in installed-wheel CI. Retention, GC, public export, publisher and full-host/PITR recovery remain pending |
 | Publication controls | Positive file selection and source/artifact scanning | Narrow scanner tests; private values are never committed |
 
 Schema v3 is additive; published v1 and v2 migrations remain byte-identical. Job cancellation
@@ -25,8 +25,9 @@ The core worker processes `document.accepted`; the explicit enrichment worker cl
 only its configured generator identity. Other job kinds remain queued.
 Character chunks preserve offsets but are not token-aware model input.
 
-The prior recorded baseline is backed by 70 installed-wheel tests with no skips,
-including an actual native CPU generation-to-durable-abstention path. See
+The recovery implementation is backed by 84 installed-wheel tests with no skips,
+including native CPU generation and isolated database/object recovery with real MCP
+and hybrid reads. See
 [the revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
 models establish execution contracts, not pretrained semantic quality.
 
@@ -40,6 +41,8 @@ pretrained retrieval/generation quality and full resource scheduling; richer gra
 and cited products; domain profiles; governed cloud and remote MCP; deployment,
 observability and integrated failure, recovery and publication acceptance. Existing
 bounded implementations do not close these programme-wide areas.
+See [the remaining implementation and acceptance ledger](docs/implementation-backlog.md)
+for concrete closure evidence across every unfinished workstream.
 
 Do not copy private source catalogs, generated products, original deployment files,
 or operational history to accelerate this roadmap. Prototype behaviour must be

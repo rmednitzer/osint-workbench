@@ -102,8 +102,11 @@ the correct private model configuration and verify its identities before hybrid
 reads. Reconcile ownership of any computation still running on an old host; a
 restored job cannot prove that computation has stopped. Reconcile external
 effects and separately maintained deletion/hold policy before enabling sources or
-submitting explicit new operations. This increment has no automatic readiness,
-retention/tombstone, cross-host reconciliation or source re-enablement command.
+submitting explicit new operations. Keep external supervisors stopped: an explicit
+`collect` with an enabled private configuration updates the source row and can
+re-enable collection. Disabled restored rows are not a fleet-wide interlock.
+This increment has no automatic readiness gate, retention/tombstone enforcement,
+cross-host reconciliation or general operator command to resume quarantined work.
 
 ## Verification boundary
 

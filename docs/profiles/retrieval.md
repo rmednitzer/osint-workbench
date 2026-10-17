@@ -1,3 +1,5 @@
+> Target specification. See STATUS.md for implemented and verified scope.
+
 # Retrieval and local embedding/reranking specification
 
 Scope: C04-C06, with C12/C13 resource integration. All specified behaviours are implementation requirements, not verified prototype properties.

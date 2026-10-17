@@ -1,3 +1,5 @@
+> Target specification. See STATUS.md for implemented and verified scope.
+
 # Operations, recovery and lifecycle specification
 
 Use one operational ownership model for configuration, migrations, code/model artifacts, data and generated products. Each installed profile declares dependencies, startup/health/ready semantics, authorities, limits, secret sources, storage and recovery. Enabled but failing is degraded/unavailable; intentionally disabled is disabled; empty source/provider config is unconfigured. Liveness alone is insufficient.

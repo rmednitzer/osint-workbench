@@ -2,7 +2,12 @@
 
 # Complete verification programme
 
-Revision 2: E01-E51. Status: tests specified, NOT RUN for the extracted implementation. The only executed application-level experiment was the pure synthetic prototype evidence-span reproduction recorded in prototype-assessment.md. No paid/cloud/live infrastructure test occurred.
+Revision 3: E01-E51 remain the complete target acceptance scenarios. Per-scenario
+NOT RUN markers mean the full specified scenario has not been closed. Implemented
+regressions cover subsets; the revision-bound `verification-evidence.json` and
+STATUS.md identify executed evidence. Do not infer either full programme acceptance
+or absence of all testing from these target markers. No paid/cloud/operational
+infrastructure test has been performed.
 
 ## Test strata and proof limits
 
