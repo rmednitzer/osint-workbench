@@ -42,7 +42,10 @@ def test_collector_native_collection_conditional_and_retirement(databases, tmp_p
     install(monkeypatch, ResponseWire(headers=[(b"etag", b'"v2"')]))
     result = collect(source(), collector, store, due_only=True)
     assert result["suppressed_documents"] == 1 and result["documents"] == 1
-    assert reader.status()["documents"] == 1
+    assert reader.search("First") == []
+    assert [hit["document_id"] for hit in reader.search("Second")] == [ids[1]]
+    # Aggregate status counts retained records; logical suppression is not erasure.
+    assert reader.status()["documents"] == 2
     collector.validate_collector()
 
 
