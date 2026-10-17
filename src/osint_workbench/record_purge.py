@@ -148,6 +148,8 @@ def _authorize(conn, history):
     identity = conn.execute("""SELECT
       session_user<>current_user AS changed_identity,
       NOT pg_has_role(current_user,'ow_purger','USAGE') AS missing_role,
+      NOT coalesce(has_schema_privilege(current_user,to_regnamespace('ow')::oid,'USAGE'),false)
+        AS missing_schema,
       EXISTS(SELECT 1 FROM pg_roles r
         WHERE pg_has_role(current_user,r.oid,'MEMBER') AND
           (r.rolsuper OR r.rolcreatedb OR r.rolcreaterole OR r.rolreplication OR r.rolbypassrls
@@ -237,8 +239,19 @@ def _authorize(conn, history):
 
 
 def _state(conn):
+    # Admit authority from catalog feedback before selecting protected history rows.
+    # A denied principal must not fail first with a raw PostgreSQL privilege error.
+    if not conn.execute(
+        "SELECT coalesce(pg_has_role(current_user,to_regrole('ow_purger')::oid,"
+        "'USAGE'),false) AS ok"
+    ).fetchone()["ok"]:
+        raise WorkbenchError("PURGE_OPERATOR_REQUIRED")
+    configured = conn.execute(
+        "SELECT EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace "
+        "WHERE n.nspname='ow' AND c.relname='retrieval_migrations') AS present"
+    ).fetchone()["present"]
+    _authorize(conn, {"retrieval/1": "configured"} if configured else {})
     history = recovery._history(conn)
-    _authorize(conn, history)
     recovery._full_visibility(conn)
     # Unknown deletion side effects cannot be inferred from the reference schema.
     if conn.execute("""SELECT 1 FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid

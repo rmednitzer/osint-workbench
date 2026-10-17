@@ -273,6 +273,8 @@ def test_restore_resets_http_state_and_adopts_known_v4_layout(
     bundle = json.loads(path.read_text())
     bundle["payload"]["migrations"].pop("5")
     bundle["payload"]["migrations"].pop("6")
+    bundle["payload"]["migrations"].pop("7")
+    bundle["payload"]["migrations"].pop("retrieval/3", None)
     bundle["payload"]["tables"].pop("collection_state")
     for row in bundle["payload"]["tables"]["collection_runs"]:
         row.pop("http_status")
