@@ -14,6 +14,13 @@ tests do not automatically close a complete scenario or make the project ready
 for operational use. The prototype is a source of feature intent, never a
 correctness oracle or a source of public fixtures/configuration.
 
+The [current prototype comparison](prototype-lessons.md) records useful mechanisms,
+bounded source/catalog findings and discriminating acceptance cases. Its delivery
+order refines this ledger without claiming profile completion or importing the
+private implementation. In particular, domain observations must distinguish state
+content from occurrence/current authority, and publication receipts must bind the
+accepted product generation.
+
 ## Delivery order and closure evidence
 
 | Workstream | Concrete outstanding implementation | Evidence required to close the workstream |
