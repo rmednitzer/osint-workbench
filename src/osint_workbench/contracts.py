@@ -15,6 +15,7 @@ class Source(StrictModel):
     source_id: Identifier
     url: str = Field(min_length=1, max_length=4096, repr=False)
     enabled: bool = True
+    poll_seconds: int = Field(default=900, ge=60, le=86400)
     freshness_seconds: int = Field(default=86400, ge=60, le=31536000)
 
 

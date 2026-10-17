@@ -293,7 +293,7 @@ def test_scoped_maintenance_principal_and_mismatched_journal(databases, tmp_path
     store = EvidenceStore(tmp_path / "objects")
     _, candidate = orphan(store)
     admin, operator = Database(roles["admin"]), Database(roles["lifecycle"])
-    tables = "ow.migrations,ow.snapshots,ow.collection_runs"
+    tables = "ow.migrations,ow.snapshots,ow.collection_runs,ow.collection_state"
     with admin.connect() as conn:
         if conn.execute("SELECT to_regclass('ow.retrieval_migrations') AS t").fetchone()["t"]:
             tables += ",ow.retrieval_migrations"

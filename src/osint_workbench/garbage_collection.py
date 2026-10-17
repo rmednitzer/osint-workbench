@@ -63,13 +63,14 @@ def _state(conn):
     _history(conn)  # Unknown schema/profile tables fail closed: references may have changed.
     if conn.execute(
         "SELECT 1 FROM pg_class WHERE oid IN ('ow.snapshots'::regclass, "
-        "'ow.collection_runs'::regclass) AND relrowsecurity"
+        "'ow.collection_runs'::regclass, 'ow.collection_state'::regclass) AND relrowsecurity"
     ).fetchone():
         raise WorkbenchError("GC_UNSUPPORTED_ROW_SECURITY")
     control = conn.execute("SELECT dataset_id,revision FROM ow.lifecycle_control").fetchone()
     rows = conn.execute(
         "SELECT sha FROM (SELECT raw_sha256 AS sha FROM ow.snapshots UNION "
         "SELECT text_sha256 FROM ow.snapshots UNION SELECT raw_sha256 FROM ow.collection_runs "
+        "WHERE raw_sha256 IS NOT NULL UNION SELECT raw_sha256 FROM ow.collection_state "
         "WHERE raw_sha256 IS NOT NULL) refs ORDER BY sha LIMIT 100001"
     ).fetchall()
     if len(rows) > 100_000:

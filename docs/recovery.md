@@ -136,3 +136,9 @@ cross-major restore, encrypted-backup service, PITR, host-loss exercise or compl
 lifecycle acceptance claims. Format-1 checkpoints require their previous isolated
 tool/schema pair; they are rejected here, not silently assigned a new policy lineage.
 Full consumer export and outbound publishing remain pending.
+
+Core v5 includes private collection schedules and validator state. Restore clears
+validators, cache pointers and failure/due state before acceptance and leaves
+sources disabled. Exact core-v4/profile-v2 format-2 layouts may adopt an empty
+schedule and unknown historical HTTP status; unknown migrations/layouts still
+fail closed. This does not enable core-v3/format-1 adoption.

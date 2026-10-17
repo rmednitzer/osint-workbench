@@ -5,10 +5,10 @@ complete merely because its design documents or interfaces exist.
 
 | Area | Current implementation | Verification boundary |
 | --- | --- | --- |
-| Configuration/package | Typed JSON, empty sources, src layout, packaged migrations | Installed-wheel CI covers retained core v1-to-v4 and active profile v1-to-v2 upgrade state |
+| Configuration/package | Typed JSON, empty sources, src layout, packaged migrations | Installed-wheel CI covers retained core v1-to-v5 and active profile v1-to-v2 upgrade state |
 | Evidence/core storage | Hashed immutable objects, PostgreSQL records/version heads | Local object tests; native PostgreSQL tests in CI |
 | Jobs | Bounded retries, attempt events, cancellation, renewal and atomic chunk worker | PostgreSQL failure/concurrency tests; distributed/remote effects remain pending |
-| Collection | RSS/Atom entry extraction and bounded public HTTP transport | Disposable parser, per-source exclusion, partial-run receipts and replay tests; full adversarial HTTP coverage remains pending |
+| Collection | RSS/Atom extraction, bounded public HTTP transport and durable due/validator state | Existing parser/exclusion/replay tests pass; new due/304/backoff/recovery tests await revision-bound native CI. Full adversarial HTTP coverage remains pending |
 | MCP | Seven stdio reads with strict schemas, reader checks and bounded errors | Real SDK client against PostgreSQL in CI |
 | Retrieval | Local ONNX embeddings, token-aware chunks, exact pgvector/RRF and generation activation/rollback | Synthetic numerical ONNX and native database/MCP tests, including actual pair scoring; pretrained semantic quality, ANN, automatic backfill and caches pending |
 | Local inference | CPU embedding/rerank runtimes, native Unix-socket generation and durable shared admission | Actual synthetic ONNX/GGUF execution and Unix transport/crash tests in CI; no GPU, pretrained quality or complete cross-host scheduler |
@@ -19,7 +19,7 @@ complete merely because its design documents or interfaces exist.
 | Export/recovery/retention | Bounded private checkpoint, empty-target restore, operator retention/holds/logical tombstones and mandatory current-policy reconciliation | Native SQL-reader, job/fence, inference, collector and restored-policy regressions passed in installed-wheel CI. Reviewed orphan-object GC passed native failure/restart and scoped-role tests. Full record erasure, legacy adoption, public export, publisher and full-host/PITR remain pending |
 | Publication controls | Positive file selection and source/artifact scanning | Narrow scanner tests; private values are never committed |
 
-Core schema v4 and retrieval-profile v2 are additive; earlier published migrations
+Core schema v5 and retrieval-profile v2 are additive; earlier published migrations
 remain byte-identical. Checkpoint format 2 requires separate policy receipts;
 legacy format-1 restore/adoption is not silently accepted. Job cancellation
 revokes acceptance authority; it does not prove a running computation has stopped.
@@ -33,7 +33,7 @@ concurrency and policy-gated isolated recovery. See
 [the revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
 models establish execution contracts, not pretrained semantic quality.
 
-The full programme covers 28 capability areas, 22 ADRs, 58 requirements and 51
+The full programme covers 28 capability areas, 23 ADRs, 58 requirements and 51
 acceptance scenarios. The tests in this repository currently establish only a
 foundation subset. Detailed future specifications are under `docs/`; they are not
 execution receipts. CI results are authoritative for a particular tested revision.
@@ -54,3 +54,7 @@ Orphan GC adds an explicit bounded plan/apply CLI, complete retained-reference
 checks, store/file identity checks and durable intent/completion receipts. The
 native failure/restart and scoped-principal tests passed in the named CI receipt.
 It never deletes retained database records or objects reachable from them.
+
+Scheduled acquisition adds an explicit bounded due-only tick and private HTTP
+validators. The new core-v5 native acceptance cases remain pending until the
+verification receipt is updated. No external timer is installed or tested.

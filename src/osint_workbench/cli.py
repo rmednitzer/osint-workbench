@@ -8,7 +8,7 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from . import garbage_collection, intelligence, lifecycle, recovery
-from .collection import collect
+from .collection import collect, collect_due
 from .contracts import DocumentInput, SourceConfig
 from .database import SCHEMA_VERSION, Database, migrate
 from .errors import WorkbenchError
@@ -98,6 +98,8 @@ def main():
     imp.add_argument("--title", required=True)
     scan = sub.add_parser("collect")
     scan.add_argument("--config", type=Path, required=True)
+    scan.add_argument("--due-only", action="store_true")
+    scan.add_argument("--max-sources", type=int, default=32)
     sub.add_parser("status")
     search = sub.add_parser("search")
     search.add_argument("query")
@@ -230,13 +232,35 @@ def main():
             identifier = Database(_dsn("OW_WRITER_DSN")).ingest(document, raw, store)
             value = {"document_id": identifier}
         elif args.command == "collect":
-            config = SourceConfig.model_validate_json(args.config.read_bytes())
+            with args.config.open("rb") as stream:
+                encoded = stream.read(8 * 1024 * 1024 + 1)
+            if len(encoded) > 8 * 1024 * 1024:
+                raise WorkbenchError("SOURCE_CONFIGURATION_TOO_LARGE")
+            config = SourceConfig.model_validate_json(encoded)
             if not config.sources:
                 value = {"status": "unconfigured", "sources": 0}
             else:
                 db = Database(_dsn("OW_WRITER_DSN"))
                 store = EvidenceStore(Path(os.environ["OW_EVIDENCE_ROOT"]))
-                value = [collect(source, db, store) for source in config.sources]
+                if args.due_only:
+                    value = collect_due(config.sources, db, store, limit=args.max_sources)
+                    print(json.dumps(value, ensure_ascii=False))
+                    if value["status"] == "failed":
+                        raise SystemExit(1)
+                    return
+                value = []
+                for source in config.sources:
+                    try:
+                        result = collect(source, db, store, due_only=args.due_only)
+                        value.append({"source_id": source.source_id, **result})
+                    except WorkbenchError as exc:
+                        # A failed source must not prevent independent configured sources.
+                        value.append(
+                            {"source_id": source.source_id, "status": "failed", "error": exc.code}
+                        )
+                if any(row["status"] == "failed" for row in value):
+                    print(json.dumps(value, ensure_ascii=False))
+                    raise SystemExit(1)
         else:
             db = Database(_dsn("OW_READER_DSN"))
             service = ReadService(

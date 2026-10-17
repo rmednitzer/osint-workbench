@@ -11,7 +11,7 @@ from .database import Database
 from .errors import WorkbenchError
 from .evidence import EvidenceStore
 from .feed_parser import MAX_FEED, MAX_RESULT
-from .fetch import fetch, validate_url
+from .fetch import FetchResult, fetch, fetch_response, validate_url, validators
 from .lifecycle import assert_key_visible
 from .text import digest
 
@@ -61,7 +61,7 @@ def feed_documents(raw: bytes, source_id: str) -> list[DocumentInput]:
         raise WorkbenchError("FEED_PARSE_FAILED") from None
 
 
-def collect(source: Source, db: Database, store: EvidenceStore) -> dict:
+def collect(source: Source, db: Database, store: EvidenceStore, *, due_only=False) -> dict:
     # Hold the session lock on the same connection that accepts records. If it
     # disconnects, acceptance fails rather than continuing after lock loss.
     with db.connect() as conn:
@@ -87,6 +87,47 @@ def collect(source: Source, db: Database, store: EvidenceStore) -> dict:
         if not source.enabled:
             conn.commit()
             return {"status": "disabled", "documents": 0}
+        resource = digest(
+            json.dumps(
+                [source.url, "feedparser-html/2", "identity", "osint-workbench/0.1"]
+            ).encode()
+        )
+        previous = conn.execute(
+            "SELECT resource_sha256 FROM ow.collection_state WHERE source_id=%s",
+            (source.source_id,),
+        ).fetchone()
+        if previous and previous["resource_sha256"] != resource:
+            conn.execute(
+                "UPDATE ow.collection_state SET resource_sha256=%s,"
+                "next_attempt=clock_timestamp(),failures=0,etag=NULL,last_modified=NULL,"
+                "raw_sha256=NULL WHERE source_id=%s",
+                (resource, source.source_id),
+            )
+            conn.execute(
+                "UPDATE ow.sources SET last_success=NULL,last_error=NULL WHERE source_id=%s",
+                (source.source_id,),
+            )
+        conn.execute(
+            "INSERT INTO ow.collection_state(source_id,resource_sha256) VALUES (%s,%s) "
+            "ON CONFLICT(source_id) DO NOTHING",
+            (source.source_id, resource),
+        )
+        state = conn.execute(
+            "SELECT *,next_attempt<=clock_timestamp() AS due FROM ow.collection_state "
+            "WHERE source_id=%s",
+            (source.source_id,),
+        ).fetchone()
+        if due_only and not state["due"]:
+            conn.commit()
+            return {"status": "not_due", "documents": 0}
+        # Reserve before external dispatch. A killed collector leaves a bounded
+        # delay and an unconfirmed attempt, not an immediate retry storm.
+        delay = min(86400, source.poll_seconds * 2 ** min(state["failures"], 16))
+        conn.execute(
+            "UPDATE ow.collection_state SET failures=least(failures+1,32),"
+            "next_attempt=clock_timestamp()+make_interval(secs=>%s) WHERE source_id=%s",
+            (delay, source.source_id),
+        )
         run_id = uuid.uuid4()
         conn.execute(
             "UPDATE ow.sources SET last_attempt=clock_timestamp() WHERE source_id=%s",
@@ -101,9 +142,35 @@ def collect(source: Source, db: Database, store: EvidenceStore) -> dict:
         suppressed = 0
         try:
             validate_url(source.url)
-            raw = fetch(source.url)
-            documents = feed_documents(raw, source.source_id)
-            raw_sha = store.put(raw)  # Once per feed, not once per item.
+            if due_only:
+                validators(state["etag"], state["last_modified"])
+                conditional = bool(state["etag"] or state["last_modified"])
+                if conditional:
+                    try:
+                        store.get(state["raw_sha256"])
+                    except WorkbenchError:
+                        # Without intact accepted evidence, a 304 cannot establish success.
+                        state.update(etag=None, last_modified=None, raw_sha256=None)
+                response = fetch_response(
+                    source.url, etag=state["etag"], last_modified=state["last_modified"]
+                )
+            else:
+                response = FetchResult(200, fetch(source.url))
+            if response.status == 304:
+                if not state["raw_sha256"] or not (state["etag"] or state["last_modified"]):
+                    raise WorkbenchError("UNSOLICITED_NOT_MODIFIED")
+                store.get(state["raw_sha256"])
+                raw_sha, documents = state["raw_sha256"], []
+                etag = response.etag if response.etag is not None else state["etag"]
+                modified = (
+                    response.last_modified
+                    if response.last_modified is not None
+                    else state["last_modified"]
+                )
+            else:
+                documents = feed_documents(response.body, source.source_id)
+                raw_sha = store.put(response.body)  # Once per feed, not once per item.
+                etag, modified = response.etag, response.last_modified
             for document in documents:
                 try:
                     assert_key_visible(
@@ -132,9 +199,14 @@ def collect(source: Source, db: Database, store: EvidenceStore) -> dict:
                 conn.commit()  # Item and run count agree even across a crash.
                 ids.append(identifier)
             conn.execute(
-                """UPDATE ow.collection_runs SET status='succeeded',raw_sha256=%s,
+                """UPDATE ow.collection_runs SET status='succeeded',raw_sha256=%s,http_status=%s,
                 finished_at=clock_timestamp() WHERE run_id=%s""",
-                (raw_sha, run_id),
+                (raw_sha, response.status, run_id),
+            )
+            conn.execute(
+                "UPDATE ow.collection_state SET failures=0,etag=%s,last_modified=%s,raw_sha256=%s,"
+                "next_attempt=clock_timestamp()+make_interval(secs=>%s) WHERE source_id=%s",
+                (etag, modified, raw_sha, source.poll_seconds, source.source_id),
             )
             conn.execute(
                 """UPDATE ow.sources SET last_success=clock_timestamp(),last_error=NULL
@@ -143,7 +215,7 @@ def collect(source: Source, db: Database, store: EvidenceStore) -> dict:
             )
             conn.commit()
             return {
-                "status": "success",
+                "status": "not_modified" if response.status == 304 else "success",
                 "documents": len(ids),
                 "document_ids": ids,
                 "suppressed_documents": suppressed,
@@ -158,6 +230,13 @@ def collect(source: Source, db: Database, store: EvidenceStore) -> dict:
                     finished_at=clock_timestamp() WHERE run_id=%s""",
                     (code, run_id),
                 )
+                # Validators advance only in the same transaction as successful
+                # completion; a partial run must be replayed using its prior validator.
+                conn.execute(
+                    "UPDATE ow.collection_state SET next_attempt=greatest(next_attempt,"
+                    "clock_timestamp()+make_interval(secs=>%s)) WHERE source_id=%s",
+                    (delay, source.source_id),
+                )
                 conn.execute(
                     "UPDATE ow.sources SET last_error=%s WHERE source_id=%s",
                     (code, source.source_id),
@@ -167,3 +246,49 @@ def collect(source: Source, db: Database, store: EvidenceStore) -> dict:
                 # Leave an interrupted run to reconcile after the connection returns.
                 pass
             raise WorkbenchError(code) from None
+
+
+def collect_due(sources, db, store, *, limit=32):
+    """One bounded tick; earliest durable due times first, external sources stay external."""
+    if type(limit) is not int or not 1 <= limit <= 128 or len(sources) > 1000:
+        raise WorkbenchError("INVALID_COLLECTION_LIMIT")
+    if len({s.source_id for s in sources}) != len(sources):
+        raise WorkbenchError("DUPLICATE_SOURCE_ID")
+    with db.connect() as conn:
+        rows = conn.execute(
+            "SELECT source_id,resource_sha256,next_attempt,"
+            "next_attempt<=clock_timestamp() AS due FROM ow.collection_state "
+            "WHERE source_id=ANY(%s::text[]) ORDER BY next_attempt,source_id",
+            ([s.source_id for s in sources],),
+        ).fetchall()
+    states = {row["source_id"]: row for row in rows}
+    sources_by_id = {s.source_id: s for s in sources}
+    unknown, due, disabled = [], [], []
+    for source in sources:
+        if not source.enabled:
+            disabled.append(source)
+        elif source.source_id not in states or states[source.source_id]["resource_sha256"] != (
+            digest(
+                json.dumps(
+                    [source.url, "feedparser-html/2", "identity", "osint-workbench/0.1"]
+                ).encode()
+            )
+        ):
+            unknown.append(source)
+    for row in rows:
+        source = sources_by_id[row["source_id"]]
+        if source.enabled and row["due"] and source not in unknown:
+            due.append(source)
+    selected = (unknown + due)[:limit]
+    results = []
+    for source in disabled + selected:
+        try:
+            result = collect(source, db, store, due_only=True)
+            results.append({"source_id": source.source_id, **result})
+        except WorkbenchError as exc:
+            results.append({"source_id": source.source_id, "status": "failed", "error": exc.code})
+    return {
+        "status": "failed" if any(r["status"] == "failed" for r in results) else "complete",
+        "results": results,
+        "deferred_sources": max(0, len(unknown) + len(due) - limit),
+    }

@@ -69,7 +69,44 @@ def roles(tmp_path_factory):
                 "INSERT INTO ow.document_heads VALUES ('upgrade-fixture',%s,%s)",
                 (external, document),
             )
+    # Pause at the exact published v4 schema and retain a real collection record
+    # before applying the new scheduling migration.
+    with psycopg.connect(dsn) as conn:
+        for version, name in enumerate(
+            (
+                "migrations/002_workflows.sql",
+                "migrations/003_intelligence.sql",
+                "migrations/004_lifecycle.sql",
+            ),
+            2,
+        ):
+            if not conn.execute(
+                "SELECT 1 FROM ow.migrations WHERE version=%s", (version,)
+            ).fetchone():
+                script = files("osint_workbench").joinpath(name).read_text()
+                conn.execute(script)
+                conn.execute(
+                    "INSERT INTO ow.migrations(version,sha256) VALUES (%s,%s)",
+                    (version, hashlib.sha256(script.encode()).hexdigest()),
+                )
+        if (
+            conn.execute("SELECT 1 FROM ow.sources WHERE source_id='upgrade-fixture'").fetchone()
+            and not conn.execute("SELECT 1 FROM ow.migrations WHERE version=5").fetchone()
+        ):
+            conn.execute(
+                "INSERT INTO ow.collection_runs(run_id,source_id,status,raw_sha256) "
+                "VALUES (gen_random_uuid(),'upgrade-fixture','succeeded',%s)",
+                (raw_sha,),
+            )
     migrate(dsn)
+    with psycopg.connect(dsn) as conn:
+        if conn.execute("SELECT 1 FROM ow.sources WHERE source_id='upgrade-fixture'").fetchone():
+            assert conn.execute(
+                "SELECT http_status FROM ow.collection_runs WHERE source_id='upgrade-fixture'"
+            ).fetchone() == (None,)
+            assert not conn.execute(
+                "SELECT 1 FROM ow.collection_state WHERE source_id='upgrade-fixture'"
+            ).fetchone()
     with psycopg.connect(dsn) as conn:
         if conn.execute("SELECT 1 FROM ow.sources WHERE source_id='upgrade-fixture'").fetchone():
             assert conn.execute(
@@ -193,13 +230,13 @@ def databases(roles):
                 "TRUNCATE ow.briefings,ow.assertion_reviews,ow.assertions,ow.enrichments,"
                 "ow.retrieval_active,ow.retrieval_vectors,"
                 "ow.retrieval_members,ow.retrieval_generations,ow.embedding_spaces,"
-                "ow.collection_runs,ow.job_events,ow.chunks,ow.jobs,ow.document_heads,"
+                "ow.collection_state,ow.collection_runs,ow.job_events,ow.chunks,ow.jobs,ow.document_heads,"
                 "ow.documents,ow.snapshots,ow.sources"
             )
             return Database(roles["writer"]), Database(roles["reader"]), roles
         conn.execute(
             "TRUNCATE ow.briefings,ow.assertion_reviews,ow.assertions,ow.enrichments,"
-            "ow.collection_runs,ow.job_events,ow.chunks,ow.jobs,ow.document_heads,"
+            "ow.collection_state,ow.collection_runs,ow.job_events,ow.chunks,ow.jobs,ow.document_heads,"
             "ow.documents,ow.snapshots,ow.sources"
         )
     return Database(roles["writer"]), Database(roles["reader"]), roles

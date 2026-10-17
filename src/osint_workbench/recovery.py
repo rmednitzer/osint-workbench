@@ -24,6 +24,7 @@ MAX_OBJECT_BYTES = 64 * 1024 * 1024
 MAX_ROWS = 100_000
 CORE = (
     "sources",
+    "collection_state",
     "lifecycle_control",
     *lifecycle.POLICY_TABLES,
     "snapshots",
@@ -58,6 +59,7 @@ def _history(conn):
         "migrations/002_workflows.sql",
         "migrations/003_intelligence.sql",
         "migrations/004_lifecycle.sql",
+        "migrations/005_collection_schedule.sql",
     ]
     expected = {
         str(i): digest(files("osint_workbench").joinpath(p).read_bytes())
@@ -128,6 +130,7 @@ def _references(tables):
     for row in tables["snapshots"]:
         refs.update((row["raw_sha256"], row["text_sha256"]))
     refs.update(r["raw_sha256"] for r in tables["collection_runs"] if r["raw_sha256"])
+    refs.update(r["raw_sha256"] for r in tables.get("collection_state", []) if r["raw_sha256"])
     return refs
 
 
@@ -295,8 +298,19 @@ def restore(
         conn.execute("SELECT pg_advisory_xact_lock(418287405)")
         history = _history(conn)
         names = CORE + (RETRIEVAL if "retrieval/1" in history else ())
+        # Exact known core-v4 format-2 layout can adopt v5's empty private schedule.
+        # Existing records and current independent lifecycle policy remain mandatory.
+        adopted_v4 = payload["migrations"] == {
+            k: v for k, v in history.items() if k != "5"
+        } and set(tables) == set(names) - {"collection_state"}
+        if adopted_v4:
+            tables["collection_state"] = []
+            if any("http_status" in row for row in tables["collection_runs"]):
+                raise WorkbenchError("RECOVERY_COLUMNS_MISMATCH")
+            for row in tables["collection_runs"]:
+                row["http_status"] = None
         if (
-            history != payload["migrations"]
+            (history != payload["migrations"] and not adopted_v4)
             or set(tables) != set(names)
             or _database_identity(conn, history) != payload["database"]
         ):
@@ -377,6 +391,10 @@ def restore(
                 (row["job_id"], row["attempt"]),
             )
         conn.execute("UPDATE ow.sources SET enabled=false")
+        conn.execute(
+            "UPDATE ow.collection_state SET etag=NULL,last_modified=NULL,"
+            "raw_sha256=NULL,failures=0,next_attempt=clock_timestamp()"
+        )
         conn.execute("""UPDATE ow.collection_runs SET status='interrupted',
             error_code='RECOVERY_RECONCILIATION_REQUIRED',finished_at=clock_timestamp()
             WHERE status='running'""")
@@ -392,4 +410,5 @@ def restore(
         "status": "restored_requires_operator_reconciliation",
         "policy_sha256": policy_sha,
         "policy_revision": policy["control"]["revision"],
+        "adopted_core_v4": adopted_v4,
     }

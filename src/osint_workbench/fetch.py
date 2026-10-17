@@ -7,8 +7,11 @@ There are no environment proxy or private-address override options.
 
 import ipaddress
 import multiprocessing
+import re
 import socket
 import time
+from dataclasses import dataclass
+from email.utils import format_datetime, parsedate_to_datetime
 from urllib.parse import urljoin, urlsplit
 
 import httpcore
@@ -147,7 +150,39 @@ class _PublicBackend(httpcore.SyncBackend):
         return _Stream(stream, self.deadline)
 
 
-def fetch(url: str, *, timeout: float = 30, max_bytes: int = MAX_BYTES) -> bytes:
+@dataclass(frozen=True)
+class FetchResult:
+    status: int
+    body: bytes
+    etag: str | None = None
+    last_modified: str | None = None
+
+
+def validators(etag=None, last_modified=None):
+    if etag is not None and (
+        not isinstance(etag, str)
+        or len(etag) > 512
+        or not re.fullmatch(r'(?:W/)?"[\x21\x23-\x7e]*"', etag)
+    ):
+        raise WorkbenchError("INVALID_HTTP_VALIDATOR")
+    if last_modified is not None:
+        try:
+            if (
+                not isinstance(last_modified, str)
+                or len(last_modified) > 128
+                or format_datetime(parsedate_to_datetime(last_modified), usegmt=True)
+                != last_modified
+            ):
+                raise ValueError
+        except (TypeError, ValueError, OverflowError):
+            raise WorkbenchError("INVALID_HTTP_VALIDATOR") from None
+    return etag, last_modified
+
+
+def fetch_response(
+    url: str, *, etag=None, last_modified=None, timeout: float = 30, max_bytes: int = MAX_BYTES
+) -> FetchResult:
+    validators(etag, last_modified)
     if (
         type(timeout) not in (int, float)
         or not 0 < timeout <= 120
@@ -162,13 +197,21 @@ def fetch(url: str, *, timeout: float = 30, max_bytes: int = MAX_BYTES) -> bytes
             current = url
             for _ in range(6):
                 validate_url(current)
+                request_headers = [
+                    ("Accept-Encoding", "identity"),
+                    ("User-Agent", "osint-workbench/0.1"),
+                ]
+                # Validators are scoped to the exact configured URI. Redirect hops
+                # never receive them, even when the origin is unchanged.
+                if current == url:
+                    if etag is not None:
+                        request_headers.append(("If-None-Match", etag))
+                    elif last_modified is not None:
+                        request_headers.append(("If-Modified-Since", last_modified))
                 with pool.stream(
                     "GET",
                     current,
-                    headers=[
-                        ("Accept-Encoding", "identity"),
-                        ("User-Agent", "osint-workbench/0.1"),
-                    ],
+                    headers=request_headers,
                     extensions={
                         "timeout": {
                             "connect": _remaining(deadline),
@@ -191,8 +234,28 @@ def fetch(url: str, *, timeout: float = 30, max_bytes: int = MAX_BYTES) -> bytes
                         validate_url(target)
                         current = target
                         continue
-                    if response.status != 200:
+                    if response.status not in {200, 304}:
                         raise WorkbenchError("SOURCE_HTTP_ERROR")
+                    fields = {}
+                    for name, value in response.headers:
+                        key = name.lower()
+                        if key in {b"etag", b"last-modified"}:
+                            if key in fields:
+                                raise WorkbenchError("INVALID_HTTP_VALIDATOR")
+                            fields[key] = value.decode("ascii")
+                    new_etag, new_modified = validators(
+                        fields.get(b"etag"), fields.get(b"last-modified")
+                    )
+                    if response.status == 304:
+                        if current != url or (etag is None and last_modified is None):
+                            raise WorkbenchError("UNSOLICITED_NOT_MODIFIED")
+                        if (
+                            new_etag is not None
+                            and etag is not None
+                            and (new_etag.removeprefix("W/") != etag.removeprefix("W/"))
+                        ):
+                            raise WorkbenchError("VALIDATOR_MISMATCH")
+                        return FetchResult(304, b"", new_etag, new_modified)
                     if headers.get(b"content-encoding", b"identity").lower() != b"identity":
                         raise WorkbenchError("UNSUPPORTED_CONTENT_ENCODING")
                     body = bytearray()
@@ -201,9 +264,21 @@ def fetch(url: str, *, timeout: float = 30, max_bytes: int = MAX_BYTES) -> bytes
                         if len(body) + len(chunk) > max_bytes:
                             raise WorkbenchError("SOURCE_TOO_LARGE")
                         body.extend(chunk)
-                    return bytes(body)
+                    # A representation obtained after a redirect cannot seed
+                    # validators for the configured URI.
+                    return FetchResult(
+                        200,
+                        bytes(body),
+                        new_etag if current == url else None,
+                        new_modified if current == url else None,
+                    )
         raise WorkbenchError("REDIRECT_LIMIT")
     except WorkbenchError:
         raise
     except (httpcore.HTTPError, OSError, UnicodeError, EOFError):
         raise WorkbenchError("SOURCE_UNAVAILABLE") from None
+
+
+def fetch(url: str, *, timeout: float = 30, max_bytes: int = MAX_BYTES) -> bytes:
+    """Compatibility API: unconditional acquisition always requires a full response."""
+    return fetch_response(url, timeout=timeout, max_bytes=max_bytes).body

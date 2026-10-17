@@ -202,3 +202,20 @@ security while preserving all files. An apply failure may leave some orphans
 unlinked; receipts and the original plan must be retained. These controls do not
 establish physical media sanitization, deletion of retained records or backup
 erasure. See ADR-0022 and the revision-bound verification receipt.
+
+## Durable acquisition refinement
+
+CA20 is the operator's bounded due-only acquisition tick. Feedback includes due
+state, unconfirmed attempts, raw hashes, successful HTTP status and per-source
+partial/failure/deferred outcomes. Configuration, source content and response
+headers remain untrusted; only an explicit external invocation starts a tick.
+
+| Unsafe control action | Constraint | Discriminating evidence |
+| --- | --- | --- |
+| U34: acknowledge an unchanged response without intact accepted local evidence, or advance a validator after partial acceptance | C34: bind validators to URI/profile, verify retained raw evidence, commit validators only with completed acceptance | Real 200/304 framing, lost-cache fallback and partial-run replay tests |
+| U35: send source-specific validators to another redirect resource or retain them after configuration/restore changes | C35: strip on redirects, reset on resource change and isolated restore, deny SQL/MCP access | Redirect, changed-resource, scoped-reader and recovery tests |
+| U36: restart collection without retaining retry delay, dispatch unbounded work or hide independent sources after one failure | C36: reserve due state before dispatch, bound backoff/counter/tick size, retain per-source failure feedback | Killed collector, restart, bounded tick/backoff and independent-source tests |
+
+No timer deployment, global host quota, Retry-After enforcement or complete
+acquisition acceptance is implied. A freshness success means representation
+validation, not factual currency or independently verified content.

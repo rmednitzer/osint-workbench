@@ -113,3 +113,6 @@ See [architecture](docs/architecture.md), [design decisions](docs/adr/),
 
 Operator-only [orphan cleanup](docs/garbage-collection.md) uses reviewed private
 plans and durable intent receipts. It does not purge retained records or backups.
+
+[Scheduled acquisition](docs/scheduled-acquisition.md) provides a durable due-only
+tick and conditional RSS/Atom fetching; source configuration stays private.

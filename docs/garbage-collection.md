@@ -9,7 +9,7 @@ neither physical media sanitization nor a right-to-erasure outcome. See ADR-0022
 
 `OW_GC_DSN` must identify a trusted maintenance principal with `ow_lifecycle`
 membership and explicit SELECT on `ow.lifecycle_control`, `ow.migrations`,
-`ow.snapshots`, `ow.collection_runs` and, when installed,
+`ow.snapshots`, `ow.collection_runs`, `ow.collection_state` and, when installed,
 `ow.retrieval_migrations`. No runtime role is automatically granted these extra
 privileges. The filesystem identity must have read/unlink permission on the
 private evidence store and write permission on the private plan/journal parent.
@@ -46,7 +46,7 @@ osint-workbench gc apply --file private/cleanup.owgc \
 
 Both phases take the exclusive lifecycle barrier before their database snapshot.
 Reachability uses **every** raw/text snapshot and every collection-run raw hash,
-including historical, failed, retired and held records. Optional retrieval state
+including historical, failed, retired and held records, plus cached-body pointers. Optional retrieval state
 references documents rather than new CAS objects, so inactive generations retain
 those documents' evidence too. Unknown schema tables/migration hashes and enabled
 row security on reference tables fail closed. A changed reference set or policy

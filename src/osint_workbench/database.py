@@ -10,7 +10,7 @@ from .contracts import DocumentInput
 from .errors import WorkbenchError
 from .evidence import EvidenceStore
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 LIFECYCLE_LOCK = 418287408
 
 
@@ -21,6 +21,7 @@ def migrate(dsn: str) -> None:
         package.joinpath("migrations/002_workflows.sql"),
         package.joinpath("migrations/003_intelligence.sql"),
         package.joinpath("migrations/004_lifecycle.sql"),
+        package.joinpath("migrations/005_collection_schedule.sql"),
     ]
     with psycopg.connect(dsn) as conn:
         conn.execute("SELECT pg_advisory_xact_lock(%s)", (LIFECYCLE_LOCK,))
@@ -100,6 +101,7 @@ class Database:
                         "lifecycle_holds",
                         "lifecycle_tombstones",
                         "lifecycle_events",
+                        "collection_state",
                     ],
                 ),
             ).fetchone():
