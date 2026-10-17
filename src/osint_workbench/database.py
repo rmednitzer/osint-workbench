@@ -61,6 +61,12 @@ class Database:
               pg_has_role(current_user,'ow_writer','MEMBER') AS writer""").fetchone()
             if any(row.values()):
                 raise WorkbenchError("UNSAFE_READER_IDENTITY")
+            if conn.execute("""SELECT 1 FROM pg_class c JOIN pg_namespace n
+              ON n.oid=c.relnamespace WHERE n.nspname IN ('ow','ow_vector')
+              AND c.relkind IN ('r','p','v','m','f') AND
+              has_table_privilege(current_user,c.oid,'INSERT,UPDATE,DELETE,TRUNCATE')
+              LIMIT 1""").fetchone():
+                raise WorkbenchError("UNSAFE_READER_IDENTITY")
 
     def ingest(
         self, doc: DocumentInput, raw: bytes, store: EvidenceStore, extractor: str = "text/1"

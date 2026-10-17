@@ -14,3 +14,7 @@ local/
 runtime/
 private/
 secrets/
+*.onnx
+*.safetensors
+*.gguf
+models/

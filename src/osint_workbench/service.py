@@ -5,18 +5,31 @@ from .text import digest
 
 
 class ReadService:
-    def __init__(self, db: Database, store: EvidenceStore):
+    def __init__(self, db: Database, store: EvidenceStore, *, encoder=None):
         db.validate_reader()
         if not store.read_only:
             raise ValueError("reader requires a read-only store")
         self.db, self.store = db, store
+        self.index = None
+        if encoder is not None:
+            from .vector_index import VectorIndex
+
+            self.index = VectorIndex(db, encoder)
 
     def search(self, query: str, limit: int = 20, offset: int = 0):
+        if self.index is not None:
+            return self.index.search(query, limit, offset)
         return {
             "strategy": "lexical",
             "degraded": False,
             "results": self.db.search(query, limit, offset),
         }
+
+    def status(self):
+        value = self.db.status()
+        if self.index is not None:
+            value.update(self.index.status())
+        return value
 
     def document(self, document_id: str, offset: int = 0, size: int = 8000):
         result = self.db.document(document_id, offset, size)

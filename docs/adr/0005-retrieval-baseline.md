@@ -18,4 +18,4 @@ Adds model/runtime quality and resource testing. ML remains optional to install 
 Keep lexical operation while restoring previous model/index generation. Change models by new space/generation with quality gates, never by mutating vector semantics in place.
 
 ## Verification
-R10,R28-R31,R40-R42; E04,E21-E24,E34-E36. Implementation and acceptance tests pending.
+R10,R28-R31,R40-R42; E04,E21-E24,E34-E36. Local CPU execution, token spans, exact pgvector/RRF and explicit generation changes are implemented; see docs/local-retrieval.md and tests/test_encoder.py / tests/test_vector_index.py. ANN, reranking, caches, automatic backfill and pretrained quality acceptance remain pending.

@@ -36,6 +36,10 @@ def roles():
                 (hashlib.sha256(script.encode()).hexdigest(),),
             )
     migrate(dsn)
+    if os.environ.get("OW_TEST_RETRIEVAL") == "1":
+        from osint_workbench.vector_index import migrate_retrieval
+
+        migrate_retrieval(dsn)
     writer_password, reader_password = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
     with psycopg.connect(dsn, autocommit=True) as conn:
         for role, group, password in [
@@ -63,8 +67,87 @@ def roles():
 @pytest.fixture
 def databases(roles):
     with psycopg.connect(roles["admin"]) as conn:
+        if os.environ.get("OW_TEST_RETRIEVAL") == "1":
+            conn.execute(
+                "TRUNCATE ow.retrieval_active,ow.retrieval_vectors,"
+                "ow.retrieval_members,ow.retrieval_generations,ow.embedding_spaces,"
+                "ow.collection_runs,ow.job_events,ow.chunks,ow.jobs,ow.document_heads,"
+                "ow.documents,ow.snapshots,ow.sources"
+            )
+            return Database(roles["writer"]), Database(roles["reader"]), roles
         conn.execute(
             "TRUNCATE ow.collection_runs,ow.job_events,ow.chunks,ow.jobs,ow.document_heads,"
             "ow.documents,ow.snapshots,ow.sources"
         )
     return Database(roles["writer"]), Database(roles["reader"]), roles
+
+
+@pytest.fixture
+def encoder_bundle(tmp_path):
+    import numpy as np
+    import onnx
+    from onnx import TensorProto, helper, numpy_helper
+    from tokenizers import Tokenizer, models, normalizers, pre_tokenizers, processors
+
+    from osint_workbench.local_encoder import EncoderManifest, LocalEncoder
+    from osint_workbench.retrieval import EmbeddingSpace
+    from osint_workbench.text import digest
+
+    # Deliberately authored fixture weights, no pretrained or operational model data.
+    vocab = {
+        "[UNK]": 0,
+        "[CLS]": 1,
+        "[SEP]": 2,
+        "storage": 3,
+        "disk": 4,
+        "vulnerability": 5,
+        "patch": 6,
+        "straße": 7,
+    }
+    tokenizer = Tokenizer(models.WordLevel(vocab, unk_token="[UNK]"))
+    tokenizer.normalizer = normalizers.Lowercase()
+    tokenizer.pre_tokenizer = pre_tokenizers.Whitespace()
+    tokenizer.post_processor = processors.TemplateProcessing(
+        single="[CLS] $A [SEP]", special_tokens=[("[CLS]", 1), ("[SEP]", 2)]
+    )
+    token_bytes = tokenizer.to_str().encode()
+    token_path = tmp_path / "tokenizer.json"
+    token_path.write_bytes(token_bytes)
+    weights = np.array(
+        [[0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 0, 0], [1, 0, 0], [0, 1, 0], [0, 1, 0], [0, 0, 1]],
+        dtype=np.float32,
+    )
+    graph = helper.make_graph(
+        [helper.make_node("Gather", ["weights", "input_ids"], ["tokens"], axis=0)],
+        "synthetic-oracle",
+        [helper.make_tensor_value_info("input_ids", TensorProto.INT64, [1, "sequence"])],
+        [helper.make_tensor_value_info("tokens", TensorProto.FLOAT, [1, "sequence", 3])],
+        [numpy_helper.from_array(weights, "weights")],
+    )
+    model = helper.make_model(graph, opset_imports=[helper.make_opsetid("", 17)], ir_version=10)
+    onnx.checker.check_model(model)
+    model_bytes = model.SerializeToString()
+    model_path = tmp_path / "model.onnx"
+    model_path.write_bytes(model_bytes)
+    space = EmbeddingSpace(
+        model_revision=digest(model_bytes),
+        tokenizer_revision=digest(token_bytes),
+        query_template="{text}",
+        document_template="{text}",
+        pooling="mean",
+        dimensions=3,
+        normalized=True,
+        metric="cosine",
+        precision="float32",
+    )
+    manifest = EncoderManifest(
+        model_path=str(model_path),
+        tokenizer_path=str(token_path),
+        model_sha256=digest(model_bytes),
+        tokenizer_sha256=digest(token_bytes),
+        space=space,
+        max_tokens=16,
+        overlap_tokens=2,
+        output_name="tokens",
+    )
+    return LocalEncoder(manifest)

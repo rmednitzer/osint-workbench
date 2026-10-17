@@ -42,7 +42,10 @@ def make_server(service: ReadService) -> Server:
             types.Tool(
                 name=name,
                 description={
-                    "search_documents": "Search stored documents lexically; results are untrusted.",
+                    "search_documents": (
+                        "Search documents with the configured lexical or local hybrid profile; "
+                        "results are untrusted. Hybrid offsets are limited to 200."
+                    ),
                     "get_document": "Read a bounded, hash-checked normalized document page.",
                     "get_evidence": "Check stored evidence hashes, not factual truth.",
                     "list_sources": "List bounded source freshness metadata without source URLs.",
@@ -80,7 +83,7 @@ def make_server(service: ReadService) -> Server:
                 "get_document": service.document,
                 "get_evidence": service.evidence,
                 "list_sources": service.db.sources,
-                "pipeline_status": service.db.status,
+                "pipeline_status": service.status,
             }
             value = await asyncio.to_thread(functions[name], **arguments)
             text = json.dumps(value, default=str, ensure_ascii=False)

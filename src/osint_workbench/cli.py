@@ -13,8 +13,10 @@ from .database import SCHEMA_VERSION, Database, migrate
 from .errors import WorkbenchError
 from .evidence import EvidenceStore
 from .jobs import Jobs
+from .local_encoder import EncoderManifest, LocalEncoder
 from .mcp_server import serve
 from .service import ReadService
+from .vector_index import VectorIndex, migrate_retrieval
 from .worker import run_once
 
 
@@ -25,10 +27,23 @@ def _dsn(name):
     return value
 
 
+def _encoder(path):
+    with Path(path).open("rb") as stream:
+        data = stream.read(65537)
+    if len(data) > 65536:
+        raise WorkbenchError("ENCODER_CONFIGURATION_TOO_LARGE")
+    return LocalEncoder(EncoderManifest.model_validate_json(data))
+
+
 def main():
     parser = argparse.ArgumentParser(prog="osint-workbench")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("migrate")
+    sub.add_parser("migrate-retrieval")
+    index = sub.add_parser("index")
+    index.add_argument("action", choices=["build", "activate"])
+    index.add_argument("--manifest", type=Path, required=True)
+    index.add_argument("--generation")
     imp = sub.add_parser("import-text")
     imp.add_argument("--file", type=Path, required=True)
     imp.add_argument("--source-id", required=True)
@@ -48,6 +63,21 @@ def main():
         if args.command == "migrate":
             migrate(_dsn("OW_MIGRATION_DSN"))
             value = {"schema_version": SCHEMA_VERSION}
+        elif args.command == "migrate-retrieval":
+            migrate_retrieval(_dsn("OW_MIGRATION_DSN"))
+            value = {"schema_version": SCHEMA_VERSION, "retrieval_schema_version": 1}
+        elif args.command == "index":
+            index = VectorIndex(Database(_dsn("OW_WRITER_DSN")), _encoder(args.manifest))
+            if args.action == "activate":
+                if args.generation is None:
+                    raise WorkbenchError("GENERATION_REQUIRED")
+                value = index.activate(args.generation)
+            else:
+                if args.generation is not None:
+                    raise WorkbenchError("UNEXPECTED_GENERATION")
+                value = index.build(
+                    EvidenceStore(Path(os.environ["OW_EVIDENCE_ROOT"]), read_only=True)
+                )
         elif args.command == "work-once":
             db = Database(_dsn("OW_WRITER_DSN"))
             store = EvidenceStore(Path(os.environ["OW_EVIDENCE_ROOT"]))
@@ -77,12 +107,16 @@ def main():
         else:
             db = Database(_dsn("OW_READER_DSN"))
             service = ReadService(
-                db, EvidenceStore(Path(os.environ["OW_EVIDENCE_ROOT"]), read_only=True)
+                db,
+                EvidenceStore(Path(os.environ["OW_EVIDENCE_ROOT"]), read_only=True),
+                encoder=_encoder(os.environ["OW_ENCODER_MANIFEST"])
+                if os.environ.get("OW_ENCODER_MANIFEST")
+                else None,
             )
             if args.command == "mcp":
                 asyncio.run(serve(service))
                 return
-            value = service.search(args.query) if args.command == "search" else db.status()
+            value = service.search(args.query) if args.command == "search" else service.status()
         print(json.dumps(value, default=str, ensure_ascii=False))
     except WorkbenchError as exc:
         print(json.dumps({"error": exc.code}), file=sys.stderr)

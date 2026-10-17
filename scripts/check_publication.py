@@ -50,6 +50,8 @@ DOCUMENTATION_HOSTS = {
     "owasp.org",
     "genai.owasp.org",
     "www.apache.org",
+    "onnxruntime.ai",
+    "huggingface.co",
     "apache.org",
 }
 REGISTRY_HOSTS = {"pypi.org", "files.pythonhosted.org"}
@@ -86,6 +88,7 @@ def inspect_text(name: str, content: str, private_values=()) -> list[str]:
         allowed = (
             host.endswith(".invalid")
             or (name == "uv.lock" and host in REGISTRY_HOSTS)
+            or (name == "pyproject.toml" and host == "pypi.org" and parts.path == "/simple")
             or (
                 (name.startswith("docs/") or Path(name).name == "LICENSE")
                 and host in DOCUMENTATION_HOSTS

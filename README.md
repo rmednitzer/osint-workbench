@@ -22,7 +22,9 @@ APIs. Their implementation and verification status is tracked in
 - Coordinate-preserving evidence quotation matching, embedding-space validation
   and deterministic reciprocal-rank fusion primitives.
 
-The retrieval primitives are **not** a working embedding/index/reranking profile.
+The optional retrieval profile now executes local ONNX embeddings and exact pgvector
+hybrid search with versioned generations. Reranking and semantic-quality acceptance
+remain pending. See [local retrieval](docs/local-retrieval.md).
 No model/provider is selected, downloaded or called automatically. No cloud keys
 or operational data are required by the current code or tests.
 
@@ -31,7 +33,7 @@ or operational data are required by the current code or tests.
 Python 3.12 is the primary tested runtime. PostgreSQL integration targets version 18.
 
 ```sh
-uv sync --locked
+uv sync --locked --extra retrieval
 uv run ruff check .
 uv run pytest -m 'not integration'
 uv build

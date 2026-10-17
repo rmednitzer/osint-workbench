@@ -18,4 +18,4 @@ A single scheduler is simpler than several conflicting GPU locks; external runti
 Drain and activate versioned generations; restore previous runtime/model manifest and index alias.
 
 ## Verification
-R30,R40-R42; E23,E34-E36. No implementation evidence yet.
+R30,R40-R42; E23,E34-E36. The CPU encoder uses verified local artifacts, a disposable bounded process and OS admission locking. Synthetic ONNX execution tests exist. Shared GPU/generator scheduling, pretrained quality and remote runtime contracts remain pending.
