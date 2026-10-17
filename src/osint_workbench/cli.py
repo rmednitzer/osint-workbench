@@ -7,7 +7,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from . import intelligence, recovery
+from . import intelligence, lifecycle, recovery
 from .collection import collect
 from .contracts import DocumentInput, SourceConfig
 from .database import SCHEMA_VERSION, Database, migrate
@@ -52,6 +52,21 @@ def main():
     recovered = sub.add_parser("restore")
     recovered.add_argument("--file", type=Path, required=True)
     recovered.add_argument("--sha256", required=True)
+    recovered.add_argument("--policy-file", type=Path, required=True)
+    recovered.add_argument("--policy-sha256", required=True)
+    recovered.add_argument("--minimum-policy-revision", type=int, required=True)
+    life = sub.add_parser("lifecycle")
+    life.add_argument(
+        "action", choices=["inspect", "retention", "hold", "release", "retire", "export-policy"]
+    )
+    life.add_argument("--document-id")
+    life.add_argument("--operation-id")
+    life.add_argument("--actor")
+    life.add_argument("--rationale")
+    life.add_argument("--retention-class")
+    life.add_argument("--retain-until")
+    life.add_argument("--hold-id")
+    life.add_argument("--file", type=Path)
     enrich = sub.add_parser("enrich")
     enrich.add_argument("action", choices=["enqueue", "work-once", "reconcile"])
     enrich.add_argument("--manifest", type=Path, required=True)
@@ -98,13 +113,40 @@ def main():
                 args.file,
                 args.sha256,
                 Path(os.environ["OW_EVIDENCE_ROOT"]),
+                policy_path=args.policy_file,
+                policy_sha=args.policy_sha256,
+                minimum_revision=args.minimum_policy_revision,
             )
+        elif args.command == "lifecycle":
+            db = Database(_dsn("OW_LIFECYCLE_DSN"))
+            if args.action == "export-policy":
+                if args.file is None:
+                    raise WorkbenchError("POLICY_FILE_REQUIRED")
+                value = lifecycle.export_policy(db, args.file)
+            elif args.action == "inspect":
+                value = lifecycle.inspect(db, args.document_id)
+            else:
+                change = lifecycle.Change.model_validate_json(
+                    json.dumps(
+                        {
+                            "action": args.action,
+                            "document_id": args.document_id,
+                            "operation_id": args.operation_id,
+                            "actor": args.actor,
+                            "rationale": args.rationale,
+                            "retention_class": args.retention_class,
+                            "retain_until": args.retain_until,
+                            "hold_id": args.hold_id,
+                        }
+                    )
+                )
+                value = lifecycle.apply(db, change)
         elif args.command == "migrate":
             migrate(_dsn("OW_MIGRATION_DSN"))
             value = {"schema_version": SCHEMA_VERSION}
         elif args.command == "migrate-retrieval":
             migrate_retrieval(_dsn("OW_MIGRATION_DSN"))
-            value = {"schema_version": SCHEMA_VERSION, "retrieval_schema_version": 1}
+            value = {"schema_version": SCHEMA_VERSION, "retrieval_schema_version": 2}
         elif args.command == "enrich":
             generator = LocalGenerator(_manifest(args.manifest, GeneratorManifest))
             if args.action == "reconcile":

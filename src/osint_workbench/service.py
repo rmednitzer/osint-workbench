@@ -18,6 +18,11 @@ class ReadService:
             self.index = VectorIndex(db, encoder)
 
     def search(self, query: str, limit: int = 20, offset: int = 0):
+        # Keep lifecycle authority over candidates through optional local inference.
+        with self.db.connect():
+            return self._search(query, limit, offset)
+
+    def _search(self, query: str, limit: int = 20, offset: int = 0):
         if self.reranker is not None:
             if (
                 type(limit) is not int

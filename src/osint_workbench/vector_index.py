@@ -7,9 +7,10 @@ from importlib.resources import files
 import psycopg
 from psycopg.types.json import Jsonb
 
-from .database import Database, migrate
+from .database import LIFECYCLE_LOCK, Database, migrate
 from .errors import WorkbenchError
 from .evidence import EvidenceStore
+from .lifecycle import assert_document_visible
 from .local_encoder import LocalEncoder
 from .retrieval import reciprocal_rank_fusion
 from .text import digest
@@ -17,20 +18,34 @@ from .text import digest
 
 def migrate_retrieval(dsn):
     migrate(dsn)
-    script = files("osint_workbench").joinpath("retrieval.sql").read_text()
-    sha = digest(script.encode())
+    scripts = [
+        files("osint_workbench").joinpath(p).read_text()
+        for p in ("retrieval.sql", "migrations/retrieval_002_lifecycle.sql")
+    ]
     with psycopg.connect(dsn) as conn:
+        conn.execute("SELECT pg_advisory_xact_lock(%s)", (LIFECYCLE_LOCK,))
         conn.execute("SELECT pg_advisory_xact_lock(418287405)")
         exists = conn.execute("SELECT to_regclass('ow.retrieval_migrations')").fetchone()[0]
-        if exists:
-            rows = conn.execute("SELECT version,sha256 FROM ow.retrieval_migrations").fetchall()
-            if rows != [(1, sha)]:
-                raise WorkbenchError("RETRIEVAL_MIGRATION_MISMATCH")
-            return
-        if conn.execute("SELECT 1 FROM pg_extension WHERE extname='vector'").fetchone():
+        applied = (
+            dict(conn.execute("SELECT version,sha256 FROM ow.retrieval_migrations").fetchall())
+            if exists
+            else {}
+        )
+        if set(applied) != set(range(1, len(applied) + 1)) or len(applied) > len(scripts):
+            raise WorkbenchError("RETRIEVAL_MIGRATION_MISMATCH")
+        if (
+            not exists
+            and conn.execute("SELECT 1 FROM pg_extension WHERE extname='vector'").fetchone()
+        ):
             raise WorkbenchError("VECTOR_EXTENSION_ALREADY_PROVISIONED")
-        conn.execute(script)
-        conn.execute("INSERT INTO ow.retrieval_migrations VALUES (1,%s)", (sha,))
+        for version, script in enumerate(scripts, 1):
+            sha = digest(script.encode())
+            if version in applied:
+                if applied[version] != sha:
+                    raise WorkbenchError("RETRIEVAL_MIGRATION_MISMATCH")
+                continue
+            conn.execute(script)
+            conn.execute("INSERT INTO ow.retrieval_migrations VALUES (%s,%s)", (version, sha))
 
 
 def corpus(conn, *, bodies=False):
@@ -82,11 +97,14 @@ class VectorIndex:
                 store.get(snapshot["raw_sha256"])
                 if digest(row["body"].encode()) != digest(raw_text):
                     raise WorkbenchError("DOCUMENT_INTEGRITY_MISMATCH")
-                vectors = self.encoder.chunks(raw_text.decode("utf-8"))
+                with self.db.connect() as authority:
+                    assert_document_visible(authority, row["document_id"])
+                    vectors = self.encoder.chunks(raw_text.decode("utf-8"))
                 count += len(vectors)
                 if count > 4096:
                     raise WorkbenchError("REFERENCE_CHUNK_LIMIT")
                 with self.db.connect() as conn:
+                    assert_document_visible(conn, row["document_id"])
                     conn.execute(
                         "INSERT INTO ow.retrieval_members VALUES (%s,%s)",
                         (generation, row["document_id"]),
@@ -217,7 +235,7 @@ class VectorIndex:
             semantic = conn.execute(
                 """SELECT v.document_id,
                 min(v.embedding OPERATOR(ow_vector.<=>) %s::ow_vector.vector) AS distance
-                FROM ow.retrieval_vectors v JOIN ow.active_documents d USING(document_id)
+                FROM ow.visible_retrieval_vectors v JOIN ow.active_documents d USING(document_id)
                 WHERE generation_id=%s GROUP BY v.document_id ORDER BY distance,v.document_id
                 LIMIT 100""",
                 (json.dumps(vector), active["generation_id"]),

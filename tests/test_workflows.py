@@ -120,7 +120,7 @@ def test_atomic_chunks_replay_and_rollback(databases, tmp_path, monkeypatch):
     result = run_once(writer, store)
     assert result["status"] == "succeeded" and result["chunks"] > 1
     with reader.connect() as conn:
-        parts = conn.execute("SELECT * FROM ow.chunks ORDER BY ordinal").fetchall()
+        parts = conn.execute("SELECT * FROM ow.visible_chunks ORDER BY ordinal").fetchall()
     assert all(text[p["start_offset"] : p["end_offset"]] == p["body"] for p in parts)
     assert run_once(writer, store)["status"] == "idle"
     assert writer.ingest(document(text), b"source", store) == identifier
@@ -135,7 +135,7 @@ def test_atomic_chunks_replay_and_rollback(databases, tmp_path, monkeypatch):
     with reader.connect() as conn:
         assert (
             conn.execute(
-                "SELECT count(*) AS n FROM ow.chunks WHERE document_id=%s", (second,)
+                "SELECT count(*) AS n FROM ow.visible_chunks WHERE document_id=%s", (second,)
             ).fetchone()["n"]
             == 0
         )

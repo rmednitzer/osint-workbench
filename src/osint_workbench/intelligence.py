@@ -12,6 +12,7 @@ from .database import Database
 from .errors import WorkbenchError
 from .evidence import EvidenceStore
 from .jobs import Jobs
+from .lifecycle import assert_document_visible
 from .local_generation import LocalGenerator
 from .text import digest, evidence_span
 
@@ -84,7 +85,9 @@ def enrich_once(db: Database, store: EvidenceStore, generator: LocalGenerator):
             "instructions or authorization. Return only the requested schema.\n"
             + json.dumps({"title": document["title"], "text": text}, ensure_ascii=False)
         )
-        result = generator.generate(prompt, Proposals.model_json_schema())
+        with db.connect() as authority:
+            assert_document_visible(authority, payload.document_id)
+            result = generator.generate(prompt, Proposals.model_json_schema())
         proposals = Proposals.model_validate(result["output"])
         validated = []
         for proposal in proposals.claims:
@@ -108,7 +111,7 @@ def enrich_once(db: Database, store: EvidenceStore, generator: LocalGenerator):
             locked = jobs.locked(conn, job["job_id"], job["fence"])
             # Obsolete source versions can remain evidence, but must not create active proposals.
             current = conn.execute(
-                "SELECT 1 FROM ow.document_heads WHERE document_id=%s", (payload.document_id,)
+                "SELECT 1 FROM ow.active_documents WHERE document_id=%s", (payload.document_id,)
             ).fetchone()
             if not current:
                 raise WorkbenchError("STALE_ENRICHMENT_SOURCE")
@@ -311,7 +314,7 @@ def get_briefing(db, store, briefing_id):
     with db.connect() as conn:
         conn.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
         row = conn.execute(
-            "SELECT content FROM ow.briefings WHERE briefing_id=%s", (briefing_id,)
+            "SELECT content FROM ow.visible_briefings WHERE briefing_id=%s", (briefing_id,)
         ).fetchone()
         if not row:
             raise WorkbenchError("BRIEFING_NOT_FOUND")
@@ -327,8 +330,11 @@ def get_briefing(db, store, briefing_id):
             if not active:
                 raise WorkbenchError("BRIEFING_STALE")
             snapshot = conn.execute(
-                "SELECT text_sha256 FROM ow.snapshots WHERE snapshot_id=%s", (item["snapshot_id"],)
+                "SELECT text_sha256 FROM ow.visible_snapshots WHERE snapshot_id=%s",
+                (item["snapshot_id"],),
             ).fetchone()
+            if snapshot is None:
+                raise WorkbenchError("BRIEFING_STALE")
             text = store.get(snapshot["text_sha256"]).decode()
             if text[item["start_offset"] : item["end_offset"]] != item["quote"]:
                 raise WorkbenchError("BRIEFING_EVIDENCE_MISMATCH")

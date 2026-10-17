@@ -11,6 +11,7 @@ from .database import Database
 from .errors import WorkbenchError
 from .evidence import EvidenceStore
 from .jobs import Jobs
+from .lifecycle import assert_document_visible
 from .text import chunks, digest
 
 
@@ -39,6 +40,7 @@ def run_once(db: Database, store: EvidenceStore) -> dict:
         chunker = "characters/1:size=1800:overlap=150"
         with db.connect() as conn:
             locked = jobs.locked(conn, job["job_id"], job["fence"])
+            assert_document_visible(conn, payload.document_id)
             for ordinal, part in enumerate(parts):
                 chunk_id = hashlib.sha256(
                     json.dumps([payload.document_id, chunker, ordinal, part["sha256"]]).encode()
@@ -72,6 +74,7 @@ def run_once(db: Database, store: EvidenceStore) -> dict:
                     ),
                 ),
             )
+            assert_document_visible(conn, payload.document_id)
             jobs.finish_locked(conn, locked, Jsonb({"chunks": len(parts), "chunker": chunker}))
         return {"status": "succeeded", "job_id": str(job["job_id"]), "chunks": len(parts)}
     except (WorkbenchError, ValidationError) as exc:

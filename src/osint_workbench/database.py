@@ -10,7 +10,8 @@ from .contracts import DocumentInput
 from .errors import WorkbenchError
 from .evidence import EvidenceStore
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
+LIFECYCLE_LOCK = 418287408
 
 
 def migrate(dsn: str) -> None:
@@ -19,8 +20,10 @@ def migrate(dsn: str) -> None:
         package.joinpath("schema.sql"),
         package.joinpath("migrations/002_workflows.sql"),
         package.joinpath("migrations/003_intelligence.sql"),
+        package.joinpath("migrations/004_lifecycle.sql"),
     ]
     with psycopg.connect(dsn) as conn:
+        conn.execute("SELECT pg_advisory_xact_lock(%s)", (LIFECYCLE_LOCK,))
         conn.execute("SELECT pg_advisory_xact_lock(418287405)")
         exists = conn.execute("SELECT to_regclass('ow.migrations')").fetchone()[0]
         applied = {}
@@ -45,18 +48,61 @@ class Database:
     def __init__(self, dsn: str):
         self._dsn = dsn
 
-    def connect(self):
-        return psycopg.connect(
+    def connect(self, *, lifecycle_exclusive=False):
+        conn = psycopg.connect(
             self._dsn,
             row_factory=dict_row,
             options="-c statement_timeout=10000 -c lock_timeout=5000",
         )
+        # Acquire before any application transaction snapshot, including repeatable
+        # read. Session end releases it even after rollback or process failure.
+        try:
+            conn.autocommit = True
+            query = (
+                "SELECT pg_advisory_lock(%s)"
+                if lifecycle_exclusive
+                else ("SELECT pg_advisory_lock_shared(%s)")
+            )
+            conn.execute(query, (LIFECYCLE_LOCK,))
+            conn.autocommit = False
+            return conn
+        except (psycopg.errors.LockNotAvailable, psycopg.errors.QueryCanceled):
+            conn.close()
+            raise WorkbenchError("LIFECYCLE_BUSY") from None
+        except Exception:
+            conn.close()
+            raise
 
     def validate_reader(self) -> None:
         with self.connect() as conn:
             row = conn.execute("""SELECT rolsuper,rolcreaterole,rolcreatedb,rolbypassrls
               FROM pg_roles WHERE rolname=current_user""").fetchone()
             if any(row.values()):
+                raise WorkbenchError("UNSAFE_READER_IDENTITY")
+            if conn.execute(
+                """SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+                WHERE n.nspname='ow' AND c.relname=ANY(%s::text[])
+                AND has_table_privilege(current_user,c.oid,'SELECT') LIMIT 1""",
+                (
+                    [
+                        "documents",
+                        "snapshots",
+                        "chunks",
+                        "assertions",
+                        "briefings",
+                        "jobs",
+                        "enrichments",
+                        "assertion_reviews",
+                        "retrieval_vectors",
+                        "retrieval_members",
+                        "lifecycle_control",
+                        "lifecycle_items",
+                        "lifecycle_holds",
+                        "lifecycle_tombstones",
+                        "lifecycle_events",
+                    ],
+                ),
+            ).fetchone():
                 raise WorkbenchError("UNSAFE_READER_IDENTITY")
             row = conn.execute("""SELECT
               has_table_privilege(current_user,'ow.documents','INSERT,UPDATE,DELETE') AS docs,
@@ -77,8 +123,13 @@ class Database:
     ) -> str:
         # Objects are durable before accepted metadata. DB failure may leave an
         # orphan; it must not create accepted records pointing at missing bytes.
-        raw_sha, text_sha = store.put(raw), store.put(doc.text.encode())
         with self.connect() as conn:
+            from .lifecycle import assert_key_visible
+
+            assert_key_visible(
+                conn, doc.source_id, hashlib.sha256(doc.external_id.encode()).hexdigest()
+            )
+            raw_sha, text_sha = store.put(raw), store.put(doc.text.encode())
             return self.ingest_stored(conn, doc, raw_sha, text_sha, extractor)
 
     @staticmethod
@@ -102,6 +153,14 @@ class Database:
         conn.execute(
             "INSERT INTO ow.sources(source_id) VALUES (%s) ON CONFLICT DO NOTHING",
             (doc.source_id,),
+        )
+        from .lifecycle import assert_key_visible
+
+        assert_key_visible(conn, doc.source_id, external)
+        conn.execute(
+            "INSERT INTO ow.lifecycle_items(source_id,external_key) VALUES (%s,%s) "
+            "ON CONFLICT DO NOTHING",
+            (doc.source_id, external),
         )
         conn.execute(
             """INSERT INTO ow.snapshots
@@ -175,7 +234,7 @@ class Database:
             row = conn.execute(
                 """SELECT document_id,snapshot_id,source_id,title,
               substring(body FROM %s FOR %s) AS text,length(body) AS total_characters,
-              body AS full_body,published_at FROM ow.documents WHERE document_id=%s""",
+              body AS full_body,published_at FROM ow.visible_documents WHERE document_id=%s""",
                 (offset + 1, size, document_id),
             ).fetchone()
         if row is None:
@@ -192,7 +251,7 @@ class Database:
             raise WorkbenchError("INVALID_SNAPSHOT_ID")
         with self.connect() as conn:
             row = conn.execute(
-                "SELECT * FROM ow.snapshots WHERE snapshot_id=%s", (snapshot_id,)
+                "SELECT * FROM ow.visible_snapshots WHERE snapshot_id=%s", (snapshot_id,)
             ).fetchone()
         if row is None:
             raise WorkbenchError("SNAPSHOT_NOT_FOUND")
@@ -207,11 +266,14 @@ class Database:
     def status(self) -> dict:
         with self.connect() as conn:
             row = conn.execute("SELECT * FROM ow.pipeline_status").fetchone()
+            version = conn.execute("SELECT version FROM ow.schema_status").fetchone()["version"]
+            lifecycle = conn.execute("SELECT * FROM ow.lifecycle_status").fetchone()
         return {
             **row,
             "configured": row["sources"] > 0,
             "retrieval": "lexical",
-            "schema_version": SCHEMA_VERSION,
+            "schema_version": version,
+            "lifecycle": lifecycle,
         }
 
     def enqueue(self, kind: str, dedup: str, payload: dict) -> str:
@@ -221,6 +283,10 @@ class Database:
             raise WorkbenchError("INVALID_JOB")
         bounded = bounded_json(payload)
         with self.connect() as conn:
+            if "document_id" in payload:
+                from .lifecycle import assert_document_visible
+
+                assert_document_visible(conn, payload["document_id"])
             return str(
                 conn.execute(
                     """INSERT INTO ow.jobs(job_id,kind,dedup_key,payload)

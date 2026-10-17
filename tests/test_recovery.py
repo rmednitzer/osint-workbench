@@ -15,7 +15,7 @@ from mcp.client.stdio import stdio_client
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
 
-from osint_workbench import intelligence, recovery
+from osint_workbench import intelligence, lifecycle, recovery
 from osint_workbench.contracts import DocumentInput
 from osint_workbench.database import Database, migrate
 from osint_workbench.errors import WorkbenchError
@@ -47,6 +47,16 @@ def isolated(roles, *, retrieval):
 def destination(roles):
     with isolated(roles, retrieval=os.environ.get("OW_TEST_RETRIEVAL") == "1") as target:
         yield target
+
+
+def policy_arguments(roles, path):
+    policy_path = path.with_suffix(".owpolicy")
+    receipt = lifecycle.export_policy(Database(roles["admin"]), policy_path)
+    return {
+        "policy_path": policy_path,
+        "policy_sha": receipt["sha256"],
+        "minimum_revision": receipt["revision"],
+    }
 
 
 def _input(text="Straße storage is unavailable.", external="one"):
@@ -107,7 +117,10 @@ def test_checkpoint_fresh_restore_citations_history_and_real_mcp(databases, dest
     assert stat.S_IMODE(path.stat().st_mode) == 0o600
     assert orphan not in json.loads(path.read_bytes())["payload"]["objects"]
     target_store = tmp_path / "restored"
-    result = recovery.restore(Database(destination["admin"]), path, receipt["sha256"], target_store)
+    policy_args = policy_arguments(roles, path)
+    result = recovery.restore(
+        Database(destination["admin"]), path, receipt["sha256"], target_store, **policy_args
+    )
     assert result["status"] == "restored_requires_operator_reconciliation"
     restored_writer, reader = Database(destination["writer"]), Database(destination["reader"])
     service = ReadService(reader, EvidenceStore(target_store, read_only=True))
@@ -148,7 +161,11 @@ def test_checkpoint_fresh_restore_citations_history_and_real_mcp(databases, dest
     asyncio.run(roundtrip())
     with pytest.raises(WorkbenchError, match="TARGET_NOT_EMPTY"):
         recovery.restore(
-            Database(destination["admin"]), path, receipt["sha256"], tmp_path / "other"
+            Database(destination["admin"]),
+            path,
+            receipt["sha256"],
+            tmp_path / "other",
+            **policy_args,
         )
     assert not (tmp_path / "other").exists()
 
@@ -170,7 +187,14 @@ def test_checkpoint_excludes_concurrent_acceptance(databases, destination, tmp_p
     monkeypatch.setattr(store, "get", concurrent)
     path = tmp_path / "snapshot.owcp"
     receipt = recovery.checkpoint(Database(roles["admin"]), store, path)
-    recovery.restore(Database(destination["admin"]), path, receipt["sha256"], tmp_path / "restored")
+    policy_args = policy_arguments(roles, path)
+    recovery.restore(
+        Database(destination["admin"]),
+        path,
+        receipt["sha256"],
+        tmp_path / "restored",
+        **policy_args,
+    )
     reader = Database(destination["reader"])
     assert reader.document(first)["document_id"] == first
     assert reader.search("Later") == []
@@ -198,6 +222,7 @@ def test_restore_rejects_corruption_and_rolls_back(
     writer.ingest(_input(), b"raw", store)
     path = tmp_path / "checkpoint.owcp"
     sha = recovery.checkpoint(Database(roles["admin"]), store, path)["sha256"]
+    policy_args = policy_arguments(roles, path)
     if failure == "digest":
         sha = "0" * 64
     elif failure == "object":
@@ -224,7 +249,9 @@ def test_restore_rejects_corruption_and_rolls_back(
     else:
         sha = _rewrite(path, lambda p: p["tables"]["sources"][0].update(unknown="rejected"))
     with pytest.raises((WorkbenchError, psycopg.IntegrityError, OSError)):
-        recovery.restore(Database(destination["admin"]), path, sha, tmp_path / "restored")
+        recovery.restore(
+            Database(destination["admin"]), path, sha, tmp_path / "restored", **policy_args
+        )
     with Database(destination["admin"]).connect() as conn:
         assert conn.execute("SELECT count(*) AS n FROM ow.documents").fetchone()["n"] == 0
         assert conn.execute("SELECT count(*) AS n FROM ow.sources").fetchone()["n"] == 0
@@ -244,7 +271,10 @@ def test_native_vector_generation_survives_restore(
     index.activate(generation)
     path = tmp_path / "checkpoint.owcp"
     sha = recovery.checkpoint(Database(roles["admin"]), store, path)["sha256"]
-    recovery.restore(Database(destination["admin"]), path, sha, tmp_path / "restored")
+    policy_args = policy_arguments(roles, path)
+    recovery.restore(
+        Database(destination["admin"]), path, sha, tmp_path / "restored", **policy_args
+    )
     service = ReadService(
         Database(destination["reader"]),
         EvidenceStore(tmp_path / "restored", read_only=True),
@@ -273,6 +303,7 @@ def test_core_only_cli_checkpoint_and_restore(roles, tmp_path):
             timeout=30,
         )
         receipt = json.loads(result.stdout)
+        policy_args = policy_arguments(source, path)
         restored = subprocess.run(
             [
                 sys.executable,
@@ -283,6 +314,12 @@ def test_core_only_cli_checkpoint_and_restore(roles, tmp_path):
                 str(path),
                 "--sha256",
                 receipt["sha256"],
+                "--policy-file",
+                str(policy_args["policy_path"]),
+                "--policy-sha256",
+                policy_args["policy_sha"],
+                "--minimum-policy-revision",
+                str(policy_args["minimum_revision"]),
             ],
             env={
                 **os.environ,

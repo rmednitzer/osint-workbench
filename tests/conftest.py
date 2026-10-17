@@ -53,6 +53,7 @@ def roles():
         for role, group, password in [
             ("ow_test_writer", "ow_writer", writer_password),
             ("ow_test_reader", "ow_reader", reader_password),
+            ("ow_test_lifecycle", "ow_lifecycle", writer_password),
         ]:
             exists = conn.execute("SELECT 1 FROM pg_roles WHERE rolname=%s", (role,)).fetchone()
             if not exists:
@@ -69,12 +70,18 @@ def roles():
         "admin": dsn,
         "writer": make_conninfo(dsn, user="ow_test_writer", password=writer_password),
         "reader": make_conninfo(dsn, user="ow_test_reader", password=reader_password),
+        "lifecycle": make_conninfo(dsn, user="ow_test_lifecycle", password=writer_password),
     }
 
 
 @pytest.fixture
 def databases(roles):
     with psycopg.connect(roles["admin"]) as conn:
+        conn.execute(
+            "TRUNCATE ow.lifecycle_events,ow.lifecycle_tombstones,"
+            "ow.lifecycle_holds,ow.lifecycle_items"
+        )
+        conn.execute("UPDATE ow.lifecycle_control SET revision=0,dataset_id=gen_random_uuid()")
         if os.environ.get("OW_TEST_RETRIEVAL") == "1":
             conn.execute(
                 "TRUNCATE ow.briefings,ow.assertion_reviews,ow.assertions,ow.enrichments,"

@@ -12,6 +12,8 @@ from .errors import WorkbenchError
 from .evidence import EvidenceStore
 from .feed_parser import MAX_FEED, MAX_RESULT
 from .fetch import fetch, validate_url
+from .lifecycle import assert_key_visible
+from .text import digest
 
 
 def feed_documents(raw: bytes, source_id: str) -> list[DocumentInput]:
@@ -96,16 +98,32 @@ def collect(source: Source, db: Database, store: EvidenceStore) -> dict:
         )
         conn.commit()
         ids = []
+        suppressed = 0
         try:
             validate_url(source.url)
             raw = fetch(source.url)
             documents = feed_documents(raw, source.source_id)
             raw_sha = store.put(raw)  # Once per feed, not once per item.
             for document in documents:
-                text_sha = store.put(document.text.encode())
-                identifier = db.ingest_stored(
-                    conn, document, raw_sha, text_sha, "feedparser-html/2"
-                )
+                try:
+                    assert_key_visible(
+                        conn, document.source_id, digest(document.external_id.encode())
+                    )
+                    text_sha = store.put(document.text.encode())
+                    identifier = db.ingest_stored(
+                        conn, document, raw_sha, text_sha, "feedparser-html/2"
+                    )
+                except WorkbenchError as exc:
+                    if exc.code != "DOCUMENT_RETIRED_OR_EXPIRED":
+                        raise
+                    conn.execute(
+                        "UPDATE ow.collection_runs SET suppressed_documents="
+                        "suppressed_documents+1,raw_sha256=%s WHERE run_id=%s",
+                        (raw_sha, run_id),
+                    )
+                    conn.commit()
+                    suppressed += 1
+                    continue
                 conn.execute(
                     """UPDATE ow.collection_runs SET accepted_documents=accepted_documents+1,
                     raw_sha256=%s WHERE run_id=%s""",
@@ -128,6 +146,7 @@ def collect(source: Source, db: Database, store: EvidenceStore) -> dict:
                 "status": "success",
                 "documents": len(ids),
                 "document_ids": ids,
+                "suppressed_documents": suppressed,
                 "run_id": str(run_id),
             }
         except Exception as exc:

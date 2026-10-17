@@ -12,6 +12,7 @@ from pathlib import Path
 from psycopg import sql
 from psycopg.types.json import Jsonb
 
+from . import lifecycle
 from .database import Database
 from .errors import WorkbenchError
 from .evidence import EvidenceStore
@@ -23,6 +24,8 @@ MAX_OBJECT_BYTES = 64 * 1024 * 1024
 MAX_ROWS = 100_000
 CORE = (
     "sources",
+    "lifecycle_control",
+    *lifecycle.POLICY_TABLES,
     "snapshots",
     "documents",
     "document_heads",
@@ -50,7 +53,12 @@ def _json(value):
 
 
 def _history(conn):
-    scripts = ["schema.sql", "migrations/002_workflows.sql", "migrations/003_intelligence.sql"]
+    scripts = [
+        "schema.sql",
+        "migrations/002_workflows.sql",
+        "migrations/003_intelligence.sql",
+        "migrations/004_lifecycle.sql",
+    ]
     expected = {
         str(i): digest(files("osint_workbench").joinpath(p).read_bytes())
         for i, p in enumerate(scripts, 1)
@@ -62,11 +70,17 @@ def _history(conn):
     if observed != expected:
         raise WorkbenchError("RECOVERY_SCHEMA_MISMATCH")
     if conn.execute("SELECT to_regclass('ow.retrieval_migrations') AS t").fetchone()["t"]:
-        rows = conn.execute("SELECT version,sha256 FROM ow.retrieval_migrations").fetchall()
-        sha = digest(files("osint_workbench").joinpath("retrieval.sql").read_bytes())
-        if rows != [{"version": 1, "sha256": sha}]:
+        rows = conn.execute(
+            "SELECT version,sha256 FROM ow.retrieval_migrations ORDER BY version"
+        ).fetchall()
+        retrieval = ["retrieval.sql", "migrations/retrieval_002_lifecycle.sql"]
+        hashes = {
+            i: digest(files("osint_workbench").joinpath(p).read_bytes())
+            for i, p in enumerate(retrieval, 1)
+        }
+        if rows != [{"version": i, "sha256": sha} for i, sha in hashes.items()]:
             raise WorkbenchError("RECOVERY_SCHEMA_MISMATCH")
-        expected["retrieval/1"] = sha
+        expected.update({"retrieval/" + str(i): sha for i, sha in hashes.items()})
     names = set(CORE) | {"migrations"}
     if "retrieval/1" in expected:
         names.update((*RETRIEVAL, "retrieval_migrations"))
@@ -199,8 +213,16 @@ def checkpoint(db: Database, store: EvidenceStore, path: Path):
                 raise WorkbenchError("RECOVERY_LIMIT_EXCEEDED")
             objects[sha] = base64.b64encode(data).decode("ascii")
     _provenance(tables, objects)
+    lifecycle.validate_policy(
+        {
+            "format": 1,
+            "kind": "lifecycle_policy",
+            "control": tables["lifecycle_control"][0],
+            "tables": {name: tables[name] for name in lifecycle.POLICY_TABLES},
+        }
+    )
     payload = {
-        "format": 1,
+        "format": 2,
         "captured_at": captured,
         "migrations": history,
         "database": database,
@@ -221,16 +243,17 @@ def checkpoint(db: Database, store: EvidenceStore, path: Path):
     }
 
 
-def _read(path, expected_sha):
+def _read_envelope(path, expected_sha, *, limit=None):
+    limit = MAX_BUNDLE if limit is None else limit
     if not isinstance(expected_sha, str) or not re.fullmatch(r"[0-9a-f]{64}", expected_sha):
         raise WorkbenchError("INVALID_RECOVERY_DIGEST")
     fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
     with os.fdopen(fd, "rb") as stream:
         info = os.fstat(stream.fileno())
-        if not stat.S_ISREG(info.st_mode) or info.st_size > MAX_BUNDLE:
+        if not stat.S_ISREG(info.st_mode) or info.st_size > limit:
             raise WorkbenchError("INVALID_RECOVERY_BUNDLE")
-        raw = stream.read(MAX_BUNDLE + 1)
-    if len(raw) > MAX_BUNDLE:
+        raw = stream.read(limit + 1)
+    if len(raw) > limit:
         raise WorkbenchError("RECOVERY_LIMIT_EXCEEDED")
     bundle = json.loads(raw)
     if set(bundle) != {"payload", "sha256"}:
@@ -238,19 +261,35 @@ def _read(path, expected_sha):
     payload = bundle["payload"]
     if digest(_json(payload)) != expected_sha or bundle["sha256"] != expected_sha:
         raise WorkbenchError("RECOVERY_DIGEST_MISMATCH")
+    return payload
+
+
+def _read(path, expected_sha):
+    payload = _read_envelope(path, expected_sha)
     if (
         set(payload) != {"format", "captured_at", "migrations", "database", "tables", "objects"}
         or type(payload["format"]) is not int
-        or payload["format"] != 1
+        or payload["format"] != 2
     ):
         raise WorkbenchError("INVALID_RECOVERY_BUNDLE")
     return payload
 
 
-def restore(db: Database, path: Path, expected_sha: str, root: Path):
+def restore(
+    db: Database,
+    path: Path,
+    expected_sha: str,
+    root: Path,
+    *,
+    policy_path: Path,
+    policy_sha: str,
+    minimum_revision: int,
+):
     """Only an empty migrated target and an absent object root. Never executes bundle SQL."""
     payload = _read(path, expected_sha)
     tables, objects = payload["tables"], payload["objects"]
+    policy = _read_envelope(policy_path, policy_sha, limit=lifecycle.MAX_POLICY)
+    tables = lifecycle.reconcile_policy(tables, policy, minimum_revision)
     _provenance(tables, objects)
     with db.connect() as conn:
         conn.execute("SELECT pg_advisory_xact_lock(418287405)")
@@ -269,9 +308,14 @@ def restore(db: Database, path: Path, expected_sha: str, root: Path):
         )
         count, size = 0, 0
         for name in names:
-            if conn.execute(
+            existing = conn.execute(
                 sql.SQL("SELECT 1 FROM ow.{} LIMIT 1").format(sql.Identifier(name))
-            ).fetchone():
+            ).fetchone()
+            if name == "lifecycle_control":
+                control = conn.execute("SELECT revision FROM ow.lifecycle_control").fetchone()
+                if not control or control["revision"] != 0:
+                    raise WorkbenchError("RECOVERY_TARGET_NOT_EMPTY")
+            elif existing:
                 raise WorkbenchError("RECOVERY_TARGET_NOT_EMPTY")
             columns = _columns(conn, name)
             if not isinstance(tables[name], list):
@@ -299,6 +343,13 @@ def restore(db: Database, path: Path, expected_sha: str, root: Path):
             if digest(data) != sha or store.put(data) != sha:
                 raise WorkbenchError("RECOVERY_OBJECT_INTEGRITY_MISMATCH")
         for name in names:
+            if name == "lifecycle_control":
+                control = tables[name][0]
+                conn.execute(
+                    "UPDATE ow.lifecycle_control SET dataset_id=%s,revision=%s",
+                    (control["dataset_id"], control["revision"]),
+                )
+                continue
             columns = sql.SQL(",").join(map(sql.Identifier, _columns(conn, name)))
             query = sql.SQL(
                 "INSERT INTO ow.{} ({}) OVERRIDING SYSTEM VALUE "
@@ -339,4 +390,6 @@ def restore(db: Database, path: Path, expected_sha: str, root: Path):
         "quarantined_jobs": len(quarantined),
         "sources_enabled": False,
         "status": "restored_requires_operator_reconciliation",
+        "policy_sha256": policy_sha,
+        "policy_revision": policy["control"]["revision"],
     }
