@@ -8,7 +8,9 @@ administrator DSN for runtime readers, or give model/parser processes host-contr
 credentials. Keep source configuration, state, evidence and secrets out of Git.
 Retrieved text is hostile data; normalization does not eliminate prompt injection.
 
-Use GitHub's private vulnerability reporting feature if available. Otherwise avoid
+Private vulnerability reporting is enabled in the observed
+[repository settings](docs/testing/repository-settings.json). Use the repository
+Security tab's private reporting route. If that route is unavailable, avoid
 posting exploit details, credentials, personal data or private infrastructure in a
 public issue; first request a private reporting route without disclosing the flaw.
 No response-time commitment or continuously staffed security team is claimed.

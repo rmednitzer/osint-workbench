@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-10-17T20:31:58.256388+00:00",
+  "scope": "public-repository-settings",
+  "baseline_commit": "5e437806c4f5624f4221dac830057037c7533284",
+  "before": {
+    "repository": {
+      "allow_merge_commit": true,
+      "allow_squash_merge": true,
+      "allow_rebase_merge": true,
+      "delete_branch_on_merge": false,
+      "allow_auto_merge": false,
+      "allow_update_branch": false,
+      "merge_commit_title": "MERGE_MESSAGE",
+      "merge_commit_message": "PR_TITLE"
+    },
+    "main_protection": null,
+    "actions": {
+      "enabled": true,
+      "allowed_actions": "all",
+      "sha_pinning_required": false
+    },
+    "selected_actions": null,
+    "workflow_permissions": {
+      "default_workflow_permissions": "read",
+      "can_approve_pull_request_reviews": false
+    },
+    "fork_approval": {
+      "approval_policy": "first_time_contributors"
+    },
+    "private_reporting": {
+      "enabled": true
+    },
+    "security_and_analysis": {
+      "secret_scanning": {
+        "status": "enabled"
+      },
+      "secret_scanning_push_protection": {
+        "status": "enabled"
+      },
+      "dependabot_security_updates": {
+        "status": "enabled"
+      },
+      "secret_scanning_non_provider_patterns": {
+        "status": "disabled"
+      },
+      "secret_scanning_validity_checks": {
+        "status": "disabled"
+      }
+    },
+    "dependency_security_fixes": {
+      "enabled": true,
+      "paused": false
+    }
+  },
+  "after": {
+    "repository": {
+      "allow_merge_commit": true,
+      "allow_squash_merge": false,
+      "allow_rebase_merge": false,
+      "delete_branch_on_merge": true,
+      "allow_auto_merge": false,
+      "allow_update_branch": true,
+      "merge_commit_title": "PR_TITLE",
+      "merge_commit_message": "PR_BODY"
+    },
+    "main_protection": {
+      "required_status_checks": {
+        "strict": true,
+        "contexts": [
+          "repository-policy",
+          "renovate-policy",
+          "installed-artifact"
+        ],
+        "checks": [
+          {
+            "context": "repository-policy",
+            "app_id": 15368
+          },
+          {
+            "context": "renovate-policy",
+            "app_id": 15368
+          },
+          {
+            "context": "installed-artifact",
+            "app_id": 15368
+          }
+        ]
+      },
+      "required_pull_request_reviews": {
+        "dismiss_stale_reviews": true,
+        "require_code_owner_reviews": false,
+        "require_last_push_approval": false,
+        "required_approving_review_count": 0
+      },
+      "required_signatures": {
+        "enabled": false
+      },
+      "enforce_admins": {
+        "enabled": true
+      },
+      "required_linear_history": {
+        "enabled": false
+      },
+      "allow_force_pushes": {
+        "enabled": false
+      },
+      "allow_deletions": {
+        "enabled": false
+      },
+      "block_creations": {
+        "enabled": false
+      },
+      "required_conversation_resolution": {
+        "enabled": true
+      },
+      "lock_branch": {
+        "enabled": false
+      },
+      "allow_fork_syncing": {
+        "enabled": false
+      }
+    },
+    "actions": {
+      "enabled": true,
+      "allowed_actions": "selected",
+      "sha_pinning_required": true
+    },
+    "selected_actions": {
+      "github_owned_allowed": false,
+      "patterns_allowed": [
+        "actions/checkout@*",
+        "actions/upload-artifact@*",
+        "astral-sh/setup-uv@*"
+      ],
+      "verified_allowed": false
+    },
+    "workflow_permissions": {
+      "default_workflow_permissions": "read",
+      "can_approve_pull_request_reviews": false
+    },
+    "fork_approval": {
+      "approval_policy": "all_external_contributors"
+    },
+    "private_reporting": {
+      "enabled": true
+    },
+    "security_and_analysis": {
+      "secret_scanning": {
+        "status": "enabled"
+      },
+      "secret_scanning_push_protection": {
+        "status": "enabled"
+      },
+      "dependabot_security_updates": {
+        "status": "enabled"
+      },
+      "secret_scanning_non_provider_patterns": {
+        "status": "disabled"
+      },
+      "secret_scanning_validity_checks": {
+        "status": "disabled"
+      }
+    },
+    "dependency_security_fixes": {
+      "enabled": true,
+      "paused": false
+    }
+  },
+  "limits": [
+    "API readback verifies configured policy; no destructive force-push/deletion probe was performed",
+    "No claim of signed commits, second-person approval or complete release protection",
+    "Existing private metadata in historical commits was not rewritten"
+  ]
+}

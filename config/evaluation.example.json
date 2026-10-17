@@ -1,0 +1,305 @@
+{
+  "format": 1,
+  "suite_id": "public_bilingual_diagnostic_v1",
+  "label_origin": "synthetic",
+  "label_protocol": "Publicly exposed authored English/German diagnostic cases. Development and held_out are frozen disjoint query groups, not a secret or independently human-labelled benchmark. Shared corpus; every document is judged. Grade 3 denotes the directly answering passage; grade 0 denotes counterexamples or absence of support. Targets were declared before model execution; passing cannot establish general semantic quality.",
+  "cutoff": 3,
+  "targets": {
+    "recall_at_k": 1.0,
+    "mrr_at_k": 0.8,
+    "ndcg_at_k": 0.8,
+    "unanswerable_abstention_rate": 1.0
+  },
+  "corpus": [
+    {
+      "document_id": "cedar_backup",
+      "text": "Cedar requires an encrypted backup every night. A backup is accepted only after an isolated restore succeeds. A completed copy alone is insufficient."
+    },
+    {
+      "document_id": "birch_backup",
+      "text": "Birch requires a weekly encrypted backup. Its monthly restoration exercise verifies a separate dataset. These rules do not apply to Cedar."
+    },
+    {
+      "document_id": "amber_versions",
+      "text": "Synthetic Amber advisory: versions 2.0 through 2.3 are affected. Version 2.4 contains the fix. There is no evidence of active exploitation; absence of evidence is not proof that exploitation is impossible."
+    },
+    {
+      "document_id": "linde_retention",
+      "text": "Für das synthetische Projekt Linde beträgt die Aufbewahrungsfrist 30 Tage. Eine aktive Sperre verhindert die physische Löschung. Eine Sperre verlängert nicht automatisch die Sichtbarkeit abgelaufener Daten."
+    },
+    {
+      "document_id": "ahorn_retention",
+      "text": "Für das synthetische Projekt Ahorn beträgt die Aufbewahrungsfrist 90 Tage. Diese Vorgabe gilt nicht für Linde. Nach Fristablauf werden Daten ausgeblendet; eine endgültige Löschung ist damit nicht nachgewiesen."
+    },
+    {
+      "document_id": "opal_rollout",
+      "text": "Synthetischer Opal-Rollout: Version 5 ist für Tests freigegeben, aber noch nicht für den Produktivbetrieb. Die Freigabe erfordert einen erfolgreichen Wiederherstellungstest und eine dokumentierte Rückfallentscheidung."
+    }
+  ],
+  "queries": [
+    {
+      "query_id": "dev_cedar_restore",
+      "split": "development",
+      "leakage_group": "dev_cedar_restore",
+      "text": "What must succeed before a Cedar backup is accepted?",
+      "answerable": true,
+      "judgments": [
+        {
+          "document_id": "cedar_backup",
+          "grade": 3
+        },
+        {
+          "document_id": "birch_backup",
+          "grade": 0
+        },
+        {
+          "document_id": "amber_versions",
+          "grade": 0
+        },
+        {
+          "document_id": "linde_retention",
+          "grade": 0
+        },
+        {
+          "document_id": "ahorn_retention",
+          "grade": 0
+        },
+        {
+          "document_id": "opal_rollout",
+          "grade": 0
+        }
+      ]
+    },
+    {
+      "query_id": "dev_amber_fixed",
+      "split": "development",
+      "leakage_group": "dev_amber_fixed",
+      "text": "Which Amber version contains the advisory fix?",
+      "answerable": true,
+      "judgments": [
+        {
+          "document_id": "cedar_backup",
+          "grade": 0
+        },
+        {
+          "document_id": "birch_backup",
+          "grade": 0
+        },
+        {
+          "document_id": "amber_versions",
+          "grade": 3
+        },
+        {
+          "document_id": "linde_retention",
+          "grade": 0
+        },
+        {
+          "document_id": "ahorn_retention",
+          "grade": 0
+        },
+        {
+          "document_id": "opal_rollout",
+          "grade": 0
+        }
+      ]
+    },
+    {
+      "query_id": "dev_linde_days",
+      "split": "development",
+      "leakage_group": "dev_linde_days",
+      "text": "Wie lange werden Daten im Projekt Linde aufbewahrt?",
+      "answerable": true,
+      "judgments": [
+        {
+          "document_id": "cedar_backup",
+          "grade": 0
+        },
+        {
+          "document_id": "birch_backup",
+          "grade": 0
+        },
+        {
+          "document_id": "amber_versions",
+          "grade": 0
+        },
+        {
+          "document_id": "linde_retention",
+          "grade": 3
+        },
+        {
+          "document_id": "ahorn_retention",
+          "grade": 0
+        },
+        {
+          "document_id": "opal_rollout",
+          "grade": 0
+        }
+      ]
+    },
+    {
+      "query_id": "dev_unknown_owner",
+      "split": "development",
+      "leakage_group": "dev_unknown_owner",
+      "text": "Who owns the Cedar project?",
+      "answerable": false,
+      "judgments": [
+        {
+          "document_id": "cedar_backup",
+          "grade": 0
+        },
+        {
+          "document_id": "birch_backup",
+          "grade": 0
+        },
+        {
+          "document_id": "amber_versions",
+          "grade": 0
+        },
+        {
+          "document_id": "linde_retention",
+          "grade": 0
+        },
+        {
+          "document_id": "ahorn_retention",
+          "grade": 0
+        },
+        {
+          "document_id": "opal_rollout",
+          "grade": 0
+        }
+      ]
+    },
+    {
+      "query_id": "eval_birch_frequency",
+      "split": "held_out",
+      "leakage_group": "eval_birch_frequency",
+      "text": "How often must Birch create an encrypted backup?",
+      "answerable": true,
+      "judgments": [
+        {
+          "document_id": "cedar_backup",
+          "grade": 0
+        },
+        {
+          "document_id": "birch_backup",
+          "grade": 3
+        },
+        {
+          "document_id": "amber_versions",
+          "grade": 0
+        },
+        {
+          "document_id": "linde_retention",
+          "grade": 0
+        },
+        {
+          "document_id": "ahorn_retention",
+          "grade": 0
+        },
+        {
+          "document_id": "opal_rollout",
+          "grade": 0
+        }
+      ]
+    },
+    {
+      "query_id": "eval_ahorn_deletion",
+      "split": "held_out",
+      "leakage_group": "eval_ahorn_deletion",
+      "text": "Beweist das Ausblenden abgelaufener Ahorn-Daten eine endgültige Löschung?",
+      "answerable": true,
+      "judgments": [
+        {
+          "document_id": "cedar_backup",
+          "grade": 0
+        },
+        {
+          "document_id": "birch_backup",
+          "grade": 0
+        },
+        {
+          "document_id": "amber_versions",
+          "grade": 0
+        },
+        {
+          "document_id": "linde_retention",
+          "grade": 0
+        },
+        {
+          "document_id": "ahorn_retention",
+          "grade": 3
+        },
+        {
+          "document_id": "opal_rollout",
+          "grade": 0
+        }
+      ]
+    },
+    {
+      "query_id": "eval_opal_production",
+      "split": "held_out",
+      "leakage_group": "eval_opal_production",
+      "text": "Ist Opal Version 5 schon für den Produktivbetrieb freigegeben?",
+      "answerable": true,
+      "judgments": [
+        {
+          "document_id": "cedar_backup",
+          "grade": 0
+        },
+        {
+          "document_id": "birch_backup",
+          "grade": 0
+        },
+        {
+          "document_id": "amber_versions",
+          "grade": 0
+        },
+        {
+          "document_id": "linde_retention",
+          "grade": 0
+        },
+        {
+          "document_id": "ahorn_retention",
+          "grade": 0
+        },
+        {
+          "document_id": "opal_rollout",
+          "grade": 3
+        }
+      ]
+    },
+    {
+      "query_id": "eval_unknown_price",
+      "split": "held_out",
+      "leakage_group": "eval_unknown_price",
+      "text": "Wie viel kostet eine Opal-Lizenz?",
+      "answerable": false,
+      "judgments": [
+        {
+          "document_id": "cedar_backup",
+          "grade": 0
+        },
+        {
+          "document_id": "birch_backup",
+          "grade": 0
+        },
+        {
+          "document_id": "amber_versions",
+          "grade": 0
+        },
+        {
+          "document_id": "linde_retention",
+          "grade": 0
+        },
+        {
+          "document_id": "ahorn_retention",
+          "grade": 0
+        },
+        {
+          "document_id": "opal_rollout",
+          "grade": 0
+        }
+      ]
+    }
+  ]
+}

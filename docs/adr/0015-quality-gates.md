@@ -19,3 +19,4 @@ Retain previous accepted generation/prompt/model route and compare upgrades befo
 
 ## Verification
 R18,R45,R53; E24,E27,E29,E41. No implementation evidence yet.
+> Implementation follow-up (2026-10-17): the [frozen local diagnostic](../local-quality.md) and separate public synthetic receipts now provide bounded execution evidence. Independent held-out semantic-quality adoption remains open; the initial verification statement below is historical.

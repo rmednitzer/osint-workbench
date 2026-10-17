@@ -1,6 +1,10 @@
+> Target specification. See STATUS.md for implemented and verified scope.
+
 # Local inference, cloud APIs and governance
 
-Scope: C12-C17 and C21. Cloud integration code is included; external activation is optional and denied by default. No paid call was performed for planning.
+Scope: C12-C17 and C21. Cloud integration remains in the implementation scope;
+adapters are not implemented yet. External activation will be optional and denied
+by default. No paid call was performed for planning.
 
 ## Provider-independent task contract
 
@@ -10,7 +14,7 @@ Use a normalized result envelope while retaining raw provider metadata privately
 
 ## Local stack
 
-Provide a tested llama.cpp server reference and common API client. Its documentation describes its API and serving features [S8], but actual pinned-version support must be tested. An external OpenAI-compatible local endpoint is supported only for declared capabilities; compatibility does not imply support for forced tools, parallel tools, streaming usage, JSON-schema enforcement or embeddings. Keep provider adaptation out of enrichment business logic.
+Provide a tested llama.cpp server reference and common API client. Its documentation describes its API and serving features [S8](../references.md#s8), but actual pinned-version support must be tested. An external OpenAI-compatible local endpoint is supported only for declared capabilities; compatibility does not imply support for forced tools, parallel tools, streaming usage, JSON-schema enforcement or embeddings. Keep provider adaptation out of enrichment business logic.
 
 Support explicit model manifests, model context/tokenizer templates, quantization, expected file hashes, code provenance and licenses. At least one genuinely useful small licensed local generation model and one encoder/reranker must pass actual CPU acceptance; GPU acceleration has a separate matrix of tested hardware/runtime/configuration. Do not bundle private model choices, weights or remote-code defaults. Test native structured/tool output; do not rely on stripping reasoning tags or cross-provider response conversion as correctness.
 

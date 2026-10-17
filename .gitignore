@@ -14,3 +14,13 @@ local/
 runtime/
 private/
 secrets/
+*.onnx
+*.safetensors
+*.gguf
+models/
+*.owcp
+*.owpolicy
+*.owgc
+*.owpurge
+CLAUDE.local.md
+.claude/settings.local.json

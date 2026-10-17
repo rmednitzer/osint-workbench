@@ -18,4 +18,4 @@ Stricter acceptance can reduce coverage; report abstention and recall rather tha
 Recompute derived generations and withdraw/supersede products; immutable source snapshots survive.
 
 ## Verification
-R27,R32,R35-R39; E27-E33,E40. No implementation evidence yet.
+R27,R32,R35-R39; E27-E33,E40. Local typed proposals, reviewed graph assertions and cited digests now have PostgreSQL/MCP tests; see ADR-0019. General graph resolution, domains and semantic-quality acceptance remain pending.

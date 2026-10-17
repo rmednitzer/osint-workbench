@@ -19,3 +19,4 @@ A future curated source pack is a separate opt-in artifact with its own review. 
 
 ## Verification
 R02, R09, R16; E01, E09, E18. All acceptance evidence remains NOT RUN until implementation. Revisit this ADR if these assumptions fail or scope changes.
+> Planning-baseline note (2026-10-17): NOT RUN statements below describe the original planning state. Current bounded implementation evidence is indexed by [STATUS](../../STATUS.md); it does not close the full programme.

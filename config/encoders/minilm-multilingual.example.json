@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "model_path": "/absolute/private/encoder/model.onnx",
+  "tokenizer_path": "/absolute/private/encoder/tokenizer.json",
+  "model_sha256": "10f7a088420252b26caf819236ca2c9d2987afd0fc06fec7553b542a5655a05a",
+  "tokenizer_sha256": "2c3387be76557bd40970cec13153b3bbf80407865484b209e655e5e4729076b8",
+  "space": {
+    "model_revision": "10f7a088420252b26caf819236ca2c9d2987afd0fc06fec7553b542a5655a05a",
+    "tokenizer_revision": "2c3387be76557bd40970cec13153b3bbf80407865484b209e655e5e4729076b8",
+    "query_template": "{text}",
+    "document_template": "{text}",
+    "pooling": "mean",
+    "dimensions": 384,
+    "normalized": true,
+    "metric": "cosine",
+    "precision": "float32"
+  },
+  "max_tokens": 128,
+  "overlap_tokens": 16,
+  "output_name": "last_hidden_state",
+  "threads": 1
+}

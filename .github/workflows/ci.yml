@@ -1,15 +1,39 @@
 name: Verify foundation
 on:
   push:
+    branches: [main]
   pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: foundation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
+  repository-policy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - run: python3 scripts/check_repository.py
+  renovate-policy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    container:
+      image: ghcr.io/renovatebot/renovate:44.166.0@sha256:510b885a90cd70437816c5c2da1d0c3beff513d3979497b2db1d37c84adfbc2b
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - run: renovate-config-validator --strict --no-global renovate.json
   installed-artifact:
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     services:
       postgres:
-        image: postgres:18@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336
+        image: pgvector/pgvector:pg18@sha256:2358fcba361ed2233a5ed81b5fe4ca779ccb304120ce531a3bf51c0ed7e2bc11
         env:
           POSTGRES_DB: ow_test
           POSTGRES_USER: postgres
@@ -27,16 +51,41 @@ jobs:
       - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
         with:
           version: "0.12.23"
-      - run: uv sync --locked --python 3.12
+      - run: uv sync --locked --extra retrieval --python 3.12
       - run: uv run ruff check . && uv run ruff format --check .
+      - name: Identify native TLS prerequisites
+        run: |
+          openssl version
+          uv run python -c 'import ssl; print("PYTHON_TLS=" + ssl.OPENSSL_VERSION)'
       - run: uv run python scripts/check_publication.py
-      - run: uv build
+      - name: Build and identify artifacts
+        run: |
+          uv build --build-constraints build-constraints.txt --require-hashes
+          sha256sum uv.lock dist/*.whl dist/*.tar.gz
+      - name: Prepare pinned native CPU test dependency
+        run: |
+          uv run python scripts/prepare_native.py --output /tmp/ow-native-source
+          uv run cmake -S /tmp/ow-native-source/llama.cpp-f2f667b02dc76d675395ae3b14546c8108d26387 -B /tmp/ow-native-build -DGGML_NATIVE=OFF -DGGML_OPENMP=OFF -DLLAMA_CURL=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_OPENSSL=OFF -DLLAMA_BUILD_UI=OFF -DLLAMA_USE_PREBUILT_UI=OFF -DGGML_CCACHE=OFF -DCMAKE_BUILD_TYPE=Release
+          uv run cmake --build /tmp/ow-native-build --target llama-server -j 2
+      - name: Verify the core without optional inference dependencies
+        run: |
+          uv venv /tmp/ow-core --python 3.12
+          uv export --locked --no-dev --no-emit-project --output-file /tmp/ow-core-requirements.txt > /dev/null
+          uv pip sync --python /tmp/ow-core/bin/python --require-hashes /tmp/ow-core-requirements.txt
+          uv pip install --python /tmp/ow-core/bin/python --no-deps dist/*.whl
+          /tmp/ow-core/bin/python -c 'import importlib.util; assert importlib.util.find_spec("onnxruntime") is None; assert importlib.util.find_spec("tokenizers") is None'
+          /tmp/ow-core/bin/osint-workbench collect --config config/sources.example.json > /tmp/ow-empty.json
+          /tmp/ow-core/bin/python -c 'import json; assert json.load(open("/tmp/ow-empty.json")) == {"status": "unconfigured", "sources": 0}'
       - name: Install and test the built wheel
         env:
+          OW_TEST_LLAMA_BIN: /tmp/ow-native-build/bin/llama-server
+          OW_TEST_RETRIEVAL: "1"
           OW_TEST_ADMIN_DSN: postgresql://postgres:ci-fixture-only@127.0.0.1:5432/ow_test
         run: |
           uv venv /tmp/ow-installed --python 3.12
-          uv pip install --python /tmp/ow-installed/bin/python dist/*.whl pytest
+          uv export --locked --extra retrieval --no-emit-project --output-file /tmp/ow-test-requirements.txt > /dev/null
+          uv pip sync --python /tmp/ow-installed/bin/python --require-hashes /tmp/ow-test-requirements.txt
+          uv pip install --python /tmp/ow-installed/bin/python --no-deps dist/*.whl
           /tmp/ow-installed/bin/python -c 'import osint_workbench; assert "site-packages" in osint_workbench.__file__'
           /tmp/ow-installed/bin/python -m pytest --require-integration --import-mode=importlib
       - name: Verify packaged file selection

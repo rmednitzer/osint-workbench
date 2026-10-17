@@ -1,0 +1,12 @@
+[Unit]
+Description=Schedule bounded OSINT Workbench acquisition ticks
+
+[Timer]
+OnBootSec=2min
+OnUnitInactiveSec=1min
+RandomizedDelaySec=15s
+AccuracySec=1s
+Unit=osint-workbench-collect.service
+
+[Install]
+WantedBy=timers.target

@@ -32,3 +32,19 @@ def test_synthetic_email_and_credential_detection():
     assert check("x", "automation@example.invalid") == []
     assert check("x", "person@unapproved.example") == ["email"]
     assert check("x", "sk-proj-" + "A" * 40) == ["credential-pattern"]
+
+
+def test_renovate_schema_allowance_is_exact_and_location_scoped():
+    check = scanner()
+    schema = "https:" + "//docs.renovatebot.com/renovate-schema.json"
+    assert check("renovate.json", schema) == []
+    assert check("src/example.py", schema) == ["unclassified-url"]
+    assert check("renovate.json", "https:" + "//docs.renovatebot.com/other") == ["unclassified-url"]
+
+
+def test_private_agent_ignore_patterns_do_not_allow_internal_hosts():
+    check = scanner()
+    patterns = "CLAUDE." + "local.md\n.claude/settings." + "local.json"
+    assert check(".gitignore", patterns) == []
+    assert check("config/example.json", patterns) == ["internal-domain"]
+    assert check(".gitignore", patterns + "\nsynthetic." + "local") == ["internal-domain"]

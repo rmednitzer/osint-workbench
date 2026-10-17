@@ -30,6 +30,7 @@ ALLOWED_FILES = {
     ".dockerignore",
     "pyproject.toml",
     "uv.lock",
+    "build-constraints.txt",
     "LICENSE",
     "README.md",
     "STATUS.md",
@@ -38,19 +39,30 @@ ALLOWED_FILES = {
     "CLAUDE.md",
     "SECURITY.md",
     "CONTRIBUTING.md",
+    "renovate.json",
 }
 DOCUMENTATION_HOSTS = {
     "github.com",
     "raw.githubusercontent.com",
     "modelcontextprotocol.io",
     "www.postgresql.org",
+    "www.rfc-editor.org",
+    "docs.python.org",
+    "www.encode.io",
     "www.psycopg.org",
     "csrc.nist.gov",
     "psas.scripts.mit.edu",
     "owasp.org",
     "genai.owasp.org",
     "www.apache.org",
+    "onnxruntime.ai",
+    "huggingface.co",
     "apache.org",
+    "man7.org",
+    "docs.github.com",
+    "docs.renovatebot.com",
+    "code.claude.com",
+    "developers.openai.com",
 }
 REGISTRY_HOSTS = {"pypi.org", "files.pythonhosted.org"}
 URLS = re.compile(r'https?://[^\s"\x27<>),]+')
@@ -69,7 +81,15 @@ def inspect_text(name: str, content: str, private_values=()) -> list[str]:
         findings.append("private-identifier")
     if any(pattern.search(content) for pattern in SECRETS):
         findings.append("credential-pattern")
-    if re.search(r"\b[\w.-]+\.(?:internal|lan|local)\b", content):
+    domain_text = "\n".join(
+        line
+        for line in content.splitlines()
+        if not (
+            name == ".gitignore"
+            and line in {"CLAUDE." + "local.md", ".claude/settings." + "local.json"}
+        )
+    )
+    if re.search(r"\b[\w.-]+\.(?:internal|lan|local)\b", domain_text):
         findings.append("internal-domain")
     for email in EMAILS.findall(content):
         if not email.endswith((".invalid", "@noreply.github.com")) and not (
@@ -84,8 +104,23 @@ def inspect_text(name: str, content: str, private_values=()) -> list[str]:
             findings.append("invalid-url")
             continue
         allowed = (
-            host.endswith(".invalid")
+            (
+                name == "renovate.json"
+                and url == "https:" + "//docs.renovatebot.com/renovate-schema.json"
+            )
+            or (
+                name == "scripts/prepare_encoder.py"
+                and host == "huggingface.co"
+                and parts.path == "/"
+            )
+            or (
+                name == "scripts/prepare_native.py"
+                and host == "codeload.github.com"
+                and parts.path == "/ggml-org/llama.cpp/tar.gz/"
+            )
+            or host.endswith(".invalid")
             or (name == "uv.lock" and host in REGISTRY_HOSTS)
+            or (name == "pyproject.toml" and host == "pypi.org" and parts.path == "/simple")
             or (
                 (name.startswith("docs/") or Path(name).name == "LICENSE")
                 and host in DOCUMENTATION_HOSTS

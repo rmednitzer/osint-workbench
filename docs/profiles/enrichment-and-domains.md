@@ -1,3 +1,5 @@
+> Target specification. See STATUS.md for implemented and verified scope.
+
 # Enrichment, graph, briefings and domain profiles
 
 ## Durable enrichment and analyst workflows
@@ -6,7 +8,7 @@ Deterministic parsing precedes model extraction. Jobs declare inputs, output sch
 
 Bounded analysts can read registered evidence/search/domain tools and propose typed enrichment outputs. They cannot execute code, change source/provider policies, see secrets or obtain host/fleet authority. Workflow definitions are reviewable code/config, not arbitrary downloaded plugins. Model tool arguments receive the same validation as external API input. Durable state records phase/checkpoint/cancel state; outputs from an expired worker are fenced out. Worker retry is at-least-once with idempotent acceptance; remote model calls may have unknown cost/outcome.
 
-Prompt injection can appear in visible text, metadata, retrieved chunks and model output. Treat it as untrusted throughout; sanitization/RAG does not eliminate it [S9]. The enforceable guarantee is bounded authority and validated effects, not model obedience. Use adversarial cases, output schemas, source-span checks and no arbitrary follow-up actions. Uncertainty and abstention remain visible.
+Prompt injection can appear in visible text, metadata, retrieved chunks and model output. Treat it as untrusted throughout; sanitization/RAG does not eliminate it [S9](../references.md#s9). The enforceable guarantee is bounded authority and validated effects, not model obedience. Use adversarial cases, output schemas, source-span checks and no arbitrary follow-up actions. Uncertainty and abstention remain visible.
 
 ## Graph and claim lifecycle
 

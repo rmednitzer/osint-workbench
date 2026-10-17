@@ -18,4 +18,9 @@ Immutable/public/provider/backed-up copies have explicit deletion limits. No ano
 Stop publication/GC, restore accepted pair and reconcile; credential rotation precedes history cleanup after disclosure.
 
 ## Verification
-R22,R29,R51,R54; E17,E18,E39,E47,E48. No implementation evidence yet.
+R22,R29,R51,R54; E17,E18,E39,E47,E48. ADR-0021 implements the bounded logical
+retention/hold/tombstone and restore-policy subset. ADR-0022 adds reviewed orphan
+cleanup. Full retained-record purge, backup expiry and outbound publication remain
+proposed; its revision-bound evidence does not close this ADR's
+whole target scope.
+> Implementation follow-up (2026-10-17): [ADR-0032](0032-transactional-retired-record-purge.md) implements bounded retired-record SQL purge, while [recovery](../recovery.md) and [lifecycle](../lifecycle.md) have bounded implementations. Full erasure, public export/publishing and operational recovery remain open.

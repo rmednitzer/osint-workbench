@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "scope": "bounded-instance-scoped-in-flight-embedding-queries",
+  "source_commit": "79a167b90bdf53a4df291ab21adf8fe6e01a50b5",
+  "ci_run": 39065399248,
+  "baseline_commit": "ba6d6db8f166c0b93109bc03d356bcfef7dc4e07",
+  "local_installed_wheel": {
+    "python": "3.12.14",
+    "tls": "OpenSSL 3.5.8 25 Aug 2026",
+    "passed": 442,
+    "deselected_integration": 203,
+    "duration_seconds": 38.0,
+    "wheel_sha256": "d836847040f8caf17dc98a6e940362b0b3ec1080997a051e6abe61de1afe1bc0"
+  },
+  "prior_local_attempt": {
+    "passed": 438,
+    "failed": 1,
+    "deselected_integration": 203,
+    "duration_seconds": 35.12,
+    "failure": "CLI subprocess import failed while the shared environment changed installed package state",
+    "observed_postcondition": "shared environment imported the source checkout after earlier installed-wheel installation",
+    "disposition": "invalidated as installed-artifact evidence; repeated in a dedicated immutable test environment",
+    "cause_limit": "reviewer confirmed uv run uninstalled/reinstalled one package in shared environment; exact overlap with failing subprocess is not independently timed",
+    "revision_binding": "earlier uncommitted test inventory; not candidate installed-artifact acceptance"
+  },
+  "review": {
+    "method": "independent concurrency/failure/identity review",
+    "production_blockers_reported": 0,
+    "recommendations_added": [
+      "BaseException cleanup regression",
+      "overlapping distinct-key and instance isolation",
+      "native changed-manifest isolation",
+      "active-flight verified-snapshot replacement semantics",
+      "bounded actual fork child cleanup"
+    ]
+  },
+  "limits": [
+    "no completed cache or TTL",
+    "no cross-instance or cross-process sharing",
+    "no fairness between distinct queries",
+    "waiter timeout does not cancel owner",
+    "followers use owner-verified snapshot; no arrival-time independent artifact rehash",
+    "no pretrained semantic-quality, GPU or throughput evidence",
+    "no operational prototype changes or provider dispatch"
+  ],
+  "native_installed_wheel": {
+    "conclusion": "success",
+    "headSha": "79a167b90bdf53a4df291ab21adf8fe6e01a50b5",
+    "status": "completed",
+    "url": "https://github.com/rmednitzer/osint-workbench/actions/runs/39065399248",
+    "passed": 645,
+    "skipped": 0,
+    "duration_seconds": 127.94,
+    "collected": [
+      645
+    ],
+    "artifact_sha256": {
+      "uv.lock": "a2b7fb8e393424c0a9e409849aebb9d2858532a6a671cd86bafc670203651678",
+      "dist/osint_workbench-0.1.0.dev1-py3-none-any.whl": "d836847040f8caf17dc98a6e940362b0b3ec1080997a051e6abe61de1afe1bc0",
+      "dist/osint_workbench-0.1.0.dev1.tar.gz": "facae199bff9b363bcb11c79a59e842af4b332e536f6d036c5725e6fdb919979"
+    },
+    "publication_scans": [
+      {
+        "findings": [],
+        "scanned_files": 195
+      },
+      {
+        "findings": [],
+        "scanned_files": 195
+      }
+    ],
+    "python_tls": [
+      "OpenSSL 3.0.13 30 Jan 2024"
+    ]
+  },
+  "dependency_changes": false,
+  "published_migration_changes": false,
+  "test_additions": 15,
+  "build_constraints_sha256": "f847b523312a001836de929b2b4d3bbc95ce10d79f485b7c0fd4ddec3273742e"
+}

@@ -1,0 +1,35 @@
+name: Audit locked dependencies
+on:
+  schedule:
+    - cron: "23 5 * * 2"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: dependency-audit-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  dependency-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
+        with:
+          version: "0.12.23"
+      - name: Install the locked audit tool and export runtime plus optional ML dependencies
+        run: |
+          uv sync --locked --extra retrieval --no-install-project --python 3.12
+          uv export --locked --extra retrieval --no-dev --no-emit-project --output-file /tmp/ow-audit-requirements.txt > /dev/null
+      - name: Query advisory data without resolving or fixing dependencies
+        run: .venv/bin/pip-audit --requirement /tmp/ow-audit-requirements.txt --require-hashes --disable-pip --strict --timeout 30 --progress-spinner off --format json --output dependency-audit.json
+      - name: Retain the public dependency report when available
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: dependency-audit-${{ github.sha }}
+          path: dependency-audit.json
+          if-no-files-found: warn
+          retention-days: 30
