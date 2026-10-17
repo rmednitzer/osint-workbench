@@ -56,9 +56,10 @@ enforcement from a container's permissive local authentication. The service
 receives only the scoped collector login. PostgreSQL administration remains in
 the guarded harness, outside the service's credentials and authority.
 
-An accelerated timer override tests real timer-triggered conditional acquisition.
-It is a fixture override, not evidence that production intervals or host sizing
-are correct. Operator-controlled phase changes and database due-time advancement
+An accelerated timer override adds a 1 s activation arm and recurring 1 s
+inactivity schedule for real timer-triggered conditional acquisition. It resets
+only prior fixture failure state before arming. This is a fixture override, not
+evidence that production intervals or host sizing are correct. Operator-controlled phase changes and database due-time advancement
 allow bounded failure/backoff/no-dispatch and full changed-body recovery checks.
 Raw CAS hashes, current document heads, fixed outbox events, HTTP/run state,
 observed requests and journal service UID must agree; process exit alone does
@@ -112,7 +113,8 @@ counts; verify journal UID and owned process/resource cleanup. Include negative
 isolation and authentication controls before claiming these positive outcomes.
 
 Guard/syntax tests are useful but do not establish namespace or systemd runtime
-behaviour. The revision-bound manual profile receipt records executed outcomes
-and runtime limitations separately from native regression CI. Until that receipt
-exists for the candidate, this ADR allocates required evidence rather than
-asserting the new integration has passed.
+behaviour. The [collector deployment receipt](../testing/collector-deployment.json)
+records the successful bounded synthetic run, exact source/wheel identities,
+failed fixture attempts and runtime limitations separately from native regression
+CI. Later candidates require their own matching evidence; this result does not
+establish Internet DNS/TLS, production cadence or operational deployment.

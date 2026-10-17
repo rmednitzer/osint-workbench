@@ -27,13 +27,13 @@ The core worker processes `document.accepted`; the explicit enrichment worker cl
 only its configured generator identity. Other job kinds remain queued.
 Character chunks preserve offsets but are not token-aware model input.
 
-The installed-wheel suite has 255 passing tests with no skips,
+The installed-wheel suite has 271 passing tests with no skips,
 including retained-state migration, direct SQL/MCP suppression, native retrieval,
 concurrency and policy-gated isolated recovery. See
 [the revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
 models establish execution contracts, not pretrained semantic quality.
 
-The full programme covers 28 capability areas, 27 ADRs, 58 requirements and 51
+The full programme covers 28 capability areas, 28 ADRs, 58 requirements and 51
 acceptance scenarios. The tests in this repository currently establish only a
 foundation subset. Detailed future specifications are under `docs/`; they are not
 execution receipts. CI results are authoritative for a particular tested revision.
@@ -89,5 +89,9 @@ it does not establish per-source tenancy or filesystem evidence confidentiality.
 The native migration/role/recovery cases passed in the named installed-wheel
 receipt. The database-backed reference service also passed its disabled-source
 SQL and unsafe-identity probes in [a separate receipt](docs/testing/collector-deployment.json).
-Enabled-source HTTP through systemd, timer activation and operational deployment
-acceptance remain pending.
+The enabled-source extension passed actual service and accelerated timer acceptance
+against a disconnected synthetic HTTP fixture, including conditional 304, 503
+backoff, no-dispatch while not due, immutable changed versions and matching
+CAS/outbox records. The manual receipt records the installed wheel digest,
+Unix-socket SCRAM negative control, service UID and owned cleanup. Internet DNS,
+TLS, production cadence and operational deployment acceptance remain open.

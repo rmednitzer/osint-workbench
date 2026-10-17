@@ -1,7 +1,7 @@
 # Reference process deployment
 
 The supplied systemd units are a reference for one Linux acquisition process,
-not an installed or accepted deployment. Native unit-parser verification checks
+not an operational deployment. Native unit-parser verification checks
 syntax and dependency/executable resolution against an isolated filesystem.
 It does not exercise systemd's namespace, cgroup, credentials, timer, networking,
 filesystem or termination behaviour. Perform the acceptance checks below on a
@@ -121,17 +121,24 @@ The ordinary suite's `tests/test_deployment.py` performs only native unit parsin
 The separate manually dispatched
 [public diagnostic workflow](../.github/workflows/public-encoder-diagnostic.yml)
 can additionally run the collector acceptance script on a disposable GitHub-hosted
-runner. The actual empty-config service, sandbox and accelerated timeout probes passed
-on the named disposable runner; see [the profile receipt](testing/profile-diagnostics.json).
-This is separate from native unit parsing and does not establish operational
-database-backed deployment acceptance.
+runner. Earlier receipts record successful empty-config service, sandbox and
+accelerated timeout probes, followed by scoped PostgreSQL/disabled-source checks;
+see [the profile receipt](testing/profile-diagnostics.json) and
+[the collector receipt](testing/collector-deployment.json). Those historical runs
+did not exercise enabled HTTP acquisition or timer activation. Native unit parsing
+is a separate, narrower evidence level.
+
+The enabled-source extension below passed on the revision and installed wheel
+recorded in the current collector receipt. That receipt preserves the failed
+fixture attempts and their corrections. Its synthetic HTTP/timer result is
+separate from operational deployment acceptance.
 
 The job must create a core installed-wheel virtual environment using the runner's
 `/usr/bin/python3`, not a home-directory-managed Python hidden by `ProtectHome`.
 The explicit privileged invocation is:
 
 ```sh
-sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT /tmp/ow-reference-core/bin/python scripts/test_reference_deployment.py --core-venv /tmp/ow-reference-core --units config/systemd --database-fixture
+sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT /tmp/ow-reference-core/bin/python scripts/test_reference_deployment.py --core-venv /tmp/ow-reference-core --units config/systemd --database-fixture --enabled-http-fixture
 ```
 
 Do not invoke this on persistent infrastructure or manually forge the runner
@@ -145,20 +152,72 @@ exercise state writes, empty effective capabilities, read-only code mounts and
 writable/executable mapping denial. A shortened 2 s start plus 2 s escalation
 checks timeout and child termination without waiting for the full 15 min limit.
 
-The script prints only sanitized `PUBLIC_DEPLOYMENT_REPORT` booleans/errors.
-It stops the units, checks that they are inactive and removes its owned unit
-files in cleanup. Runner destruction removes the synthetic account and remaining
+The manual workflow defaults to `reference-service`; choose `public-encoder` or
+`both` explicitly to run the separate pretrained diagnostic. The reference job
+uses a fixed disposable PostgreSQL 18 container. It refuses existing application
+schema/login targets, applies the packaged migrations, and tests a disabled-source
+SQL tick under the real service account. Deliberately broad synthetic writer/admin
+identities must be refused before source or evidence writes. Administrative
+credentials remain in guarded setup and negative probes, never as a runtime
+fallback.
+
+## Isolated enabled-source fixture
+
+The optional `--enabled-http-fixture` requires `--database-fixture`. It creates
+the fixed owned `ow-reference` network namespace containing only loopback and a
+synthetic public-classified `93.184.216.34/32` address. It verifies the namespace
+identity, interface/address set and route inventory before binding HTTP port 80.
+No veth, external network interface or external route is created. The address is
+fixture data, not an Internet endpoint under the project's control.
+
+A root-owned service override supplies `NetworkNamespacePath` and a read-only
+hosts-file bind mapping `feed.fixture.invalid` to that address. The unchanged
+installed collector resolves and fetches `http://feed.fixture.invalid/feed`
+through its production URL, DNS, public-address, deadline and HTTP checks. No
+resolver monkeypatch, private-address exception or application fixture flag is
+used. The scoped collector connects to the disposable PostgreSQL container through
+a Unix socket visible inside the namespace. Explicit local/host SCRAM setup and
+a wrong-password authentication failure at that same endpoint must exclude a
+permissive local-trust connection before the fixture can claim authenticated
+database integration.
+
+The required sequence is initial HTTP 200 acceptance, an actual timer-triggered
+304, controlled HTTP 503 with durable backoff, a non-due tick with no HTTP request,
+then unconditional acceptance of a changed representation after failure. The
+fixture adds an explicit 1 s activation arm and accelerates recurring inactivity
+scheduling to 1 s, with zero jitter and 100 ms accuracy. It advances only the
+synthetic source's database due time. Earlier probe failure state is reset before
+arming; production timer configuration and start-rate limits remain unchanged. It cross-checks request/validator
+observations, PostgreSQL run state, exact raw/text CAS bytes, current heads,
+fixed-kind outbox events and the journal's service UID. Neither a process exit
+nor a timer's presence alone establishes these outcomes.
+
+The script prints a sanitized `PUBLIC_DEPLOYMENT_REPORT`. Failure diagnostics
+contain only allowlisted command/state/exception categories, bounded counts and
+known harness basenames/line numbers; raw arguments, exception messages and
+journals remain excluded. Timer progress uses the raw D-Bus unsigned integer
+property while the unit is active, rather than parsing formatted CLI durations.
+It stops the owned units and HTTP process, checks their state and namespace use,
+and removes its owned overrides, namespace and unit files in cleanup. Preexisting
+fixed resources cause refusal; a cleanup failure remains a failed result. Runner
+destruction removes the synthetic account, database and remaining
 application/state files. These safeguards do not prove the runtime's identity
 cryptographically; the workflow must remain restricted to disposable hosted
-runners. No source URLs, database credentials, acquisitions, provider requests or
-model artifacts are used by this job. A separate encoder diagnostic job in the
-same manually dispatched workflow has its own explicit artifact-download scope.
+runners. Linux namespace/systemd support and administrative capabilities are
+prerequisites; their absence must not be worked around by weakening production
+network policy. The job uses only fixed public synthetic source/configuration and
+disposable test credentials. It uses no operational sources, provider requests or
+model artifacts. The separate encoder diagnostic has its own explicit
+artifact-download scope.
 
-Even a passing result leaves timer activation, live acquisition/database access,
-full-duration timeout, memory pressure, target-host resource sizing, production
-network policy, other workers and integrated recovery unverified. Record its
-exact revision and observed report before describing any property as verified.
-See [ADR-0026](adr/0026-bounded-process-supervision.md).
+Even a passing enabled-fixture result leaves Internet DNS, TLS/certificates,
+external publishers, production timer cadence, full-duration timeout, memory
+pressure, target-host resource sizing, operational credential custody, production
+egress policy, other workers and integrated recovery unverified. It demonstrates
+only the observed synthetic HTTP/database/service path on the named runner.
+Record the exact revision, wheel identity and observed report before describing
+any property as verified. See [ADR-0026](adr/0026-bounded-process-supervision.md)
+and [ADR-0028](adr/0028-isolated-enabled-source-service-fixture.md).
 
 ## Synthetic deployment acceptance
 
@@ -217,28 +276,15 @@ deadline. The systemd process timeout remains the aggregate runtime boundary.
 The native startup tests use a silent loopback PostgreSQL protocol peer, not a
 mock connection. See the revision-bound CI receipt before claiming a tested build.
 
-The manual workflow defaults to `reference-service`; choose `public-encoder` or
-`both` explicitly to run the separate pretrained diagnostic. The reference job
-adds a fixed disposable PostgreSQL 18 fixture. It refuses existing application
-schema/login targets, applies the packaged migrations, and tests a disabled-source
-SQL tick under the real service account. It then supplies deliberately broad
-synthetic writer/admin identities and requires explicit refusal before source or
-evidence writes. Database creation/migration credentials remain in the guarded
-fixture setup and deliberate negative probes; they are never a runtime fallback.
-Public reports contain booleans, with no raw journal, DSN or credential output.
-This does not establish enabled-source HTTP acquisition through systemd, timer
-activation, operational credential custody or production deployment acceptance.
-
 The scoped SQL role does not make the writable evidence directory append-only at
 the OS boundary. A compromised filesystem owner can read or unlink CAS objects;
 separate storage authority and recovery controls remain necessary. This reference
 does not claim containment of a malicious collector process.
 
-The [collector deployment receipt](testing/collector-deployment.json) records the
-successful guarded PostgreSQL/systemd probe. Its runtime source is unchanged
-from the subsequent full native suite; the intervening change fixes only a
-retirement test's retained-versus-visible counter expectation. The manual job
-did not retain its own wheel digest, so this is source-bound deployment evidence;
-the independently built native-CI wheel identities are recorded separately. The first
-failed native attempt is preserved in the verification receipt. These results do
-not expand the runtime or operational acceptance scope above.
+The current [collector deployment receipt](testing/collector-deployment.json)
+records successful enabled-source HTTP acquisition, accelerated timer activation,
+SCRAM and sandbox checks on its exact source revision and measured installed
+wheel. It preserves all failed fixture attempts and the earlier source-bound
+disabled-source receipt, whose manual wheel digest was not recorded. Earlier
+native retirement-test corrections remain in the verification receipt. These
+results establish only the bounded synthetic path described above.
