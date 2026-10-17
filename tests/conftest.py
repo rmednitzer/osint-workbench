@@ -11,7 +11,7 @@ from psycopg import sql
 from psycopg.conninfo import make_conninfo
 from psycopg.types.json import Jsonb
 
-from osint_workbench.database import Database, migrate
+from osint_workbench.database import SCHEMA_VERSION, Database, migrate
 from osint_workbench.evidence import EvidenceStore
 from osint_workbench.service import ReadService
 
@@ -135,7 +135,9 @@ def roles(tmp_path_factory):
                 "SELECT http_status FROM ow.collection_runs WHERE source_id='upgrade-fixture'"
             ).fetchone() == (None,)
             if prior_collection_state is not None:
-                assert conn.execute("SELECT max(version) FROM ow.migrations").fetchone() == (6,)
+                assert conn.execute("SELECT max(version) FROM ow.migrations").fetchone() == (
+                    SCHEMA_VERSION,
+                )
                 assert (
                     conn.execute(
                         "SELECT * FROM ow.collection_state WHERE source_id='upgrade-fixture'"
