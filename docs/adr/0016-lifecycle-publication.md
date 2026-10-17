@@ -18,4 +18,7 @@ Immutable/public/provider/backed-up copies have explicit deletion limits. No ano
 Stop publication/GC, restore accepted pair and reconcile; credential rotation precedes history cleanup after disclosure.
 
 ## Verification
-R22,R29,R51,R54; E17,E18,E39,E47,E48. No implementation evidence yet.
+R22,R29,R51,R54; E17,E18,E39,E47,E48. ADR-0021 implements the bounded logical
+retention/hold/tombstone and restore-policy subset. Physical GC/erasure and outbound
+publication remain proposed; its revision-bound evidence does not close this ADR's
+whole target scope.

@@ -96,6 +96,9 @@ and cited-digest contracts.
 
 See [private recovery](docs/recovery.md) for bounded consistent checkpoints and
 isolated restore. Checkpoints contain private records and are not public exports.
+See [lifecycle controls](docs/lifecycle.md) for operator-only retention, holds and
+permanent logical retirement. Restore requires a separately trusted current policy
+receipt; physical erasure/GC remains pending.
 
 ## Engineering and attribution
 

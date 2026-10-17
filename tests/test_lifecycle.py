@@ -99,7 +99,10 @@ def test_retirement_revokes_reader_and_fences_all_versions(databases, tmp_path):
     operator = Database(roles["lifecycle"])
     store = EvidenceStore(tmp_path / "objects")
     old = writer.ingest(_input("Previous storage evidence."), b"old", store)
-    doc, assertion, brief, pending, leased, fence = _fixture(writer, store)
+    doc, assertion, brief, unrelated_pending, unrelated_running, _ = _fixture(writer, store)
+    pending = writer.enqueue("fixture-document", "pending", {"document_id": doc})
+    leased = writer.enqueue("fixture-doc-running", "leased", {"document_id": old})
+    fence = Jobs(writer).claim(kinds=["fixture-doc-running"])["fence"]
     snapshot = reader.document(doc)["snapshot_id"]
     other = writer.ingest(_input("vulnerability patch", external="other"), b"other", store)
     service = ReadService(reader, EvidenceStore(store.root, read_only=True))
@@ -118,6 +121,15 @@ def test_retirement_revokes_reader_and_fences_all_versions(databases, tmp_path):
         intelligence.review(writer, assertion, "accept", "fixture-reviewer", "Retired")
     for job in (pending, leased):
         assert Jobs(writer).inspect(job)["status"] == "cancelled"
+    assert Jobs(writer).inspect(unrelated_pending)["status"] == "ready"
+    assert Jobs(writer).inspect(unrelated_running)["status"] == "running"
+    with writer.connect() as conn:
+        assert (
+            conn.execute(
+                "SELECT fence FROM ow.job_events WHERE job_id=%s AND event='cancelled'", (leased,)
+            ).fetchone()["fence"]
+            == fence
+        )
     with pytest.raises(WorkbenchError, match="STALE_JOB_LEASE"):
         Jobs(writer).finish(leased, fence, {})
     for table in (
@@ -446,3 +458,30 @@ def test_retirement_waits_for_already_admitted_transaction(databases, tmp_path):
                 "SELECT 1 FROM ow.visible_documents WHERE document_id=%s", (doc,)
             ).fetchone()
         assert future.result(timeout=10)["action"] == "retire"
+
+
+@pytest.mark.integration
+def test_policy_roundtrip_ignores_role_timezone_defaults(databases, destination, tmp_path):
+    writer, _, roles = databases
+    operator = Database(roles["lifecycle"])
+    store = EvidenceStore(tmp_path / "objects")
+    doc = writer.ingest(_input(), b"raw", store)
+    with psycopg.connect(roles["admin"]) as conn:
+        conn.execute("ALTER ROLE ow_test_lifecycle SET timezone='Europe/Vienna'")
+    try:
+        with operator.connect() as conn:
+            assert (
+                conn.execute("SELECT current_setting('TimeZone') AS zone").fetchone()["zone"]
+                == "UTC"
+            )
+        change(operator, doc, "hold", hold_id="timezone-hold")
+        path = tmp_path / "checkpoint.owcp"
+        receipt = recovery.checkpoint(Database(roles["admin"]), store, path)
+        policy = policy_arguments({"admin": roles["lifecycle"]}, path)
+        result = recovery.restore(
+            Database(destination["admin"]), path, receipt["sha256"], tmp_path / "restored", **policy
+        )
+        assert result["policy_revision"] == 1
+    finally:
+        with psycopg.connect(roles["admin"]) as conn:
+            conn.execute("ALTER ROLE ow_test_lifecycle RESET timezone")

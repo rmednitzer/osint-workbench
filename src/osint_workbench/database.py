@@ -52,7 +52,7 @@ class Database:
         conn = psycopg.connect(
             self._dsn,
             row_factory=dict_row,
-            options="-c statement_timeout=10000 -c lock_timeout=5000",
+            options="-c statement_timeout=10000 -c lock_timeout=5000 -c timezone=UTC",
         )
         # Acquire before any application transaction snapshot, including repeatable
         # read. Session end releases it even after rollback or process failure.

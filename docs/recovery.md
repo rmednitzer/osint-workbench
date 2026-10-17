@@ -1,6 +1,6 @@
 # Private checkpoint and isolated recovery
 
-This is a bounded logical checkpoint of the workbench's `ow` application tables
+Format 2 is a bounded logical checkpoint of the workbench's `ow` application tables
 and their referenced immutable evidence. It is **private data**, not a public
 export. It contains source identifiers, document contents, job payloads, reviewer
 identities/rationales and stored products. Do not commit, publish or send it to an
@@ -46,6 +46,11 @@ inference ownership receipts, model/tokenizer binaries and host/deployment
 configuration are outside the bundle. Protect and recover them separately. A
 checkpoint is insufficient to reconstruct the whole installation.
 
+The checkpoint includes its dataset UUID, retention, holds, tombstones and audit
+events. Captured lifecycle state is not sufficient authority to restore: a separately
+retained current policy and trusted receipt are mandatory. See
+[lifecycle controls](lifecycle.md) for semantics, custody and legacy compatibility.
+
 ## Operator procedure
 
 Run only on the installation you intend to back up. Set `OW_RECOVERY_DSN` privately
@@ -70,18 +75,26 @@ and never imports credentials or database grants.
 
 Set `OW_RECOVERY_DSN` to the isolated target's operator identity and
 `OW_EVIDENCE_ROOT` to an **absent** directory whose private parent already exists.
-The target application tables must be empty. Set `CHECKPOINT_SHA256` from the
-independently retained trusted receipt.
+The target application tables must be empty apart from the migration's fresh
+revision-zero control row. Set `CHECKPOINT_SHA256`, `POLICY_SHA256` and
+`MINIMUM_POLICY_REVISION` from independently retained trusted receipts. Current
+policy must belong to the checkpoint's dataset and cover at least its captured
+revision and the independently retained minimum. Export it after lifecycle changes
+using the operator-only `lifecycle export-policy` command.
 
 ```sh
-osint-workbench restore --file /private-storage/checkpoint.owcp --sha256 "$CHECKPOINT_SHA256"
+osint-workbench restore --file /private-storage/checkpoint.owcp --sha256 "$CHECKPOINT_SHA256" --policy-file /private-storage/current.owpolicy --policy-sha256 "$POLICY_SHA256" --minimum-policy-revision "$MINIMUM_POLICY_REVISION"
 ```
 
 Restore locks target tables, verifies compatibility and the expected digest,
-validates all object bytes/provenance, stores objects durably and inserts metadata
+validates all object bytes/provenance and policy history/state, stores objects durably and inserts metadata
 in one database transaction using fixed table names and bound JSON values. No
 bundle path, SQL statement, model download or network request is executed.
 Preserved review/event identities remain ordered and their sequences advance.
+Current retention, holds and monotonic tombstones override captured policy before
+the metadata transaction commits. Reader views cannot serve retired/expired
+records, their assertions/products or their vector candidates after restore. Their
+private physical bytes remain retained; this is not erasure.
 Any validation/constraint failure rolls back database records. A failed or killed
 attempt may leave a private object directory; do not reuse it or delete it
 automatically. Inspect and move it aside before a fresh attempt. If acknowledgement
@@ -101,11 +114,11 @@ and MCP client. Inspect stale products and degraded retrieval explicitly. Restor
 the correct private model configuration and verify its identities before hybrid
 reads. Reconcile ownership of any computation still running on an old host; a
 restored job cannot prove that computation has stopped. Reconcile external
-effects and separately maintained deletion/hold policy before enabling sources or
+effects and additional deployment-specific policy before enabling sources or
 submitting explicit new operations. Keep external supervisors stopped: an explicit
 `collect` with an enabled private configuration updates the source row and can
 re-enable collection. Disabled restored rows are not a fleet-wide interlock.
-This increment has no automatic readiness gate, retention/tombstone enforcement,
+This increment has no overall deployment readiness gate or physical GC,
 cross-host reconciliation or general operator command to resume quarantined work.
 
 ## Verification boundary
@@ -116,5 +129,7 @@ identity sequences, concurrent acceptance exclusion, native ONNX/pgvector hybrid
 reads, core-only CLI round trips, corrupted objects/metadata, foreign-key rollback,
 unknown tables, resource limits, symlink/no-overwrite and non-regular-file rejection.
 The CI receipt applies only to its named revision. There are no operational data,
-cross-major restore, encrypted-backup service, PITR, host-loss exercise or retention
-acceptance claims. Full consumer export and outbound publishing remain pending.
+cross-major restore, encrypted-backup service, PITR, host-loss exercise or complete
+lifecycle acceptance claims. Format-1 checkpoints require their previous isolated
+tool/schema pair; they are rejected here, not silently assigned a new policy lineage.
+Full consumer export and outbound publishing remain pending.

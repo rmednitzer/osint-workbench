@@ -7,7 +7,7 @@ cloud support must be optional, policy-controlled and accountable. A new install
 must reproduce the documented supported profile without private prototype files.
 This is integration engineering, not a claim of original model research.
 
-This ledger records unfinished work after the bounded private recovery increment.
+This ledger records unfinished work after bounded recovery and logical lifecycle controls.
 STATUS.md describes current code; the named CI receipt establishes tested scope.
 The 51 full acceptance scenarios remain the release programme. More regression
 tests do not automatically close a complete scenario or make the project ready
@@ -18,7 +18,7 @@ correctness oracle or a source of public fixtures/configuration.
 
 | Workstream | Concrete outstanding implementation | Evidence required to close the workstream |
 | --- | --- | --- |
-| Recovery and lifecycle | Retention classes/holds, deletion events and tombstone propagation through documents, graph, jobs, vectors, context and products; reachability-based GC; larger-corpus/deployment recovery and external policy reconciliation | E13/E39/E45/E48: real deletion/hold cases, restored tombstones applied before serving, failure/restart and accepted-write recovery boundary; no held/referenced object removed |
+| Recovery and lifecycle | Physical reachability-based GC/erasure and validation; backup expiry; independent policy custody/replication; legacy format adoption; larger-corpus/deployment recovery; extend current logical-key suppression/holds to future context/cache profiles | E13/E39/E45/E48: physical deletion/hold/shared-reference cases, supported old-pair migration, restored policy and failure/restart, explicit recovery point; current logical suppression does not prove erasure |
 | Acquisition and parsing | Scheduled acquisition/prerequisites, cursors, conditional requests, bounded rate/backoff; article/XML/ZIP/PDF and generic specialist adapters; explicit partial/schema-drift outcomes; broader adversarial HTTP/DNS/redirect coverage | E05/E09/E10/E12/E19/E20/E40: synthetic hostile inputs through the installed actual transport/parser path, bounded resources and preserved raw versions; no operational endpoint catalogue |
 | Retrieval at scale | Resumable backfill, incremental scheduling, cache identities/invalidation, scoped filtering and optional ANN with an exact oracle; index readiness/rollback across upgrades | E21–E24/E39/E45: restart during backfill, compatible atomic activation, filtered candidate isolation, measured exact-vs-ANN recall and frozen relevance cases |
 | Useful local models and resource operations | Select licensed pinned pretrained encoder/reranker/generator artifacts; capability/upgrade probes, complete stream/incomplete/refusal contracts where supported; measured memory/queue admission, OOM/drain/shutdown and a declared acceleration profile | E23/E24/E34–E36/E41: actual held-out CPU inference and declared GPU hardware evidence, independent expected outputs, no implicit downloads/custom model code, old worker ownership resolved before replacement |
