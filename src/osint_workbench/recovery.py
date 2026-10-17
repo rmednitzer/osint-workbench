@@ -284,7 +284,12 @@ def restore(db: Database, path: Path, expected_sha: str, root: Path):
         if count > MAX_ROWS or size > MAX_METADATA:
             raise WorkbenchError("RECOVERY_LIMIT_EXCEEDED")
         # Exclusive creation prevents mixing snapshots or overwriting another store.
-        root.mkdir(mode=0o700, parents=False, exist_ok=False)
+        parent = os.open(root.parent, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+        try:
+            os.mkdir(root.name, mode=0o700, dir_fd=parent)
+            os.fsync(parent)  # The new root entry must survive before metadata acceptance.
+        finally:
+            os.close(parent)
         store, total = EvidenceStore(root), 0
         for sha, encoded in objects.items():
             data = base64.b64decode(encoded, validate=True)

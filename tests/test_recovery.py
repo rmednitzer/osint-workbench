@@ -188,9 +188,11 @@ def _rewrite(path, change):
 
 @pytest.mark.integration
 @pytest.mark.parametrize(
-    "failure", ["digest", "object", "foreign-key", "schema", "columns", "version"]
+    "failure", ["digest", "object", "foreign-key", "schema", "columns", "version", "fsync"]
 )
-def test_restore_rejects_corruption_and_rolls_back(databases, destination, tmp_path, failure):
+def test_restore_rejects_corruption_and_rolls_back(
+    databases, destination, tmp_path, failure, monkeypatch
+):
     writer, _, roles = databases
     store = EvidenceStore(tmp_path / "objects")
     writer.ingest(_input(), b"raw", store)
@@ -213,9 +215,15 @@ def test_restore_rejects_corruption_and_rolls_back(databases, destination, tmp_p
         sha = _rewrite(path, lambda p: p["migrations"].update({"999": "0" * 64}))
     elif failure == "version":
         sha = _rewrite(path, lambda p: p["database"].update(postgres_major=999))
+    elif failure == "fsync":
+
+        def unavailable(_fd):
+            raise OSError("synthetic durability failure")
+
+        monkeypatch.setattr(recovery.os, "fsync", unavailable)
     else:
         sha = _rewrite(path, lambda p: p["tables"]["sources"][0].update(unknown="rejected"))
-    with pytest.raises((WorkbenchError, psycopg.IntegrityError)):
+    with pytest.raises((WorkbenchError, psycopg.IntegrityError, OSError)):
         recovery.restore(Database(destination["admin"]), path, sha, tmp_path / "restored")
     with Database(destination["admin"]).connect() as conn:
         assert conn.execute("SELECT count(*) AS n FROM ow.documents").fetchone()["n"] == 0

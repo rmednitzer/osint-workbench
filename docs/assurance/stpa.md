@@ -132,7 +132,8 @@ trust, other clients bypassing local admission, cross-user/host resource content
 incomplete graph resolution/diversity and full recovery/retention. A checked source
 span is not semantic entailment, and an executable hash is not complete deployment
 attestation. These limits remain in STATUS.md and ADR-0019.
-# Private recovery control increment
+
+## Private recovery control increment
 
 The bounded checkpoint/restore path adds the following controls without closing
 the target lifecycle analysis:

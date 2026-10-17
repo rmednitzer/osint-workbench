@@ -38,6 +38,7 @@ Database insertion is transactional; failed restores can leave unreferenced priv
 objects, never a partially accepted dataset. Populated targets cannot be retried
 blindly. Regression evidence uses fresh PostgreSQL databases and actual reader/MCP
 and hybrid queries, including corrupt-bundle rejection and post-restore review
-withdrawal. These partially address R22/R29/R51/R54 and the recovery intent of
-E17/E48; they do not close those full acceptance scenarios. Published migrations
+withdrawal. These address R14 and a bounded subset of E13. Consumer export under
+R22/E17, publishing under R51/E47 and retention/deletion under R29/R54/E48 remain
+open; private recovery is not evidence of those effects. Published migrations
 remain unchanged. The revision-bound CI receipt determines verified scope.
