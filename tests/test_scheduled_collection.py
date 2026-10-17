@@ -385,3 +385,56 @@ def test_cached_body_is_a_gc_and_checkpoint_reference(databases, tmp_path):
     receipt = recovery.checkpoint(operator, store, path)
     assert receipt["objects"] == 1
     assert set(json.loads(path.read_text())["payload"]["objects"]) == {sha}
+
+
+@pytest.mark.integration
+def test_native_http_server_to_postgresql_revalidation(databases, tmp_path, monkeypatch):
+    import threading
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    writer, reader, _ = databases
+    requests = []
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            requests.append(self.headers.get("If-None-Match"))
+            if requests[-1] == '"native"':
+                self.send_response(304)
+                self.send_header("ETag", '"native"')
+                self.end_headers()
+            else:
+                self.send_response(200)
+                self.send_header("ETag", '"native"')
+                self.send_header("Content-Length", str(len(FEED)))
+                self.end_headers()
+                self.wfile.write(FEED)
+
+        def log_message(self, *args):
+            pass
+
+    # Fixture routing only: actual sockets/framing/deadlines/parser/database;
+    # production DNS/TLS/address policy is deliberately not asserted by this test.
+    with ThreadingHTTPServer(("127.0.0.1", 0), Handler) as server:
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+
+        class RoutedBackend(acquisition._PublicBackend):
+            def connect_tcp(self, host, port, timeout=None, **kwargs):
+                stream = httpcore.SyncBackend.connect_tcp(
+                    self,
+                    "127.0.0.1",
+                    server.server_port,
+                    timeout=timeout,
+                )
+                return acquisition._Stream(stream, self.deadline)
+
+        monkeypatch.setattr(acquisition, "_PublicBackend", RoutedBackend)
+        try:
+            store = EvidenceStore(tmp_path / "objects")
+            assert collect(source(), writer, store, due_only=True)["documents"] == 2
+            due(writer)
+            assert collect(source(), writer, store, due_only=True)["status"] == "not_modified"
+            assert requests == [None, '"native"'] and reader.status()["documents"] == 2
+        finally:
+            server.shutdown()
+            thread.join(timeout=5)
