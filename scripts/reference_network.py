@@ -108,6 +108,8 @@ def _response(connection, status, body=b"", *, etag=None):
         status
     ]
     headers = [f"HTTP/1.1 {status} {reason}", f"Content-Length: {len(body)}", "Connection: close"]
+    if status == 503:
+        headers.append("Retry-After: 120")
     if etag is not None:
         headers.extend([f"ETag: {etag}", f"Last-Modified: {MODIFIED}"])
     connection.sendall(("\r\n".join(headers) + "\r\n\r\n").encode("ascii") + body)

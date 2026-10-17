@@ -33,7 +33,7 @@ concurrency and policy-gated isolated recovery. See
 [the revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
 models establish execution contracts, not pretrained semantic quality.
 
-The full programme covers 28 capability areas, 28 ADRs, 58 requirements and 51
+The full programme covers 28 capability areas, 29 ADRs, 58 requirements and 51
 acceptance scenarios. The tests in this repository currently establish only a
 foundation subset. Detailed future specifications are under `docs/`; they are not
 execution receipts. CI results are authoritative for a particular tested revision.
@@ -95,3 +95,11 @@ backoff, no-dispatch while not due, immutable changed versions and matching
 CAS/outbox records. The manual receipt records the installed wheel digest,
 Unix-socket SCRAM negative control, service UID and owned cleanup. Internet DNS,
 TLS, production cadence and operational deployment acceptance remain open.
+
+The bounded per-source Retry-After profile handles final 429/503 advice using the
+database clock, preserves ordinary backoff and failed-manual reservations, and
+reports malformed hints, seven-day clamping and unconfirmed state persistence
+explicitly. It adds no schema migration or worker sleep. Its native and actual
+service acceptance must be checked against the named revision receipts; redirect
+delays, shared-host quotas, trustworthy clocks and longer server minima remain
+outside this profile.

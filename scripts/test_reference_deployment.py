@@ -482,7 +482,8 @@ def enabled_http_service_acceptance(account):
     def state():
         with connect() as conn:
             policy = conn.execute(
-                "SELECT *,next_attempt>clock_timestamp() AS future "
+                "SELECT *,next_attempt>clock_timestamp() AS future, "
+                "next_attempt-clock_timestamp() AS wait "
                 "FROM ow.collection_state WHERE source_id=%s",
                 (source_id,),
             ).fetchone()
@@ -777,6 +778,7 @@ def enabled_http_service_acceptance(account):
                 and failed[1][-1]["error_code"] == "SOURCE_HTTP_ERROR"
                 and failed[0]["failures"] == 1
                 and failed[0]["future"]
+                and 90 < failed[0]["wait"].total_seconds() <= 120
                 and failed[6]["last_error"] == "SOURCE_HTTP_ERROR",
                 "HTTP_FAILURE_BACKOFF_MISMATCH",
             )
@@ -834,6 +836,7 @@ def enabled_http_service_acceptance(account):
                 "enabled_http_tick": True,
                 "conditional_304_no_duplicates": True,
                 "http_failure_backoff": True,
+                "retry_after_seconds_persisted": True,
                 "not_due_no_http": True,
                 "changed_feed_immutable_versions": True,
                 "job_and_cas_evidence_verified": True,

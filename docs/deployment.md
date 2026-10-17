@@ -184,6 +184,8 @@ database integration.
 The required sequence is initial HTTP 200 acceptance, an actual timer-triggered
 304, controlled HTTP 503 with durable backoff, a non-due tick with no HTTP request,
 then unconditional acceptance of a changed representation after failure. The
+503 fixture requests a 120 s Retry-After delay; acceptance must observe that
+durable delay beyond the 60 s local failure floor before testing no dispatch. The
 fixture adds an explicit 1 s activation arm and accelerates recurring inactivity
 scheduling to 1 s, with zero jitter and 100 ms accuracy. It advances only the
 synthetic source's database due time. Earlier probe failure state is reset before

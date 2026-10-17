@@ -323,3 +323,32 @@ password authentication, actual timer activation and cleanup require observed
 candidate execution; syntax, disabled-source probes or fixture setup alone do
 not establish them. No TLS, source truth, production reliability, independent
 semantic acceptance, reader tenancy or full E2E programme closure is implied.
+
+## Bounded server-advised retry refinement
+
+CA3/CA5/CA20 include admission of a later source attempt after an untrusted final
+429/503 response. Feedback is a bounded error disposition, persistent source
+failure count and next-attempt timestamp; no raw response header is authority.
+SC2/SC5/SC6 and H1/H2/H5/H6/H9 apply. Retry scheduling is a discrete database
+decision; a worker sleeping while retaining resources is not its implementation.
+
+| UCA | Hazardous context / category | Derived constraint and allocation | Discriminating evidence |
+| --- | --- | --- | --- |
+| U51 | CA3/CA5/P or T: retry automatically before accepted bounded server advice/local backoff, or lose the delay at process restart | C51: persist the maximum of reservation, ordinary failure-backoff deadline and bounded server deadline using database time; no worker sleep; ADR-0029 | Native delta/date, backoff-floor, restart and no-early-dispatch cases |
+| U52 | CA5/P: accept ambiguous, malformed or arbitrarily large metadata as indefinite scheduling authority, or describe a capped wait as fully honouring a larger minimum | C52: bounded single-field parser, seven-day cap with `SOURCE_RETRY_AFTER_CAPPED`, explicit invalid-input fallback and disclosed longer-minimum trade-off | Duplicate/date-comma, oversized/invalid input, cap-boundary and raw-header-canary tests |
+| U53 | CA5/P or T: schedule from an origin-supplied clock or misinterpret an obsolete date while claiming exact deadline compliance | C53: UTC date handling with database-clock admission, explicit RFC 850 year-window and clock-skew limits; origin Date/Age does not replace local scheduling authority | Three-format/date-boundary, past-date and database-time cases; tests do not attest clock correctness |
+| U54 | CA20/CA9/P: apply an unreviewed manual retry, resource reset or restored-source enable while reporting continuous automatic server-delay protection | C54: explicit manual refresh overrides due time; new failure re-establishes bounded advice; configuration reset and disabled-source restore/re-enablement remain disclosed overrides | Manual override, new-failure persistence, changed-resource and restore contracts |
+| U55 | CA5/CA9/P: return raw retry headers/URLs, accept an error body as evidence, or present a per-source timestamp as shared-host rate governance | C55: bounded safe errors only, no error-body acceptance, final 429/503 scope and no shared-host/redirect-delay claim | Wire-to-collector rejection/canary cases, independent-source progress and installed-wheel regression scope |
+| U56 | CA5/CA7/P or T: report server advice as durably scheduled after the failure transaction loses its connection or commit acknowledgement | C56: return `COLLECTION_STATE_PERSIST_FAILED` when persistence is unconfirmed; retain the last confirmed pre-dispatch reservation and reconcile observed database state on restart | Native backend termination while a fixture returns advice, explicit persistence-failure result, restarted reservation/interrupted-run checks |
+
+A malicious or faulty origin can still affect its source's availability within
+the chosen horizon. The cap can retry earlier than a legitimate longer minimum;
+manual operator actions can override the timestamp. Those are explicit policy
+limits, not proof of complete Retry-After compliance. Simultaneous sources at one
+host, clock jumps, external server behaviour, redirect-delay semantics and actual
+provider quotas require separate controls/evidence. A crash between advice receipt
+and commit cannot retain uncommitted advice; a lost commit acknowledgement can
+leave an unknown outcome. The database, not the original HTTP error disposition,
+determines what survived. Failed manual dispatch preserves an older later
+reservation; successful manual acceptance can reset it to normal polling. No original endpoint, new
+MCP authority or operational deployment change is implied by this increment.

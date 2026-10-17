@@ -44,6 +44,7 @@ DOCUMENTATION_HOSTS = {
     "raw.githubusercontent.com",
     "modelcontextprotocol.io",
     "www.postgresql.org",
+    "www.rfc-editor.org",
     "www.psycopg.org",
     "csrc.nist.gov",
     "psas.scripts.mit.edu",

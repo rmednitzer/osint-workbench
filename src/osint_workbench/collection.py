@@ -3,15 +3,23 @@ import subprocess
 import sys
 import tempfile
 import uuid
+from datetime import timedelta
 
 from pydantic import TypeAdapter
 
 from .contracts import DocumentInput, Identifier, Source
 from .database import Database
-from .errors import WorkbenchError
+from .errors import SourceHTTPError, WorkbenchError
 from .evidence import EvidenceStore
 from .feed_parser import MAX_FEED, MAX_RESULT
-from .fetch import FetchResult, fetch, fetch_response, validate_url, validators
+from .fetch import (
+    MAX_RETRY_AFTER_SECONDS,
+    FetchResult,
+    fetch,
+    fetch_response,
+    validate_url,
+    validators,
+)
 from .lifecycle import assert_key_visible
 from .text import digest
 
@@ -128,7 +136,8 @@ def collect(source: Source, db: Database, store: EvidenceStore, *, due_only=Fals
         delay = min(86400, source.poll_seconds * 2 ** min(state["failures"], 16))
         conn.execute(
             "UPDATE ow.collection_state SET failures=least(failures+1,32),"
-            "next_attempt=clock_timestamp()+make_interval(secs=>%s) WHERE source_id=%s",
+            "next_attempt=greatest(next_attempt,clock_timestamp()+make_interval(secs=>%s)) "
+            "WHERE source_id=%s",
             (delay, source.source_id),
         )
         run_id = uuid.uuid4()
@@ -241,6 +250,21 @@ def collect(source: Source, db: Database, store: EvidenceStore, *, due_only=Fals
             code = exc.code if isinstance(exc, WorkbenchError) else "COLLECT_BACKEND_FAILURE"
             try:
                 conn.rollback()
+                retry_at = None
+                if isinstance(exc, SourceHTTPError):
+                    # Use the database clock for both absolute-date comparison
+                    # and relative waits. Persistence later than receipt is a
+                    # conservative extension; never trust an origin Date clock.
+                    now = conn.execute("SELECT clock_timestamp() AS now").fetchone()["now"]
+                    if exc.retry_after_seconds is not None:
+                        retry_at = now + timedelta(seconds=exc.retry_after_seconds)
+                    elif exc.retry_after_at is not None:
+                        retry_at = exc.retry_after_at
+                    if retry_at is not None:
+                        limit = now + timedelta(seconds=MAX_RETRY_AFTER_SECONDS)
+                        if retry_at > limit:
+                            retry_at = limit
+                            code = "SOURCE_RETRY_AFTER_CAPPED"
                 conn.execute(
                     """UPDATE ow.collection_runs SET status='failed',error_code=%s,
                     finished_at=clock_timestamp() WHERE run_id=%s""",
@@ -250,8 +274,9 @@ def collect(source: Source, db: Database, store: EvidenceStore, *, due_only=Fals
                 # completion; failed or unconfirmed work requires a full unconditional replay.
                 conn.execute(
                     "UPDATE ow.collection_state SET next_attempt=greatest(next_attempt,"
-                    "clock_timestamp()+make_interval(secs=>%s)) WHERE source_id=%s",
-                    (delay, source.source_id),
+                    "clock_timestamp()+make_interval(secs=>%s),%s::timestamptz) "
+                    "WHERE source_id=%s",
+                    (delay, retry_at, source.source_id),
                 )
                 conn.execute(
                     "UPDATE ow.sources SET last_error=%s WHERE source_id=%s",
@@ -259,8 +284,12 @@ def collect(source: Source, db: Database, store: EvidenceStore, *, due_only=Fals
                 )
                 conn.commit()
             except Exception:
-                # Leave an interrupted run to reconcile after the connection returns.
-                pass
+                # Reservation remains, but the observed server hint/failed run
+                # could not be committed. Never report that persistence succeeded.
+                # Avoid a second rollback in the driver context manager, whose
+                # warning can include the private connection identity.
+                conn.close()
+                raise WorkbenchError("COLLECTION_STATE_PERSIST_FAILED") from None
             raise WorkbenchError(code) from None
 
 

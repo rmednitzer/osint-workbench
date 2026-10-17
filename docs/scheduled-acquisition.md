@@ -39,12 +39,50 @@ are not a global per-host quota or a distributed execution-termination guarantee
 A due attempt durably reserves its next eligible time before dispatch. Consecutive
 failed or unconfirmed attempts use `min(86400, poll_seconds * 2^n)` seconds, where
 `n` is the previous failure count; success resets the counter and schedules the
-next poll after completion. Restart does not reset the delay. The next admitted
+next poll after completion. Restart does not reset a committed delay. The next admitted
 collector marks abandoned running receipts interrupted. There is no automatic
 sleep/retry loop. `collect` without `--due-only` explicitly bypasses due times and
 makes an unconditional request, while retaining the same source exclusion lock.
+A successful manual refresh resets scheduling to the configured poll interval.
+A failed manual refresh preserves any later previously stored due time.
 `--max-sources` applies only to `--due-only`; an explicit cap supplied to manual
 collection is rejected rather than silently ignored.
+
+## Server-requested retry delays
+
+Final HTTP 429/503 failures may extend the per-source schedule using one
+`Retry-After` field. ASCII nonnegative delay-seconds and the three HTTP-date
+formats (IMF-fixdate, RFC850, asctime) are supported. The input is bounded at
+128 bytes, and duplicate, combined or malformed fields produce
+`INVALID_RETRY_AFTER` with ordinary local backoff. Error bodies and raw retry
+fields are not retained, returned or logged. Hints on other status codes and
+redirect responses are outside this profile; existing redirect handling remains.
+
+The failure transaction uses the database UTC clock and stores the greatest of
+its existing reservation, local backoff and the validated hint. Delta seconds
+start at failure persistence, conservatively later than response receipt.
+HTTP-date remains absolute UTC; the untrusted origin `Date` header is not a clock.
+The rolling RFC850 two-digit century interpretation uses application UTC,
+including the full instant at the 50-year boundary; clock correctness remains
+an assumption.
+Workers do not sleep or retry within the tick. Independent due sources can proceed.
+
+A hint can extend eligibility by at most 604800 s (seven days) from persistence.
+A longer valid request is capped and reported as `SOURCE_RETRY_AFTER_CAPPED`.
+This protects source availability against unbounded remote deferral and **does
+not fully honour a larger requested minimum**. It is an explicit local policy,
+not a claim of complete HTTP conformance. Zero, past or shorter hints cannot
+shorten ordinary backoff or an existing later reservation.
+
+The failed run, source error and deadline commit together. A persistence failure
+reports `COLLECTION_STATE_PERSIST_FAILED`; only the earlier local reservation can
+then be relied on. A kill between response receipt and that commit can also lose
+uncommitted server advice. The next collector reconciles the running receipt as
+interrupted; it cannot reconstruct a lost header. Committed advice survives a
+collector restart, but restore deliberately clears schedules and disables sources.
+Manual refresh, resource identity changes and explicit restore/re-enablement are
+operator overrides; this is not a host-wide rate limit or provider quota.
+See [ADR-0029](adr/0029-bounded-retry-after-scheduling.md).
 
 Validators are restricted to bounded printable entity tags and canonical IMF-fixdate
 Last-Modified values. Unsupported or ambiguous fields fail closed. Entity tags take
@@ -86,10 +124,11 @@ core-v4 format-2 checkpoints can adopt the v5 layout with an empty schedule and
 unknown historical HTTP status, subject to all existing policy/hash/target checks.
 Core-v3/format-1 adoption remains unavailable.
 
-Remaining acquisition work includes Retry-After policy, shared-host rate limits,
+Remaining acquisition work includes redirect-response retry advice, shared-host rate limits,
 jitter, durable cursors, conditional article fetches and additional formats. Real
-DNS/TLS adversarial cases, deployed timer behaviour and larger-corpus operation
-need separate evidence. See ADR-0023 and the implementation backlog.
+DNS/TLS adversarial cases, production timer cadence and larger-corpus operation
+need separate evidence. Synthetic installed-service/timer results are recorded
+separately in the collector deployment receipt. See ADR-0023 and the implementation backlog.
 
 The native acceptance suite also routes a disposable local HTTP server through
 the real socket/framing/parser/database path. Fixture routing does not establish
