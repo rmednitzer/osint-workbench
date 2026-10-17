@@ -7,7 +7,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from . import intelligence, lifecycle, recovery
+from . import garbage_collection, intelligence, lifecycle, recovery
 from .collection import collect
 from .contracts import DocumentInput, SourceConfig
 from .database import SCHEMA_VERSION, Database, migrate
@@ -55,6 +55,13 @@ def main():
     recovered.add_argument("--policy-file", type=Path, required=True)
     recovered.add_argument("--policy-sha256", required=True)
     recovered.add_argument("--minimum-policy-revision", type=int, required=True)
+    gc = sub.add_parser("gc")
+    gc.add_argument("action", choices=["plan", "apply"])
+    gc.add_argument("--file", type=Path, required=True)
+    gc.add_argument("--operation-id")
+    gc.add_argument("--minimum-age-seconds", type=int, default=86400)
+    gc.add_argument("--sha256")
+    gc.add_argument("--journal", type=Path)
     life = sub.add_parser("lifecycle")
     life.add_argument(
         "action", choices=["inspect", "retention", "hold", "release", "retire", "export-policy"]
@@ -101,7 +108,22 @@ def main():
     job.add_argument("job_id")
     args = parser.parse_args()
     try:
-        if args.command == "checkpoint":
+        if args.command == "gc":
+            db = Database(_dsn("OW_GC_DSN"))
+            store = EvidenceStore(Path(os.environ["OW_EVIDENCE_ROOT"]), read_only=True)
+            if args.action == "plan":
+                value = garbage_collection.plan(
+                    db,
+                    store,
+                    args.file,
+                    operation_id=args.operation_id,
+                    minimum_age_seconds=args.minimum_age_seconds,
+                )
+            else:
+                if args.sha256 is None or args.journal is None:
+                    raise WorkbenchError("GC_PLAN_DIGEST_AND_JOURNAL_REQUIRED")
+                value = garbage_collection.apply(db, store, args.file, args.sha256, args.journal)
+        elif args.command == "checkpoint":
             value = recovery.checkpoint(
                 Database(_dsn("OW_RECOVERY_DSN")),
                 EvidenceStore(Path(os.environ["OW_EVIDENCE_ROOT"]), read_only=True),

@@ -16,7 +16,7 @@ complete merely because its design documents or interfaces exist.
 | Vulnerability/regulatory profiles | Target specification | No domain adapters or applicability verification yet |
 | Cloud APIs/accounting/batches | Target specification | No credential access, native adapters, remote requests or spending |
 | Remote MCP | Target authentication design | No HTTP listener or remote client compatibility claim |
-| Export/recovery/retention | Bounded private checkpoint, empty-target restore, operator retention/holds/logical tombstones and mandatory current-policy reconciliation | Native SQL-reader, job/fence, inference, collector and restored-policy regressions passed in installed-wheel CI. Physical GC/erasure, legacy adoption, public export, publisher and full-host/PITR remain pending |
+| Export/recovery/retention | Bounded private checkpoint, empty-target restore, operator retention/holds/logical tombstones and mandatory current-policy reconciliation | Native SQL-reader, job/fence, inference, collector and restored-policy regressions passed in installed-wheel CI. Reviewed orphan-object GC is implemented; its new native evidence is pending this revision. Full record erasure, legacy adoption, public export, publisher and full-host/PITR remain pending |
 | Publication controls | Positive file selection and source/artifact scanning | Narrow scanner tests; private values are never committed |
 
 Core schema v4 and retrieval-profile v2 are additive; earlier published migrations
@@ -33,12 +33,12 @@ concurrency and policy-gated isolated recovery. See
 [the revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
 models establish execution contracts, not pretrained semantic quality.
 
-The full programme covers 28 capability areas, 21 ADRs, 58 requirements and 51
+The full programme covers 28 capability areas, 22 ADRs, 58 requirements and 51
 acceptance scenarios. The tests in this repository currently establish only a
 foundation subset. Detailed future specifications are under `docs/`; they are not
 execution receipts. CI results are authoritative for a particular tested revision.
 
-Outstanding dependency groups: physical deletion/GC, policy custody and wider recovery operations;
+Outstanding dependency groups: full retained-record erasure and backup expiry, policy custody and wider recovery operations;
 pretrained retrieval/generation quality and full resource scheduling; richer graph
 and cited products; domain profiles; governed cloud and remote MCP; deployment,
 observability and integrated failure, recovery and publication acceptance. Existing
@@ -49,3 +49,8 @@ for concrete closure evidence across every unfinished workstream.
 Do not copy private source catalogs, generated products, original deployment files,
 or operational history to accelerate this roadmap. Prototype behaviour must be
 reviewed and improved where it fails the target contracts.
+
+Orphan GC adds an explicit bounded plan/apply CLI, complete retained-reference
+checks, store/file identity checks and durable intent/completion receipts. The
+new native failure/restart tests must pass before claiming verified behaviour.
+It never deletes retained database records or objects reachable from them.

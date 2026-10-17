@@ -178,7 +178,25 @@ policy is applied before the restored database can serve those rows. A jointly
 stale policy/hash/minimum cannot be detected offline and remains an explicit
 assumption requiring operational custody evidence.
 
-No physical erasure, reachability-based GC, old-binary coordination, privileged
+No full retained-record erasure, old-binary coordination, privileged
 direct-writer containment, remote disclosure recall or complete E39/E45/E48 closure
 is established. See ADR-0021 and `docs/lifecycle.md`; future context, cache and cloud
 profiles must inherit these constraints rather than claim protection automatically.
+
+## Bounded orphan-deletion refinement
+
+CA18 is the operator's reviewed orphan-plan application. Feedback is the private
+plan digest, retained-reference set, policy revision and durable intent/completion
+receipts. The control boundary excludes independent SQL/filesystem writers.
+
+| Unsafe control action | Constraint | Discriminating evidence |
+| --- | --- | --- |
+| U31: delete an object because its document is hidden, while a retained version, hold or shared raw-feed record still references it | C31: use all snapshot and collection-run references; refuse unknown schema and reference-table row security | Held/retired historical and shared-feed reachability tests |
+| U32: apply an old plan after reference, policy, root or file identity changes | C32: exclusively admit maintenance before snapshot; revalidate dataset, revision, reference set and every candidate before any unlink | Stale hold/reference, store substitution and changed-object refusals |
+| U33: retry an ambiguous unlink with no durable intent or report completion before directory persistence | C33: durably bind intent to reviewed plan before unlink; require that intent for missing-file resume; fsync shards before completion | Intent failure, post-unlink fsync failure and killed-process restart tests |
+
+Safe nonexecution includes rejecting unexpected inventory and unsupported row
+security while preserving all files. An apply failure may leave some orphans
+unlinked; receipts and the original plan must be retained. These controls do not
+establish physical media sanitization, deletion of retained records or backup
+erasure. See ADR-0022 and the revision-bound verification receipt.

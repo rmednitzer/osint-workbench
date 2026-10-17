@@ -110,3 +110,6 @@ passing a subset of tests does not establish complete conformance.
 
 See [architecture](docs/architecture.md), [design decisions](docs/adr/),
 [security policy](SECURITY.md) and [contribution guide](CONTRIBUTING.md).
+
+Operator-only [orphan cleanup](docs/garbage-collection.md) uses reviewed private
+plans and durable intent receipts. It does not purge retained records or backups.
