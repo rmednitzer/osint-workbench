@@ -27,6 +27,73 @@
         "owned_units_removed": true
       },
       "follow_up": "A separate no-follow HEAD request to the immutable public model URL observed us.aws.cdn.hf.co; add only that exact HTTPS CDN hostname, retaining all artifact hashes and limits."
+    },
+    {
+      "source_revision": "307766ff0100f731c9246de695500089bd57fe6a",
+      "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39042429286",
+      "workflow_result": "success",
+      "wheel_sha256": "ae3a8ebf3846558083cd6d2dcf4639d863f4d8d522744941958c165f1d80dee5",
+      "encoder": {
+        "stage": "completed",
+        "result": "completed_negative_gates",
+        "inference_reached": true,
+        "verified_artifact_bytes": 479383128,
+        "completed_document_calls": 6,
+        "completed_query_calls": 8,
+        "all_targets_met": false,
+        "semantic_acceptance": "not_established_by_public_diagnostic",
+        "activated": false,
+        "encoder_split_metrics": {
+          "development": {
+            "mrr_at_k": 0.8333333333333334,
+            "ndcg_at_k": 0.8769765845238192,
+            "recall_at_k": 1,
+            "unanswerable_abstention_rate": 0
+          },
+          "held_out": {
+            "mrr_at_k": 1,
+            "ndcg_at_k": 1,
+            "recall_at_k": 1,
+            "unanswerable_abstention_rate": 0
+          }
+        },
+        "lexical_split_metrics": {
+          "development": {
+            "mrr_at_k": 0.8333333333333334,
+            "ndcg_at_k": 0.8769765845238192,
+            "recall_at_k": 1,
+            "unanswerable_abstention_rate": 0
+          },
+          "held_out": {
+            "mrr_at_k": 1,
+            "ndcg_at_k": 1,
+            "recall_at_k": 1,
+            "unanswerable_abstention_rate": 0
+          }
+        }
+      },
+      "reference_service": {
+        "accepted": true,
+        "empty_config_tick": true,
+        "journal_service_uid": true,
+        "state_write": true,
+        "capabilities_zero": true,
+        "code_mount_read_only": true,
+        "writable_executable_denied": true,
+        "supervisor_timeout": true,
+        "timeout_child_stopped": true,
+        "real_sources_or_database_tested": false,
+        "timer_activation_tested": false,
+        "owned_units_removed": true
+      },
+      "raw_observations": {
+        "path": "public-encoder-diagnostic-307766f/",
+        "file_count": 24,
+        "github_artifact_id": 12104607123,
+        "downloaded_zip_sha256": "c5d8e1c9c5ace3e9dc9f2e8990f69ee87167141623b21ea912c6dbe54bdb1e73",
+        "ranking_replays_verified": 2
+      },
+      "interpretation": "Encoder and lexical baseline have equal aggregate metrics on these eight public authored synthetic cases; both fail unsupported-query abstention. No general quality, adoption, sovereignty or production retrieval claim."
     }
   ],
   "limits": [

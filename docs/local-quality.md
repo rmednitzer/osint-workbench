@@ -199,3 +199,22 @@ immutable model URL identified the exact public artifact CDN `us.aws.cdn.hf.co`.
 The follow-up admits only that hostname, retaining the original revision, byte
 limits, hashes, suite, targets and runtime constraints. No inference or quality
 result is inferred from artifact metadata or preparation failure.
+
+The follow-up run at revision `307766f` completed six document and eight query
+calls using the pinned pretrained bytes. Both the encoder and lexical baseline
+produced the following aggregate measurements; raw rankings, scores, timings,
+protocol and replayable receipts are preserved in
+[the public observation directory](testing/public-encoder-diagnostic-307766f/).
+
+| Split | Recall@3 | MRR@3 | nDCG@3 | Unsupported-query abstention |
+| --- | ---: | ---: | ---: | ---: |
+| Development | 1.0 | 0.833333 | 0.876977 | 0.0 |
+| Exposed held-out | 1.0 | 1.0 | 1.0 | 0.0 |
+
+Both systems failed the frozen abstention target. Workflow success means completed
+execution with retained negative gates. These eight cases demonstrate no aggregate
+relevance improvement over this lexical baseline. They do not establish statistical
+equivalence or population performance. Encoder execution does not validate
+production chunking, pgvector, hybrid RRF, reranking, briefing or citation quality.
+An independently designed answerability policy, independent labels, representative
+resources and an adopted model/sovereignty decision remain open.

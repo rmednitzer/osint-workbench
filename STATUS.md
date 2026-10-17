@@ -27,7 +27,7 @@ The core worker processes `document.accepted`; the explicit enrichment worker cl
 only its configured generator identity. Other job kinds remain queued.
 Character chunks preserve offsets but are not token-aware model input.
 
-The installed-wheel suite has 205 passing tests with no skips,
+The installed-wheel suite has 206 passing tests with no skips,
 including retained-state migration, direct SQL/MCP suppression, native retrieval,
 concurrency and policy-gated isolated recovery. See
 [the revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
@@ -70,3 +70,11 @@ lineage or an adopted sovereign production profile. See
 [local quality diagnostics](docs/local-quality.md) and
 [reference deployment](docs/deployment.md). Native regression evidence is bound to the tested revision in the verification
 receipt; manual profile results are recorded separately.
+
+The explicit pretrained diagnostic completed on a disposable runner: six document
+and eight query calls, with the frozen public inputs unchanged. Encoder and lexical
+baseline had equal aggregate relevance metrics on these eight authored cases;
+both failed unsupported-query abstention. The installed core service also passed
+its bounded non-root sandbox and accelerated timeout/child-stop probes. See
+[separate profile receipts and preserved observations](docs/testing/profile-diagnostics.json).
+Neither result closes semantic-quality adoption or operational deployment acceptance.
