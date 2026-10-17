@@ -61,6 +61,7 @@ def _history(conn):
         "migrations/004_lifecycle.sql",
         "migrations/005_collection_schedule.sql",
         "migrations/006_collector_role.sql",
+        "migrations/007_retired_record_purge.sql",
     ]
     expected = {
         str(i): digest(files("osint_workbench").joinpath(p).read_bytes())
@@ -76,7 +77,11 @@ def _history(conn):
         rows = conn.execute(
             "SELECT version,sha256 FROM ow.retrieval_migrations ORDER BY version"
         ).fetchall()
-        retrieval = ["retrieval.sql", "migrations/retrieval_002_lifecycle.sql"]
+        retrieval = [
+            "retrieval.sql",
+            "migrations/retrieval_002_lifecycle.sql",
+            "migrations/retrieval_003_purge_role.sql",
+        ]
         hashes = {
             i: digest(files("osint_workbench").joinpath(p).read_bytes())
             for i, p in enumerate(retrieval, 1)
@@ -228,7 +233,7 @@ def checkpoint(db: Database, store: EvidenceStore, path: Path):
                 raise WorkbenchError("RECOVERY_LIMIT_EXCEEDED")
             objects[sha] = base64.b64encode(data).decode("ascii")
     _provenance(tables, objects)
-    lifecycle.validate_policy(
+    policy = lifecycle.validate_policy(
         {
             "format": 1,
             "kind": "lifecycle_policy",
@@ -236,6 +241,7 @@ def checkpoint(db: Database, store: EvidenceStore, path: Path):
             "tables": {name: tables[name] for name in lifecycle.POLICY_TABLES},
         }
     )
+    lifecycle.assert_no_purged_documents(tables, policy)
     payload = {
         "format": 2,
         "captured_at": captured,
@@ -291,17 +297,19 @@ def _read(path, expected_sha):
 
 
 def _known_legacy_history(observed, current, version):
-    """Only exact published core4/core5 and identical optional-profile digests.
+    """Only exact published core4/core5/core6 and optional profile2 digests.
 
     The current target history has already been checked against every packaged
     migration. Do not treat an arbitrary prefix, missing profile or unknown hash
     as proof of a compatible earlier data contract.
     """
-    if version not in (4, 5):
+    if version not in (4, 5, 6):
         return False
     keys = {str(i) for i in range(1, version + 1)}
     expected = {
-        key: value for key, value in current.items() if key in keys or key.startswith("retrieval/")
+        key: value
+        for key, value in current.items()
+        if key in keys or key in {"retrieval/1", "retrieval/2"}
     }
     return observed == expected
 
@@ -321,19 +329,23 @@ def restore(
     tables, objects = payload["tables"], payload["objects"]
     policy = _read_envelope(policy_path, policy_sha, limit=lifecycle.MAX_POLICY)
     tables = lifecycle.reconcile_policy(tables, policy, minimum_revision)
+    lifecycle.assert_no_purged_documents(tables, policy)
     _provenance(tables, objects)
     with db.connect() as conn:
         conn.execute("SELECT pg_advisory_xact_lock(418287405)")
         history = _history(conn)
         _full_visibility(conn)
         names = CORE + (RETRIEVAL if "retrieval/1" in history else ())
-        # V6 changes only a jobs.kind default and grants. Exact known v5 has
-        # the same data layout; v4 additionally needs an empty private schedule.
+        # V6/V7 change defaults, grants and allowed lifecycle actions only.
+        # Exact known v5/v6 retain the same table layout; v4 needs an empty schedule.
         # No schema3/format1 inference or mixed migration history is accepted.
         adopted_v4 = _known_legacy_history(payload["migrations"], history, 4) and set(
             tables
         ) == set(names) - {"collection_state"}
         adopted_v5 = _known_legacy_history(payload["migrations"], history, 5) and set(
+            tables
+        ) == set(names)
+        adopted_v6 = _known_legacy_history(payload["migrations"], history, 6) and set(
             tables
         ) == set(names)
         if adopted_v4:
@@ -343,7 +355,12 @@ def restore(
             for row in tables["collection_runs"]:
                 row["http_status"] = None
         if (
-            (history != payload["migrations"] and not adopted_v4 and not adopted_v5)
+            (
+                history != payload["migrations"]
+                and not adopted_v4
+                and not adopted_v5
+                and not adopted_v6
+            )
             or set(tables) != set(names)
             or _database_identity(conn, history) != payload["database"]
         ):
@@ -445,4 +462,5 @@ def restore(
         "policy_revision": policy["control"]["revision"],
         "adopted_core_v4": adopted_v4,
         "adopted_core_v5": adopted_v5,
+        "adopted_core_v6": adopted_v6,
     }

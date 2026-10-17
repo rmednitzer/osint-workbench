@@ -1,12 +1,12 @@
 """Operator-only preservation and logical suppression; no physical-erasure claim."""
 
 import json
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
 from psycopg import sql
 from psycopg.types.json import Jsonb
-from pydantic import AwareDatetime, Field
+from pydantic import AwareDatetime, Field, field_validator
 
 from .contracts import Digest, Identifier, StrictModel
 from .errors import WorkbenchError
@@ -60,11 +60,83 @@ class Event(StrictModel):
     revision: int = Field(gt=0)
     source_id: Identifier
     external_key: Digest
-    action: Literal["retention", "hold", "release", "retire"]
+    action: Literal["retention", "hold", "release", "retire", "purge"]
     actor: str = Field(min_length=1, max_length=96)
     rationale: str = Field(min_length=1, max_length=2000)
     result: dict
     recorded_at: AwareDatetime
+
+
+PURGE_COUNT_KEYS = frozenset(
+    {
+        "documents",
+        "snapshots",
+        "document_heads",
+        "jobs",
+        "job_events",
+        "chunks",
+        "enrichments",
+        "assertions",
+        "assertion_reviews",
+        "briefings",
+        "retrieval_vectors",
+        "retrieval_members",
+        "retrieval_active",
+        "retrieval_generations_invalidated",
+    }
+)
+
+
+class PurgeResult(StrictModel):
+    format: Literal[1]
+    kind: Literal["retired_record_purge"]
+    operation_id: Identifier
+    plan_sha256: Digest
+    dataset_id: UUID
+    source_id: Identifier
+    external_key: Digest
+    policy_revision_before: int = Field(ge=0)
+    revision: int = Field(gt=0)
+    counts: dict[str, Annotated[int, Field(ge=0)]]
+    sql_deleted: Literal[True]
+    physical_erasure: Literal[False]
+    cas_objects_deleted: Literal[0]
+    backup_erasure: Literal[False]
+
+    @field_validator("counts")
+    @classmethod
+    def exact_count_keys(cls, value):
+        if set(value) != PURGE_COUNT_KEYS or value.get("documents", 0) < 1:
+            raise ValueError("complete fixed purge counts and deleted documents required")
+        return value
+
+    @field_validator("format", "cas_objects_deleted", mode="before")
+    @classmethod
+    def literal_integers(cls, value):
+        if type(value) is not int:
+            raise ValueError("integer required")
+        return value
+
+    @field_validator("sql_deleted", "physical_erasure", "backup_erasure", mode="before")
+    @classmethod
+    def literal_booleans(cls, value):
+        if type(value) is not bool:
+            raise ValueError("boolean required")
+        return value
+
+
+def purge_request_sha(operation_id, source_id, external_key, actor, rationale, plan_sha256):
+    payload = {
+        "format": 1,
+        "kind": "retired_record_purge",
+        "operation_id": operation_id,
+        "source_id": source_id,
+        "external_key": external_key,
+        "actor": actor,
+        "rationale": rationale,
+        "plan_sha256": plan_sha256,
+    }
+    return digest(json.dumps(payload, sort_keys=True, allow_nan=False).encode())
 
 
 MODELS = {
@@ -303,11 +375,11 @@ def validate_policy(payload):
         or len({e["operation_id"] for e in events}) != len(events)
     ):
         raise WorkbenchError("LIFECYCLE_POLICY_HISTORY_MISMATCH")
-    _validate_state(parsed)
+    _validate_state(parsed, control)
     return payload
 
 
-def _validate_state(parsed):
+def _validate_state(parsed, control):
     def key(row):
         return row.source_id, row.external_key
 
@@ -321,10 +393,39 @@ def _validate_state(parsed):
     ):
         raise WorkbenchError("LIFECYCLE_POLICY_HISTORY_MISMATCH")
     expected_items = {k: ("manual", None) for k in items}
-    expected_holds, expected_tombstones = {}, set()
+    expected_holds, expected_tombstones, expected_purges = {}, set(), set()
     try:
         for event in sorted(parsed["lifecycle_events"], key=lambda e: e.revision):
             result = event.result
+            if event.action == "purge":
+                purged = PurgeResult.model_validate_json(json.dumps(result))
+                k = key(event)
+                if (
+                    k not in items
+                    or not event.actor.strip()
+                    or not event.rationale.strip()
+                    or k not in expected_tombstones
+                    or k in expected_purges
+                    or (k, False) in expected_holds.values()
+                    or purged.source_id != event.source_id
+                    or purged.external_key != event.external_key
+                    or purged.operation_id != event.operation_id
+                    or purged.dataset_id != control.dataset_id
+                    or purged.revision != event.revision
+                    or purged.policy_revision_before != event.revision - 1
+                    or purge_request_sha(
+                        event.operation_id,
+                        event.source_id,
+                        event.external_key,
+                        event.actor,
+                        event.rationale,
+                        purged.plan_sha256,
+                    )
+                    != event.request_sha256
+                ):
+                    raise ValueError
+                expected_purges.add(k)
+                continue
             change = Change.model_validate_json(
                 json.dumps(
                     {
@@ -384,6 +485,23 @@ def _validate_state(parsed):
                 raise ValueError
     except (KeyError, ValueError):
         raise WorkbenchError("LIFECYCLE_POLICY_HISTORY_MISMATCH") from None
+
+
+def assert_no_purged_documents(tables, policy):
+    """Refuse retained SQL documents named by a durable purge decision.
+
+    This does not remove bytes, rewrite checkpoints, or prove deletion of external
+    copies. A pre-purge checkpoint must not resurrect purged retained content even
+    under a newer policy that would suppress its ordinary reader visibility.
+    """
+    validate_policy(policy)
+    purged = {
+        (event["source_id"], event["external_key"])
+        for event in policy["tables"]["lifecycle_events"]
+        if event["action"] == "purge"
+    }
+    if any((row["source_id"], row["external_key"]) in purged for row in tables["documents"]):
+        raise WorkbenchError("RECOVERY_PURGED_CONTENT_PRESENT")
 
 
 def export_policy(db, path):

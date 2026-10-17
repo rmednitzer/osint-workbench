@@ -20,7 +20,11 @@ def migrate_retrieval(dsn):
     migrate(dsn)
     scripts = [
         files("osint_workbench").joinpath(p).read_text()
-        for p in ("retrieval.sql", "migrations/retrieval_002_lifecycle.sql")
+        for p in (
+            "retrieval.sql",
+            "migrations/retrieval_002_lifecycle.sql",
+            "migrations/retrieval_003_purge_role.sql",
+        )
     ]
     with psycopg.connect(dsn) as conn:
         conn.execute("SELECT pg_advisory_xact_lock(%s)", (LIFECYCLE_LOCK,))
@@ -66,6 +70,18 @@ class VectorIndex:
         self.db, self.encoder = db, encoder
         self.space_id = encoder.manifest.identity()
 
+    @staticmethod
+    def _building(conn, generation):
+        # A status fence is checked under the row lock; all accepted chunks in
+        # this transaction retain that authority until commit. Cooperative purge
+        # additionally holds the exclusive lifecycle barrier between transactions.
+        row = conn.execute(
+            "SELECT status FROM ow.retrieval_generations WHERE generation_id=%s FOR UPDATE",
+            (generation,),
+        ).fetchone()
+        if row is None or row["status"] != "building":
+            raise WorkbenchError("RETRIEVAL_GENERATION_INVALIDATED")
+
     def build(self, store: EvidenceStore):
         with self.db.connect() as conn:
             conn.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
@@ -98,12 +114,14 @@ class VectorIndex:
                 if digest(row["body"].encode()) != digest(raw_text):
                     raise WorkbenchError("DOCUMENT_INTEGRITY_MISMATCH")
                 with self.db.connect() as authority:
+                    self._building(authority, generation)
                     assert_document_visible(authority, row["document_id"])
                     vectors = self.encoder.chunks(raw_text.decode("utf-8"))
                 count += len(vectors)
                 if count > 4096:
                     raise WorkbenchError("REFERENCE_CHUNK_LIMIT")
                 with self.db.connect() as conn:
+                    self._building(conn, generation)
                     assert_document_visible(conn, row["document_id"])
                     conn.execute(
                         "INSERT INTO ow.retrieval_members VALUES (%s,%s)",
@@ -136,10 +154,38 @@ class VectorIndex:
                             ),
                         )
             with self.db.connect() as conn:
-                conn.execute(
-                    "UPDATE ow.retrieval_generations SET status='ready' WHERE generation_id=%s",
+                self._building(conn, generation)
+                stored = conn.execute(
+                    "SELECT document_id FROM ow.retrieval_members "
+                    "WHERE generation_id=%s ORDER BY document_id",
                     (generation,),
-                )
+                ).fetchall()
+                missing = conn.execute(
+                    """SELECT 1 FROM ow.retrieval_members m WHERE generation_id=%s
+                    AND NOT EXISTS (SELECT 1 FROM ow.retrieval_vectors v
+                    WHERE v.generation_id=m.generation_id AND v.document_id=m.document_id)
+                    LIMIT 1""",
+                    (generation,),
+                ).fetchone()
+                actual_chunks = conn.execute(
+                    "SELECT count(*) AS n FROM ow.retrieval_vectors WHERE generation_id=%s",
+                    (generation,),
+                ).fetchone()["n"]
+                # Validate the captured build contract, not the current corpus:
+                # unrelated corpus drift remains a separate activation decision.
+                if (
+                    stored != [{"document_id": row["document_id"]} for row in rows]
+                    or missing
+                    or actual_chunks != count
+                ):
+                    raise WorkbenchError("INCOMPLETE_RETRIEVAL_GENERATION")
+                ready = conn.execute(
+                    "UPDATE ow.retrieval_generations SET status='ready' "
+                    "WHERE generation_id=%s AND status='building' RETURNING generation_id",
+                    (generation,),
+                ).fetchone()
+                if ready is None:
+                    raise WorkbenchError("RETRIEVAL_GENERATION_INVALIDATED")
             return {
                 "generation_id": str(generation),
                 "space_id": self.space_id,
@@ -152,7 +198,7 @@ class VectorIndex:
             with self.db.connect() as conn:
                 conn.execute(
                     "UPDATE ow.retrieval_generations SET status='failed',error_code=%s "
-                    "WHERE generation_id=%s",
+                    "WHERE generation_id=%s AND status='building'",
                     (code, generation),
                 )
             raise WorkbenchError(code) from None

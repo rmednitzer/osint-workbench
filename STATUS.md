@@ -5,7 +5,7 @@ complete merely because its design documents or interfaces exist.
 
 | Area | Current implementation | Verification boundary |
 | --- | --- | --- |
-| Configuration/package | Typed JSON, empty sources, src layout, packaged migrations | Installed-wheel CI covers retained core v1-to-v6 and active profile v1-to-v2 upgrade state |
+| Configuration/package | Typed JSON, empty sources, src layout, packaged migrations | Installed-wheel CI covers retained core migrations and active profile upgrade state; the new core7/profile3 candidate requires its own receipt |
 | Evidence/core storage | Hashed immutable objects, PostgreSQL records/version heads | Local object tests; native PostgreSQL tests in CI |
 | Jobs | Bounded retries, attempt events, cancellation, renewal and atomic chunk worker | PostgreSQL failure/concurrency tests; distributed/remote effects remain pending |
 | Collection | RSS/Atom extraction, bounded public HTTP transport and durable due/validator state | Native HTTP sockets, parser, due/304/backoff, crash/replay and recovery tests passed. Full adversarial HTTP coverage remains pending |
@@ -13,13 +13,13 @@ complete merely because its design documents or interfaces exist.
 | Retrieval | Local ONNX embeddings, token-aware chunks, exact pgvector/RRF and generation activation/rollback | Synthetic numerical ONNX and native database/MCP tests, including actual pair scoring; frozen offline scorer/local diagnostic added; pretrained semantic acceptance, ANN, automatic backfill and caches pending |
 | Local inference | CPU embedding/rerank runtimes, native Unix-socket generation and durable shared admission | Actual synthetic ONNX/GGUF execution and Unix transport/crash tests in CI; no GPU, pretrained quality or complete cross-host scheduler |
 | Enrichment/graph/briefings | Durable typed proposals, evidence spans, operator reviews and cited assertion digests | PostgreSQL/MCP proposal, review, withdrawal and cited-digest tests passed; pretrained semantic acceptance, aliases/merge and diversity pending |
-| Vulnerability/regulatory profiles | Target specification | No domain adapters or applicability verification yet |
+| Vulnerability/regulatory profiles | Offline advisory observation envelope; broader domain specifications | Authored strict-contract tests; no upstream adapters or applicability verification yet |
 | Cloud APIs/accounting/batches | Target specification | No credential access, native adapters, remote requests or spending |
 | Remote MCP | Target authentication design | No HTTP listener or remote client compatibility claim |
-| Export/recovery/retention | Bounded private checkpoint, empty-target restore, operator retention/holds/logical tombstones and mandatory current-policy reconciliation | Native SQL-reader, job/fence, inference, collector and restored-policy regressions passed in installed-wheel CI. Reviewed orphan-object GC passed native failure/restart and scoped-role tests. Full record erasure, legacy adoption, public export, publisher and full-host/PITR remain pending |
+| Export/recovery/retention | Bounded private checkpoint, empty-target restore, operator retention/holds/logical tombstones and mandatory current-policy reconciliation | Native SQL-reader, job/fence, inference, collector and restored-policy regressions passed in installed-wheel CI. Reviewed orphan-object GC passed native failure/restart and scoped-role tests. Full record erasure, legacy format-1 adoption, public export, publisher and full-host/PITR remain pending |
 | Publication controls | Positive file selection and source/artifact scanning | Narrow scanner tests; private values are never committed |
 
-Core schema v6 and retrieval-profile v2 are additive; earlier published migrations
+Core schema v7 and retrieval-profile v3 are additive; earlier published migrations
 remain byte-identical. Checkpoint format 2 requires separate policy receipts;
 legacy format-1 restore/adoption is not silently accepted. Job cancellation
 revokes acceptance authority; it does not prove a running computation has stopped.
@@ -33,7 +33,7 @@ concurrency and policy-gated isolated recovery. See
 [the revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
 models establish execution contracts, not pretrained semantic quality.
 
-The full programme covers 28 capability areas, 31 ADRs, 58 requirements and 51
+The full programme covers 28 capability areas, 32 ADRs, 58 requirements and 51
 acceptance scenarios. The tests in this repository currently establish only a
 foundation subset. Detailed future specifications are under `docs/`; they are not
 execution receipts. CI results are authoritative for a particular tested revision.
@@ -122,3 +122,11 @@ vulnerability-profile acceptance remain pending; see [the bounded contract](docs
 The installed-wheel run passed all 147 advisory cases and the retained native
 suite in the named verification receipt. No upstream interoperability or semantic
 intelligence-quality acceptance follows from these authored contract fixtures.
+
+Retired-record SQL purge adds a private plan/apply operator command, separately
+scoped purge credentials and an atomic durable lifecycle decision. It removes
+known SQL derivatives, preserves shared/held dependencies and refuses historical
+restore content covered by current purge policy. CAS, feeds, backups, WAL and media
+erasure remain outside its scope; [the operator procedure](docs/retired-record-purge.md)
+describes irreversible effects and retrieval rebuild requirements. Execution
+evidence for this candidate must be read from its named revision receipt.

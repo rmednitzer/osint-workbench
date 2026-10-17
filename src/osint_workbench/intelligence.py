@@ -263,6 +263,10 @@ def create_briefing(db, document_ids):
         db.document(identifier)  # Validate digests before constructing a product.
     with db.connect() as conn:
         conn.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+        for identifier in document_ids:
+            # Admission above validates identity, but lifecycle changes can win
+            # before this shared transaction. Never persist a dangling selection.
+            assert_document_visible(conn, identifier)
         rows = conn.execute(
             """SELECT a.*,d.snapshot_id,d.source_id FROM ow.current_assertions a
             JOIN ow.active_documents d USING(document_id) WHERE a.document_id=ANY(%s)

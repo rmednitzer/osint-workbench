@@ -410,3 +410,42 @@ retractions and operational assessment require separate implementation and
 verification. This contributes bounded evidence toward E31; it does not close
 E31/E32 or the vulnerability-intelligence profile, nor establish source truth or
 CVSS vector/score consistency.
+
+## Transactional retired-record purge refinement
+
+[ADR-0032](../adr/0032-transactional-retired-record-purge.md) refines CA17
+(review/apply purge) and CA8 (restore), with the operator, purge process, job
+coordinator and retrieval builder as interacting controllers. The controlled
+state comprises retained SQL records, their supported derivative references and
+permanent lifecycle history. H1/H4/H8 and U21/C21 apply. Feedback must distinguish
+a reviewed impact plan, an unconfirmed commit, a durable purge event, a private
+receipt copy and actual postconditions. The discrete purge command has no
+duration category; delayed execution and premature completion are timing/order
+concerns. This refinement defines acceptance obligations, not executed evidence.
+
+| UCA | Hazardous context / category | Derived constraint and allocation | Required discriminating evidence |
+| --- | --- | --- | --- |
+| U66 | CA17/P: delete only one version, delete an expiry-only item, or delete held/shared collateral while interpreting a document ID as the complete disposal unit | C66: require the permanent source/key tombstone, recheck all holds, traverse all versions and supported derivatives, retain shared snapshots and block held collateral; bind the exact impact set to the reviewed plan | Multiple versions, shared snapshots/feed bodies, shared immutable products and held-neighbour refusal |
+| U67 | CA17/P or T: apply a stale plan or accept producer output after deletion, including a builder changing an invalidated generation back to ready | C67: exclusive lifecycle admission before snapshot, exact state revalidation, job-fence rejection and conditional generation acceptance; preserve neighbouring vectors while invalidating affected corpus claims | Stale plan and real worker/build/activation interleavings; no target reconstruction or incomplete ready generation |
+| U68 | CA17/CA7/P or T: publish success before commit, repeat deletion after a lost response without checking durable identity, or treat a receipt-write failure as database rollback | C68: purge event/revision/deletions commit atomically; replay checks exact operation/request/plan binding; uncertain COMMIT remains an error until durable reconciliation | Mid-transaction rollback, exact/conflicting retry, lost-response reconciliation and post-commit receipt failure |
+| U69 | CA8/P or T: restore a pre-purge checkpoint under newer policy while merely hiding the resurrected records | C69: validate purge history and current independently retained policy; reject historical target records before object acceptance; accept compatible post-purge state only | Pre-purge refusal with absent object root, post-purge round trip, stale/missing/incorrect policy and explicit known-history adoption cases |
+| U70 | CA17/P: execute deletion using broad owner/writer authority or omit optional stored retrieval dependencies because a runtime feature is disabled | C70: separate explicit purger authority, supported core7/profile3 history and full dependency visibility; reject unsupported schema/RLS or broadened identities; MCP remains read-only | Scoped positive principal, owner/superuser/writer/collector negatives, core-only and retrieval cases |
+| U71 | CA9/P: report transactional record deletion as erasure of shared feeds, WAL, backups, media or already disclosed data, or infer reversibility from an older checkpoint | C71: disclose retained copies/policy identifiers and destructive SQL-state boundary; separate orphan GC, backup expiry and media controls; old backups are not authorized unpurge | Receipt/documentation scope review, preserved shared references and historical restore rejection; no global-erasure or legal-compliance claim |
+
+Causal cases include a valid-looking plan that predates a new shared derivative
+(U66/U67); a builder retaining the old corpus in memory after its target vectors
+were removed (U67); a completion file published while the database context has
+not yet committed (U68); and a recovery operator assuming a newer tombstone also
+removes old bodies from a checkpoint (U69). The controller must observe the
+enforced dependency/commit/recovery state rather than infer it from an earlier
+command acknowledgement. Keeping the durable decision in the same transaction
+removes the external-journal/SQL atomicity gap; it does not prove file custody or
+the freshness of jointly rolled-back trusted policy inputs.
+
+Old binaries, privileged direct writers and independent filesystem writers do
+not participate in the advisory-lock contract and require operational exclusion.
+Already disclosed text and historical backups are outside this actuation path.
+Refusing an unsupported or held closure leaves records retained and suppressed;
+operators must see that incomplete disposition instead of assuming deletion.
+These controls contribute to E39/E48 without closing full retained-data erasure,
+backup expiry, remote-copy disposal or whole-host recovery.

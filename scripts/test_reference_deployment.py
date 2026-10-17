@@ -245,7 +245,7 @@ def prepare_database_fixture(venv, *, enabled_http_fixture=False):
             del os.environ[name]
     import psycopg
 
-    from osint_workbench.database import Database, migrate
+    from osint_workbench.database import SCHEMA_VERSION, Database, migrate
     from osint_workbench.errors import WorkbenchError
 
     with psycopg.connect(FIXTURE_ADMIN_DSN, autocommit=True) as conn:
@@ -285,7 +285,7 @@ def prepare_database_fixture(venv, *, enabled_http_fixture=False):
                 sql.SQL("GRANT {} TO {}").format(sql.Identifier(group), sql.Identifier(name))
             )
         require(
-            conn.execute("SELECT max(version) FROM ow.migrations").fetchone()[0] == 6,
+            conn.execute("SELECT max(version) FROM ow.migrations").fetchone()[0] == SCHEMA_VERSION,
             "FIXTURE_SCHEMA_VERSION_MISMATCH",
         )
     if enabled_http_fixture:

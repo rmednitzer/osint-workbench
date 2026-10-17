@@ -8,7 +8,15 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from . import evaluation, garbage_collection, intelligence, lifecycle, quality, recovery
+from . import (
+    evaluation,
+    garbage_collection,
+    intelligence,
+    lifecycle,
+    quality,
+    record_purge,
+    recovery,
+)
 from .collection import collect, collect_due
 from .contracts import DocumentInput, SourceConfig
 from .database import SCHEMA_VERSION, Database, migrate
@@ -80,6 +88,14 @@ def main():
     recovered.add_argument("--policy-file", type=Path, required=True)
     recovered.add_argument("--policy-sha256", required=True)
     recovered.add_argument("--minimum-policy-revision", type=int, required=True)
+    purge = sub.add_parser("purge")
+    purge.add_argument("action", choices=["plan", "apply"])
+    purge.add_argument("--file", type=Path, required=True)
+    purge.add_argument("--document-id")
+    purge.add_argument("--operation-id")
+    purge.add_argument("--actor")
+    purge.add_argument("--rationale")
+    purge.add_argument("--sha256")
     gc = sub.add_parser("gc")
     gc.add_argument("action", choices=["plan", "apply"])
     gc.add_argument("--file", type=Path, required=True)
@@ -167,6 +183,21 @@ def main():
             if not value["all_targets_met"]:
                 raise SystemExit(2)
             return
+        elif args.command == "purge":
+            db = Database(_dsn("OW_PURGE_DSN"))
+            if args.action == "plan":
+                value = record_purge.plan(
+                    db,
+                    args.file,
+                    document_id=args.document_id,
+                    operation_id=args.operation_id,
+                    actor=args.actor,
+                    rationale=args.rationale,
+                )
+            else:
+                if args.sha256 is None:
+                    raise WorkbenchError("PURGE_PLAN_DIGEST_REQUIRED")
+                value = record_purge.apply(db, args.file, args.sha256)
         elif args.command == "gc":
             db = Database(_dsn("OW_GC_DSN"))
             store = EvidenceStore(Path(os.environ["OW_EVIDENCE_ROOT"]), read_only=True)
@@ -227,7 +258,7 @@ def main():
             value = {"schema_version": SCHEMA_VERSION}
         elif args.command == "migrate-retrieval":
             migrate_retrieval(_dsn("OW_MIGRATION_DSN"))
-            value = {"schema_version": SCHEMA_VERSION, "retrieval_schema_version": 2}
+            value = {"schema_version": SCHEMA_VERSION, "retrieval_schema_version": 3}
         elif args.command == "enrich":
             generator = LocalGenerator(_manifest(args.manifest, GeneratorManifest))
             if args.action == "reconcile":

@@ -279,7 +279,7 @@ def test_collector_refuses_mixed_schema_or_changed_default(databases, corruption
         elif corruption == "digest":
             admin.execute("UPDATE ow.migrations SET sha256=%s WHERE version=6", ("0" * 64,))
         else:
-            admin.execute("INSERT INTO ow.migrations(version,sha256) VALUES (7,%s)", ("0" * 64,))
+            admin.execute("INSERT INTO ow.migrations(version,sha256) VALUES (8,%s)", ("0" * 64,))
         try:
             with pytest.raises(WorkbenchError, match="UNSAFE_COLLECTOR_IDENTITY"):
                 collector.validate_collector()
@@ -291,7 +291,7 @@ def test_collector_refuses_mixed_schema_or_changed_default(databases, corruption
             elif corruption == "digest":
                 admin.execute("UPDATE ow.migrations SET sha256=%s WHERE version=6", (prior,))
             else:
-                admin.execute("DELETE FROM ow.migrations WHERE version=7")
+                admin.execute("DELETE FROM ow.migrations WHERE version=8")
     collector.validate_collector()
 
 
