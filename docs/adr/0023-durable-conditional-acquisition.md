@@ -72,4 +72,4 @@ Their native PostgreSQL result must be read from the candidate's verification
 receipt; local collection without that database is not execution evidence.
 Server Retry-After, shared-host quotas, jitter, cursors and broader acquisition
 formats remain explicit follow-up work; this increment does not close E05/E09–E12.
-> Compatibility follow-up (2026-10-17): [ADR-0027](0027-collector-database-authority.md) adds scoped collector authority, [ADR-0029](0029-bounded-retry-after-scheduling.md) implements bounded per-source Retry-After, and [ADR-0032](0032-transactional-retired-record-purge.md) adds core7/profile3 recovery conditions. The v5/profile2 and deferred-scope statements below describe the original acquisition increment.
+> Compatibility follow-up (2026-10-17): [ADR-0027](0027-collector-database-authority.md) adds scoped collector authority, [ADR-0029](0029-bounded-retry-after-scheduling.md) implements bounded per-source Retry-After, and [ADR-0032](0032-transactional-retired-record-purge.md) adds core7/profile3 recovery conditions. The v5/profile2 and deferred-scope statements in the original record describe the original acquisition increment.

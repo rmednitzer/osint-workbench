@@ -39,3 +39,10 @@ def test_action_tags_are_rejected_and_immutable_references_pass():
     assert check("  - uses: actions/checkout@" + "a" * 40 + " # reviewed\n") == []
     assert check("  - uses: docker://example.invalid/image@sha256:" + "a" * 64) == []
     assert check("  pull_request_target:\n") == ["privileged-pr-event-requires-review"]
+
+
+def test_dockerfile_and_workflow_images_require_content_identity():
+    check = policy().image_pins
+    assert check("FROM example.invalid/fixture:latest\n") == ["image-not-immutable"]
+    image = "example.invalid/fixture:1@sha256:" + "a" * 64
+    assert check("FROM " + image + "\n  image: " + image) == []

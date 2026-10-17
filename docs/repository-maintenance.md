@@ -25,14 +25,15 @@ available; repository-file checks alone do not prove a particular client loaded 
 reviewed and refreshed against current main before integration; its generic
 configuration is not a dependency compatibility assessment.
 
-- Enable PEP621/uv.lock and GitHub Actions management. The latter also tracks job/
-  service container images, including the pinned validation tool.
+- Enable PEP621/uv.lock, GitHub Actions and Dockerfile management. These cover
+  action/service images and the separately pinned validation-tool Dockerfile.
 - Group routine non-major Python updates and non-major CI action/image updates.
   Use a three-day release-age gate for manifest-level routine Python updates.
   The weekly uv lock maintenance is a separate complete resolution and must be
   reviewed; do not assume that gate independently delays every transitive version.
 - Use Europe/Vienna scheduling before 06:00 on Monday, with at most three open
-  Renovate PRs and one new PR per hour. This is a bot eligibility window, not a
+  routine Renovate PRs and one new PR per hour. Security updates may bypass normal
+  bot limits. This is an eligibility window, not a
   promise of exact execution time or an embargo on manual security updates.
 - Require dependency-dashboard approval for major updates. Disable automerge;
   every accepted update requires current checks and maintainer review.

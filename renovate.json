@@ -3,7 +3,7 @@
   "extends": ["config:recommended", ":pinDigests"],
   "timezone": "Europe/Vienna",
   "schedule": ["before 6am on monday"],
-  "enabledManagers": ["pep621", "github-actions"],
+  "enabledManagers": ["pep621", "github-actions", "dockerfile"],
   "dependencyDashboard": true,
   "dependencyDashboardTitle": "Dependency maintenance",
   "prConcurrentLimit": 3,
@@ -41,7 +41,7 @@
       "minimumReleaseAge": "3 days"
     },
     {
-      "matchManagers": ["github-actions"],
+      "matchManagers": ["github-actions", "dockerfile"],
       "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
       "groupName": "CI actions and images (non-major)"
     },

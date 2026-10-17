@@ -73,7 +73,7 @@ guarded manual workflow requires an explicitly selected disposable GitHub runner
 
 ## Repository and dependency checks
 
-`scripts/check_repository.py` checks tracked local Markdown links/headings, agent
+`scripts/check_repository.py` checks tracked and new nonignored local Markdown links/headings, agent
 bridges and immutable action references. It does not validate external link
 availability, prose truth, every Markdown construct or full workflow semantics.
 The [maintenance policy](docs/repository-maintenance.md) defines Renovate,

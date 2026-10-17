@@ -78,6 +78,14 @@ def action_pins(text):
     return failures
 
 
+def image_pins(text):
+    return [
+        "image-not-immutable"
+        for image in re.findall(r"^\s*(?:FROM|image:)\s+([^\s#]+)", text, flags=re.MULTILINE)
+        if not re.fullmatch(r"[^\s@]+@sha256:[0-9a-f]{64}", image)
+    ]
+
+
 def main():
     selected = (
         subprocess.check_output(
@@ -93,7 +101,11 @@ def main():
             findings.append({"path": name, "category": category})
     for name in selected:
         if name.startswith(".github/workflows/") and name.endswith((".yml", ".yaml")):
-            for category in action_pins((ROOT / name).read_text()):
+            content = (ROOT / name).read_text()
+            for category in action_pins(content) + image_pins(content):
+                findings.append({"path": name, "category": category})
+        elif name.endswith("Dockerfile"):
+            for category in image_pins((ROOT / name).read_text()):
                 findings.append({"path": name, "category": category})
     if "@AGENTS.md" not in (ROOT / "CLAUDE.md").read_text().splitlines():
         findings.append({"path": "CLAUDE.md", "category": "missing-shared-import"})

@@ -55,4 +55,4 @@ optional schema and immutable history; no automatic destructive downgrade is sup
 isolation, identity mismatch, switching, rollback and corpus drift. Semantic quality,
 ANN, reranking, caches, background backfill/resumption, GPU/generation serving and
 complete recovery remain required. See STATUS.md and docs/local-retrieval.md.
-> Implementation follow-up (2026-10-17): [ADR-0019](0019-proposals-and-local-generation.md) implements bounded native local pair scoring. Persistent caches, ANN, automatic backfill and pretrained semantic acceptance remain open; pending statements below retain this ADR's original increment scope.
+> Implementation follow-up (2026-10-17): [ADR-0019](0019-proposals-and-local-generation.md) implements bounded native local pair scoring. Persistent caches, ANN, automatic backfill and pretrained semantic acceptance remain open; pending statements in the original record retain this ADR's original increment scope.
