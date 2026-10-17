@@ -1,10 +1,23 @@
 {
   "schema_version": 1,
-  "verified_commit": "249a4c3c1aa61b79ccb1be2b0df87e30ba7398b3",
-  "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39029907428",
+  "verified_commit": "d3330a0e50896a43f13313b617da1e7eeb0790c0",
+  "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39031820491",
   "result": "success",
-  "installed_wheel_tests": {"collected": 54, "passed": 54, "failed": 0, "skipped": 0},
-  "environment": {"python": "3.12", "database": "PostgreSQL 18 with pgvector", "inference": "ONNX Runtime CPU"},
+  "installed_wheel_tests": {
+    "collected": 70,
+    "passed": 70,
+    "failed": 0,
+    "skipped": 0
+  },
+  "environment": {
+    "python": "3.12.3",
+    "database": "PostgreSQL 18 with pgvector",
+    "inference": [
+      "ONNX Runtime CPU",
+      "llama.cpp native CPU"
+    ],
+    "native_source_revision": "f2f667b02dc76d675395ae3b14546c8108d26387"
+  },
   "scope": [
     "Core storage, immutable evidence and typed configuration",
     "Workflow retries, cancellation, concurrency, killed claimant and transactional rollback",
@@ -12,13 +25,55 @@
     "Synthetic ONNX numerical oracle, token spans, admission and artifact integrity",
     "Native pgvector generations, switching, rollback, failed builds and corpus drift",
     "Real MCP SDK client over stdio for lexical and hybrid reads",
-    "Lint and source/wheel/sdist publication scans"
+    "Lint and source/wheel/sdist publication scans",
+    "Actual ONNX pair reranking with an independent numerical oracle",
+    "Actual native constrained generation with synthetic constant GGUF weights",
+    "Native generation to fenced durable abstention and degraded cited product",
+    "Owner-checked Unix socket protocol and killed-client ownership reconciliation",
+    "Evidence-located proposals, append-only reviews, withdrawal and source invalidation",
+    "Real MCP stdio reads for reviewed cited products",
+    "HTTP/1.1 framing and bounded streaming regressions",
+    "Core installation without optional inference dependencies"
   ],
   "limits": [
-    "Synthetic model weights verify numerical execution, not pretrained semantic quality",
-    "No GPU, local text generation, reranker, cloud provider or remote MCP verification",
+    "Synthetic weights verify execution, not pretrained language or retrieval quality",
+    "No GPU, full entity resolution/diversity, live cloud provider or remote MCP verification",
     "No complete backup/restore/retention or full roadmap acceptance claim",
-    "Privacy scanning is a backstop, not an exhaustive anonymity guarantee",
-    "This receipt applies to the named commit, not automatically to later changes"
-  ]
+    "Runtime executable/model hashes do not attest all libraries or source-to-binary provenance",
+    "Privacy scans are a backstop, not an exhaustive anonymity guarantee",
+    "This receipt applies to the named code commit; later documentation does not expand its scope"
+  ],
+  "prior_receipt": {
+    "schema_version": 1,
+    "verified_commit": "249a4c3c1aa61b79ccb1be2b0df87e30ba7398b3",
+    "workflow_run": "https://github.com/rmednitzer/osint-workbench/actions/runs/39029907428",
+    "result": "success",
+    "installed_wheel_tests": {
+      "collected": 54,
+      "passed": 54,
+      "failed": 0,
+      "skipped": 0
+    },
+    "environment": {
+      "python": "3.12",
+      "database": "PostgreSQL 18 with pgvector",
+      "inference": "ONNX Runtime CPU"
+    },
+    "scope": [
+      "Core storage, immutable evidence and typed configuration",
+      "Workflow retries, cancellation, concurrency, killed claimant and transactional rollback",
+      "Collection exclusion, partial replay and disposable feed parsing",
+      "Synthetic ONNX numerical oracle, token spans, admission and artifact integrity",
+      "Native pgvector generations, switching, rollback, failed builds and corpus drift",
+      "Real MCP SDK client over stdio for lexical and hybrid reads",
+      "Lint and source/wheel/sdist publication scans"
+    ],
+    "limits": [
+      "Synthetic model weights verify numerical execution, not pretrained semantic quality",
+      "No GPU, local text generation, reranker, cloud provider or remote MCP verification",
+      "No complete backup/restore/retention or full roadmap acceptance claim",
+      "Privacy scanning is a backstop, not an exhaustive anonymity guarantee",
+      "This receipt applies to the named commit, not automatically to later changes"
+    ]
+  }
 }
