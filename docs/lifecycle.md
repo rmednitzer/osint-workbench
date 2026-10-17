@@ -108,6 +108,8 @@ snapshot; later decisions require a newer export and receipt.
 Inspect the current revision and retry export using a new filename before relying
 on recovery. `.owpolicy` files contain private identifiers and audit actors; the
 Git ignore rule is a backstop, not a disclosure policy.
+The policy receipt hashes the sorted-key JSON payload, excluding the outer
+envelope, just like checkpoint receipts. A raw-file checksum is a separate value.
 
 ## Recovery policy and compatibility
 

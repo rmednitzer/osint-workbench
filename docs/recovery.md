@@ -11,6 +11,9 @@ with restricted access, and keep its returned SHA-256 receipt separately in a
 trusted location. Replacing both the file and the trusted digest defeats the
 integrity check. No claim of anonymity, secure erasure or disaster recovery for
 the whole host is made.
+The returned `sha256` identifies the project's sorted-key JSON payload, excluding
+the outer envelope. Use that receipt for `--sha256`; it is not the raw-file digest
+reported by `sha256sum`.
 
 ## Capture contract
 

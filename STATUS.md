@@ -5,7 +5,7 @@ complete merely because its design documents or interfaces exist.
 
 | Area | Current implementation | Verification boundary |
 | --- | --- | --- |
-| Configuration/package | Typed JSON, empty sources, src layout, packaged migrations | Prior installed v1-to-v3 baseline; v4/profile-v2 lifecycle migration candidate requires exact-revision CI |
+| Configuration/package | Typed JSON, empty sources, src layout, packaged migrations | Installed-wheel CI covers retained core v1-to-v4 and active profile v1-to-v2 upgrade state |
 | Evidence/core storage | Hashed immutable objects, PostgreSQL records/version heads | Local object tests; native PostgreSQL tests in CI |
 | Jobs | Bounded retries, attempt events, cancellation, renewal and atomic chunk worker | PostgreSQL failure/concurrency tests; distributed/remote effects remain pending |
 | Collection | RSS/Atom entry extraction and bounded public HTTP transport | Disposable parser, per-source exclusion, partial-run receipts and replay tests; full adversarial HTTP coverage remains pending |
@@ -16,7 +16,7 @@ complete merely because its design documents or interfaces exist.
 | Vulnerability/regulatory profiles | Target specification | No domain adapters or applicability verification yet |
 | Cloud APIs/accounting/batches | Target specification | No credential access, native adapters, remote requests or spending |
 | Remote MCP | Target authentication design | No HTTP listener or remote client compatibility claim |
-| Export/recovery/retention | Bounded private checkpoint, empty-target restore, operator retention/holds/logical tombstones and mandatory current-policy reconciliation | Prior recovery baseline verified; new SQL-reader, job, inference, collector and restored-policy regressions require native CI. Physical GC/erasure, legacy adoption, public export, publisher and full-host/PITR remain pending |
+| Export/recovery/retention | Bounded private checkpoint, empty-target restore, operator retention/holds/logical tombstones and mandatory current-policy reconciliation | Native SQL-reader, job/fence, inference, collector and restored-policy regressions passed in installed-wheel CI. Physical GC/erasure, legacy adoption, public export, publisher and full-host/PITR remain pending |
 | Publication controls | Positive file selection and source/artifact scanning | Narrow scanner tests; private values are never committed |
 
 Core schema v4 and retrieval-profile v2 are additive; earlier published migrations
@@ -27,9 +27,9 @@ The core worker processes `document.accepted`; the explicit enrichment worker cl
 only its configured generator identity. Other job kinds remain queued.
 Character chunks preserve offsets but are not token-aware model input.
 
-The prior recovery baseline is backed by 84 installed-wheel tests with no skips,
-including native CPU generation and isolated database/object recovery with real MCP
-and hybrid reads. See
+The lifecycle implementation is backed by 103 installed-wheel tests with no skips,
+including retained-state migration, direct SQL/MCP suppression, native retrieval,
+concurrency and policy-gated isolated recovery. See
 [the revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
 models establish execution contracts, not pretrained semantic quality.
 
