@@ -19,6 +19,7 @@ Stop publication/GC, restore accepted pair and reconcile; credential rotation pr
 
 ## Verification
 R22,R29,R51,R54; E17,E18,E39,E47,E48. ADR-0021 implements the bounded logical
-retention/hold/tombstone and restore-policy subset. Physical GC/erasure and outbound
-publication remain proposed; its revision-bound evidence does not close this ADR's
+retention/hold/tombstone and restore-policy subset. ADR-0022 adds reviewed orphan
+cleanup. Full retained-record purge, backup expiry and outbound publication remain
+proposed; its revision-bound evidence does not close this ADR's
 whole target scope.

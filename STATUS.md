@@ -16,7 +16,7 @@ complete merely because its design documents or interfaces exist.
 | Vulnerability/regulatory profiles | Target specification | No domain adapters or applicability verification yet |
 | Cloud APIs/accounting/batches | Target specification | No credential access, native adapters, remote requests or spending |
 | Remote MCP | Target authentication design | No HTTP listener or remote client compatibility claim |
-| Export/recovery/retention | Bounded private checkpoint, empty-target restore, operator retention/holds/logical tombstones and mandatory current-policy reconciliation | Native SQL-reader, job/fence, inference, collector and restored-policy regressions passed in installed-wheel CI. Reviewed orphan-object GC is implemented; its new native evidence is pending this revision. Full record erasure, legacy adoption, public export, publisher and full-host/PITR remain pending |
+| Export/recovery/retention | Bounded private checkpoint, empty-target restore, operator retention/holds/logical tombstones and mandatory current-policy reconciliation | Native SQL-reader, job/fence, inference, collector and restored-policy regressions passed in installed-wheel CI. Reviewed orphan-object GC passed native failure/restart and scoped-role tests. Full record erasure, legacy adoption, public export, publisher and full-host/PITR remain pending |
 | Publication controls | Positive file selection and source/artifact scanning | Narrow scanner tests; private values are never committed |
 
 Core schema v4 and retrieval-profile v2 are additive; earlier published migrations
@@ -27,7 +27,7 @@ The core worker processes `document.accepted`; the explicit enrichment worker cl
 only its configured generator identity. Other job kinds remain queued.
 Character chunks preserve offsets but are not token-aware model input.
 
-The lifecycle implementation is backed by 103 installed-wheel tests with no skips,
+The lifecycle implementation is backed by 120 installed-wheel tests with no skips,
 including retained-state migration, direct SQL/MCP suppression, native retrieval,
 concurrency and policy-gated isolated recovery. See
 [the revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
@@ -52,5 +52,5 @@ reviewed and improved where it fails the target contracts.
 
 Orphan GC adds an explicit bounded plan/apply CLI, complete retained-reference
 checks, store/file identity checks and durable intent/completion receipts. The
-new native failure/restart tests must pass before claiming verified behaviour.
+native failure/restart and scoped-principal tests passed in the named CI receipt.
 It never deletes retained database records or objects reachable from them.

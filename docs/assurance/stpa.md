@@ -154,6 +154,8 @@ evidence.
 ## Logical lifecycle control increment
 
 This refines CA17 (retention/hold/retire/policy export) and CA8 (isolated restore).
+The LC- namespace disambiguates lifecycle constraints from the earlier remote-MCP
+U25/U26 and C25/C26 identifiers; neither scope supersedes the other.
 The controlled state is the current logical-key policy, private retained records,
 reader/worker authority and an independently retained dataset/revision receipt.
 Feedback includes operation identity/revision, active holds, cancelled job fences,
@@ -162,12 +164,12 @@ remain applicable. These are discrete commands; duration-type UCAs are N/A.
 
 | UCA | Hazardous context / category | Derived constraint and allocation | Evidence |
 | --- | --- | --- | --- |
-| U25 | CA17/P: retire a logical item while one of several preservation holds is active | C25: serialize policy changes, reject held retirement and preserve hold history; no physical purge path in this increment | Hold/release/idempotency and restored-hold tests |
-| U26 | CA17/P: interpret a hold as permission to keep serving expired content | C26: preservation and serving are independent; expiry hides all versions despite holds | Expiry-with-holds and clock-expiry/no-model-dispatch tests |
-| U27 | CA8/P or T: restore an older checkpoint without the current matching dataset policy or with incomplete hold/tombstone history | C27: require independent hash/minimum revision, matching lineage, history/state consistency and monotonic tombstones before metadata commit | Older-checkpoint/newer-policy recovery, stale/wrong/corrupt/missing-tombstone refusal |
-| U28 | CA10/CA14/T: accept output or activate a stale view after retirement commits because a transaction snapshot predates a waited lock | C28: acquire cooperative shared admission before any data transaction snapshot; exclusive lifecycle mutation cancels fences; filter derivative reads | Late repeatable-read, admitted-transaction, stale-fence and native vector/rerank tests |
-| U29 | CA6/P: return a retired historical body, quote, product or vector through a raw SQL grant or forgotten reader path | C29: security-barrier content views, revoke raw reader grants, reject unsafe reader identities, withhold products containing suppressed selections | Direct SQL grants/predicate tests, historical-version tests and real MCP reads |
-| U30 | CA17/N: omit independent policy custody after a decision while an older backup remains the recovery source | C30: operator retains current file and trusted minimum-revision receipt outside the rollback set; export failure is not decision rollback | Explicit export/restore contracts and stale-minimum test; simultaneous rollback of all trusted inputs remains an operational residual |
+| LC-U25 | CA17/P: retire a logical item while one of several preservation holds is active | LC-C25: serialize policy changes, reject held retirement and preserve hold history; no physical purge path in this increment | Hold/release/idempotency and restored-hold tests |
+| LC-U26 | CA17/P: interpret a hold as permission to keep serving expired content | LC-C26: preservation and serving are independent; expiry hides all versions despite holds | Expiry-with-holds and clock-expiry/no-model-dispatch tests |
+| LC-U27 | CA8/P or T: restore an older checkpoint without the current matching dataset policy or with incomplete hold/tombstone history | LC-C27: require independent hash/minimum revision, matching lineage, history/state consistency and monotonic tombstones before metadata commit | Older-checkpoint/newer-policy recovery, stale/wrong/corrupt/missing-tombstone refusal |
+| LC-U28 | CA10/CA14/T: accept output or activate a stale view after retirement commits because a transaction snapshot predates a waited lock | LC-C28: acquire cooperative shared admission before any data transaction snapshot; exclusive lifecycle mutation cancels fences; filter derivative reads | Late repeatable-read, admitted-transaction, stale-fence and native vector/rerank tests |
+| LC-U29 | CA6/P: return a retired historical body, quote, product or vector through a raw SQL grant or forgotten reader path | LC-C29: security-barrier content views, revoke raw reader grants, reject unsafe reader identities, withhold products containing suppressed selections | Direct SQL grants/predicate tests, historical-version tests and real MCP reads |
+| LC-U30 | CA17/N: omit independent policy custody after a decision while an older backup remains the recovery source | LC-C30: operator retains current file and trusted minimum-revision receipt outside the rollback set; export failure is not decision rollback | Explicit export/restore contracts and stale-minimum test; simultaneous rollback of all trusted inputs remains an operational residual |
 
 LC1: a collector sees an item again after retirement. It must record suppression
 and continue other entries without accepting a new version of that logical item.
@@ -185,7 +187,7 @@ profiles must inherit these constraints rather than claim protection automatical
 
 ## Bounded orphan-deletion refinement
 
-CA18 is the operator's reviewed orphan-plan application. Feedback is the private
+CA19 is the operator's reviewed orphan-plan application (CA18 remains remote MCP authorization). Feedback is the private
 plan digest, retained-reference set, policy revision and durable intent/completion
 receipts. The control boundary excludes independent SQL/filesystem writers.
 
