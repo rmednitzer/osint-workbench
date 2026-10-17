@@ -16,9 +16,6 @@ from .text import digest
 
 class Runtime:
     def __init__(self, manifest: EncoderManifest):
-        import onnxruntime as ort
-        from tokenizers import Tokenizer
-
         self.manifest = manifest
         model = verified_file(
             manifest.model_path,
@@ -32,6 +29,11 @@ class Runtime:
             16 * 1024 * 1024,
             "TOKENIZER_INTEGRITY_MISMATCH",
         )
+        # Refuse unverified artifacts before native-library initialization,
+        # which can discover devices and emit host-specific diagnostics.
+        import onnxruntime as ort
+        from tokenizers import Tokenizer
+
         self.tokenizer = Tokenizer.from_str(tokenizer.decode())
         self.tokenizer.no_truncation()
         self.tokenizer.no_padding()
