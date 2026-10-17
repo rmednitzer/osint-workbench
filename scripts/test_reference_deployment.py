@@ -44,7 +44,7 @@ def command(argv, *, allowed=(0,), timeout=30):
     )
     if result.returncode not in allowed:
         executable = Path(argv[0]).name
-        if executable not in {"systemctl", "journalctl", "useradd"}:
+        if executable not in {"systemctl", "journalctl", "useradd", "busctl"}:
             executable = "other"
         action = argv[1] if len(argv) > 1 else "none"
         if action not in {
@@ -54,6 +54,7 @@ def command(argv, *, allowed=(0,), timeout=30):
             "daemon-reload",
             "is-active",
             "reset-failed",
+            "get-property",
             "--sync",
             "--unit",
             "--system",
@@ -74,6 +75,37 @@ def command(argv, *, allowed=(0,), timeout=30):
         )
         raise Rejected("NATIVE_COMMAND_FAILED")
     return result.stdout
+
+
+def parse_bus_uint64(value):
+    """Parse busctl's raw typed uint64 without accepting display durations."""
+    require(isinstance(value, str) and len(value) <= 64, "TIMER_DBUS_VALUE_INVALID")
+    fields = value.split()
+    require(len(fields) == 2 and fields[0] == "t", "TIMER_DBUS_VALUE_INVALID")
+    number = fields[1]
+    require(
+        number.isascii() and number.isdecimal() and len(number) <= 20, "TIMER_DBUS_VALUE_INVALID"
+    )
+    result = int(number)
+    require(result <= 2**64 - 1, "TIMER_DBUS_VALUE_INVALID")
+    return result
+
+
+def timer_last_trigger():
+    # Fixed unit object only. Call while the timer is active so GC cannot replace
+    # its runtime object; systemctl show formats nonzero durations for humans.
+    return parse_bus_uint64(
+        command(
+            [
+                "busctl",
+                "get-property",
+                "org.freedesktop.systemd1",
+                "/org/freedesktop/systemd1/unit/osint_2dworkbench_2dcollect_2etimer",
+                "org.freedesktop.systemd1.Timer",
+                "LastTriggerUSecMonotonic",
+            ]
+        )
+    )
 
 
 def exception_diagnostic(error):
@@ -131,7 +163,7 @@ def preflight(venv, units):
     require(os.environ.get("RUNNER_ENVIRONMENT") == "github-hosted", "HOSTED_RUNNER_REQUIRED")
     require(Path("/proc/1/comm").read_text().strip() == "systemd", "SYSTEMD_PID1_REQUIRED")
     require(
-        all(shutil.which(item) for item in ("systemctl", "journalctl", "useradd")),
+        all(shutil.which(item) for item in ("systemctl", "journalctl", "useradd", "busctl")),
         "SYSTEM_TOOLS_REQUIRED",
     )
     for path in (APP, CONFIG, STATE, UNIT_ROOT / SERVICE, UNIT_ROOT / TIMER):
@@ -553,6 +585,7 @@ def enabled_http_service_acceptance(account):
                 "protocol",
                 "condition",
             }
+            timer_active = False
             for label, name in (("timer", TIMER), ("service", SERVICE)):
                 values = command(
                     [
@@ -565,6 +598,8 @@ def enabled_http_service_acceptance(account):
                     ]
                 ).splitlines()
                 observed_values = dict(line.split("=", 1) for line in values if "=" in line)
+                if label == "timer":
+                    timer_active = observed_values.get("ActiveState") == "active"
                 for field, accepted in (
                     ("ActiveState", states),
                     ("SubState", substates),
@@ -572,11 +607,9 @@ def enabled_http_service_acceptance(account):
                 ):
                     value = observed_values.get(field)
                     diagnostic[label + "_" + field] = value if value in accepted else "other"
-            trigger = command(
-                ["systemctl", "show", TIMER, "--property=LastTriggerUSecMonotonic", "--value"]
-            ).strip()
+            diagnostic["raw_trigger_available"] = timer_active
             diagnostic["timer_trigger_advanced"] = (
-                trigger.isdecimal() and int(trigger) > before_trigger
+                timer_last_trigger() > before_trigger if timer_active else False
             )
             timers = command(["systemctl", "show", TIMER, "--property=TimersMonotonic", "--value"])
             diagnostic["initial_active_arm_present"] = "OnActiveUSec" in timers
@@ -665,11 +698,10 @@ def enabled_http_service_acceptance(account):
                 "HTTP_FIRST_REQUEST_MISMATCH",
             )
             original_entries = entries()
-            before_trigger = int(
-                command(
-                    ["systemctl", "show", TIMER, "--property=LastTriggerUSecMonotonic", "--value"]
-                ).strip()
-            )
+            # Preflight refuses known units and this fresh fixture has never
+            # activated its timer. There is no historical trigger to preserve;
+            # querying an inactive, unloaded D-Bus object would be unreliable.
+            before_trigger = 0
             force_due()
             # The fixture's initial arm is relative to timer activation. An
             # OnUnitInactiveSec-only timer may have no retained service timestamp
@@ -703,11 +735,7 @@ def enabled_http_service_acceptance(account):
             # Capture runtime trigger evidence while the timer is still active.
             # Stopping an inactive unit permits GC/unload; a later show may load
             # a fresh object with no retained in-memory last-trigger timestamp.
-            triggered = int(
-                command(
-                    ["systemctl", "show", TIMER, "--property=LastTriggerUSecMonotonic", "--value"]
-                ).strip()
-            )
+            triggered = timer_last_trigger()
             if triggered <= before_trigger:
                 timer_diagnostic("HTTP_TIMER_LAST_TRIGGER_UNCHANGED", network, before_trigger)
                 raise Rejected("HTTP_TIMER_LAST_TRIGGER_UNCHANGED")

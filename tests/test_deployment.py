@@ -1,5 +1,7 @@
-"""Native unit parsing, not execution or a deployed sandbox acceptance test."""
+"""Native unit parsing and diagnostic redaction; no privileged deployment execution."""
 
+import importlib.util
+import json
 import os
 import shutil
 import subprocess
@@ -8,6 +10,84 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def load_deployment_helper():
+    script = ROOT / "scripts/test_reference_deployment.py"
+    spec = importlib.util.spec_from_file_location("deployment_redaction_test", script)
+    helper = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(helper)
+    return helper
+
+
+def diagnostic_output(capsys):
+    captured = capsys.readouterr()
+    prefix = "PUBLIC_DEPLOYMENT_DIAGNOSTIC="
+    assert captured.err == "" and captured.out.count("\n") == 1
+    assert captured.out.startswith(prefix) and len(captured.out.encode()) < 1024
+    return json.loads(captured.out.removeprefix(prefix)), captured.out
+
+
+def test_actual_command_failure_diagnostic_excludes_arguments_and_paths(capsys):
+    helper = load_deployment_helper()
+    credential_canary = "synthetic-credential-redaction-canary"
+    path_canary = "/synthetic/private/path-redaction-canary"
+    with pytest.raises(helper.Rejected, match="^NATIVE_COMMAND_FAILED$"):
+        helper.command(["/usr/bin/false", credential_canary, path_canary])
+    diagnostic, text = diagnostic_output(capsys)
+    assert credential_canary not in text and path_canary not in text
+    assert "/usr/bin/false" not in text
+    assert diagnostic == {
+        "kind": "native_command_failed",
+        "executable": "other",
+        "action": "other",
+        "returncode": 1,
+    }
+
+
+def test_actual_filesystem_exception_diagnostic_keeps_only_known_frame(tmp_path, capsys):
+    helper = load_deployment_helper()
+    target = tmp_path / "synthetic-private-path-canary"
+    target.write_text("synthetic-existing-private-content-canary")
+    try:
+        helper.write_private(target, "replacement-must-not-be-written")
+    except FileExistsError as error:
+        helper.exception_diagnostic(error)
+    else:
+        pytest.fail("existing private output was unexpectedly overwritten")
+    diagnostic, text = diagnostic_output(capsys)
+    assert target.name not in text and str(tmp_path) not in text and str(ROOT) not in text
+    assert "synthetic-existing-private-content-canary" not in text
+    assert "replacement-must-not-be-written" not in text
+    assert set(diagnostic) == {"kind", "exception_type", "frame_file", "frame_line"}
+    assert diagnostic["kind"] == "unexpected_exception"
+    assert diagnostic["exception_type"] == "FileExistsError"
+    assert diagnostic["frame_file"] == "test_reference_deployment.py"
+    assert type(diagnostic["frame_line"]) is int and 1 <= diagnostic["frame_line"] <= 20000
+    assert target.read_text() == "synthetic-existing-private-content-canary"
+
+
+class SyntheticPrivateExceptionName(RuntimeError):
+    pass
+
+
+@pytest.mark.parametrize(
+    ("exception_class", "expected_type"),
+    [(ValueError, "ValueError"), (SyntheticPrivateExceptionName, "other")],
+)
+def test_external_exception_diagnostic_excludes_message_class_and_external_frame(
+    capsys, exception_class, expected_type
+):
+    helper = load_deployment_helper()
+    canary = "synthetic-exception-message-canary"
+    try:
+        raise exception_class(canary)
+    except exception_class as error:
+        helper.exception_diagnostic(error)
+    diagnostic, text = diagnostic_output(capsys)
+    assert canary not in text and "SyntheticPrivateExceptionName" not in text
+    assert str(ROOT) not in text and "test_deployment.py" not in text
+    assert diagnostic == {"kind": "unexpected_exception", "exception_type": expected_type}
 
 
 @pytest.mark.parametrize("invalid_directive", [False, True])
