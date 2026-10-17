@@ -352,3 +352,41 @@ leave an unknown outcome. The database, not the original HTTP error disposition,
 determines what survived. Failed manual dispatch preserves an older later
 reservation; successful manual acceptance can reset it to normal polling. No original endpoint, new
 MCP authority or operational deployment change is implied by this increment.
+
+## Native transport trust-verification refinement
+
+CA3/CA4 depend on connection-time destination checks, authenticated TLS identity
+and bounded native I/O. CA9 must decide whether transport evidence actually
+exercised those effects or substituted a permissive/mock boundary. Feedback
+includes native peer handshake/request observations, original hostname/SNI/Host,
+classified resolver results, actual connection destination, elapsed waits and
+fixture cleanup. SC3/SC5/SC6 and H1/H3/H5/H6 apply. TLS setup, connection and
+verification decisions are discrete; ongoing waits require the existing absolute
+deadline and observed owned-task termination.
+
+| UCA | Hazardous context / category | Derived constraint and allocation | Discriminating evidence |
+| --- | --- | --- | --- |
+| U57 | CA3/P: connect to a prohibited address from a mixed DNS result or resolve the hostname again after validating a different answer | C57: validate the complete answer set and pass the admitted address to the actual TCP connection; classify mapped-private addresses before admission; ADR-0030 | Mixed/mapped/blocked/empty resolver cases, observed connection destination and no-connect rejection controls |
+| U58 | CA3/CA4/P: accept a TLS peer using only a valid chain or pinned IP while losing the original hostname, or bypass verification to exercise a fixture | C58: preserve original-origin SNI/Host and certificate hostname/chain checks; fixture CA trust exists only inside tests, never machine trust or a production bypass | Native trusted peer, wrong-host and untrusted-chain cases with no accepted negative HTTP request |
+| U59 | CA3/CA5/N or T: reset the complete deadline at TLS/redirect boundaries or retain owned resolution/I/O after the caller stops waiting | C59: propagate one absolute monotonic deadline through phases, bound native handshake/read and DNS subprocess cleanup | Actual handshake/body-stall elapsed tests, redirect-budget cases and resolution/owned-task termination evidence |
+| U60 | CA9/P: call mocked TLS, route injection, connection refusal or the existing plain-HTTP service receipt operational TLS assurance | C60: identify each fixture injection, require positive plus independent trust-negative native peers and keep unit/native/service evidence levels separate | Revision-bound installed-wheel inventory, peer-side observations and explicit Internet DNS/PKI/operational limits |
+| U61 | CA7/CA9/P: expose certificate paths, private keys, resolver strings or peer content through transport diagnostics | C61: bounded safe errors and ephemeral private test keys, no system trust mutation or raw failure logging | Error-canary/redaction assertions, local fixture custody and publication checks |
+| U62 | CA3/P: treat an explicit zero port as an omitted default while describing destination-port validation as complete | C62: distinguish missing port from zero and reject explicit zero under the unchanged 80/443 policy | URL-policy regression before socket dispatch; this does not assert a prior private-network exploit |
+| U63 | CA7/N or P: a native trust/transport failure triggers a nonexistent exception-class lookup, masking the intended bounded failure disposition | C63: map actual installed transport exception families and exercise negative native peers instead of inferring error handling from success | Wrong-host, untrusted-chain, expired-certificate and stalled/invalid TLS cases with safe errors |
+| U64 | CA3/CA5/P or T: treat a readable resolver pipe prefix as a complete message, then block past the absolute deadline or allocate from an unbounded declaration | C64: bounded JSON bytes over private IPC, bounded `recv_bytes` in one owned receiver thread and remaining-budget queue wait; reject excessive complete answer sets without truncation | Replayed partial-frame stall, excessive packet/answer/address, EOF and malformed-JSON cases with actual subprocess/IPC execution |
+| U65 | CA5/CA7/N or P: return a deadline result while an owned resolver child/thread remains active and silently claim cancellation completed | C65: terminate/join child with bounded kill fallback, join receiver and close endpoints; explicit cleanup failure if termination is unobserved; disclose startup/cleanup overhead | Entered-child and partial-frame deadline cases with observed child/thread termination; daemon status alone is not cleanup evidence |
+
+The harness, OS TLS/network implementation and pinned dependencies remain trusted
+parts of these experiments. Public-address classification is not complete egress
+confinement, and synthetic CA trust is not operational PKI acceptance. A passing
+native fixture cannot establish Internet DNS, revocation policy, universal trust,
+hostile-kernel containment or full transport conformance. No original endpoint,
+private certificate inventory, model download or operational service change is
+required by this verification increment.
+
+The original partial-frame case is controlled fault injection, not an observed
+operational attack. Its correction bounds result reception and validates the
+returned packet; libc/NSS work before that packet exists is still trusted and
+its internal memory allocation is not bounded by the Python answer cap. Process
+creation and cleanup have separate costs. API portability does not establish
+Windows/macOS or every Linux configuration without native execution evidence.

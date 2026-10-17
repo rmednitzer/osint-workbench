@@ -45,6 +45,8 @@ DOCUMENTATION_HOSTS = {
     "modelcontextprotocol.io",
     "www.postgresql.org",
     "www.rfc-editor.org",
+    "docs.python.org",
+    "www.encode.io",
     "www.psycopg.org",
     "csrc.nist.gov",
     "psas.scripts.mit.edu",

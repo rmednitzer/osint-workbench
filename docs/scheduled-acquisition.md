@@ -139,3 +139,27 @@ The startup check rejects broadened or missing application privileges before
 creating an evidence store or dispatching HTTP. `OW_WRITER_DSN` remains for trusted
 import/worker code; it is not a collection fallback. An empty source list still
 returns `unconfigured` without connecting. See [ADR-0027](adr/0027-collector-database-authority.md).
+
+## Transport trust and resolver limits
+
+Transport failures use the installed HTTP library's documented exception families
+and return bounded `SOURCE_UNAVAILABLE`/deadline errors. An explicit URL port zero
+is invalid; only configured/default ports 80 and 443 are admitted. HTTPS retains
+the original origin for hostname verification, SNI and HTTP Host while TCP uses
+a validated numeric DNS answer. Certificate verification remains enabled.
+
+Resolver IPC uses bounded JSON rather than received pickle data. A result may
+contain at most 64 addresses, 64 ASCII characters per address and 4096 packet
+bytes. The entire answer must be valid/public; excessive sets fail rather than
+being truncated. An owned receiver thread lets the same absolute deadline cover
+a complete message, including partial frames. Cleanup terminates/joins the owned
+resolver and receiver and reports unconfirmed cleanup explicitly. Startup and up
+to three one-second cleanup joins are additional overhead; libc/NSS allocations
+before the returned Python result are outside these message limits.
+
+Native TLS fixtures use ephemeral authored certificates, add their CA only to a
+test context, and route TCP only to loopback. They exercise real TLS, framing,
+parser and scoped collector state without changing system trust or claiming live
+public DNS/CA compatibility, revocation or deployed TLS acceptance. The separate
+supervised service fixture uses synthetic HTTP; it must not be relabelled as a
+TLS deployment. See [ADR-0030](adr/0030-native-transport-trust-verification.md).

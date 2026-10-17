@@ -77,7 +77,11 @@ def native_generator(monkeypatch):
                                 ):
                                     ready = True
                                     break
-                        except httpcore.HTTPError:
+                        except (
+                            httpcore.NetworkError,
+                            httpcore.TimeoutException,
+                            httpcore.ProtocolError,
+                        ):
                             pass
                     time.sleep(0.05)
                 if not ready:

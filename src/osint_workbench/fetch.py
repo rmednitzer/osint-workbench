@@ -6,9 +6,12 @@ There are no environment proxy or private-address override options.
 """
 
 import ipaddress
+import json
 import multiprocessing
+import queue
 import re
 import socket
+import threading
 import time
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -20,6 +23,9 @@ import httpcore
 from .errors import SourceHTTPError, WorkbenchError
 
 MAX_BYTES = 10 * 1024 * 1024
+MAX_DNS_ADDRESSES = 64
+MAX_DNS_PACKET = 4096
+MAX_DNS_ADDRESS = 64
 MAX_RETRY_AFTER_SECONDS = 604800
 _WEEKDAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 _LONG_WEEKDAYS = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
@@ -109,7 +115,7 @@ def validate_url(url: str) -> tuple[str, int]:
         raise WorkbenchError("INVALID_SOURCE_URL")
     try:
         part = urlsplit(url)
-        port = part.port or (443 if part.scheme == "https" else 80)
+        port = part.port if part.port is not None else (443 if part.scheme == "https" else 80)
         if (
             part.scheme not in {"https", "http"}
             or not part.hostname
@@ -149,11 +155,45 @@ def public_addresses(addresses: list[str]) -> list[str]:
     return sorted(set(result))
 
 
+def _bounded_dns_addresses(addresses):
+    if not isinstance(addresses, list):
+        raise WorkbenchError("DNS_INVALID")
+    if len(addresses) > MAX_DNS_ADDRESSES:
+        raise WorkbenchError("DNS_LIMIT")
+    for address in addresses:
+        if not isinstance(address, str) or not address.isascii():
+            raise WorkbenchError("DNS_INVALID")
+        if len(address) > MAX_DNS_ADDRESS:
+            raise WorkbenchError("DNS_LIMIT")
+    return addresses
+
+
+def _resolver_packet(addresses):
+    try:
+        packet = json.dumps(_bounded_dns_addresses(addresses), separators=(",", ":")).encode()
+        if len(packet) > MAX_DNS_PACKET:
+            raise WorkbenchError("DNS_LIMIT")
+        return packet
+    except WorkbenchError as exc:
+        return json.dumps({"error": exc.code}).encode()
+
+
 def _resolve_child(host, port, pipe):
     try:
-        pipe.send([r[4][0] for r in socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)])
-    except OSError:
-        pipe.send([])
+        try:
+            records = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
+            # Reject the whole oversized result, never truncate a later private
+            # address out of the set. OS/NSS allocation precedes this Python cap.
+            if len(records) > MAX_DNS_ADDRESSES:
+                packet = b'{"error":"DNS_LIMIT"}'
+            else:
+                packet = _resolver_packet([record[4][0] for record in records])
+        except OSError:
+            packet = b"[]"
+        pipe.send_bytes(packet)
+    except (OSError, EOFError):
+        # The parent may already have closed after its deadline.
+        pass
     finally:
         pipe.close()
 
@@ -169,20 +209,60 @@ def resolve(host: str, port: int, deadline: float) -> list[str]:
     context = multiprocessing.get_context("spawn")
     parent, child = context.Pipe(duplex=False)
     process = context.Process(target=_resolve_child, args=(host, port, child), daemon=True)
-    process.start()
-    child.close()
+    received = queue.Queue(maxsize=1)
+    started = False
+    receiver = None
+
+    def receive():
+        try:
+            packet = parent.recv_bytes(MAX_DNS_PACKET)
+        except (OSError, EOFError, ValueError):
+            packet = None
+        received.put_nowait(packet)
+
     try:
-        if not parent.poll(_remaining(deadline)):
-            raise WorkbenchError("FETCH_DEADLINE")
-        return public_addresses(parent.recv())
+        _remaining(deadline)
+        process.start()
+        started = True
+        child.close()
+        # Readability alone does not establish a complete frame. Keep the entire
+        # bounded receive under the same deadline; no pickle decoding is used.
+        pending_receiver = threading.Thread(target=receive, name="ow-dns-receiver", daemon=True)
+        pending_receiver.start()
+        receiver = pending_receiver
+        try:
+            packet = received.get(timeout=_remaining(deadline))
+        except queue.Empty:
+            raise WorkbenchError("FETCH_DEADLINE") from None
+        _remaining(deadline)
+        if packet is None:
+            raise WorkbenchError("DNS_INVALID")
+        try:
+            addresses = json.loads(packet)
+        except (ValueError, UnicodeError, RecursionError):
+            raise WorkbenchError("DNS_INVALID") from None
+        if isinstance(addresses, dict):
+            if set(addresses) == {"error"} and addresses["error"] in ("DNS_LIMIT", "DNS_INVALID"):
+                raise WorkbenchError(addresses["error"])
+            raise WorkbenchError("DNS_INVALID")
+        validated = public_addresses(_bounded_dns_addresses(addresses))
+        _remaining(deadline)
+        return validated
     finally:
-        parent.close()
-        if process.is_alive():
-            process.terminate()
-        process.join(timeout=1)
-        if process.is_alive():
-            process.kill()
+        child.close()
+        if started:
+            if process.is_alive():
+                process.terminate()
             process.join(timeout=1)
+            if process.is_alive():
+                process.kill()
+                process.join(timeout=1)
+        # Termination closes the owned writer and releases a partial-frame read.
+        if receiver is not None:
+            receiver.join(timeout=1)
+        parent.close()
+        if (started and process.is_alive()) or (receiver is not None and receiver.is_alive()):
+            raise WorkbenchError("DNS_RESOLVER_CLEANUP_FAILED")
 
 
 class _Stream:
@@ -368,7 +448,16 @@ def fetch_response(
         raise WorkbenchError("REDIRECT_LIMIT")
     except WorkbenchError:
         raise
-    except (httpcore.HTTPError, OSError, UnicodeError, EOFError):
+    except (
+        httpcore.TimeoutException,
+        httpcore.NetworkError,
+        httpcore.ProtocolError,
+        httpcore.ProxyError,
+        httpcore.UnsupportedProtocol,
+        OSError,
+        UnicodeError,
+        EOFError,
+    ):
         raise WorkbenchError("SOURCE_UNAVAILABLE") from None
 
 

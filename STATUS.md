@@ -33,7 +33,7 @@ concurrency and policy-gated isolated recovery. See
 [the revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
 models establish execution contracts, not pretrained semantic quality.
 
-The full programme covers 28 capability areas, 29 ADRs, 58 requirements and 51
+The full programme covers 28 capability areas, 30 ADRs, 58 requirements and 51
 acceptance scenarios. The tests in this repository currently establish only a
 foundation subset. Detailed future specifications are under `docs/`; they are not
 execution receipts. CI results are authoritative for a particular tested revision.
@@ -104,3 +104,11 @@ cases and the actual service's 120 s delay/no-dispatch probe passed in the named
 revision receipts; redirect
 delays, shared-host quotas, trustworthy clocks and longer server minima remain
 outside this profile.
+
+Transport assurance adds native TLS trust/hostname/SNI and deadline cases plus
+resolver-process/pinning tests. Fixes use the pinned HTTP library's actual error
+families, reject explicit port zero and bound complete resolver IPC with typed
+JSON, an absolute receive deadline and observed child/thread cleanup. No runtime
+TLS verification bypass or system trust-store change is introduced. Candidate
+execution remains bound to the named native and separate service receipts; public
+DNS/PKI, revocation and operational TLS acceptance remain outside these fixtures.
