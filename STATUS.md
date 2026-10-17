@@ -27,7 +27,7 @@ The core worker processes `document.accepted`; the explicit enrichment worker cl
 only its configured generator identity. Other job kinds remain queued.
 Character chunks preserve offsets but are not token-aware model input.
 
-The installed-wheel suite has 343 passing tests with no skips,
+The installed-wheel suite has 381 passing tests with no skips,
 including retained-state migration, direct SQL/MCP suppression, native retrieval,
 concurrency and policy-gated isolated recovery. See
 [the revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
@@ -109,6 +109,7 @@ Transport assurance adds native TLS trust/hostname/SNI and deadline cases plus
 resolver-process/pinning tests. Fixes use the pinned HTTP library's actual error
 families, reject explicit port zero and bound complete resolver IPC with typed
 JSON, an absolute receive deadline and observed child/thread cleanup. No runtime
-TLS verification bypass or system trust-store change is introduced. Candidate
-execution remains bound to the named native and separate service receipts; public
+TLS verification bypass or system trust-store change is introduced. All 38 new
+cases passed in the revision-bound native receipt; normal JSON resolver use also
+passed the separate hardened HTTP service receipt. Public
 DNS/PKI, revocation and operational TLS acceptance remain outside these fixtures.

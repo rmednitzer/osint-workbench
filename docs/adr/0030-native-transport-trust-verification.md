@@ -183,3 +183,10 @@ mixed/mapped-private DNS results, connection-time pinning, redirected policy and
 native handshake/read deadline enforcement. Report each fixture's injection
 boundary and any unexecuted case explicitly. This ADR allocates and bounds that
 evidence; a candidate's receipt establishes which cases actually passed.
+
+The installed-wheel run at source `f43d5a6ec08f60443cb344c7cea3d55a4fdbe684`
+passed all 381 cases, including the 38 new DNS/TLS/collector cases. Runtime and
+artifact identities are in [the native receipt](../testing/verification-evidence.json).
+The [separate service receipt](../testing/collector-deployment.json) establishes
+normal JSON resolver operation inside the hardened synthetic HTTP service,
+without extending that observation to TLS or partial IPC under systemd.
