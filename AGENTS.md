@@ -19,3 +19,18 @@ proof of implemented or tested behaviour. Keep the full roadmap intact.
   with recovery and compatibility evidence.
 - Keep core, ML and cloud authority separate. Optional profiles may be disabled at
   runtime but must not disappear from the implementation roadmap without a decision.
+
+## Branch lifecycle
+
+- Keep `main` as the integration branch. Use one temporary branch per active change;
+  reuse it for verification fixes instead of creating a branch for every CI run.
+- After tested work reaches `main`, remove its temporary remote branch and prune
+  stale local tracking refs. Keep verification evidence bound to commit SHAs and
+  workflow runs; branch names are not evidence-retention mechanisms.
+- Before deleting a branch, refresh remote state, verify its tip is an ancestor of
+  `main`, and check for open pull requests. Preserve branches with unique commits,
+  open pull requests or an explicitly documented ongoing purpose, including bot
+  onboarding and dependency-update branches. Never delete `main`.
+- Recheck the remote tip immediately before deletion. If it moved or containment
+  cannot be established, stop that deletion and inspect the new state. Report the
+  removed branches and any exceptions retained.
