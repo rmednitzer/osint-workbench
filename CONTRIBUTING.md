@@ -7,7 +7,9 @@ credentials, identifiers, prompts or operational/model/provider responses.
 
 ## Development checks
 
-Python 3.12 is the primary tested runtime; package bounds also permit 3.13.
+The minimum is CPython 3.12. Required full native CI covers 24.04/3.12,
+24.04/3.13 and 26.04/3.14; see [runtime support](docs/runtime-support.md).
+The commands below use 3.12; reproduce the relevant CI profile with its interpreter.
 PostgreSQL integration targets PostgreSQL 18 with pgvector. Use the uv version
 pinned in the workflow when reproducing CI.
 
@@ -93,6 +95,7 @@ Scans are backstops, not permission to disclose arbitrary material.
 
 Use the [PR template](.github/pull_request_template.md). Require current
 `repository-policy`, `renovate-policy` and `installed-artifact` checks before merge.
+The `installed-artifact` aggregate requires every native matrix leg to succeed.
 Use merge commits to retain tested source SHAs and their evidence ancestry. A solo
 maintainer does not need a fictitious second-person approval, but remains
 responsible for reviewing code, dependencies and failure evidence. Do not bypass

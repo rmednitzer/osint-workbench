@@ -122,9 +122,12 @@ def _exact_int(value: object) -> object:
     return value
 
 
+# Bound each clock/offset component before delegating calendar validation to
+# datetime. Its ISO parser may accept rollover syntax that this wire contract
+# excludes; admission must not depend on the interpreter's normalization rules.
 _DATETIME = re.compile(
-    r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,6})?"
-    r"(?:Z|[+-][0-9]{2}:[0-9]{2})"
+    r"[0-9]{4}-[0-9]{2}-[0-9]{2}T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]"
+    r"(?:\.[0-9]{1,6})?(?:Z|[+-](?:[01][0-9]|2[0-3]):[0-5][0-9])"
 )
 _DATE = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
 

@@ -70,6 +70,8 @@ agent mutates. Do not run `uv run pytest` after installing a wheel and assume it
 still tests that wheel.
 
 Dependency changes follow [the maintenance policy](docs/repository-maintenance.md).
+The [runtime policy](docs/runtime-support.md) requires full installed/native tests
+for both LTS defaults and intermediate 3.13, plus separate real-service acceptance.
 Renovate proposes changes; it does not approve compatibility, rewrite supported
 Python bounds or regenerate the hashed build closure implicitly.
 

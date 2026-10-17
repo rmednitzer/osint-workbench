@@ -585,7 +585,16 @@ def test_unknown_or_non_integer_schema_versions_rejected(version):
         "2099-03-01T12:00:00z",
         "2099-03-01T12:00:00.1234567Z",
         "2099-03-01T24:00:00Z",
+        "2099-03-01T24:00:00+00:00",
+        "2099-03-01T24:00:00-01:00",
+        "2099-03-01T23:60:00Z",
         "2099-03-01T12:00:60Z",
+        "2099-03-01T12:00:00+00:60",
+        "2099-03-01T12:00:00-00:60",
+        "2099-03-01T12:00:00+23:60",
+        "2099-03-01T12:00:00-23:60",
+        "2099-03-01T12:00:00+24:00",
+        "2099-03-01T12:00:00-24:00",
         "2099-03-01T12:00:00+0200",
         "2099-03-01",
         "0001-01-01T00:00:00+01:00",
@@ -597,6 +606,27 @@ def test_timestamp_lexical_contract(stamp):
     payload = base_payload()
     payload["observed_at"] = stamp
     assert rejected(encode(payload)).code == "ADVISORY_RECORD_INVALID"
+
+
+@pytest.mark.parametrize(
+    ("stamp", "expected"),
+    [
+        ("2099-03-01T00:00:00Z", datetime(2099, 3, 1, tzinfo=UTC)),
+        (
+            "2099-03-01T23:59:59.999999Z",
+            datetime(2099, 3, 1, 23, 59, 59, 999999, tzinfo=UTC),
+        ),
+        ("2099-03-01T23:59:00+23:59", datetime(2099, 3, 1, tzinfo=UTC)),
+        ("2099-03-01T00:00:00-23:59", datetime(2099, 3, 1, 23, 59, tzinfo=UTC)),
+        ("2099-03-01T00:00:00+00:00", datetime(2099, 3, 1, tzinfo=UTC)),
+    ],
+)
+def test_timestamp_component_boundaries_preserve_exact_instant(stamp, expected):
+    payload = base_payload()
+    payload["observed_at"] = stamp
+    parsed = parse(payload)
+    assert parsed.observed_at == expected
+    assert parse_advisory_record(serialize_advisory_record(parsed)).observed_at == expected
 
 
 def test_nonfinite_and_oversized_number_literals_rejected():

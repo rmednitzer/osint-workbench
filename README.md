@@ -32,7 +32,9 @@ or operational data are required by the current code or tests.
 
 ## Development
 
-Python 3.12 is the primary tested runtime. PostgreSQL integration targets version 18.
+CPython 3.12–3.14 is supported. Required CI covers Ubuntu 24.04/Python 3.12 and
+3.13, plus Ubuntu 26.04/Python 3.14; PostgreSQL integration targets version 18.
+See [runtime support](docs/runtime-support.md) for deployment and evidence limits.
 
 ```sh
 uv sync --locked --extra retrieval

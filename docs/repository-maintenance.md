@@ -77,7 +77,9 @@ not update one identity without the other. No runtime auto-download is authorize
 Main/PR/manual foundation CI has bounded timeouts and cancels superseded runs for
 the same PR/ref. Branch pushes without a PR do not run a duplicate native build.
 Required checks are `repository-policy`, `renovate-policy` and
-`installed-artifact`. Public diagnostics remain explicit manual activities;
+`installed-artifact`. The latter aggregates all required Ubuntu/Python native
+matrix jobs and fails on incomplete matrix work; see [runtime support](runtime-support.md).
+Public diagnostics remain explicit manual activities;
 concurrency queues them rather than terminating a running supervised fixture.
 
 The weekly/manual dependency audit exports locked core and optional ML runtime
@@ -130,6 +132,12 @@ remain distinct from implemented regression subsets.
 Current dependency and repository controls do not close type/static analysis,
 licence/SBOM/provenance dispositions, complete release assurance or the wider
 implementation backlog.
+
+The reviewed runtime-compatibility change updates SHA-pinned checkout, artifact
+upload and setup-uv actions, and pins uv 0.13.1. It also reviews the two targeted
+filelock/platformdirs patch updates. This explicit compatibility review is separate
+from routine bot scheduling/release-age eligibility; MCP remains on its reviewed
+1.x API contract and native source/checksum remain unchanged.
 
 ## Official guidance
 
