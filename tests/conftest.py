@@ -35,7 +35,15 @@ def roles():
                 "INSERT INTO ow.migrations(version,sha256) VALUES (1,%s)",
                 (hashlib.sha256(script.encode()).hexdigest(),),
             )
+            conn.execute("INSERT INTO ow.sources(source_id) VALUES ('upgrade-fixture')")
+            conn.execute("""INSERT INTO ow.jobs(job_id,kind,dedup_key,payload,status,attempt)
+                         VALUES (gen_random_uuid(),'upgrade-fixture','legacy','{}','ready',2)""")
     migrate(dsn)
+    with psycopg.connect(dsn) as conn:
+        if conn.execute("SELECT 1 FROM ow.sources WHERE source_id='upgrade-fixture'").fetchone():
+            assert conn.execute(
+                "SELECT status,attempt,max_attempts FROM ow.jobs WHERE kind='upgrade-fixture'"
+            ).fetchone() == ("ready", 2, 5)
     if os.environ.get("OW_TEST_RETRIEVAL") == "1":
         from osint_workbench.vector_index import migrate_retrieval
 

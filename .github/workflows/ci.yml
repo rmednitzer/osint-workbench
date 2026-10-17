@@ -31,6 +31,15 @@ jobs:
       - run: uv run ruff check . && uv run ruff format --check .
       - run: uv run python scripts/check_publication.py
       - run: uv build
+      - name: Verify the core without optional inference dependencies
+        run: |
+          uv venv /tmp/ow-core --python 3.12
+          uv export --locked --no-dev --no-emit-project --output-file /tmp/ow-core-requirements.txt > /dev/null
+          uv pip sync --python /tmp/ow-core/bin/python --require-hashes /tmp/ow-core-requirements.txt
+          uv pip install --python /tmp/ow-core/bin/python --no-deps dist/*.whl
+          /tmp/ow-core/bin/python -c 'import importlib.util; assert importlib.util.find_spec("onnxruntime") is None; assert importlib.util.find_spec("tokenizers") is None'
+          /tmp/ow-core/bin/osint-workbench collect --config config/sources.example.json > /tmp/ow-empty.json
+          /tmp/ow-core/bin/python -c 'import json; assert json.load(open("/tmp/ow-empty.json")) == {"status": "unconfigured", "sources": 0}'
       - name: Install and test the built wheel
         env:
           OW_TEST_RETRIEVAL: "1"
