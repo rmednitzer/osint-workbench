@@ -1,0 +1,11 @@
+.git
+.venv
+private
+local
+runtime
+secrets
+.env
+__pycache__
+.pytest_cache
+dist
+build

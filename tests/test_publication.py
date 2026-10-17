@@ -1,0 +1,34 @@
+import importlib.util
+from pathlib import Path
+
+
+def scanner():
+    path = Path(__file__).resolve().parents[1] / "scripts/check_publication.py"
+    spec = importlib.util.spec_from_file_location("publication", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.inspect_text
+
+
+def test_private_canary_never_appears_in_findings():
+    check = scanner()
+    value = "synthetic-sensitive-host"
+    findings = check("src/example.py", "a " + value, [value])
+    assert findings == ["private-identifier"] and value not in str(findings)
+
+
+def test_urls_have_location_specific_policy():
+    check = scanner()
+    assert check("config/source.json", "https://example.invalid/feed") == []
+    assert check("config/source.json", "https://unapproved.example/feed") == ["unclassified-url"]
+    assert check("src/example.py", "https://github.com/example/repo") == ["unclassified-url"]
+    assert check("docs/reference.md", "https://github.com/example/repo") == []
+    assert check("uv.lock", "https://pypi.org/simple") == []
+    assert check("src/example.py", "https://pypi.org/simple") == ["unclassified-url"]
+
+
+def test_synthetic_email_and_credential_detection():
+    check = scanner()
+    assert check("x", "automation@example.invalid") == []
+    assert check("x", "person@unapproved.example") == ["email"]
+    assert check("x", "sk-proj-" + "A" * 40) == ["credential-pattern"]
