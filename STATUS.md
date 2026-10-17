@@ -27,7 +27,7 @@ The core worker processes `document.accepted`; the explicit enrichment worker cl
 only its configured generator identity. Other job kinds remain queued.
 Character chunks preserve offsets but are not token-aware model input.
 
-The installed-wheel suite has 271 passing tests with no skips,
+The installed-wheel suite has 343 passing tests with no skips,
 including retained-state migration, direct SQL/MCP suppression, native retrieval,
 concurrency and policy-gated isolated recovery. See
 [the revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
@@ -99,7 +99,8 @@ TLS, production cadence and operational deployment acceptance remain open.
 The bounded per-source Retry-After profile handles final 429/503 advice using the
 database clock, preserves ordinary backoff and failed-manual reservations, and
 reports malformed hints, seven-day clamping and unconfirmed state persistence
-explicitly. It adds no schema migration or worker sleep. Its native and actual
-service acceptance must be checked against the named revision receipts; redirect
+explicitly. It adds no schema migration or worker sleep. Native scheduling/fault
+cases and the actual service's 120 s delay/no-dispatch probe passed in the named
+revision receipts; redirect
 delays, shared-host quotas, trustworthy clocks and longer server minima remain
 outside this profile.

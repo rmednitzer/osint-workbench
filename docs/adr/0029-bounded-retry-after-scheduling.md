@@ -150,6 +150,7 @@ unconfirmed state persistence, and a restarted collector must honour the last
 durable reservation/reconcile the interrupted run. Existing restore and scoped
 principal contracts must still pass in the installed wheel.
 
-The candidate's revision-bound CI/profile receipts establish actual executed
-scope. These parser and scheduling cases do not establish shared-host fairness,
+The [native CI receipt](../testing/verification-evidence.json) and separate
+[actual-service receipt](../testing/collector-deployment.json) record the executed
+scope on their exact source revision and measured installed wheel. These parser and scheduling cases do not establish shared-host fairness,
 external-provider behaviour, clock correctness or complete HTTP conformance.
