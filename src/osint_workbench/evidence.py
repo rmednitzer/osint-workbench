@@ -29,6 +29,7 @@ class EvidenceStore:
             if not self.read_only:
                 try:
                     os.mkdir(sha[:2], mode=0o700, dir_fd=root_fd)
+                    os.fsync(root_fd)
                 except FileExistsError:
                     pass
             child_fd = os.open(

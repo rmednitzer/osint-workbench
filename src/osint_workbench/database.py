@@ -10,21 +10,31 @@ from .contracts import DocumentInput
 from .errors import WorkbenchError
 from .evidence import EvidenceStore
 
+SCHEMA_VERSION = 2
+
 
 def migrate(dsn: str) -> None:
-    script = files("osint_workbench").joinpath("schema.sql").read_text()
-    sha = hashlib.sha256(script.encode()).hexdigest()
+    package = files("osint_workbench")
+    scripts = [package.joinpath("schema.sql"), package.joinpath("migrations/002_workflows.sql")]
     with psycopg.connect(dsn) as conn:
         conn.execute("SELECT pg_advisory_xact_lock(418287405)")
         exists = conn.execute("SELECT to_regclass('ow.migrations')").fetchone()[0]
+        applied = {}
         if exists:
-            row = conn.execute("SELECT sha256 FROM ow.migrations WHERE version=1").fetchone()
-            if row:
-                if row[0] != sha:
+            applied = dict(conn.execute("SELECT version,sha256 FROM ow.migrations").fetchall())
+            if set(applied) != set(range(1, len(applied) + 1)) or max(applied, default=0) > len(
+                scripts
+            ):
+                raise WorkbenchError("UNSUPPORTED_MIGRATION_HISTORY")
+        for version, resource in enumerate(scripts, start=1):
+            script = resource.read_text()
+            sha = hashlib.sha256(script.encode()).hexdigest()
+            if version in applied:
+                if applied[version] != sha:
                     raise WorkbenchError("MIGRATION_DIGEST_MISMATCH")
-                return
-        conn.execute(script)
-        conn.execute("INSERT INTO ow.migrations(version,sha256) VALUES (1,%s)", (sha,))
+                continue
+            conn.execute(script)
+            conn.execute("INSERT INTO ow.migrations(version,sha256) VALUES (%s,%s)", (version, sha))
 
 
 class Database:
@@ -58,6 +68,12 @@ class Database:
         # Objects are durable before accepted metadata. DB failure may leave an
         # orphan; it must not create accepted records pointing at missing bytes.
         raw_sha, text_sha = store.put(raw), store.put(doc.text.encode())
+        with self.connect() as conn:
+            return self.ingest_stored(conn, doc, raw_sha, text_sha, extractor)
+
+    @staticmethod
+    def ingest_stored(conn, doc, raw_sha, text_sha, extractor):
+        """Internal transaction boundary; caller has durably verified both objects."""
         snapshot = hashlib.sha256(
             json.dumps([doc.source_id, raw_sha, text_sha, extractor]).encode()
         ).hexdigest()
@@ -73,49 +89,46 @@ class Database:
                 ]
             ).encode()
         ).hexdigest()
-        with self.connect() as conn:
+        conn.execute(
+            "INSERT INTO ow.sources(source_id) VALUES (%s) ON CONFLICT DO NOTHING",
+            (doc.source_id,),
+        )
+        conn.execute(
+            """INSERT INTO ow.snapshots
+            (snapshot_id,source_id,raw_sha256,text_sha256,extractor)
+            VALUES (%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING""",
+            (snapshot, doc.source_id, raw_sha, text_sha, extractor),
+        )
+        inserted = conn.execute(
+            """INSERT INTO ow.documents
+            (document_id,source_id,external_key,snapshot_id,title,body,published_at)
+            VALUES (%s,%s,%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING RETURNING document_id""",
+            (
+                document,
+                doc.source_id,
+                external,
+                snapshot,
+                doc.title,
+                doc.text,
+                doc.published_at,
+            ),
+        ).fetchone()
+        if inserted:
             conn.execute(
-                "INSERT INTO ow.sources(source_id) VALUES (%s) ON CONFLICT DO NOTHING",
-                (doc.source_id,),
+                """INSERT INTO ow.document_heads(source_id,external_key,document_id)
+              VALUES (%s,%s,%s) ON CONFLICT(source_id,external_key)
+              DO UPDATE SET document_id=excluded.document_id""",
+                (doc.source_id, external, document),
             )
             conn.execute(
-                """INSERT INTO ow.snapshots
-                (snapshot_id,source_id,raw_sha256,text_sha256,extractor)
-                VALUES (%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING""",
-                (snapshot, doc.source_id, raw_sha, text_sha, extractor),
-            )
-            inserted = conn.execute(
-                """INSERT INTO ow.documents
-                (document_id,source_id,external_key,snapshot_id,title,body,published_at)
-                VALUES (%s,%s,%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING RETURNING document_id""",
+                """INSERT INTO ow.jobs(job_id,kind,dedup_key,payload)
+              VALUES (%s,'document.accepted',%s,%s) ON CONFLICT DO NOTHING""",
                 (
+                    uuid.uuid4(),
                     document,
-                    doc.source_id,
-                    external,
-                    snapshot,
-                    doc.title,
-                    doc.text,
-                    doc.published_at,
+                    psycopg.types.json.Jsonb({"document_id": document, "snapshot_id": snapshot}),
                 ),
-            ).fetchone()
-            if inserted:
-                conn.execute(
-                    """INSERT INTO ow.document_heads(source_id,external_key,document_id)
-                  VALUES (%s,%s,%s) ON CONFLICT(source_id,external_key)
-                  DO UPDATE SET document_id=excluded.document_id""",
-                    (doc.source_id, external, document),
-                )
-                conn.execute(
-                    """INSERT INTO ow.jobs(job_id,kind,dedup_key,payload)
-                  VALUES (%s,'document.accepted',%s,%s) ON CONFLICT DO NOTHING""",
-                    (
-                        uuid.uuid4(),
-                        document,
-                        psycopg.types.json.Jsonb(
-                            {"document_id": document, "snapshot_id": snapshot}
-                        ),
-                    ),
-                )
+            )
         return document
 
     def search(self, query: str, limit: int = 20, offset: int = 0) -> list[dict]:
@@ -188,45 +201,31 @@ class Database:
             **row,
             "configured": row["sources"] > 0,
             "retrieval": "lexical",
-            "schema_version": 1,
+            "schema_version": SCHEMA_VERSION,
         }
 
     def enqueue(self, kind: str, dedup: str, payload: dict) -> str:
+        from .jobs import bounded_json
+
         if not kind or len(kind) > 100 or not dedup or len(dedup) > 4096:
             raise WorkbenchError("INVALID_JOB")
+        bounded = bounded_json(payload)
         with self.connect() as conn:
             return str(
                 conn.execute(
                     """INSERT INTO ow.jobs(job_id,kind,dedup_key,payload)
               VALUES (%s,%s,%s,%s) ON CONFLICT(kind,dedup_key)
               DO UPDATE SET dedup_key=excluded.dedup_key RETURNING job_id""",
-                    (uuid.uuid4(), kind, dedup, psycopg.types.json.Jsonb(payload)),
+                    (uuid.uuid4(), kind, dedup, bounded),
                 ).fetchone()["job_id"]
             )
 
     def claim(self, lease_seconds: int = 30) -> dict | None:
-        if type(lease_seconds) is not int or not 1 <= lease_seconds <= 3600:
-            raise WorkbenchError("INVALID_LEASE")
-        with self.connect() as conn:
-            return conn.execute(
-                """WITH candidate AS (
-              SELECT job_id FROM ow.jobs WHERE status='ready' OR
-              (status='running' AND lease_until<clock_timestamp())
-              ORDER BY job_id FOR UPDATE SKIP LOCKED LIMIT 1)
-              UPDATE ow.jobs SET status='running',attempt=attempt+1,fence=%s,
-                lease_until=clock_timestamp()+make_interval(secs=>%s)
-              WHERE job_id IN (SELECT job_id FROM candidate)
-              RETURNING job_id,kind,payload,attempt,fence,lease_until""",
-                (uuid.uuid4(), lease_seconds),
-            ).fetchone()
+        from .jobs import Jobs
+
+        return Jobs(self).claim(lease_seconds=lease_seconds)
 
     def finish(self, job_id: str, fence: str, result: dict) -> None:
-        with self.connect() as conn:
-            row = conn.execute(
-                """UPDATE ow.jobs SET status='succeeded',result=%s,lease_until=NULL
-              WHERE job_id=%s AND fence=%s AND status='running'
-              AND lease_until>clock_timestamp() RETURNING job_id""",
-                (psycopg.types.json.Jsonb(result), job_id, fence),
-            ).fetchone()
-            if row is None:
-                raise WorkbenchError("STALE_JOB_LEASE")
+        from .jobs import Jobs
+
+        Jobs(self).finish(job_id, fence, result)

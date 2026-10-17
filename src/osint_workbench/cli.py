@@ -9,11 +9,13 @@ from pydantic import ValidationError
 
 from .collection import collect
 from .contracts import DocumentInput, SourceConfig
-from .database import Database, migrate
+from .database import SCHEMA_VERSION, Database, migrate
 from .errors import WorkbenchError
 from .evidence import EvidenceStore
+from .jobs import Jobs
 from .mcp_server import serve
 from .service import ReadService
+from .worker import run_once
 
 
 def _dsn(name):
@@ -37,11 +39,22 @@ def main():
     search = sub.add_parser("search")
     search.add_argument("query")
     sub.add_parser("mcp")
+    sub.add_parser("work-once")
+    job = sub.add_parser("job")
+    job.add_argument("action", choices=["inspect", "cancel"])
+    job.add_argument("job_id")
     args = parser.parse_args()
     try:
         if args.command == "migrate":
             migrate(_dsn("OW_MIGRATION_DSN"))
-            value = {"schema_version": 1}
+            value = {"schema_version": SCHEMA_VERSION}
+        elif args.command == "work-once":
+            db = Database(_dsn("OW_WRITER_DSN"))
+            store = EvidenceStore(Path(os.environ["OW_EVIDENCE_ROOT"]))
+            value = run_once(db, store)
+        elif args.command == "job":
+            jobs = Jobs(Database(_dsn("OW_WRITER_DSN")))
+            value = getattr(jobs, args.action)(args.job_id)
         elif args.command == "import-text":
             raw = args.file.read_bytes()
             document = DocumentInput(

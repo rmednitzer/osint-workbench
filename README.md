@@ -64,6 +64,9 @@ osint-workbench collect --config config/sources.example.json
 osint-workbench import-text --file ./synthetic.txt --source-id fixture --title Example
 osint-workbench search evidence
 osint-workbench status
+osint-workbench work-once
+osint-workbench job inspect JOB_UUID
+osint-workbench job cancel JOB_UUID
 osint-workbench mcp
 ```
 
@@ -76,6 +79,12 @@ not recursively fetch articles or claim full-text coverage beyond supplied entri
 `get_evidence` verifies byte integrity, not truth. Content remains untrusted, and a
 remote AI client can disclose locally retrieved content to its own provider. Current
 MCP transport is local stdio; authenticated remote HTTP remains unimplemented.
+
+`work-once` validates stored evidence, produces versioned character chunks, then
+commits the chunks, downstream work record and completion atomically. Repeat it
+under an external supervisor; it does not start a background daemon. It claims only
+job kinds it implements. Cancellation is an operator write, never an MCP tool.
+See [workflow contracts](docs/workflows.md) for retry and recovery semantics.
 
 ## Engineering and attribution
 

@@ -5,10 +5,10 @@ complete merely because its design documents or interfaces exist.
 
 | Area | Current implementation | Verification boundary |
 | --- | --- | --- |
-| Configuration/package | Typed JSON, empty sources, src layout, packaged migration | Local tests, wheel inspection and CI |
+| Configuration/package | Typed JSON, empty sources, src layout, packaged migration | Local tests, installed wheel and v1-to-v2 migration CI |
 | Evidence/core storage | Hashed immutable objects, PostgreSQL records/version heads | Local object tests; native PostgreSQL tests in CI |
-| Jobs | Enqueue, dedup, expiring claims, fencing and completion | PostgreSQL tests in CI; cancellation/outbox dispatch lifecycle remains incomplete |
-| Collection | RSS/Atom entry extraction and bounded public HTTP transport | Parser/address/resolver tests; full adversarial HTTP/parser coverage remains pending |
+| Jobs | Bounded retries, attempt events, cancellation, renewal and atomic chunk worker | PostgreSQL failure/concurrency tests; distributed/remote effects remain pending |
+| Collection | RSS/Atom entry extraction and bounded public HTTP transport | Disposable parser, per-source exclusion, partial-run receipts and replay tests; full adversarial HTTP coverage remains pending |
 | MCP | Five stdio reads with strict schemas, reader checks and bounded errors | Real SDK client against PostgreSQL in CI |
 | Retrieval | Lexical search; dimension/identity/fusion primitives | Primitive tests only; real embeddings, chunk tokenization, pgvector, backfill and reranking pending |
 | Local inference | Target specification | No model serving, resource scheduler or actual model verification yet |
@@ -18,6 +18,11 @@ complete merely because its design documents or interfaces exist.
 | Remote MCP | Target authentication design | No HTTP listener or remote client compatibility claim |
 | Export/recovery/retention | Target specification | No complete backup/restore/GC/publisher workflow yet |
 | Publication controls | Positive file selection and source/artifact scanning | Narrow scanner tests; private values are never committed |
+
+Schema v2 is additive; the published v1 SQL remains byte-identical. Job cancellation
+revokes acceptance authority; it does not prove a running computation has stopped.
+The worker currently processes `document.accepted` only, preserving other job kinds.
+Character chunks preserve offsets but are not token-aware model input.
 
 The full programme covers 28 capability areas, 17 ADRs, 58 requirements and 51
 acceptance scenarios. The tests in this repository currently establish only a

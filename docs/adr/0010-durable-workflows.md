@@ -1,6 +1,6 @@
 # ADR-0010: Durable jobs, fencing and transactional outbox
 
-Status: PROPOSED. Owner: maintainer. Date: 2026-10-17.
+Status: ACCEPTED for local workflow core; remote effects remain proposed. Owner: maintainer. Date: 2026-10-17.
 
 ## Context
 Enrichment, indexing, batch imports and reports must survive crashes and overlapping workers.
@@ -18,4 +18,4 @@ Lease expiry, clock assumptions, cancellation and queue contention require tests
 Version job records and drain/restore safely; preserve pending/unknown outcomes instead of deleting them.
 
 ## Verification
-R33,R34,R47; E06,E25,E26,E43. No implementation evidence yet.
+R33,R34,R47; E06,E25,E26,E43. `tests/test_workflows.py` covers local leases, concurrent claims, killed claimant recovery, retry exhaustion, cancellation, partial acquisition replay and atomic chunk rollback. These tests do not establish remote execution guarantees or complete all acceptance scenarios.

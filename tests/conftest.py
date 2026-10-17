@@ -1,5 +1,7 @@
+import hashlib
 import os
 import secrets
+from importlib.resources import files
 
 import psycopg
 import pytest
@@ -26,6 +28,13 @@ def roles():
     with psycopg.connect(dsn, autocommit=True) as conn:
         if conn.info.dbname != "ow_test":
             raise RuntimeError("tests refuse any database not named ow_test")
+        if conn.execute("SELECT to_regclass('ow.migrations')").fetchone()[0] is None:
+            script = files("osint_workbench").joinpath("schema.sql").read_text()
+            conn.execute(script)
+            conn.execute(
+                "INSERT INTO ow.migrations(version,sha256) VALUES (1,%s)",
+                (hashlib.sha256(script.encode()).hexdigest(),),
+            )
     migrate(dsn)
     writer_password, reader_password = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
     with psycopg.connect(dsn, autocommit=True) as conn:
@@ -54,5 +63,8 @@ def roles():
 @pytest.fixture
 def databases(roles):
     with psycopg.connect(roles["admin"]) as conn:
-        conn.execute("TRUNCATE ow.jobs,ow.document_heads,ow.documents,ow.snapshots,ow.sources")
+        conn.execute(
+            "TRUNCATE ow.collection_runs,ow.job_events,ow.chunks,ow.jobs,ow.document_heads,"
+            "ow.documents,ow.snapshots,ow.sources"
+        )
     return Database(roles["writer"]), Database(roles["reader"]), roles

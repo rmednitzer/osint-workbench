@@ -181,3 +181,16 @@ def test_feed_parser_preserves_evidence_and_rejects_unknown_format():
     assert docs[0].published_at.utcoffset().total_seconds() == 0
     with pytest.raises(WorkbenchError, match="PARSE"):
         feed_documents(b"<html>Not a feed</html>", "fixture")
+
+
+def test_disposable_parser_rejects_bad_items_and_entities():
+    missing_body = b"""<rss version="2.0"><channel><item><guid>one</guid>
+    <title>No evidence</title></item></channel></rss>"""
+    with pytest.raises(WorkbenchError, match="FEED_INVALID_ENTRY"):
+        feed_documents(missing_body, "fixture")
+    hostile = b"""<?xml version="1.0"?><!DOCTYPE rss [<!ENTITY leak SYSTEM
+    "file:///nonexistent-synthetic-evidence">]><rss version="2.0"><channel>
+    <item><guid>one</guid><title>Untrusted</title><description>&leak;</description>
+    </item></channel></rss>"""
+    with pytest.raises(WorkbenchError):
+        feed_documents(hostile, "fixture")
