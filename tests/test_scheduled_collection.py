@@ -466,3 +466,32 @@ def test_checkpoint_and_restore_reject_row_filtered_schema(databases, destinatio
     with pytest.raises(WorkbenchError, match="RECOVERY_ROW_SECURITY_UNSUPPORTED"):
         recovery.restore(target, path, receipt["sha256"], tmp_path / "restored", **policy)
     assert not (tmp_path / "restored").exists()
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("due_only", [True, False])
+def test_new_body_cannot_mask_missing_retained_evidence(databases, tmp_path, monkeypatch, due_only):
+    writer, _, _ = databases
+    store = EvidenceStore(tmp_path / "objects")
+    install(monkeypatch, ResponseWire(headers=[(b"etag", b'"old"')]))
+    collect(source(), writer, store, due_only=True)
+    (store.root / digest(FEED)[:2] / digest(FEED)).unlink()
+    due(writer)
+    changed = FEED.replace(b"Second evidence", b"Different new evidence")
+    wire = ResponseWire(body=changed, headers=[(b"etag", b'"new"')])
+    install(monkeypatch, wire)
+    with pytest.raises(WorkbenchError, match="EVIDENCE_UNAVAILABLE"):
+        collect(source(), writer, store, due_only=due_only)
+    assert b"if-none-match" not in dict(wire.request.headers)
+    with writer.connect() as conn:
+        row = conn.execute("SELECT etag,raw_sha256 FROM ow.collection_state").fetchone()
+        assert row == {"etag": '"old"', "raw_sha256": digest(FEED)}
+        assert conn.execute("SELECT last_error FROM ow.sources").fetchone()["last_error"] == (
+            "EVIDENCE_UNAVAILABLE"
+        )
+        assert (
+            conn.execute(
+                "SELECT accepted_documents FROM ow.collection_runs WHERE status='failed'"
+            ).fetchone()["accepted_documents"]
+            == 0
+        )

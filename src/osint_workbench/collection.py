@@ -142,15 +142,17 @@ def collect(source: Source, db: Database, store: EvidenceStore, *, due_only=Fals
         suppressed = 0
         try:
             validate_url(source.url)
+            lost_cache = None
+            if state["raw_sha256"] is not None:
+                try:
+                    store.get(state["raw_sha256"])
+                except WorkbenchError:
+                    # Neither scheduled nor manual refresh may hide an observed
+                    # gap in retained evidence behind a different new body.
+                    lost_cache = state["raw_sha256"]
+                    state.update(etag=None, last_modified=None, raw_sha256=None)
             if due_only:
                 validators(state["etag"], state["last_modified"])
-                conditional = bool(state["etag"] or state["last_modified"])
-                if conditional:
-                    try:
-                        store.get(state["raw_sha256"])
-                    except WorkbenchError:
-                        # Without intact accepted evidence, a 304 cannot establish success.
-                        state.update(etag=None, last_modified=None, raw_sha256=None)
                 response = fetch_response(
                     source.url, etag=state["etag"], last_modified=state["last_modified"]
                 )
@@ -170,6 +172,10 @@ def collect(source: Source, db: Database, store: EvidenceStore, *, due_only=Fals
             else:
                 documents = feed_documents(response.body, source.source_id)
                 raw_sha = store.put(response.body)  # Once per feed, not once per item.
+                if lost_cache is not None:
+                    # A different new representation does not repair the known gap
+                    # in retained historical evidence. Never clear its failure silently.
+                    store.get(lost_cache)
                 etag, modified = response.etag, response.last_modified
             for document in documents:
                 try:
