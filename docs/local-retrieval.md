@@ -91,6 +91,14 @@ conversion accuracy and numerical compatibility still require validation.
 
 ## Verification and remaining acceptance
 
+Identical overlapping `LocalEncoder.query` calls on one encoder instance share
+one verified native computation under [ADR-0034](adr/0034-bounded-query-coalescing.md).
+The exact validated query packet binds the flight; owners/waiters and wait time
+are bounded. Followers receive independent vector copies. No completed cache is
+retained, so later calls verify model files again. A waiting caller's timeout does
+not cancel the owner. This adds no cross-process scheduling, persistent cache,
+new MCP authority or semantic-quality claim.
+
 `tests/test_encoder.py` executes actual ONNX Runtime CPU inference and validates exact
 fixture vectors, Unicode spans, hashes, no silent truncation, zero-vector rejection
 and admission release. `tests/test_vector_index.py` uses native pgvector and a real

@@ -483,3 +483,17 @@ orphan bytes while this integrity boundary is unverified. Actual native executio
 and revision-bound receipts are required before describing the counterexample as
 closed; storage media erasure, distributed-lock correctness and whole-host
 recovery remain outside this refinement.
+
+## In-flight query coalescing
+
+[ADR-0034](../adr/0034-bounded-query-coalescing.md) refines local model execution
+and retrieval response control. A caller waiting for another computation must not
+be mistaken for its owner, and a prior result must not become an unvalidated
+completed cache. This contributes to E10/E23/E34/E39 without closing them.
+
+| UCA | Hazardous context / category | Derived constraint and allocation | Discriminating evidence |
+| --- | --- | --- | --- |
+| U77 | Return a vector from a different query/model contract or share mutable result ownership | C77: exact packet digest, instance scope, manifest snapshot and independent result copies | Different keys/instances, native oracle and caller mutation |
+| U78 | Release inference authority when a follower times out, or leave followers blocked after owner failure | C78: follower wait has its own bound; only owner controls computation; every owner exit wakes followers and removes flight | Timeout during blocked owner, typed/unexpected failure, retry and native admission tests |
+| U79 | Admit unbounded duplicate waiters or reuse an inherited locked instance after fork | C79: bounded distinct owners and aggregate waiters, fail-fast refusal and PID guard before mutex | Capacity refusal and actual fork while parent mutex is held |
+| U80 | Treat a completed query result as indefinitely valid after artifact or policy changes | C80: remove completed flights, reverify later native calls, and preserve per-search database/lifecycle checks | Native model tamper after completed identical query; existing lifecycle/retrieval suite |

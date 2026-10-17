@@ -14,6 +14,7 @@ from pydantic import Field, model_validator
 
 from .contracts import StrictModel
 from .errors import WorkbenchError
+from .query_flights import QueryFlights
 from .retrieval import EmbeddingSpace
 from .text import digest
 
@@ -82,17 +83,22 @@ class EncoderManifest(StrictModel):
 class LocalEncoder:
     def __init__(self, manifest: EncoderManifest):
         self.manifest = manifest
+        self._queries = QueryFlights()
 
     def invoke(self, text: str, *, operation: Literal["query", "document", "chunks"]):
-        packet = encode_packet(self.manifest, text, operation)
+        manifest = EncoderManifest.model_validate(self.manifest.model_dump())
+        packet = encode_packet(manifest, text, operation)
+        return self._invoke_packet(manifest, packet)
+
+    def _invoke_packet(self, manifest, packet):
         # No credentials, DSNs, hub tokens or ambient proxy configuration enter the child.
         env = {
             "PYTHONIOENCODING": "utf-8",
             "TOKENIZERS_PARALLELISM": "false",
-            "OMP_NUM_THREADS": str(self.manifest.threads),
+            "OMP_NUM_THREADS": str(manifest.threads),
             "OPENBLAS_NUM_THREADS": "1",
             "MKL_NUM_THREADS": "1",
-            "RAYON_NUM_THREADS": str(self.manifest.threads),
+            "RAYON_NUM_THREADS": str(manifest.threads),
         }
         with admission(), tempfile.TemporaryFile() as output:
             try:
@@ -130,16 +136,21 @@ class LocalEncoder:
                 }:
                     code = "ENCODER_UNAVAILABLE"
                 raise WorkbenchError(code)
-            if decoded["encoder_id"] != self.manifest.identity():
+            if decoded["encoder_id"] != manifest.identity():
                 raise ValueError
             for row in decoded["results"]:
-                self.manifest.space.validate_vector(row["vector"])
+                manifest.space.validate_vector(row["vector"])
             return decoded["results"]
         except (ValueError, KeyError, TypeError):
             raise WorkbenchError("ENCODER_INVALID_RESULT") from None
 
     def query(self, text):
-        return self.invoke(text, operation="query")[0]["vector"]
+        manifest = EncoderManifest.model_validate(self.manifest.model_dump())
+        packet = encode_packet(manifest, text, "query")
+        return self._queries.run(
+            bytes.fromhex(digest(packet)),
+            lambda: self._invoke_packet(manifest, packet)[0]["vector"],
+        )
 
     def chunks(self, text):
         return self.invoke(text, operation="chunks")

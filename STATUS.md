@@ -33,7 +33,7 @@ concurrency and policy-gated isolated recovery. See
 [the revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
 models establish execution contracts, not pretrained semantic quality.
 
-The full programme covers 28 capability areas, 33 ADRs, 58 requirements and 51
+The full programme covers 28 capability areas, 34 ADRs, 58 requirements and 51
 acceptance scenarios. The tests in this repository currently establish only a
 foundation subset. Detailed future specifications are under `docs/`; they are not
 execution receipts. CI results are authoritative for a particular tested revision.
