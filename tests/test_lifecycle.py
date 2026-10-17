@@ -6,7 +6,7 @@ import os
 import sys
 import threading
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, timedelta, timezone
 
 import psycopg
 import pytest
@@ -393,6 +393,68 @@ def test_policy_revision_is_bounded_before_allocating_history():
         lifecycle.validate_policy(bad)
 
 
+def test_policy_history_compares_timestamp_instants_not_rendered_offsets():
+    request = lifecycle.Change(
+        action="hold",
+        document_id="b" * 64,
+        operation_id="hold-op",
+        actor="fixture-reviewer",
+        rationale="Synthetic hold",
+        hold_id="hold-one",
+    )
+    instant = datetime(2026, 1, 1, tzinfo=UTC)
+    key = {"source_id": "fixture", "external_key": "a" * 64}
+    control = {"singleton": True, "dataset_id": str(uuid.uuid4()), "revision": 1}
+    result = {
+        "operation_id": "hold-op",
+        "document_id": "b" * 64,
+        "action": "hold",
+        "revision": 1,
+        "cancelled_jobs": 0,
+        "physical_erasure": False,
+        "retention_class": None,
+        "retain_until": None,
+        "hold_id": "hold-one",
+    }
+    tables = {
+        "lifecycle_items": [{**key, "retention_class": "manual", "retain_until": None}],
+        "lifecycle_holds": [
+            {**key, "hold_id": "hold-one", "placed_at": instant.isoformat(), "released_at": None}
+        ],
+        "lifecycle_tombstones": [],
+        "lifecycle_events": [
+            {
+                **key,
+                "operation_id": "hold-op",
+                "request_sha256": recovery.digest(request.model_dump_json().encode()),
+                "revision": 1,
+                "action": "hold",
+                "actor": "fixture-reviewer",
+                "rationale": "Synthetic hold",
+                "result": result,
+                "recorded_at": instant.isoformat(),
+            }
+        ],
+    }
+    payload = {
+        "format": 1,
+        "kind": "lifecycle_policy",
+        "control": control,
+        "tables": copy.deepcopy(tables),
+    }
+    for name, field in (("lifecycle_holds", "placed_at"), ("lifecycle_events", "recorded_at")):
+        payload["tables"][name][0][field] = instant.astimezone(
+            timezone(timedelta(hours=2))
+        ).isoformat()
+    baseline = {"lifecycle_control": [control], **tables}
+    lifecycle.reconcile_policy(baseline, payload, 1)
+    payload["tables"]["lifecycle_holds"][0]["placed_at"] = (
+        instant + timedelta(seconds=1)
+    ).isoformat()
+    with pytest.raises(WorkbenchError, match="HISTORY_MISMATCH"):
+        lifecycle.reconcile_policy(baseline, payload, 1)
+
+
 @pytest.mark.integration
 def test_clock_expiry_blocks_new_model_dispatch_without_a_sweeper(databases, tmp_path):
     writer, reader, roles = databases
@@ -483,6 +545,19 @@ def test_policy_roundtrip_ignores_role_timezone_defaults(databases, destination,
         path = tmp_path / "checkpoint.owcp"
         receipt = recovery.checkpoint(Database(roles["admin"]), store, path)
         policy = policy_arguments({"admin": roles["lifecycle"]}, path)
+        # An older valid producer may render the same instants with an offset.
+        # Preserve the original request/result encoding; only row timestamps vary.
+        bundle = json.loads(policy["policy_path"].read_bytes())
+        for name, field in (("lifecycle_holds", "placed_at"), ("lifecycle_events", "recorded_at")):
+            for row in bundle["payload"]["tables"][name]:
+                row[field] = (
+                    datetime.fromisoformat(row[field])
+                    .astimezone(timezone(timedelta(hours=2)))
+                    .isoformat()
+                )
+        bundle["sha256"] = recovery.digest(recovery._json(bundle["payload"]))
+        policy["policy_sha"] = bundle["sha256"]
+        policy["policy_path"].write_bytes(recovery._json(bundle))
         result = recovery.restore(
             Database(destination["admin"]), path, receipt["sha256"], tmp_path / "restored", **policy
         )

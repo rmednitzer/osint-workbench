@@ -430,8 +430,6 @@ def export_policy(db, path):
 
 def reconcile_policy(backup_tables, payload, minimum_revision):
     """Trusted external receipt is necessary; offline code cannot infer its freshness."""
-    from .recovery import _json
-
     validate_policy(payload)
     validate_policy(
         {
@@ -451,21 +449,36 @@ def reconcile_policy(backup_tables, payload, minimum_revision):
     ):
         raise WorkbenchError("LIFECYCLE_POLICY_STALE_OR_WRONG_DATASET")
     policy = payload["tables"]
-    event_map = {e["operation_id"]: _json(e) for e in policy["lifecycle_events"]}
+    event_map = {
+        e["operation_id"]: Event.model_validate_json(json.dumps(e))
+        for e in policy["lifecycle_events"]
+    }
     for event in backup_tables["lifecycle_events"]:
-        if event_map.get(event["operation_id"]) != _json(event):
+        if event_map.get(event["operation_id"]) != Event.model_validate_json(json.dumps(event)):
             raise WorkbenchError("LIFECYCLE_POLICY_HISTORY_MISMATCH")
     for table, keys in (("lifecycle_tombstones", ("source_id", "external_key")),):
-        rows = {tuple(r[k] for k in keys): r for r in policy[table]}
-        if any(rows.get(tuple(r[k] for k in keys)) != r for r in backup_tables[table]):
+        rows = {
+            tuple(r[k] for k in keys): Tombstone.model_validate_json(json.dumps(r))
+            for r in policy[table]
+        }
+        if any(
+            rows.get(tuple(r[k] for k in keys)) != Tombstone.model_validate_json(json.dumps(r))
+            for r in backup_tables[table]
+        ):
             raise WorkbenchError("LIFECYCLE_POLICY_HISTORY_MISMATCH")
-    holds = {h["hold_id"]: h for h in policy["lifecycle_holds"]}
-    for hold in backup_tables["lifecycle_holds"]:
-        new = holds.get(hold["hold_id"])
+    holds = {
+        h["hold_id"]: Hold.model_validate_json(json.dumps(h)) for h in policy["lifecycle_holds"]
+    }
+    for row in backup_tables["lifecycle_holds"]:
+        hold = Hold.model_validate_json(json.dumps(row))
+        new = holds.get(hold.hold_id)
         if (
             not new
-            or any(new[k] != hold[k] for k in ("source_id", "external_key", "placed_at"))
-            or (hold["released_at"] is not None and new["released_at"] != hold["released_at"])
+            or any(
+                getattr(new, k) != getattr(hold, k)
+                for k in ("source_id", "external_key", "placed_at")
+            )
+            or (hold.released_at is not None and new.released_at != hold.released_at)
         ):
             raise WorkbenchError("LIFECYCLE_POLICY_HISTORY_MISMATCH")
     items = {(r["source_id"], r["external_key"]): r for r in backup_tables["lifecycle_items"]}

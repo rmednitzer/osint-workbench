@@ -69,6 +69,8 @@ changes serialize the reference dataset. Finer-grained admission remains a scali
 decision requiring equivalent race tests.
 Application sessions also set UTC explicitly, so checkpoint and policy history
 comparisons do not depend on different login roles' timezone defaults.
+Equivalent row timestamp offsets compare as instants; original request/result
+encoding remains unchanged for operation-hash verification.
 
 Collection skips retired/expired items with a durable `suppressed_documents` count
 and continues accepting other feed entries. Raw feed objects can contain several
