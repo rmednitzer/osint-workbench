@@ -1,6 +1,6 @@
 # ADR-0033: Retain filesystem admission through evidence-reference commits
 
-Status: ACCEPTED for implementation; revision-bound execution evidence pending.
+Status: ACCEPTED and implemented within the local Linux profile. Native evidence: [630-test receipt](../testing/verification-evidence.json), source `064be8bb629a61e50ed9d4708a52a7b13675cb28`, [run 39063644045](https://github.com/rmednitzer/osint-workbench/actions/runs/39063644045).
 Owner: maintainer. Date: 2026-10-17.
 
 ## Context and counterexample
@@ -123,6 +123,4 @@ backend loss before final validation, standalone put, cached 304 acceptance,
 multi-commit collection, restore, nested ownership, separate process/store
 instances, timeouts and error cleanup. Verify no accepted metadata references a
 deleted object and verify the lock lifetime through real commit. Distinguish
-injected exceptions from actual backend/process termination. Until a
-revision-bound receipt records execution, these are obligations and a proposed
-remediation, not a verified closure claim.
+injected exceptions from actual backend/process termination. The named receipt records the bounded native cases and their limits. This does not extend local process-kill evidence to power-loss, remote-filesystem or operational-host durability.

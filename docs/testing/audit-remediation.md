@@ -33,9 +33,12 @@ boundaries explicit. It does not close the full implementation roadmap.
   hashes must prevent a build. This is not a claim that every possible external
   PEP 517 frontend or development bootstrap applies those command-line controls.
 
-Execution is pending the named installed-wheel receipt. Local/component checks
-alone are not native release acceptance. The publication receipt must retain
-failed attempts, exact code/artifact identities and the separate service profile.
+All 630 installed-wheel tests passed with no skips, including 58 additional audit
+cases. The [revision-bound receipt](verification-evidence.json) identifies source
+`064be8bb629a61e50ed9d4708a52a7b13675cb28` and [run 39063644045](https://github.com/rmednitzer/osint-workbench/actions/runs/39063644045). The
+[separate service receipt](collector-deployment.json) covers the same wheel.
+Local/component checks alone are not the native release evidence; any failed
+attempts and exact code/artifact identities remain recorded.
 
 ## Audit dispositions still open
 

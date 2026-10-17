@@ -27,13 +27,13 @@ The core worker processes `document.accepted`; the explicit enrichment worker cl
 only its configured generator identity. Other job kinds remain queued.
 Character chunks preserve offsets but are not token-aware model input.
 
-The installed-wheel suite has 572 passing tests with no skips,
+The installed-wheel suite has 630 passing tests with no skips,
 including retained-state migration, direct SQL/MCP suppression, native retrieval,
 concurrency and policy-gated isolated recovery. See
 [the revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
 models establish execution contracts, not pretrained semantic quality.
 
-The full programme covers 28 capability areas, 32 ADRs, 58 requirements and 51
+The full programme covers 28 capability areas, 33 ADRs, 58 requirements and 51
 acceptance scenarios. The tests in this repository currently establish only a
 foundation subset. Detailed future specifications are under `docs/`; they are not
 execution receipts. CI results are authoritative for a particular tested revision.
@@ -129,3 +129,13 @@ known SQL derivatives, preserves shared/held dependencies and refuses historical
 restore content covered by current purge policy. CAS, feeds, backups, WAL and media
 erasure remain outside its scope; [the operator procedure](docs/retired-record-purge.md)
 describes irreversible effects and retrieval rebuild requirements. All 44 additional purge, race and compatibility cases passed in the named installed-wheel receipt; the current wheel also passed the separate synthetic collector-service run.
+
+Audit remediation adds a store-root inode barrier retained through evidence
+acceptance and connection cleanup, independent of database backend liveness.
+The installed-wheel receipt includes actual GC backend termination and process
+kills with subsequent writer/CAS verification. Data-only feed parsing, typed URL
+and UTF-8 packet admission, bounded numeric address fallback and transient
+contention retry also passed. Isolated workflow builds enforce a frozen hashed
+backend closure; runtime dependencies and published SQL migrations are unchanged.
+See [scope, acceptance and open audit dispositions](docs/testing/audit-remediation.md).
+These checks do not close the wider semantic, cloud, deployment or erasure roadmap.
