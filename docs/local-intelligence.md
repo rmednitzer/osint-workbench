@@ -46,10 +46,19 @@ looks idle. Lock paths/users/hosts must be configured consistently; this is not 
 scheduler. Use the [marker custody and recovery protocol](inference-marker-safety.md); do not
 delete a marker or switch lock paths merely to bypass a reservation.
 
-Native tokenization currently enables `parse_special` for the combined prompt,
-including embedded source text. Separating trusted template tokens from untrusted
-content remains an open [audit item](testing/audit-remediation-2026-10-18.md).
-Schema checks and bounded effects do not establish prompt-injection resistance.
+Native tokenization treats source-bearing prompt text as literal content with
+`parse_special=False`; only the separately configured trusted prefix/suffix may
+contain control tokens. Completion receives the exact validated integer-token
+sequence, with one shared deadline and final context bound. The runtime verifies
+that automatic special tokens are a bounded prefix only; automatic suffixes or
+other transformations fail capability validation. This is not generic chat-template
+support or semantic prompt-injection resistance. See
+[ADR-0045](adr/0045-bounded-operational-profile.md).
+
+The tokenization policy version participates in generator identity. Old queued
+enrichment jobs keep their prior identity/kind and are not claimed by this new
+generator. Explicit enqueue creates a new identity-bound job; operators must
+review the disposition of old queued jobs. No automatic reset or migration occurs.
 
 ## Enrichment and graph contract
 

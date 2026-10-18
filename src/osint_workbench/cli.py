@@ -12,6 +12,7 @@ from . import (
     cloud,
     evaluation,
     garbage_collection,
+    health,
     intelligence,
     lifecycle,
     quality,
@@ -30,7 +31,7 @@ from .local_reranker import LocalReranker, RerankerManifest
 from .mcp_server import serve
 from .service import ReadService
 from .vector_index import VectorIndex, migrate_retrieval
-from .worker import run_once
+from .worker import run_batch, run_once
 
 
 def _dsn(name):
@@ -38,6 +39,16 @@ def _dsn(name):
     if not value:
         raise WorkbenchError("DATABASE_CONFIGURATION_REQUIRED")
     return value
+
+
+def _writable_store():
+    group = os.environ.get("OW_EVIDENCE_READ_GID")
+    if group is not None and (not group.isascii() or not group.isdecimal()):
+        raise WorkbenchError("INVALID_EVIDENCE_GROUP")
+    gid = int(group) if group is not None else None
+    if gid is not None and not 0 <= gid < 2**32 - 1:
+        raise WorkbenchError("INVALID_EVIDENCE_GROUP")
+    return EvidenceStore(Path(os.environ["OW_EVIDENCE_ROOT"]), shared_group=gid)
 
 
 def _manifest(path, model):
@@ -200,10 +211,17 @@ def main():
     scan.add_argument("--due-only", action="store_true")
     scan.add_argument("--max-sources", type=int)
     sub.add_parser("status")
+    probe = sub.add_parser("health")
+    probe.add_argument("--max-source-age-seconds", type=int, required=True)
+    probe.add_argument("--max-pending-jobs", type=int, required=True)
+    probe.add_argument("--max-failed-jobs", type=int, required=True)
+    probe.add_argument("--require-retrieval", action="store_true")
     search = sub.add_parser("search")
     search.add_argument("query")
     sub.add_parser("mcp")
     sub.add_parser("work-once")
+    batch = sub.add_parser("work")
+    batch.add_argument("--max-jobs", type=int, default=32)
     job = sub.add_parser("job")
     job.add_argument("action", choices=["inspect", "cancel"])
     job.add_argument("job_id")
@@ -407,10 +425,19 @@ def main():
                 value = index.build(
                     EvidenceStore(Path(os.environ["OW_EVIDENCE_ROOT"]), read_only=True)
                 )
-        elif args.command == "work-once":
+        elif args.command in {"work-once", "work"}:
+            if args.command == "work" and not 1 <= args.max_jobs <= 1000:
+                raise WorkbenchError("INVALID_WORK_LIMIT")
             db = Database(_dsn("OW_WRITER_DSN"))
-            store = EvidenceStore(Path(os.environ["OW_EVIDENCE_ROOT"]))
-            value = run_once(db, store)
+            store = EvidenceStore(Path(os.environ["OW_EVIDENCE_ROOT"]), read_only=True)
+            if args.command == "work-once":
+                value = run_once(db, store)
+            else:
+                value = run_batch(db, store, max_jobs=args.max_jobs)
+                print(json.dumps(value))
+                if value["failed"]:
+                    raise SystemExit(1)
+                return
         elif args.command == "job":
             jobs = Jobs(Database(_dsn("OW_WRITER_DSN")))
             value = getattr(jobs, args.action)(args.job_id)
@@ -422,7 +449,7 @@ def main():
                 title=args.title,
                 text=raw.decode("utf-8"),
             )
-            store = EvidenceStore(Path(os.environ["OW_EVIDENCE_ROOT"]))
+            store = _writable_store()
             identifier = Database(_dsn("OW_WRITER_DSN")).ingest(document, raw, store)
             value = {"document_id": identifier}
         elif args.command == "collect":
@@ -441,7 +468,7 @@ def main():
             else:
                 db = Database(_dsn("OW_COLLECTOR_DSN"))
                 db.validate_collector()
-                store = EvidenceStore(Path(os.environ["OW_EVIDENCE_ROOT"]))
+                store = _writable_store()
                 if args.due_only:
                     value = collect_due(
                         config.sources,
@@ -486,6 +513,18 @@ def main():
                 return
             if args.command == "mcp":
                 asyncio.run(serve(service))
+                return
+            if args.command == "health":
+                value = health.check(
+                    service,
+                    max_source_age_seconds=args.max_source_age_seconds,
+                    max_pending_jobs=args.max_pending_jobs,
+                    max_failed_jobs=args.max_failed_jobs,
+                    require_retrieval=args.require_retrieval,
+                )
+                print(json.dumps(value))
+                if not value["ready"]:
+                    raise SystemExit(1)
                 return
             value = service.search(args.query) if args.command == "search" else service.status()
         print(json.dumps(value, default=str, ensure_ascii=False))

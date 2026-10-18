@@ -1,13 +1,86 @@
 # Reference process deployment
 
-The supplied systemd units are a reference for one Linux acquisition process,
-with separate revision-bound synthetic acceptance, not an operational deployment.
+The supplied systemd units cover Linux acquisition and an optional supervised
+chunk-worker/aggregate-health profile. They require separate revision-bound
+synthetic acceptance and operator provisioning before operational deployment.
 Native unit-parser verification checks
 syntax and dependency/executable resolution against an isolated filesystem.
 It does not exercise systemd's namespace, cgroup, credentials, timer, networking,
 filesystem or termination behaviour. Perform the acceptance checks below on a
 separate synthetic deployment before enabling real sources. No actual hosts,
 service accounts, source catalogs or credentials are supplied.
+
+The [operational profile](operational-profile.md) defines its goal, health
+semantics and remaining adoption gates. The procedure below first describes
+private collector storage; the shared profile is a separate explicit choice.
+
+## Optional shared worker and health profile
+
+Provision separate non-login accounts `osint-workbench-worker` and
+`osint-workbench-health`, each with its own primary group. Provision the
+`osint-workbench-evidence` read group and grant both accounts supplementary
+membership. The collector owns evidence; neither consumer joins its private
+account group or receives its acquisition credentials. These names are generic
+template identities, not an inventory of an operational host.
+
+Start from an empty, collector-owned evidence root with the evidence group's
+numeric GID and mode 2750. Provision parent traversal explicitly without making
+private directories public. Stop all users of an existing private store before
+planning a separately reviewed custody migration; the code does not convert
+private objects or recursively change their permissions.
+
+Install `osint-workbench-collect-shared.conf` as a root-owned collector service
+drop-in under `osint-workbench-collect.service.d/`. It selects the evidence group
+and shared state-directory mode. Set `OW_EVIDENCE_READ_GID` to its actual numeric
+GID in the private `collector.env`. The creating process must use that group as
+its effective primary group; supplementary membership alone is insufficient.
+The explicit creation profile verifies
+no-symlink anchored directories, ownership, group, modes and root identity.
+POSIX access/default ACLs are refused to avoid hidden named-principal access.
+New subdirectories use 0750 and objects 0640 even under umask 0077. No application
+chmod requests a setgid bit; `RestrictSUIDSGID=yes` remains enabled. Existing
+incompatible objects/directories cause refusal, never implicit disclosure or repair.
+Staging remains private until complete bytes are flushed and shared publication
+is prepared. Cooperative concurrent creation of the same new prefix can fail
+closed during its permission transition; retry only through the normal bounded
+collection workflow. Group members can read every object in this selected store;
+this is not document authorization. Keep unrelated workloads out of the evidence
+group.
+
+Install the worker's environment as root-owned mode 0600
+`/etc/osint-workbench-worker/runtime.env`, containing only its `OW_WRITER_DSN`
+and any explicitly needed libpq configuration. Install the health environment
+similarly at `/etc/osint-workbench-health/runtime.env`, with `OW_READER_DSN` and
+explicit `OW_HEALTH_MAX_SOURCE_AGE_SECONDS`, `OW_HEALTH_MAX_PENDING_JOBS` and
+`OW_HEALTH_MAX_FAILED_JOBS`. Root's service manager reads environment files;
+client certificates/password files need narrowly provisioned account-readable
+paths in that role's configuration directory. Environment values are process
+secrets, not encrypted storage. Do not put migration, recovery, lifecycle,
+accounting or provider credentials into either environment.
+
+Copy the `osint-workbench-work` and `osint-workbench-health` service/timer pairs
+as root-owned system units and verify their syntax before enabling them. Each
+consumer mounts evidence read-only, cannot access the other roles' configuration
+directories and runs without capabilities. PostgreSQL connections may use Unix
+or IP sockets; configure host egress policy separately. The core health template
+does not load an encoder. An operator-selected retrieval health profile requires
+a reviewed ExecStart override adding `--require-retrieval`, its encoder manifest
+and measured resource/sandbox adjustments; the metadata gate does not run a model.
+
+Run collection, worker and health services manually first and inspect their
+private results. Prove a newly collected object is readable by both consumers,
+cannot be written by them, and their SQL identities cannot acquire broader roles.
+Only then enable the worker/health timers. The worker ticks 30 seconds after
+completion with up to five seconds jitter; health ticks one minute after completion
+with up to ten seconds jitter. Both start about three minutes after boot and
+cannot overlap their own unit. Their timeout/resource limits are initial hard
+bounds, not accepted capacity. No missed wall-clock runs are replayed.
+
+A failed health observation yields a failed service with aggregate journal output.
+Configure and test the operator's monitor/response separately. The repository
+sends no alerts and gives no default SLO or recovery target. Worker/health units
+remain disabled by default. Restored evidence is private; do not enable shared
+consumers against it until explicit custody provisioning is complete.
 
 ## Scope and authority
 
@@ -106,25 +179,30 @@ There is no MCP service unit. The MCP client starts
 owns its lifetime. A background systemd service would sever this transport.
 Use a different OS account/sandbox and a dedicated `ow_reader` login, supply only
 `OW_READER_DSN`, and mount evidence read-only with narrowly scoped read access.
-Do not grant it the collector's group or write access. The collector's 0700
-state directory does not automatically grant any reader access: explicitly
-provision the separate read-only bind mount/ACL and verify both readability and
-write denial. Enforce private source-config/credential denial as well.
+Do not grant it the collector's private account group, credentials or write access.
+The private 0700 store does not grant reader access. Explicitly provision the
+shared creation profile above and select its read group for this account, then
+verify both readability of newly created objects and mount-level write denial.
+Directory ACL inheritance alone cannot override private 0600 object creation;
+do not assume it provides continuing read access. Enforce private source-config/
+credential denial as well. The selected group reads all retained CAS bytes;
+SQL lifecycle filtering does not erase or authorize each filesystem object.
 
 MCP clients must preserve stdout for protocol frames and capture diagnostics
 privately. The client itself can disclose retrieved content to its own model
 provider; read-only local access does not establish data sovereignty outside
 that client boundary. Remote authenticated MCP remains a separate unfinished
-profile. No model paths, inference processes, chunk worker, enrichment worker,
-index build, lifecycle mutation or GC is scheduled by these units. Those roles
-need independently reviewed credentials, resource limits and lifecycle supervision.
+profile. The optional worker pair schedules character chunking only. No model
+paths, inference processes, enrichment worker, index build, lifecycle mutation
+or GC is scheduled by these units. Those roles need independently reviewed
+credentials, resource limits and lifecycle supervision.
 
 ## Explicit hosted-runner checks
 
 The ordinary suite's `tests/test_deployment.py` performs only native unit parsing.
 The separate manually dispatched
 [public diagnostic workflow](../.github/workflows/public-encoder-diagnostic.yml)
-can additionally run the collector acceptance script on a disposable GitHub-hosted
+can additionally run the service acceptance script on a disposable GitHub-hosted
 runner. Earlier receipts record successful empty-config service, sandbox and
 accelerated timeout probes, followed by scoped PostgreSQL/disabled-source checks;
 see [the profile receipt](testing/profile-diagnostics.json) and
@@ -144,12 +222,20 @@ including current-head reuse after one changed feed item. Its installed wheel
 is identified separately for each runner. This synthetic HTTP/timer result remains
 separate from operational deployment acceptance.
 
+The [operational-profile service successor](testing/operational-service-2026-10-18.json)
+records source `d4a1e64be1e399eb052db13f35ddcf0fc5234b81` on both LTS defaults,
+including separate worker/health accounts, authentication failure recovery,
+read-only shared evidence access, lexical reads, explicit health failure/recovery
+and accelerated worker/health timer activation. It identifies the exact installed
+wheel and owned-unit cleanup. Production timer durations, sustained load, model
+quality and operational deployment remain outside this fixture.
+
 The job must create a core installed-wheel virtual environment using the runner's
 `/usr/bin/python3`, not a home-directory-managed Python hidden by `ProtectHome`.
 The explicit privileged invocation is:
 
 ```sh
-sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT /tmp/ow-reference-core/bin/python scripts/test_reference_deployment.py --core-venv /tmp/ow-reference-core --units config/systemd --database-fixture --enabled-http-fixture
+sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT /tmp/ow-reference-core/bin/python scripts/test_reference_deployment.py --core-venv /tmp/ow-reference-core --units config/systemd --database-fixture --enabled-http-fixture --operational-fixture
 ```
 
 Do not invoke this on persistent infrastructure or manually forge the runner
@@ -177,6 +263,15 @@ credentials remain in guarded setup and negative probes, never as a runtime
 fallback.
 
 ## Isolated enabled-source fixture
+
+The optional `--operational-fixture` requires both fixture flags below and all
+disposable-runner guards. It provisions the explicit shared creation profile and
+separate worker/health accounts. It proves failed worker authentication leaves
+durable jobs untouched, successful chunking, idle restart without duplicate rows,
+new-object readability and write/configuration denial under the actual consumer
+units, lexical reader execution, failed and recovered health thresholds, and
+accelerated activation of both new timers. These are synthetic functional probes,
+not sustained capacity, representative recovery or operational deployment.
 
 The optional `--enabled-http-fixture` requires `--database-fixture`. It creates
 the fixed owned `ow-reference` network namespace containing only loopback and a

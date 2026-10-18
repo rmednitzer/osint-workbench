@@ -27,6 +27,16 @@ UNIT_ROOT = Path("/etc/systemd/system")
 SERVICE = "osint-workbench-collect.service"
 TIMER = "osint-workbench-collect.timer"
 ACCOUNT = "osint-workbench"
+WORK_ACCOUNT = "osint-workbench-worker"
+HEALTH_ACCOUNT = "osint-workbench-health"
+EVIDENCE_GROUP = "osint-workbench-evidence"
+WORK_CONFIG = Path("/etc/osint-workbench-worker")
+HEALTH_CONFIG = Path("/etc/osint-workbench-health")
+WORK_SERVICE = "osint-workbench-work.service"
+WORK_TIMER = "osint-workbench-work.timer"
+HEALTH_SERVICE = "osint-workbench-health.service"
+HEALTH_TIMER = "osint-workbench-health.timer"
+OPERATIONAL_UNITS = (WORK_SERVICE, WORK_TIMER, HEALTH_SERVICE, HEALTH_TIMER)
 COMMAND_ENV = {"PATH": "/usr/sbin:/usr/bin:/sbin:/bin", "LC_ALL": "C"}
 
 
@@ -92,7 +102,9 @@ def parse_bus_uint64(value):
     return result
 
 
-def timer_last_trigger():
+def timer_last_trigger(timer=TIMER):
+    require(timer in (TIMER, WORK_TIMER, HEALTH_TIMER), "UNKNOWN_FIXTURE_TIMER")
+    encoded = timer.replace("-", "_2d").replace(".", "_2e")
     # Fixed unit object only. Call while the timer is active so GC cannot replace
     # its runtime object; systemctl show formats nonzero durations for humans.
     return parse_bus_uint64(
@@ -101,7 +113,7 @@ def timer_last_trigger():
                 "busctl",
                 "get-property",
                 "org.freedesktop.systemd1",
-                "/org/freedesktop/systemd1/unit/osint_2dworkbench_2dcollect_2etimer",
+                "/org/freedesktop/systemd1/unit/" + encoded,
                 "org.freedesktop.systemd1.Timer",
                 "LastTriggerUSecMonotonic",
             ]
@@ -158,7 +170,7 @@ def write_private(path, content, *, mode=0o600):
     path.chmod(mode)
 
 
-def preflight(venv, units):
+def preflight(venv, units, *, operational_fixture=False):
     require(os.geteuid() == 0, "ROOT_REQUIRED")
     require(os.environ.get("GITHUB_ACTIONS") == "true", "GITHUB_ACTIONS_REQUIRED")
     require(os.environ.get("RUNNER_ENVIRONMENT") == "github-hosted", "HOSTED_RUNNER_REQUIRED")
@@ -167,16 +179,29 @@ def preflight(venv, units):
         all(shutil.which(item) for item in ("systemctl", "journalctl", "useradd", "busctl")),
         "SYSTEM_TOOLS_REQUIRED",
     )
-    for path in (APP, CONFIG, STATE, UNIT_ROOT / SERVICE, UNIT_ROOT / TIMER):
+    names = (SERVICE, TIMER, *OPERATIONAL_UNITS) if operational_fixture else (SERVICE, TIMER)
+    targets = (APP, CONFIG, STATE, *(UNIT_ROOT / name for name in names))
+    if operational_fixture:
+        targets = (*targets, WORK_CONFIG, HEALTH_CONFIG)
+    for path in targets:
         require(not os.path.lexists(path), "TARGET_ALREADY_EXISTS")
-    for name in (SERVICE, TIMER):
+    for name in names:
         require(not os.path.lexists(UNIT_ROOT / f"{name}.d"), "DROPIN_TARGET_ALREADY_EXISTS")
+    accounts = (ACCOUNT, WORK_ACCOUNT, HEALTH_ACCOUNT) if operational_fixture else (ACCOUNT,)
     for lookup in (pwd.getpwnam, grp.getgrnam):
+        for account in accounts:
+            try:
+                lookup(account)
+            except KeyError:
+                continue
+            raise Rejected("ACCOUNT_ALREADY_EXISTS")
+    if operational_fixture:
         try:
-            lookup(ACCOUNT)
+            grp.getgrnam(EVIDENCE_GROUP)
         except KeyError:
-            continue
-        raise Rejected("ACCOUNT_ALREADY_EXISTS")
+            pass
+        else:
+            raise Rejected("EVIDENCE_GROUP_ALREADY_EXISTS")
     require((venv / "bin/python").is_file(), "CORE_VENV_REQUIRED")
     require((venv / "bin/osint-workbench").is_file(), "INSTALLED_ENTRYPOINT_REQUIRED")
     settings = {}
@@ -189,8 +214,22 @@ def preflight(venv, units):
         base.is_relative_to("/usr") or base.is_relative_to("/opt"),
         "SYSTEM_PYTHON_BASE_REQUIRED",
     )
-    for name in (SERVICE, TIMER):
+    for name in names:
         require((units / name).is_file(), "REFERENCE_UNITS_REQUIRED")
+    if operational_fixture:
+        for name in OPERATIONAL_UNITS:
+            require(
+                command(
+                    ["systemctl", "show", name, "--property=LoadState", "--value"],
+                    allowed=(0, 1, 4),
+                ).strip()
+                == "not-found",
+                "OPERATIONAL_UNIT_ALREADY_KNOWN",
+            )
+    if operational_fixture:
+        require(
+            (units / "osint-workbench-collect-shared.conf").is_file(), "SHARING_DROPIN_REQUIRED"
+        )
     require(
         command(
             ["systemctl", "show", SERVICE, "--property=LoadState", "--value"], allowed=(0, 1, 4)
@@ -205,6 +244,14 @@ def preflight(venv, units):
         == "not-found",
         "TIMER_ALREADY_KNOWN",
     )
+
+
+def collector_environment(dsn, shared_gid=None):
+    result = "OW_COLLECTOR_DSN=" + dsn + "\n"
+    if shared_gid is not None:
+        require(type(shared_gid) is int and shared_gid >= 0, "INVALID_SHARED_GROUP")
+        result += f"OW_EVIDENCE_READ_GID={shared_gid}\n"
+    return result
 
 
 # Public disposable-runner credentials only. No DSN or network endpoint is accepted
@@ -233,7 +280,7 @@ FIXTURE_UNIX_DSN = (
 )
 
 
-def prepare_database_fixture(venv, *, enabled_http_fixture=False):
+def prepare_database_fixture(venv, *, enabled_http_fixture=False, operational_fixture=False):
     # Called only after every root/hosted-runner/PID1/owned-target preflight guard.
     require(venv == Path("/tmp/ow-reference-core"), "FIXTURE_VENV_REFUSED")
     require(
@@ -264,7 +311,7 @@ def prepare_database_fixture(venv, *, enabled_http_fixture=False):
         require(
             not conn.execute(
                 "SELECT 1 FROM pg_roles WHERE rolname IN "
-                "('ow_reference_collector','ow_reference_writer')"
+                "('ow_reference_collector','ow_reference_writer','ow_reference_reader')"
             ).fetchone(),
             "FIXTURE_LOGIN_ALREADY_EXISTS",
         )
@@ -275,6 +322,7 @@ def prepare_database_fixture(venv, *, enabled_http_fixture=False):
         for name, group in (
             ("ow_reference_collector", "ow_collector"),
             ("ow_reference_writer", "ow_writer"),
+            *(([("ow_reference_reader", "ow_reader")]) if operational_fixture else []),
         ):
             conn.execute(
                 sql.SQL(
@@ -334,11 +382,11 @@ def journal_observed(since, account, expected):
     return False
 
 
-def database_service_acceptance(account):
+def database_service_acceptance(account, *, shared_gid=None):
     import psycopg
 
     def configure(identifier, dsn):
-        (CONFIG / "collector.env").write_text("OW_COLLECTOR_DSN=" + dsn + "\n")
+        (CONFIG / "collector.env").write_text(collector_environment(dsn, shared_gid))
         (CONFIG / "sources.json").write_text(
             json.dumps(
                 {
@@ -431,7 +479,7 @@ def database_service_acceptance(account):
     }
 
 
-def enabled_http_service_acceptance(account):
+def enabled_http_service_acceptance(account, *, shared_gid=None, operational_accounts=None):
     import psycopg
     from psycopg.rows import dict_row
     from reference_network import FEED_V1, FEED_V2, ReferenceNetwork
@@ -636,8 +684,9 @@ def enabled_http_service_acceptance(account):
     with ReferenceNetwork(before_close=stop_owned_units) as network:
         try:
             for directory in (service_dir, timer_dir):
-                directory.mkdir(mode=0o755)
-                owned.append(directory)
+                if not directory.exists():
+                    directory.mkdir(mode=0o755)
+                    owned.append(directory)
             override = service_dir / "enabled-http.conf"
             owned.append(override)
             write_private(
@@ -658,7 +707,9 @@ def enabled_http_service_acceptance(account):
                 "RandomizedDelaySec=0\nAccuracySec=100ms\n",
                 mode=0o644,
             )
-            (CONFIG / "collector.env").write_text("OW_COLLECTOR_DSN=" + FIXTURE_UNIX_DSN + "\n")
+            (CONFIG / "collector.env").write_text(
+                collector_environment(FIXTURE_UNIX_DSN, shared_gid)
+            )
             (CONFIG / "sources.json").write_text(
                 json.dumps(
                     {
@@ -840,7 +891,13 @@ def enabled_http_service_acceptance(account):
                 and requests[-1]["if_modified_since"] is None,
                 "HTTP_FAILURE_REPLAY_NOT_UNCONDITIONAL",
             )
+            operational_result = (
+                operational_service_acceptance(*operational_accounts)
+                if operational_accounts is not None
+                else {}
+            )
             return {
+                **operational_result,
                 "enabled_http_tick": True,
                 "conditional_304_no_duplicates": True,
                 "http_failure_backoff": True,
@@ -860,7 +917,7 @@ def enabled_http_service_acceptance(account):
             command(["systemctl", "daemon-reload"])
             command(["systemctl", "reset-failed", SERVICE], allowed=(0, 1, 5))
             (CONFIG / "collector.env").write_text(
-                "OW_COLLECTOR_DSN=" + FIXTURE_COLLECTOR_DSN + "\n"
+                collector_environment(FIXTURE_COLLECTOR_DSN, shared_gid)
             )
             (CONFIG / "sources.json").write_text(
                 json.dumps(
@@ -875,6 +932,335 @@ def enabled_http_service_acceptance(account):
                     }
                 )
             )
+
+
+def operational_service_acceptance(worker, observer, owned):
+    """Exercise separate non-root units only inside the guarded synthetic fixture."""
+    import psycopg
+    from psycopg.rows import dict_row
+
+    def state():
+        with psycopg.connect(FIXTURE_ADMIN_DSN, row_factory=dict_row) as conn:
+            jobs = conn.execute(
+                "SELECT kind,status,count(*) AS n FROM ow.jobs GROUP BY kind,status"
+            ).fetchall()
+            chunks = conn.execute(
+                "SELECT c.body,c.start_offset,c.end_offset,c.text_sha256,d.body AS document_body "
+                "FROM ow.chunks c JOIN ow.documents d USING(document_id)"
+            ).fetchall()
+            sha = conn.execute(
+                "SELECT s.text_sha256 FROM ow.document_heads h JOIN ow.documents d "
+                "USING(document_id) JOIN ow.snapshots s USING(snapshot_id) "
+                "WHERE d.title='One'"
+            ).fetchone()["text_sha256"]
+        return {(r["kind"], r["status"]): r["n"] for r in jobs}, chunks, sha
+
+    def result(unit, since, account, predicate):
+        command(["journalctl", "--sync"])
+        raw = command(
+            ["journalctl", "--unit", unit, f"--since=@{since}", "--output=json", "--no-pager"]
+        )
+        for line in raw.splitlines():
+            row = json.loads(line)
+            try:
+                value = json.loads(row.get("MESSAGE", ""))
+            except (ValueError, TypeError):
+                continue
+            if predicate(value):
+                require(row.get("_UID") == str(account.pw_uid), "OPERATIONAL_UID_MISMATCH")
+                return value
+        raise Rejected("OPERATIONAL_RESULT_NOT_OBSERVED")
+
+    def override(unit, content):
+        directory = UNIT_ROOT / f"{unit}.d"
+        if not directory.exists():
+            directory.mkdir(mode=0o755)
+            owned.append(directory)
+        path = directory / "operational-probe.conf"
+        require(not path.exists(), "OPERATIONAL_OVERRIDE_EXISTS")
+        write_private(path, content, mode=0o644)
+        owned.append(path)
+        command(["systemctl", "daemon-reload"])
+        return path
+
+    def restore(path):
+        path.unlink()
+        owned.remove(path)
+        command(["systemctl", "daemon-reload"])
+
+    def health_environment(pending):
+        return (
+            "OW_READER_DSN=" + reader_dsn + "\n"
+            "OW_HEALTH_MAX_SOURCE_AGE_SECONDS=3600\n"
+            f"OW_HEALTH_MAX_PENDING_JOBS={pending}\nOW_HEALTH_MAX_FAILED_JOBS=0\n"
+        )
+
+    writer_dsn = FIXTURE_WRITER_DSN
+    reader_dsn = (
+        "host=127.0.0.1 port=5432 dbname=ow_test user=ow_reference_reader "
+        "password=ci-fixture-only connect_timeout=5 sslmode=disable"
+    )
+    write_private(WORK_CONFIG / "runtime.env", "OW_WRITER_DSN=" + writer_dsn + "\n")
+    write_private(HEALTH_CONFIG / "runtime.env", health_environment(8))
+    before, chunks, sha = state()
+    require(
+        before == {("document.accepted", "ready"): 3} and not chunks,
+        "OPERATIONAL_INITIAL_QUEUE_MISMATCH",
+    )
+    # Actual authentication failure must not claim or discard durable work.
+    (WORK_CONFIG / "runtime.env").write_text(
+        "OW_WRITER_DSN="
+        + writer_dsn.replace("password=ci-fixture-only", "password=wrong-fixture")
+        + "\n"
+    )
+    command(["systemctl", "start", WORK_SERVICE], allowed=(1,), timeout=20)
+    require(state()[:2] == (before, []), "WORKER_AUTH_FAILURE_MUTATED_WORK")
+    (WORK_CONFIG / "runtime.env").write_text("OW_WRITER_DSN=" + writer_dsn + "\n")
+    command(["systemctl", "reset-failed", WORK_SERVICE])
+    started = str(time.time())
+    command(["systemctl", "start", WORK_SERVICE], timeout=30)
+    result(
+        WORK_SERVICE,
+        started,
+        worker,
+        lambda v: (
+            isinstance(v, dict)
+            and v.get("kind") == "chunk_worker_tick"
+            and v.get("attempted") == 3
+            and v.get("succeeded") == 3
+            and v.get("failed") == 0
+        ),
+    )
+    jobs, chunks, _ = state()
+    require(
+        jobs == {("document.accepted", "succeeded"): 3, ("document.chunked", "ready"): 3}
+        and len(chunks) == 3,
+        "WORKER_DURABLE_RESULT_MISMATCH",
+    )
+    from osint_workbench.text import digest
+
+    require(
+        all(
+            c["body"] == c["document_body"][c["start_offset"] : c["end_offset"]]
+            and digest(c["body"].encode()) == c["text_sha256"]
+            for c in chunks
+        ),
+        "WORKER_CHUNK_PROVENANCE_MISMATCH",
+    )
+    started = str(time.time())
+    command(["systemctl", "start", WORK_SERVICE], timeout=30)
+    result(
+        WORK_SERVICE,
+        started,
+        worker,
+        lambda v: (
+            isinstance(v, dict)
+            and v.get("kind") == "chunk_worker_tick"
+            and v.get("attempted") == 0
+            and v.get("idle_observed") is True
+        ),
+    )
+    require(state()[0] == jobs and len(state()[1]) == 3, "WORKER_RESTART_DUPLICATED_WORK")
+    # Prove access with the same unit hardening and real service accounts.
+    probe = APP / "operational-probe.py"
+    write_private(probe, OPERATIONAL_PROBE, mode=0o644)
+    for unit, account, other_config in (
+        (WORK_SERVICE, worker, HEALTH_CONFIG),
+        (HEALTH_SERVICE, observer, WORK_CONFIG),
+    ):
+        target = APP / f"owned-probe-{account.pw_name}"
+        write_private(target, "synthetic writable-owner probe\n")
+        os.chown(target, account.pw_uid, account.pw_gid)
+        path = override(
+            unit,
+            "[Service]\nExecStart=\n"
+            f"ExecStart={APP}/venv/bin/python {probe} {sha} {target} {other_config}\n",
+        )
+        started = str(time.time())
+        command(["systemctl", "start", unit], timeout=20)
+        result(
+            unit,
+            started,
+            account,
+            lambda v: (
+                isinstance(v, dict)
+                and v.get("kind") == "custody_probe"
+                and all(
+                    v.get(k) is True
+                    for k in (
+                        "cas_read",
+                        "cas_write_denied",
+                        "code_read_only",
+                        "other_config_denied",
+                        "capabilities_zero",
+                    )
+                )
+            ),
+        )
+        restore(path)
+    # A real CLI lexical read is run as the reader account under its service sandbox.
+    path = override(
+        HEALTH_SERVICE,
+        f"[Service]\nExecStart=\nExecStart={APP}/venv/bin/osint-workbench search Changed\n",
+    )
+    started = str(time.time())
+    command(["systemctl", "start", HEALTH_SERVICE], timeout=20)
+    result(
+        HEALTH_SERVICE,
+        started,
+        observer,
+        lambda v: (
+            isinstance(v, dict)
+            and v.get("strategy") == "lexical"
+            and isinstance(v.get("results"), list)
+            and len(v["results"]) == 1
+            and v["results"][0].get("title") == "Two"
+        ),
+    )
+    restore(path)
+    # Unsupported downstream jobs stay queued and must affect health thresholds.
+    (HEALTH_CONFIG / "runtime.env").write_text(health_environment(0))
+    started = str(time.time())
+    command(["systemctl", "start", HEALTH_SERVICE], allowed=(1,), timeout=20)
+    result(
+        HEALTH_SERVICE,
+        started,
+        observer,
+        lambda v: (
+            isinstance(v, dict)
+            and v.get("kind") == "aggregate_health"
+            and v.get("ready") is False
+            and v.get("reasons") == ["HEALTH_PENDING_JOBS_EXCEEDED"]
+        ),
+    )
+    (HEALTH_CONFIG / "runtime.env").write_text(health_environment(8))
+    command(["systemctl", "reset-failed", HEALTH_SERVICE])
+    started = str(time.time())
+    command(["systemctl", "start", HEALTH_SERVICE], timeout=20)
+    result(
+        HEALTH_SERVICE,
+        started,
+        observer,
+        lambda v: (
+            isinstance(v, dict)
+            and v.get("kind") == "aggregate_health"
+            and v.get("ready") is True
+            and not v.get("reasons")
+        ),
+    )
+
+    def accelerated_tick(timer, service, account, predicate):
+        path = override(
+            timer,
+            "[Timer]\nOnBootSec=\nOnUnitInactiveSec=\nOnActiveSec=2s\n"
+            "OnUnitInactiveSec=30s\nRandomizedDelaySec=0\nAccuracySec=100ms\n",
+        )
+        try:
+            command(["systemctl", "reset-failed", service], allowed=(0, 1, 5))
+            started = str(time.time())
+            command(["systemctl", "start", timer])
+            deadline = time.monotonic() + 15
+            while time.monotonic() < deadline:
+                try:
+                    result(service, started, account, predicate)
+                    break
+                except Rejected as error:
+                    if str(error) != "OPERATIONAL_RESULT_NOT_OBSERVED":
+                        raise
+                    time.sleep(0.2)
+            else:
+                raise Rejected("OPERATIONAL_TIMER_TICK_NOT_OBSERVED")
+            while time.monotonic() < deadline:
+                if (
+                    command(["systemctl", "is-active", service], allowed=(0, 3)).strip()
+                    == "inactive"
+                ):
+                    break
+                time.sleep(0.1)
+            else:
+                raise Rejected("OPERATIONAL_TIMER_SERVICE_DID_NOT_SETTLE")
+            require(
+                command(
+                    ["systemctl", "show", service, "--property=ExecMainStatus", "--value"]
+                ).strip()
+                == "0",
+                "OPERATIONAL_TIMER_SERVICE_FAILED",
+            )
+            require(timer_last_trigger(timer) > 0, "OPERATIONAL_TIMER_TRIGGER_NOT_OBSERVED")
+        finally:
+            command(["systemctl", "stop", timer, service], allowed=(0, 5), timeout=20)
+            for name in (timer, service):
+                require(
+                    command(["systemctl", "is-active", name], allowed=(0, 3, 4)).strip()
+                    in ("inactive", "failed", "unknown"),
+                    "OPERATIONAL_TIMER_STILL_ACTIVE",
+                )
+            restore(path)
+
+    accelerated_tick(
+        WORK_TIMER,
+        WORK_SERVICE,
+        worker,
+        lambda v: (
+            isinstance(v, dict)
+            and v.get("kind") == "chunk_worker_tick"
+            and v.get("attempted") == 0
+            and v.get("idle_observed") is True
+        ),
+    )
+    accelerated_tick(
+        HEALTH_TIMER,
+        HEALTH_SERVICE,
+        observer,
+        lambda v: (
+            isinstance(v, dict) and v.get("kind") == "aggregate_health" and v.get("ready") is True
+        ),
+    )
+    return {
+        "operational_fixture_tested": True,
+        "worker_auth_failure_no_claim": True,
+        "worker_jobs_and_chunks_verified": True,
+        "worker_restart_no_duplicates": True,
+        "separate_account_cas_read_only": True,
+        "other_role_config_denied": True,
+        "reader_lexical_service_read": True,
+        "health_threshold_failure_recovery": True,
+        "worker_timer_activation_tested": True,
+        "health_timer_activation_tested": True,
+    }
+
+
+OPERATIONAL_PROBE = r"""
+import errno,json,os,sys
+from pathlib import Path
+from osint_workbench.evidence import EvidenceStore
+store = EvidenceStore(Path('/var/lib/osint-workbench/evidence'), read_only=True)
+sha = sys.argv[1]
+value = {'kind': 'custody_probe', 'cas_read': store.get(sha) == b'First evidence'}
+value['capabilities_zero'] = any(line.startswith('CapEff:') and int(line.split()[1],16) == 0
+    for line in Path('/proc/self/status').read_text().splitlines())
+target = store.root / sha[:2] / sha
+try:
+    fd = os.open(target, os.O_WRONLY | os.O_NOFOLLOW)
+    os.close(fd)
+    value['cas_write_denied'] = False
+except OSError as exc:
+    value['cas_write_denied'] = exc.errno in (errno.EACCES, errno.EPERM, errno.EROFS)
+try:
+    fd = os.open(sys.argv[2], os.O_WRONLY | os.O_NOFOLLOW)
+    os.close(fd)
+    value['code_read_only'] = False
+except OSError as exc:
+    value['code_read_only'] = exc.errno == errno.EROFS
+value['other_config_denied'] = True
+for target in [Path('/etc/osint-workbench/sources.json'), Path(sys.argv[3]) / 'runtime.env']:
+    try:
+        target.read_bytes()
+        value['other_config_denied'] = False
+    except OSError as exc:
+        value['other_config_denied'] &= exc.errno in (errno.EACCES, errno.EPERM, errno.ENOENT)
+print(json.dumps(value))
+"""
 
 
 PROBE = r"""
@@ -930,7 +1316,14 @@ else:
 
 
 def acceptance(
-    venv, units, installed_units, dropins, *, database_fixture=False, enabled_http_fixture=False
+    venv,
+    units,
+    installed_units,
+    dropins,
+    *,
+    database_fixture=False,
+    enabled_http_fixture=False,
+    operational_fixture=False,
 ):
     command(
         [
@@ -960,7 +1353,46 @@ def acceptance(
     write_private(CONFIG / "collector.env", "# No credentials in synthetic acceptance.\n")
     write_private(CONFIG / "sources.json", '{"sources": []}\n', mode=0o640)
     os.chown(CONFIG / "sources.json", 0, account.pw_gid)
-    for name in (SERVICE, TIMER):
+    operational_accounts = None
+    shared_gid = None
+    if operational_fixture:
+        command(["groupadd", "--system", EVIDENCE_GROUP])
+        shared_gid = grp.getgrnam(EVIDENCE_GROUP).gr_gid
+        accounts = []
+        for username, config in ((WORK_ACCOUNT, WORK_CONFIG), (HEALTH_ACCOUNT, HEALTH_CONFIG)):
+            command(
+                [
+                    "useradd",
+                    "--system",
+                    "--user-group",
+                    "--no-create-home",
+                    "--shell",
+                    "/usr/sbin/nologin",
+                    "--groups",
+                    EVIDENCE_GROUP,
+                    username,
+                ]
+            )
+            role_account = pwd.getpwnam(username)
+            accounts.append(role_account)
+            config.mkdir(mode=0o750)
+            os.chown(config, 0, role_account.pw_gid)
+        STATE.mkdir(mode=0o755)
+        evidence = STATE / "evidence"
+        evidence.mkdir(mode=0o700)
+        os.chown(evidence, account.pw_uid, shared_gid)
+        evidence.chmod(0o2750)
+        shared_directory = UNIT_ROOT / f"{SERVICE}.d"
+        shared_directory.mkdir(mode=0o755)
+        dropins.append(shared_directory)
+        shared = shared_directory / "shared-evidence.conf"
+        write_private(
+            shared, (units / "osint-workbench-collect-shared.conf").read_text(), mode=0o644
+        )
+        dropins.append(shared)
+        operational_accounts = (*accounts, dropins)
+    names = (SERVICE, TIMER, *OPERATIONAL_UNITS) if operational_fixture else (SERVICE, TIMER)
+    for name in names:
         target = UNIT_ROOT / name
         write_private(target, (units / name).read_text(), mode=0o644)
         installed_units.append(target)
@@ -987,15 +1419,24 @@ def acceptance(
             require(row.get("_UID") == str(account.pw_uid), "JOURNAL_UID_MISMATCH")
             observed = True
     require(observed, "UNCONFIGURED_RESULT_NOT_OBSERVED")
-    database_result = database_service_acceptance(account) if database_fixture else {}
-    http_result = enabled_http_service_acceptance(account) if enabled_http_fixture else {}
+    database_result = (
+        database_service_acceptance(account, shared_gid=shared_gid) if database_fixture else {}
+    )
+    http_result = (
+        enabled_http_service_acceptance(
+            account, shared_gid=shared_gid, operational_accounts=operational_accounts
+        )
+        if enabled_http_fixture
+        else {}
+    )
     probe_dir = APP / "writable-probe"
     probe_dir.mkdir(mode=0o700)
     os.chown(probe_dir, account.pw_uid, account.pw_gid)
     write_private(APP / "probe.py", PROBE, mode=0o644)
     dropin_dir = UNIT_ROOT / f"{SERVICE}.d"
-    dropin_dir.mkdir(mode=0o755)
-    dropins.append(dropin_dir)
+    if not dropin_dir.exists():
+        dropin_dir.mkdir(mode=0o755)
+        dropins.append(dropin_dir)
     override = dropin_dir / "acceptance.conf"
     write_private(
         override,
@@ -1053,19 +1494,30 @@ def main():
     parser.add_argument("--units", type=Path, required=True)
     parser.add_argument("--database-fixture", action="store_true")
     parser.add_argument("--enabled-http-fixture", action="store_true")
+    parser.add_argument("--operational-fixture", action="store_true")
     args = parser.parse_args()
     installed_units, dropins = [], []
     outcome = None
     failure = None
     try:
-        preflight(args.core_venv.resolve(), args.units.resolve())
+        preflight(
+            args.core_venv.resolve(),
+            args.units.resolve(),
+            operational_fixture=args.operational_fixture,
+        )
+        require(
+            not args.operational_fixture or (args.database_fixture and args.enabled_http_fixture),
+            "OPERATIONAL_FIXTURE_REQUIRES_HTTP_AND_DATABASE",
+        )
         require(
             not args.enabled_http_fixture or args.database_fixture,
             "HTTP_FIXTURE_REQUIRES_DATABASE_FIXTURE",
         )
         if args.database_fixture:
             prepare_database_fixture(
-                args.core_venv.resolve(), enabled_http_fixture=args.enabled_http_fixture
+                args.core_venv.resolve(),
+                enabled_http_fixture=args.enabled_http_fixture,
+                operational_fixture=args.operational_fixture,
             )
         outcome = acceptance(
             args.core_venv.resolve(),
@@ -1074,6 +1526,7 @@ def main():
             dropins,
             database_fixture=args.database_fixture,
             enabled_http_fixture=args.enabled_http_fixture,
+            operational_fixture=args.operational_fixture,
         )
     except Rejected as exc:
         failure = str(exc)
@@ -1094,8 +1547,9 @@ def main():
     finally:
         if installed_units:
             try:
-                command(["systemctl", "stop", TIMER, SERVICE], allowed=(0, 5), timeout=30)
-                for name in (SERVICE, TIMER):
+                owned_names = [path.name for path in installed_units]
+                command(["systemctl", "stop", *owned_names], allowed=(0, 5), timeout=30)
+                for name in owned_names:
                     active = command(["systemctl", "is-active", name], allowed=(0, 3, 4)).strip()
                     require(active in ("inactive", "failed", "unknown"), "UNIT_STILL_ACTIVE")
             except (Rejected, OSError, subprocess.SubprocessError):

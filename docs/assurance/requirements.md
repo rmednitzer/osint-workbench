@@ -82,4 +82,13 @@ proposals, writer-attributed reviews or synthetic MCP tests alone.
 
 Inferred: a single-operator Linux reference with optional isolated workspaces is the initial deployment context; multi-tenant service operation is not claimed. Exact runtime/model/provider selections and quality/resource thresholds must be frozen at M0/M2 with evidence. No assumption of model truth, calibrated confidence, source completeness, compatible model weights or stable API aliases is accepted.
 
+[ADR-0045](../adr/0045-bounded-operational-profile.md) and the
+[operational profile](../operational-profile.md) refine R01/R05–R08/R14/R19/R21/
+R49/R50 for bounded chunk supervision, aggregate readiness, exact read authority,
+MCP byte pagination, literal-source tokenization and composed logical recovery.
+The operator owns health limits, model usefulness, target capacity and recovery
+point/time acceptance. Configuration bounds and disposable fixture timing are
+not substitute acceptance targets. Current evidence remains revision-bound in
+STATUS; these refinements do not close the complete E01–E51 programme.
+
 Every new adapter impacts R02/R09/R25/R26/R52; model changes R27-R35/R40-R45/R53; provider changes R43-R47/R55; domain changes R36-R39; lifecycle changes R14/R29/R49/R54. Reconcile hazards, ADRs, data contracts, privacy policy and tests before activation. Missing required evidence blocks the corresponding claim/profile acceptance; it is not represented as a pass.

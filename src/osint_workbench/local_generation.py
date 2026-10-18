@@ -12,13 +12,15 @@ from typing import Literal
 
 import httpcore
 from jsonschema import Draft202012Validator
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from .contracts import Digest, StrictModel
 from .errors import WorkbenchError
 from .fetch import _remaining, _Stream
 from .local_encoder import admission
 from .text import digest
+
+TOKENIZATION_POLICY = "literal-source-prefix-specials-v1"
 
 
 class GeneratorManifest(StrictModel):
@@ -36,10 +38,25 @@ class GeneratorManifest(StrictModel):
     prompt_prefix: str = Field(default="", max_length=2000)
     prompt_suffix: str = Field(default="", max_length=2000)
 
+    @field_validator("prompt_prefix", "prompt_suffix")
+    @classmethod
+    def safe_template(cls, value):
+        try:
+            value.encode("utf-8", errors="strict")
+        except UnicodeError:
+            raise ValueError("invalid prompt template") from None
+        if "\x00" in value:
+            raise ValueError("invalid prompt template")
+        return value
+
     def identity(self):
         return digest(
             json.dumps(
-                self.model_dump(exclude={"socket_path", "model_path", "peer_uid"}), sort_keys=True
+                {
+                    **self.model_dump(exclude={"socket_path", "model_path", "peer_uid"}),
+                    "tokenization_policy": TOKENIZATION_POLICY,
+                },
+                sort_keys=True,
             ).encode()
         )
 
@@ -178,6 +195,41 @@ class LocalGenerator:
         if file_digest(self.manifest.model_path, 32 * 1024**3) != self.manifest.model_sha256:
             raise WorkbenchError("MODEL_INTEGRITY_MISMATCH")
 
+    def _prompt_tokens(self, pool, prompt):
+        # Only operator-owned template segments may interpret model control tokens.
+        # Submit IDs so completion cannot reparse hostile source text. Automatic
+        # tokenizer specials must be a bounded prefix, not an EOS moved before data.
+        manifest = self.manifest
+
+        def tokenize(content, *, add_special, parse_special):
+            result = self._request(
+                pool,
+                "/tokenize",
+                {"content": content, "add_special": add_special, "parse_special": parse_special},
+            )
+            tokens = result.get("tokens") if isinstance(result, dict) else None
+            if not isinstance(tokens, list) or any(
+                type(token) is not int or not 0 <= token <= 2147483647 for token in tokens
+            ):
+                raise WorkbenchError("INFERENCE_PROTOCOL_ERROR")
+            if len(tokens) + manifest.max_output_tokens > manifest.context_tokens:
+                raise WorkbenchError("GENERATION_CONTEXT_EXCEEDED")
+            return tokens
+
+        source = tokenize(prompt, add_special=False, parse_special=False)
+        if not source:
+            raise WorkbenchError("INFERENCE_CAPABILITY_MISMATCH")
+        automatic = tokenize(prompt, add_special=True, parse_special=False)
+        added = len(automatic) - len(source)
+        if not 0 <= added <= 8 or automatic[added:] != source:
+            raise WorkbenchError("INFERENCE_CAPABILITY_MISMATCH")
+        prefix = tokenize(manifest.prompt_prefix, add_special=False, parse_special=True)
+        suffix = tokenize(manifest.prompt_suffix, add_special=False, parse_special=True)
+        ids = automatic[:added] + prefix + source + suffix
+        if len(ids) + manifest.max_output_tokens > manifest.context_tokens:
+            raise WorkbenchError("GENERATION_CONTEXT_EXCEEDED")
+        return ids
+
     def generate(self, prompt: str, schema: dict):
         if not isinstance(prompt, str) or not 1 <= len(prompt) <= 32000:
             raise WorkbenchError("INVALID_GENERATION_INPUT")
@@ -186,28 +238,29 @@ class LocalGenerator:
         if len(json.dumps(schema)) > 32000:
             raise WorkbenchError("INVALID_GENERATION_SCHEMA")
         manifest = self.manifest
-        prompt = manifest.prompt_prefix + prompt + manifest.prompt_suffix
+        try:
+            GeneratorManifest.safe_template(manifest.prompt_prefix)
+            GeneratorManifest.safe_template(manifest.prompt_suffix)
+            prompt.encode("utf-8", errors="strict")
+            if "\x00" in prompt:
+                raise ValueError
+        except (ValueError, UnicodeError):
+            raise WorkbenchError("INVALID_GENERATION_INPUT") from None
+        prompt_sha256 = digest(
+            (manifest.prompt_prefix + prompt + manifest.prompt_suffix).encode("utf-8")
+        )
         submitted = False
         with admission() as held, self._pool() as pool:
             try:
                 self._probe(pool)
-                tokens = self._request(
-                    pool,
-                    "/tokenize",
-                    {"content": prompt, "add_special": True, "parse_special": True},
-                )
-                ids = tokens.get("tokens") if isinstance(tokens, dict) else None
-                if not isinstance(ids, list) or any(type(t) is not int or t < 0 for t in ids):
-                    raise WorkbenchError("INFERENCE_PROTOCOL_ERROR")
-                if len(ids) + manifest.max_output_tokens > manifest.context_tokens:
-                    raise WorkbenchError("GENERATION_CONTEXT_EXCEEDED")
+                ids = self._prompt_tokens(pool, prompt)
                 receipt = held.create_marker(manifest.identity(), self._peer)
                 submitted = True
                 result = self._request(
                     pool,
                     "/completion",
                     {
-                        "prompt": prompt,
+                        "prompt": ids,
                         "stream": False,
                         "n_predict": manifest.max_output_tokens,
                         "temperature": 0,
@@ -239,7 +292,7 @@ class LocalGenerator:
                 return {
                     "output": decoded,
                     "response_sha256": digest(content.encode()),
-                    "prompt_sha256": digest(prompt.encode()),
+                    "prompt_sha256": prompt_sha256,
                     "generator_id": manifest.identity(),
                 }
             except Exception as exc:

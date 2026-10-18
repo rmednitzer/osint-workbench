@@ -73,3 +73,14 @@ Retry-After parsing, stale-validator reset on URL change, lease fencing and
 cancellation, migration locking, SQL parameterization, MCP tool surface and
 error redaction, chunk coordinates, embedding identity, activation atomicity
 and RRF determinism. See the PR description for the per-area evidence summary.
+
+## Operational-profile successor
+
+[ADR-0045](../adr/0045-bounded-operational-profile.md) adds serialized-byte MCP
+pagination, literal source/trusted-template tokenization with a new generator
+identity policy, and exact effective reader relation/column validation. The table
+above records the original review, not a floating current disposition. The
+successor's installed/native regressions and service results must be tied to
+their tested revision in STATUS; their existence alone is not a pass.
+Independent reviewer authority, label/quote semantics, retrieval writer grants,
+terminal-job retry behavior and other listed findings remain separate work.

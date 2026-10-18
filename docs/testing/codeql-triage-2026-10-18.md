@@ -1,5 +1,26 @@
 # Initial CodeQL local-input triage
 
+## Operational-profile successor
+
+Python analysis `1976129494` at
+`d4a1e64be1e399eb052db13f35ddcf0fc5234b81` reported two new path findings,
+alerts 40 and 41, on private-default evidence root creation/open after the
+constructor/admission refactor. Review inspected their actual SARIF flows and
+every production caller, independently cross-checking the trust boundary.
+Both receive only operator `OW_EVIDENCE_ROOT` from CLI startup/maintenance.
+Acquired data, model output and the seven MCP schemas have no root/environment
+setter; evidence names are validated digests. They were individually dismissed
+as false positives for this intentional configured-root authority.
+
+The private default still trusts operator-controlled ancestors and guards the
+final admission component; it is not a filesystem sandbox. The explicit shared
+creation profile adds a no-follow ancestor walk, root inode identity and anchored
+ownership/group/mode/ACL checks. Neither disposition asserts that private ancestor
+custody is automatically enforced. No query, source path or security setting was
+excluded or weakened. Later source/configuration changes need their own review.
+
+## Original review
+
 Observed source: `0ebf58147b91585b40932ee051f4a39e276fcbd9`.
 CodeQL setup run: `39100269005`; Python analysis: `1974880998`.
 The extended remote-and-local scan raised 21 findings. Review used the actual

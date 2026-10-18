@@ -35,6 +35,8 @@ cannot substitute for runtime, semantic, provider or recovery evidence.
 | Capture a private checkpoint and restore an isolated target | [Recovery](recovery.md) |
 | Remove unreferenced evidence objects or retired SQL derivatives | [Orphan GC](garbage-collection.md) and [SQL purge](retired-record-purge.md) |
 | Install/test the bounded collector reference | [Deployment](deployment.md) and [runtime support](runtime-support.md) |
+| Supervise bounded processing and assess adoption gates | [Operational profile](operational-profile.md) |
+| Consume seven reads with byte-budget pagination | [MCP read contract](mcp-read-contract.md) |
 | Maintain dependencies, hosted controls and publication | [Repository maintenance](repository-maintenance.md) and [publication privacy](publication-privacy.md) |
 | Interpret Python/native/licence evidence | [SBOM](sbom.md), [native inventory](native-inventory.md), [licence dispositions](security/dependency-licences.md), [native policy](security/native-components.md) and [notice scope](security/supplementary-notices.md) |
 

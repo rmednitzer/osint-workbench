@@ -1,0 +1,13 @@
+# Completion-relative bounded ticks; no overlapping invocation of this service.
+[Unit]
+Description=Schedule OSINT Workbench health ticks
+
+[Timer]
+OnBootSec=3min
+OnUnitInactiveSec=1min
+RandomizedDelaySec=10s
+AccuracySec=1s
+Unit=osint-workbench-health.service
+
+[Install]
+WantedBy=timers.target
