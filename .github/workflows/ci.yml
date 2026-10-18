@@ -17,7 +17,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
       - run: python3 scripts/check_repository.py
+      - name: Scan public files and new commit metadata
+        env:
+          PUBLICATION_BASE: ${{ github.event.pull_request.base.sha || github.event.before || 'HEAD^' }}
+        run: python3 scripts/check_publication.py --base-revision "$PUBLICATION_BASE" --allow-base-identities
   renovate-policy:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -75,6 +80,7 @@ jobs:
           test "$ID" = ubuntu && test "$VERSION_ID" = "$EXPECTED_UBUNTU"
           .venv/bin/python -c 'import os,platform,sys; assert platform.python_implementation() == "CPython"; assert f"{sys.version_info.major}.{sys.version_info.minor}" == os.environ["EXPECTED_PYTHON"]; print(sys.version)'
       - run: .venv/bin/ruff check . && .venv/bin/ruff format --check .
+      - run: .venv/bin/python scripts/check_static.py
       - name: Identify native TLS prerequisites
         run: |
           openssl version
@@ -112,6 +118,34 @@ jobs:
           /tmp/ow-installed/bin/python -m pytest --require-integration --import-mode=importlib
       - name: Verify packaged file selection
         run: .venv/bin/python scripts/check_publication.py --artifacts dist
+      # Evidence is generated and retained only after installed tests and package scans pass.
+      - name: Prepare the runtime inventory environment
+        run: |
+          uv venv /tmp/ow-evidence --python "${{ matrix.python }}"
+          uv export --locked --extra retrieval --no-dev --no-emit-project --output-file /tmp/ow-evidence-requirements.txt > /dev/null
+          uv pip sync --python /tmp/ow-evidence/bin/python --require-hashes /tmp/ow-evidence-requirements.txt
+          uv pip install --python /tmp/ow-evidence/bin/python --no-deps dist/*.whl
+      - name: Generate and verify build evidence
+        env:
+          OW_EVIDENCE_COMMIT: ${{ github.sha }}
+          OW_EVIDENCE_OS: ubuntu-${{ matrix.ubuntu }}
+          OW_EVIDENCE_PYTHON: ${{ matrix.python }}
+          OW_EVIDENCE_RUN_ID: ${{ github.run_id }}
+          OW_EVIDENCE_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          export OW_EVIDENCE_TREE="$(git rev-parse HEAD^{tree})"
+          /tmp/ow-evidence/bin/python scripts/build_evidence.py generate --artifacts dist --output build-evidence
+          /tmp/ow-evidence/bin/python scripts/build_evidence.py verify --artifacts dist --output build-evidence
+      - name: Retain the tested distributions and public evidence
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: build-evidence-${{ matrix.runner }}-python${{ matrix.python }}-${{ github.sha }}
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
+            build-evidence/*
+          if-no-files-found: error
+          retention-days: 30
   # Keep the required check stable while requiring every matrix leg to succeed.
   installed-artifact:
     if: ${{ always() }}
@@ -123,3 +157,75 @@ jobs:
         env:
           MATRIX_RESULT: ${{ needs.installed-artifact-matrix.result }}
         run: test "$MATRIX_RESULT" = success
+
+  attest-builds:
+    # Never grant signing capabilities to PR code, manual branches or failed builds.
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'rmednitzer/osint-workbench' }}
+    needs: [repository-policy, renovate-policy, installed-artifact]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      # Same-run artifacts only. Do not check out or execute repository code here.
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: build-evidence-*
+          path: evidence
+          merge-multiple: false
+          digest-mismatch: error
+      - name: Validate the complete evidence set without executing it
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          python3 - <<'PYTHON'
+          import hashlib, json, os
+          from pathlib import Path
+          root = Path('evidence')
+          expected = {f'build-evidence-{runner}-python{version}-{os.environ["SOURCE_SHA"]}'
+                      for runner, version in [('ubuntu-24.04', '3.12'), ('ubuntu-24.04', '3.13'), ('ubuntu-26.04', '3.14')]}
+          assert {p.name for p in root.iterdir()} == expected
+          for leg in root.iterdir():
+              files = [p for p in leg.rglob('*') if p.is_file()]
+              assert len(files) == 4 and not any(p.is_symlink() for p in leg.rglob('*'))
+              manifest = leg / 'build-evidence/manifest.json'
+              checksum = leg / 'build-evidence/manifest.sha256'
+              assert manifest.stat().st_size <= 4 * 1024 * 1024
+              raw = manifest.read_bytes()
+              assert checksum.read_text() == hashlib.sha256(raw).hexdigest() + '\n'
+              receipt = json.loads(raw)
+              assert receipt['source']['commit'] == os.environ['SOURCE_SHA']
+              assert len(receipt['artifacts']) == 2
+              names = [item['filename'] for item in receipt['artifacts']]
+              assert sum(name.endswith('.whl') for name in names) == 1
+              assert sum(name.endswith('.tar.gz') for name in names) == 1
+              assert {p.relative_to(leg).as_posix() for p in files} == {
+                  'build-evidence/manifest.json', 'build-evidence/manifest.sha256',
+                  *(f'dist/{name}' for name in names)}
+              for item in receipt['artifacts']:
+                  name = item['filename']
+                  assert Path(name).name == name and name.endswith(('.whl', '.tar.gz'))
+                  artifact = leg / 'dist' / name
+                  assert artifact.is_file() and artifact.stat().st_size == item['bytes'] <= 256 * 1024 * 1024
+                  assert hashlib.sha256(artifact.read_bytes()).hexdigest() == item['sha256']
+          PYTHON
+      - name: Attest the tested distributions and integrity evidence
+        id: attest
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          push-to-registry: false
+          create-storage-record: false
+          subject-path: |
+            evidence/**/*.whl
+            evidence/**/*.tar.gz
+            evidence/**/manifest.json
+            evidence/**/manifest.sha256
+      - name: Retain the portable signature bundle
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: build-attestation-${{ github.sha }}
+          path: ${{ steps.attest.outputs.bundle-path }}
+          if-no-files-found: error
+          retention-days: 30

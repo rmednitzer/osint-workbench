@@ -17,7 +17,7 @@ complete merely because its design documents or interfaces exist.
 | Cloud APIs/accounting/batches | Target specification | No credential access, native adapters, remote requests or spending |
 | Remote MCP | Target authentication design | No HTTP listener or remote client compatibility claim |
 | Export/recovery/retention | Bounded private checkpoint, empty-target restore, operator retention/holds/logical tombstones and mandatory current-policy reconciliation | Native SQL-reader, job/fence, inference, collector and restored-policy regressions passed in installed-wheel CI. Reviewed orphan-object GC and transactional retired-record SQL purge passed native failure/restart, recovery and scoped-role tests. Full record erasure, legacy format-1 adoption, public export, publisher and full-host/PITR remain pending |
-| Publication controls | Positive file selection and source/artifact scanning | Narrow scanner tests; private values are never committed |
+| Publication controls | Positive file selection and source/artifact scanning | File/archive checks plus bounded new-commit metadata scanning; private exact-value checks run outside public CI and do not establish anonymity |
 
 Core schema v7 and retrieval-profile v3 are additive; earlier published migrations
 remain byte-identical. Checkpoint format 2 requires separate policy receipts;
@@ -34,7 +34,7 @@ concurrency and policy-gated isolated recovery. See
 [the earlier revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
 models establish execution contracts, not pretrained semantic quality.
 
-The full programme covers 28 capability areas, 35 ADRs, 58 requirements and 51
+The full programme covers 28 capability areas, 36 ADRs, 58 requirements and 51
 acceptance scenarios. The tests in this repository currently establish only a
 foundation subset. Detailed future specifications are under `docs/`; they are not
 execution receipts. CI results are authoritative for a particular tested revision.
@@ -166,3 +166,22 @@ and the separate two-LTS service diagnostic are defined in
 [ADR-0035](docs/adr/0035-python-ubuntu-runtime-support.md). Passing results remain
 revision-bound; these additions do not relabel earlier receipts or establish
 operational deployment, GPU or pretrained quality acceptance.
+
+Publication maintenance adds bounded new-commit metadata checks, an initial four-module
+type gate and application-source security lint with reviewed line-level exceptions.
+CI retains the tested wheel/sdist and source-bound integrity/inventory receipts for
+30 days after successful native tests and publication scans. Main-push provenance
+uses a separate signing job that executes no repository code. The installed Python
+inventory is not a standards-conformant SBOM or a legal licence disposition. See
+[publication privacy](docs/publication-privacy.md), [build evidence](docs/build-evidence.md)
+and [ADR-0036](docs/adr/0036-publication-security-evidence.md). Exact successful
+CI/signature results must be inspected for the particular revision; configuration
+alone is not a receipt. CodeQL and available hosted security settings are recorded
+separately in the dated security-settings receipt.
+
+Review of the initial CodeQL findings also hardens operator model-manifest reads:
+nonblocking no-follow opens reject nonregular files before reading, enforce the
+64 KiB bound before and after the read, and return sanitized errors. Actual CLI
+FIFO/symlink/oversize and post-stat growth regressions cover this failure boundary.
+This does not turn operator-selected filesystem paths into an untrusted-user
+sandbox; trusted parent directories remain required.

@@ -40,11 +40,32 @@ def _dsn(name):
 
 
 def _manifest(path, model):
-    with Path(path).open("rb") as stream:
-        data = stream.read(65537)
+    # The operator selects configuration paths; MCP/source/model text does not.
+    # Refuse final symlinks, devices and FIFOs before reading so configuration
+    # loading cannot block outside the native inference deadline.
+    fd = None
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode):
+            raise WorkbenchError("MODEL_CONFIGURATION_INVALID")
+        if info.st_size > 65536:
+            raise WorkbenchError("MODEL_CONFIGURATION_TOO_LARGE")
+        with os.fdopen(fd, "rb") as stream:
+            fd = None  # The stream owns the descriptor after successful wrapping.
+            data = stream.read(65537)
+    except OSError:
+        raise WorkbenchError("MODEL_CONFIGURATION_UNAVAILABLE") from None
+    finally:
+        if fd is not None:
+            os.close(fd)
     if len(data) > 65536:
         raise WorkbenchError("MODEL_CONFIGURATION_TOO_LARGE")
-    return model.model_validate_json(data)
+    try:
+        return model.model_validate_json(data)
+    except (ValidationError, ValueError):
+        # Retain the CLI's existing malformed-configuration error contract.
+        raise WorkbenchError("INVALID_CONFIGURATION_OR_INPUT") from None
 
 
 def _encoder(path):

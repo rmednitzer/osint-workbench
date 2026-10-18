@@ -35,7 +35,8 @@ def feed_documents(raw: bytes, source_id: str) -> list[DocumentInput]:
         raise WorkbenchError("INVALID_SOURCE_ID") from None
     with tempfile.TemporaryFile() as output:
         try:
-            result = subprocess.run(
+            # Reviewed: fixed interpreter/module argv, validated ID, no shell; raw feed is stdin.
+            result = subprocess.run(  # noqa: S603
                 [sys.executable, "-I", "-m", "osint_workbench.feed_parser", source_id],
                 input=raw,
                 stdout=output,

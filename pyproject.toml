@@ -41,6 +41,7 @@ dev = [
     "onnx>=1.18,<2",
     "gguf>=0.17,<1",
     "cmake>=3.31,<5",
+    "mypy>=2.4,<3",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -57,3 +58,20 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
+
+# Initial type gate: bounded wire models, sanitized errors and evidence coordinates.
+# Other application modules and dynamic values are not claimed fully type-checked.
+[tool.mypy]
+python_version = "3.12"
+files = [
+    "src/osint_workbench/advisory.py",
+    "src/osint_workbench/contracts.py",
+    "src/osint_workbench/errors.py",
+    "src/osint_workbench/text.py",
+]
+follow_imports = "silent"
+check_untyped_defs = true
+no_implicit_optional = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+show_error_codes = true
