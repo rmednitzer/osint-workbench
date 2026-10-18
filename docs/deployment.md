@@ -141,7 +141,11 @@ authentication failure, source-file credential replacement on reactivation,
 503 backoff, missing-name no-dispatch and duplicate-free recovery. Production
 resource durations, external DNS/public PKI and actual providers remain outside
 this fixture. Require a candidate-bound two-LTS receipt before claiming this
-service path verified; local unit-parser success alone is insufficient.
+service path verified; local unit-parser success alone is insufficient. The
+[2026-10-18 receipt](testing/scheduled-api-service-2026-10-18.json) records the
+successful two-LTS run `39153966588` at `9c03e4eb` with exact wheel, unit and
+harness hashes. Later revisions need their own evidence or explicit unchanged
+file/artifact comparison.
 
 ## Scope and authority
 

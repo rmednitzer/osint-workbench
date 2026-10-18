@@ -51,6 +51,15 @@ failure/recovery and accelerated timer acceptance using the same wheel. See
 [service receipt](docs/testing/operational-service-2026-10-18.json).
 Later changes need their own checks; these results are not a floating current pass.
 
+The scheduled API candidate `9c03e4eb053998ccd4b5022e81f93941ab1b4f63`
+passed the separate Ubuntu 24.04/Python 3.12 and Ubuntu 26.04/Python 3.14 service
+jobs in run `39153966588`. Its [service receipt](docs/testing/scheduled-api-service-2026-10-18.json)
+binds the wheel and unit/harness hashes to observed authenticated HTTPS,
+partial/terminal continuation, accelerated timer, credential failure/replacement,
+backoff, recovery and downstream worker/reader outcomes. Its TLS peer is synthetic
+and disconnected; no actual provider or operational host was contacted. This
+service evidence does not substitute for the candidate's foundation matrix.
+
 These are installed-wheel tests against disposable PostgreSQL 18/pgvector,
 native HTTP/TLS/Unix transports and authored synthetic ONNX/GGUF fixtures. They
 establish execution, authority, consistency and failure contracts within those
