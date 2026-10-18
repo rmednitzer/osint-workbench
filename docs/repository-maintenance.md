@@ -36,8 +36,10 @@ dependency dashboard is distinct from a mergeable update PR.
   routine Renovate PRs and one new PR per hour. Security updates may bypass normal
   bot limits. This is an eligibility window, not a
   promise of exact execution time or an embargo on manual security updates.
-- Require dependency-dashboard approval for major updates. Disable automerge;
-  every accepted update requires current checks and maintainer review.
+- Require dependency-dashboard approval for major updates. Renovate configuration
+  disables bot-requested automerge; every accepted update requires current checks
+  and maintainer review. GitHub auto-merge availability is a separate setting: a
+  maintainer can explicitly queue an individual reviewed PR.
 - Do not automatically rewrite Python support bounds, the runner generation or
   the build-system requirement. Those are tested compatibility/closure decisions.
   Revisit exclusions during dependency review; they are not permanent freezes.
@@ -124,8 +126,13 @@ conversations, no force push/deletion of main and enforcement for administrators
 It intentionally requires zero additional approving reviewers for a solo
 maintainer; this does not remove the maintainer's review responsibility. Signed
 commits and a second reviewer are not claimed. Merge commits preserve tested
-source ancestry; squash/rebase merge paths are disabled. Merged branches can be
-deleted automatically while main remains protected. Branch updates are enabled.
+source ancestry and remain the selected integration method. The dated settings
+receipts are observations, not permanent enforcement claims: the 2026-10-19
+read-back found squash and GitHub auto-merge available, unlike the original
+2026-10-17 state. This repair leaves their availability unchanged; it does not
+select squash or grant automatic approval. Rebase remains disabled. Merged
+branches can be deleted automatically while main remains protected. Branch updates
+are enabled.
 
 Allowed actions are checkout, upload-artifact, download-artifact, attest and setup-uv
 at full SHAs; no other
@@ -142,6 +149,15 @@ and record a dated receipt. Keep the before-state snapshot and change manifest
 for recovery. Roll back settings only under authorized incident/change scope;
 do not disable protection merely to merge blocked code. Reverting bot/CI config
 must preserve usable required-check names or update the check policy deliberately.
+
+The [merge-message successor receipt](testing/merge-message-settings-2026-10-19.json)
+records a narrowly scoped settings repair after PR #23. Default merge and squash
+messages now use the PR title and a blank body. PR titles still require review;
+manual bodies and messages already stored when auto-merge was queued can override
+these defaults. Review queued messages explicitly. Keep exact-message preflight
+and post-merge scans; neither defaults nor a passing PR scan certify future Git
+metadata. Rollback values are in the receipt, but restoring automatic PR-body
+copying would restore the observed failure mode.
 
 ## Documentation maintenance
 

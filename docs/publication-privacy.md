@@ -116,6 +116,14 @@ Preflight does not replace the full commit-range scan or automatically intercept
 GitHub UI edits. Existing public history remains unchanged, and a passing new
 range does not clear an earlier finding.
 
+PR #23 also introduced public upstream release-note URLs in merge `02685c13`
+when GitHub copied its PR body. The [settings receipt](testing/merge-message-settings-2026-10-19.json)
+records their host categories and the exact message digest without reproducing
+the body. Main-push repository policy failed as intended. Merge and squash
+defaults now select a blank body; explicit overrides and already queued
+auto-merge messages still need review. This does not clear that historical
+finding, permit new URL hosts or change the scanner.
+
 ## Generated assurance files
 
 After producer verification, scan the exact supplementary and final receipt sets:

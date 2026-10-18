@@ -116,7 +116,12 @@ The PR #9 merge message at `e594e949` contains an agent session URL. A full-rang
 publication scan still reports it; the incremental scan after PR #13 is clean.
 Public history has not been rewritten, and content accessibility behind that URL
 has not been established. Planned-message checks do not clear the historical
-finding or intercept future GitHub UI edits automatically.
+finding or intercept future GitHub UI edits automatically. PR #23 merge
+`02685c13` later copied public upstream release-note URLs into Git metadata and
+failed the same policy. The [merge-message settings repair](docs/testing/merge-message-settings-2026-10-19.json)
+sets blank default bodies while preserving history and the scanner. New
+incremental passes exclude these reviewed historical findings; they do not clear
+them.
 
 Keep operational sources, hostnames, credentials, prompts, private inventories,
 checkpoints and deployment configuration outside Git and public CI. Prototype
