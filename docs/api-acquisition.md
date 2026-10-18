@@ -198,7 +198,7 @@ an independently controlled reprovisioning procedure.
 `tests/test_api_acquisition.py`, collector-role tests and recovery tests exercise
 synthetic contracts. Installed native transport/database and both LTS service
 credential-delivery evidence must be bound to the candidate artifact before
-operational claims. The [scheduled API service receipt](testing/scheduled-api-service-2026-10-18.json)
+operational claims. The [scheduled API service receipt](testing/scheduled-api-hardening-2026-10-18.json)
 records the passing disconnected two-LTS service path at its named revision. A
 parser, unit or synthetic service pass does not establish actual provider operation.
 

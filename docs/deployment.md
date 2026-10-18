@@ -147,7 +147,9 @@ service path verified; local unit-parser success alone is insufficient. The
 [2026-10-18 receipt](testing/scheduled-api-service-2026-10-18.json) records the
 successful two-LTS run `39153966588` at `9c03e4eb` with exact wheel, unit and
 harness hashes. Later revisions need their own evidence or explicit unchanged
-file/artifact comparison.
+file/artifact comparison. Its [hardening successor](testing/scheduled-api-hardening-2026-10-18.json)
+records both LTS passes at `e3e13af7` in run `39154880281`, including explicit
+TLS 1.2 minimum and hash-only synthetic peer verification.
 
 ## Scope and authority
 

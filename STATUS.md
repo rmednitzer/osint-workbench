@@ -59,6 +59,13 @@ partial/terminal continuation, accelerated timer, credential failure/replacement
 backoff, recovery and downstream worker/reader outcomes. Its TLS peer is synthetic
 and disconnected; no actual provider or operational host was contacted. This
 service evidence does not substitute for the candidate's foundation matrix.
+The [hardening successor](docs/testing/scheduled-api-hardening-2026-10-18.json)
+records both LTS service passes in `39154880281` at
+`e3e13af7003ebe31965732e8868ca618838b9e55`, with explicit fixture TLS minimum and
+a hash-only synthetic peer verifier. The matching CodeQL disposition is recorded
+[individually](docs/testing/codeql-triage-2026-10-18.md#scheduled-api-fixture-successor);
+no query/path exclusion was introduced. Older receipt hashes remain historical.
+
 
 These are installed-wheel tests against disposable PostgreSQL 18/pgvector,
 native HTTP/TLS/Unix transports and authored synthetic ONNX/GGUF fixtures. They
