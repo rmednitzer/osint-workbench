@@ -9,6 +9,7 @@ The caller must stop its owned service before namespace removal.
 """
 
 import argparse
+import base64
 import hashlib
 import hmac
 import json
@@ -30,6 +31,9 @@ CONTROL = ROOT / "phase"
 OBSERVATIONS = ROOT / "requests.jsonl"
 READY = ROOT / "ready"
 API_TOKEN_DIGEST = ROOT / "api-token.sha256"
+API_CLIENT_DIGEST = ROOT / "api-client.sha256"
+OAUTH_ACCESS_TOKEN = "synthetic-oauth-access-token-fixture"
+OAUTH_REQUEST = b"grant_type=client_credentials&scope=catalog%3Aread"
 API_CERT = ROOT / "api.pem"
 API_KEY = ROOT / "api.key"
 API_PAGES = {
@@ -65,6 +69,8 @@ API_PAGES["kev"] = json.dumps(
         ],
     }
 ).encode()
+API_PAGES["oauth"] = API_PAGES["kev"]
+API_PAGES["oauth-denied"] = API_PAGES["kev"]
 API_PAGES["kev-invalid"] = API_PAGES["kev"].replace(b'"count": 1', b'"count": 2')
 MAX_HEADER = 8192
 MAX_REQUESTS = 64
@@ -238,58 +244,120 @@ def handle_connection(connection, phase, record, *, deadline=None):
             pass
 
 
-def handle_api_connection(connection, phase, expected_digest, record, *, deadline=None):
+def _api_request(connection, deadline):
+    data = b""
+    while b"\r\n\r\n" not in data:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise ValueError
+        connection.settimeout(remaining)
+        part = connection.recv(min(1024, MAX_HEADER + 1 - len(data)))
+        if not part:
+            raise ValueError
+        data += part
+        if len(data) > MAX_HEADER:
+            raise ValueError
+    head, body = data.split(b"\r\n\r\n", 1)
+    lines = head.split(b"\r\n")
+    if len(lines) > 17 or len(lines[0]) > 512:
+        raise ValueError
+    headers = {}
+    for line in lines[1:]:
+        key, value = line.split(b":", 1)
+        key = key.decode("ascii").lower()
+        value = value.strip()
+        if (
+            not key
+            or any(c not in "abcdefghijklmnopqrstuvwxyz0123456789-" for c in key)
+            or key in headers
+            or any(c < 32 or c > 126 for c in value)
+        ):
+            raise ValueError
+        headers[key] = value
+    length = headers.get("content-length", b"0")
+    if (
+        headers.get("host") != b"feed.fixture.invalid"
+        or "transfer-encoding" in headers
+        or not length.isdigit()
+        or len(length) > 3
+        or int(length) > 512
+    ):
+        raise ValueError
+    while len(body) < int(length):
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise ValueError
+        connection.settimeout(remaining)
+        part = connection.recv(int(length) - len(body))
+        if not part:
+            raise ValueError
+        body += part
+    if len(body) != int(length):
+        raise ValueError
+    return lines[0], headers, body
+
+
+def handle_api_connection(
+    connection, phase, expected_digest, record, *, deadline=None, client_digest=None
+):
     """Synthetic provider contract; record only fixed status/boolean observations."""
     if phase not in (*API_PAGES, "fail"):
         raise ValueError("INVALID_FIXTURE_PHASE")
     deadline = min(time.monotonic() + 3, deadline or float("inf"))
-    data = b""
     try:
-        while b"\r\n\r\n" not in data:
-            remaining = deadline - time.monotonic()
-            if remaining <= 0:
+        line, headers, incoming = _api_request(connection, deadline)
+        oauth = phase in {"oauth", "oauth-denied"}
+        token_request = oauth and line == b"POST /token HTTP/1.1"
+        if token_request:
+            if client_digest is None:
                 raise ValueError
-            connection.settimeout(remaining)
-            part = connection.recv(min(1024, MAX_HEADER + 1 - len(data)))
-            if not part:
+            authorized = hmac.compare_digest(
+                hashlib.sha256(headers.get("authorization", b"")).hexdigest(), client_digest
+            )
+            path_ok = (
+                incoming == OAUTH_REQUEST
+                and headers.get("content-type") == b"application/x-www-form-urlencoded"
+            )
+            status = 401 if not authorized or phase == "oauth-denied" else (200 if path_ok else 400)
+            body = json.dumps(
+                {
+                    "access_token": OAUTH_ACCESS_TOKEN,
+                    "token_type": "Bearer",
+                    "expires_in": 300,
+                    "scope": "catalog:read",
+                }
+            ).encode()
+            stage = {"stage": "token"}
+        else:
+            if incoming:
                 raise ValueError
-            data += part
-            if len(data) > MAX_HEADER:
-                raise ValueError
-        head, remainder = data.split(b"\r\n\r\n", 1)
-        lines = head.split(b"\r\n")
-        expected_path = b"/records?cursor=page-2" if phase == "v2" else b"/records"
-        if len(lines) > 17 or remainder or len(lines[0]) > 512:
-            raise ValueError
-        headers = {}
-        for line in lines[1:]:
-            key, value = line.split(b":", 1)
-            key = key.decode("ascii").lower()
-            value = value.strip()
-            if (
-                not key
-                or any(c not in "abcdefghijklmnopqrstuvwxyz0123456789-" for c in key)
-                or key in headers
-                or any(c < 32 or c > 126 for c in value)
-            ):
-                raise ValueError
-            headers[key] = value
-        if (
-            headers.get("host") != b"feed.fixture.invalid"
-            or headers.get("content-length", b"0") != b"0"
-            or "transfer-encoding" in headers
-        ):
-            raise ValueError
-        authorized = hmac.compare_digest(
-            hashlib.sha256(headers.get("authorization", b"")).hexdigest(), expected_digest
+            expected_path = b"/records?cursor=page-2" if phase == "v2" else b"/records"
+            expected = (
+                hashlib.sha256(("Bearer " + OAUTH_ACCESS_TOKEN).encode()).hexdigest()
+                if oauth
+                else expected_digest
+            )
+            authorized = hmac.compare_digest(
+                hashlib.sha256(headers.get("authorization", b"")).hexdigest(), expected
+            )
+            path_ok = line == b"GET " + expected_path + b" HTTP/1.1"
+            status = (
+                401
+                if not authorized
+                else (400 if not path_ok else (503 if phase == "fail" else 200))
+            )
+            body = API_PAGES.get(phase, b"")
+            stage = {"stage": "resource"} if oauth else {}
+        record(
+            {
+                "phase": phase,
+                "status": status,
+                "authorized": authorized,
+                "path_ok": path_ok,
+                **stage,
+            }
         )
-        path_ok = lines[0] == b"GET " + expected_path + b" HTTP/1.1"
-        status = (
-            401 if not authorized else (400 if not path_ok else (503 if phase == "fail" else 200))
-        )
-        record({"phase": phase, "status": status, "authorized": authorized, "path_ok": path_ok})
-        body = API_PAGES[phase] if status == 200 else b""
-        _response(connection, status, body, media_type="application/json")
+        _response(connection, status, body if status == 200 else b"", media_type="application/json")
     except (ValueError, UnicodeError, OSError):
         try:
             connection.settimeout(0.1)
@@ -350,6 +418,7 @@ def serve(expected_inode, host_inode, *, api=False):
                                 API_TOKEN_DIGEST.read_text(),
                                 record,
                                 deadline=deadline,
+                                client_digest=API_CLIENT_DIGEST.read_text(),
                             )
                     except (ssl.SSLError, OSError):
                         # TLS rejection records no application request or authentication data.
@@ -387,6 +456,10 @@ class ReferenceNetwork:
                     API_TOKEN_DIGEST,
                     hashlib.sha256(("Bearer " + self._api_token).encode()).hexdigest(),
                 )
+                basic = b"Basic " + base64.b64encode(
+                    ("reference-client:" + self._api_token).encode()
+                )
+                _write_new(API_CLIENT_DIGEST, hashlib.sha256(basic).hexdigest())
                 run(
                     [
                         "openssl",

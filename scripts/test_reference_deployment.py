@@ -942,7 +942,7 @@ def api_service_acceptance(account, units, shared_gid, owned):
 
     import psycopg
     from psycopg.rows import dict_row
-    from reference_network import API_CERT, API_PAGES, ReferenceNetwork
+    from reference_network import API_CERT, API_PAGES, OAUTH_ACCESS_TOKEN, ReferenceNetwork
 
     from osint_workbench.errors import WorkbenchError
     from osint_workbench.evidence import EvidenceStore
@@ -1050,7 +1050,10 @@ def api_service_acceptance(account, units, shared_gid, owned):
         for line in raw.splitlines():
             row = json.loads(line)
             message = row.get("MESSAGE", "")
-            require(token not in message, "API_JOURNAL_TOKEN_DISCLOSURE")
+            require(
+                token not in message and OAUTH_ACCESS_TOKEN not in message,
+                "API_JOURNAL_TOKEN_DISCLOSURE",
+            )
             try:
                 value = json.loads(message)
             except (ValueError, TypeError):
@@ -1259,6 +1262,61 @@ def api_service_acceptance(account, units, shared_gid, owned):
         # synchronous oneshot reader has exited. Preserve its existing mode.
         probe.write_text(API_READ_PROBE + KEV_READ_PROBE)
         command(["systemctl", "start", HEALTH_SERVICE], timeout=30)
+        before_oauth = state()[2:]
+        config["auth"].update(
+            kind="oauth-client-credentials",
+            context="synthetic-oauth-v1",
+            oauth={
+                "token_endpoint": "https://feed.fixture.invalid/token",
+                "client_id": "reference-client",
+                "scopes": ["catalog:read"],
+            },
+        )
+        configuration.write_text(json.dumps(config))
+        network.set_phase("oauth")
+        count = len(network.observations())
+        tick("success")
+        observed = network.observations()[count:]
+        require(
+            len(observed) == 2
+            and [r.get("stage") for r in observed] == ["token", "resource"]
+            and all(r["authorized"] and r["path_ok"] and r["status"] == 200 for r in observed),
+            "OAUTH_SERVICE_EXCHANGE_MISMATCH",
+        )
+        require(state()[2:] == before_oauth, "OAUTH_REPLAY_DUPLICATED_DOCUMENTS")
+        config["auth"]["credential"]["name"] = "missing-token"
+        configuration.write_text(json.dumps(config))
+        count = len(network.observations())
+        tick("CREDENTIAL_UNAVAILABLE", failed=True)
+        require(len(network.observations()) == count, "OAUTH_MISSING_CREDENTIAL_DISPATCH")
+        config["auth"]["credential"]["name"] = "provider-token"
+        configuration.write_text(json.dumps(config))
+        network.set_phase("oauth-denied")
+        count = len(network.observations())
+        tick("OAUTH_TOKEN_REJECTED", failed=True)
+        require(
+            len(network.observations()) == count + 1
+            and network.observations()[-1]["stage"] == "token",
+            "OAUTH_DENIAL_DISPATCHED_RESOURCE",
+        )
+        count = len(network.observations())
+        tick("not_due")
+        require(len(network.observations()) == count, "OAUTH_BACKOFF_DISPATCH")
+        network.set_phase("oauth")
+        force_due()
+        tick("success")
+        require(state()[2:] == before_oauth, "OAUTH_RECOVERY_MUTATED_DOCUMENTS")
+        require(OAUTH_ACCESS_TOKEN not in repr(state()), "OAUTH_SQL_TOKEN_DISCLOSURE")
+        require(
+            all(
+                OAUTH_ACCESS_TOKEN.encode() not in p.read_bytes()
+                and token.encode() not in p.read_bytes()
+                for p in store.root.rglob("*")
+                if p.is_file()
+            ),
+            "OAUTH_CAS_TOKEN_DISCLOSURE",
+        )
+        command(["systemctl", "start", HEALTH_SERVICE], timeout=30)
     return {
         "api_https_service_tested": True,
         "api_loaded_credential_tested": True,
@@ -1271,6 +1329,9 @@ def api_service_acceptance(account, units, shared_gid, owned):
         "api_external_provider_tested": False,
         "kev_format_service_worker_reader_tested": True,
         "kev_replay_schema_refusal_tested": True,
+        "oauth_loaded_secret_token_resource_tested": True,
+        "oauth_denial_backoff_recovery_tested": True,
+        "oauth_token_nonretention_tested": True,
     }
 
 

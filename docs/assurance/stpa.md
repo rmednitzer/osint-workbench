@@ -705,3 +705,25 @@ Refusal preserves accepted records and reports failure rather than accepting a
 truncated catalogue. Optional action/triage fields remain source text; they do not
 authorize remediation or forensic execution. Broader E31/E32/E40 controls need
 qualified domain persistence, independent applicability and revision semantics.
+
+
+## OAuth acquisition refinement
+
+[ADR-0049](../adr/0049-oauth-client-credentials.md) allocates the existing API
+constraints to two explicit destinations and two credential uses. Relevant
+process-model errors are confusing authentication with content-use rights,
+replaying resource rejection as a fresh grant, assuming a JWT's decoded claims
+authenticate its issuer/audience, or resetting old progress because a new optional
+configuration field changed serialization.
+
+| Existing UCA | Constraint allocation | Discriminating evidence and limits |
+| --- | --- | --- |
+| U1/U4 | Both HTTPS endpoints remain private/operator-configured; client secret goes only to token endpoint, bearer only to resource; no redirect, discovery or arbitrary POST | Native distinct-origin TLS and exact request inspection; existing pinned-address denial cases; no actual provider contract inferred |
+| U8 | Reuse checked secret custody; do not persist grant response or pass it into evidence parser; refuse exact raw/decoded resource reflection of either secret | Native SQL/CAS non-retention and reflection cases, real loaded-secret service exchange; no zeroization, arbitrary encoded-secret detection or same-UID sandbox |
+| U10 | One grant and at most one resource request per admitted tick; expiry bounds transport; no authentication fallback or automatic refresh/replay; typed Retry-After preserves source backoff | Disabled/not-due/cycle-cap no-dispatch, rejection request counts, malformed/expired/scope-changed grants, native scheduling and two-LTS denial/recovery |
+| U12 | Preserve old profile bytes; bind installed/native and real-service evidence to candidate; require independent provider/rights adoption | Exact legacy hash and compatible continuation cases, revision-bound service outcomes; asymmetric authentication, real entitlements and full E05/E08/E10 acceptance remain open |
+
+The AS and resource remain separate trust boundaries even when privately
+configured at one origin. Requested/returned scope is checked, but opaque-token
+issuer/audience validation and remote enforcement are not invented locally.
+Failure preserves prior accepted evidence and does not silently retry.

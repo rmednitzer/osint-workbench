@@ -42,6 +42,12 @@ def exchange(helper, phase, request, *, deadline=None, api=False):
                             hashlib.sha256(b"Bearer synthetic-fixture-token").hexdigest(),
                             records.append,
                             deadline=deadline,
+                            client_digest=hashlib.sha256(
+                                b"Basic "
+                                + helper.base64.b64encode(
+                                    b"reference-client:synthetic-fixture-token"
+                                )
+                            ).hexdigest(),
                         )
                     else:
                         helper.handle_connection(
@@ -229,3 +235,46 @@ def test_api_fixture_guard_precedes_tls_or_listener_creation(monkeypatch):
     monkeypatch.setattr(socket, "socket", forbidden)
     with pytest.raises(RuntimeError):
         helper.serve(0, 0, api=True)
+
+
+@pytest.mark.parametrize("phase,status", [("oauth", 200), ("oauth-denied", 401)])
+def test_oauth_fixture_issues_only_bounded_synthetic_grants(network_helper, phase, status):
+    helper = network_helper
+    encoded = helper.base64.b64encode(b"reference-client:synthetic-fixture-token")
+    wire = (
+        b"POST /token HTTP/1.1\r\nHost: feed.fixture.invalid\r\nAuthorization: Basic "
+        + encoded
+        + b"\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: "
+        + str(len(helper.OAUTH_REQUEST)).encode()
+        + b"\r\n\r\n"
+        + helper.OAUTH_REQUEST
+    )
+    observed, _, body, records = exchange(helper, phase, wire, api=True)
+    assert observed == status
+    assert records == [
+        {"phase": phase, "status": status, "authorized": True, "path_ok": True, "stage": "token"}
+    ]
+    if status == 200:
+        assert helper.json.loads(body) == {
+            "access_token": helper.OAUTH_ACCESS_TOKEN,
+            "token_type": "Bearer",
+            "expires_in": 300,
+            "scope": "catalog:read",
+        }
+    else:
+        assert body == b""
+
+
+def test_oauth_fixture_resource_never_accepts_client_authentication(network_helper):
+    for authorization, status in [
+        (b"Bearer " + network_helper.OAUTH_ACCESS_TOKEN.encode(), 200),
+        (b"Basic invalid-client-authorization", 401),
+    ]:
+        wire = (
+            b"GET /records HTTP/1.1\r\nHost: feed.fixture.invalid\r\nAuthorization: "
+            + authorization
+            + b"\r\n\r\n"
+        )
+        actual, _, body, rows = exchange(network_helper, "oauth", wire, api=True)
+        assert actual == status and rows[0]["stage"] == "resource"
+        assert body == (network_helper.API_PAGES["oauth"] if status == 200 else b"")
