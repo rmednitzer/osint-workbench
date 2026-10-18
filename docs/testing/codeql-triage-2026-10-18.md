@@ -65,3 +65,15 @@ These are individual path-authority false-positive dispositions, distinct from
 fixing the additional availability/robustness issues. Future helper changes can
 create new alert identities and need fresh PR-specific review. Their resolution
 must not be inferred from a clean main-branch alert list.
+
+## Settlement evidence successor finding
+
+The PR-head analysis for `d068b410162f8c23ae8dba64a052f217b0a8ffce` raised one
+high-severity path alert on `cloud.evidence_digest` (ADR-0043).
+
+| Alert | Actual source | Disposition |
+| --- | --- | --- |
+| 38 | Operator `cloud-ledger settle --evidence` CLI argument; the only caller | Intended operator selector for a private provider evidence file, the same authority as alerts 3 and 18. The read is a no-follow, nonblocking descriptor open with regular-file admission, a non-empty 64 MiB cumulative byte budget, and only the SHA-256 retained. No MCP, source, model or ledger field can select the path. Tests cover symlink, FIFO, empty, oversized and missing files. |
+
+This is an individual path-authority false-positive disposition, not a query
+exclusion. Dismissing the hosted alert remains a maintainer action.
