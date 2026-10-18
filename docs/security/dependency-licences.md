@@ -49,6 +49,18 @@ changes TestClient streaming/cancellation and URL, header and host handling.
 Compatibility remains subject to the required installed/native CI profiles.
 This review does not close any existing notice or native-closure disposition.
 
+The subsequent certifi 2026.10.18 refresh reviews its selected universal wheel's
+METADATA and unchanged shipped MPL-2.0 notice after verifying the lock hash. It
+still has no `License-Expression` and requires Python 3.7 or newer. Its CA bundle
+matches [upstream commit 5cb238c](https://github.com/certifi/python-certifi/commit/5cb238caeeb6c30ec1a7309ad3e16a5aa7b10ce8)
+byte-for-byte (SHA-256
+`d87887200c9a705dccc937b9b83b5e67e47024c4a4b7f9dd15700c72e0f55453`).
+Certificate-fingerprint comparison finds 117 roots versus the prior 121: four
+emSign roots removed, none added. Connections relying solely on those roots can
+fail verification; no custom trust exception or TLS bypass is introduced. Existing
+notice/source obligations remain unresolved as stated below. This comparison
+establishes the selected bundle change, not independent certification of CA trust.
+
 Historically, the initial review inspected 31 manylinux archives: 30 supported
 standard/ABI3 archives and one additional unsupported free-threaded CPython 3.13
 ONNX Runtime archive. The current review admits only the 30 supported native
@@ -93,7 +105,7 @@ custody or an atomic snapshot of every inspected file.
 | MIT, MIT-0, BSD variants, ISC-like or zlib notices within included texts | Preserve the applicable notices and disclaimers; inspect each actual text for endorsement, attribution and modification conditions. Do not replace them with the application's Apache licence. |
 | Apache-2.0 application and dependencies; dual Apache/BSD packages | Retain the licence and applicable notices, record modifications where required, and carry any applicable NOTICE material. Review patent and chosen dual-licence terms. A top-level expression does not establish the terms of embedded components. |
 | PSF-2.0 declarations in feedparser-sgmllib and typing-extensions | Preserve their shipped licence terms and notices; review modification/redistribution conditions from those texts. |
-| certifi 2026.7.22 | The shipped notice identifies Mozilla-derived CA data under MPL-2.0. Preserve its notice and review covered-file/source-availability obligations, especially for modified bundles. This review does not authenticate the certificate data. |
+| certifi 2026.10.18 | The shipped notice identifies Mozilla-derived CA data under MPL-2.0. Preserve its notice and review covered-file/source-availability obligations, especially for modified bundles. This review does not authenticate the certificate data. |
 | tqdm 4.70.1 | Its shipped LICENCE distinguishes MPL-2.0 and MIT contributions. Preserve that distinction and review covered-file/source-availability obligations; do not flatten it to MIT. |
 | psycopg and psycopg-binary 3.3.6 | Both declare LGPL-3.0-only and ship LGPLv3 text. Review incorporated GPLv3 terms, corresponding source, replacement/relinking and reverse-engineering conditions for the actual distribution method. Do not infer that a binary wheel has satisfied these obligations merely because it contains this text. |
 | Flatbuffers 25.12.19 and tokenizers 0.23.3 | Missing shipped licence text remains an explicit notice gap. Exact-release upstream Apache-2.0 evidence is recorded; arrange appropriate notices before redistributing those wheel contents. Upstream evidence alone cannot make a missing wheel file present. |

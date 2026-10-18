@@ -2,7 +2,7 @@
   "schema_version": 1,
   "review_date": "2026-10-18",
   "scope": "RECORD-listed ELF file-set identity; standard CPython3.12-3.14 manylinux x86_64 and compatible ABI3; no native dependency closure or legal approval",
-  "lock_sha256": "a650c080ad3ca32ed1498ca0b2f253b6f239411d417d6cc68fd589765581c428",
+  "lock_sha256": "05adee02ff9c0b038171f2c1977acbf4e5f152bb296650914a96d6a09f112c42",
   "review_history": [
     {
       "source_commit": "331d597",
@@ -50,12 +50,12 @@
     },
     {
       "name": "certifi",
-      "version": "2026.7.22",
+      "version": "2026.10.18",
       "native_dependency_closure": "not-established-by-empty-ELF-set",
       "variants": [
         {
-          "wheel_filename": "certifi-2026.7.22-py3-none-any.whl",
-          "wheel_sha256": "62f22742b58a1a33014a2b6b706588a8d7e2a88ae7bd1a6ebe8c992928483775",
+          "wheel_filename": "certifi-2026.10.18-py3-none-any.whl",
+          "wheel_sha256": "73191c47aaa79da394e8fee2dbc2ec827432cab56311122c9e47abf79e390f62",
           "files": []
         }
       ]

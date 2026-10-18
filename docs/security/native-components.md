@@ -43,6 +43,12 @@ ELF magic. No ELF objects were found. The recorded empty set remains explicit;
 all other wheel variants and all 147 ELF proof entries are unchanged. This does
 not establish the absence of external or transitive native dependencies.
 
+The subsequent certifi 2026.10.18 refresh verifies its locked universal-wheel
+hash and inspects all 12 ZIP members. No ELF objects are present. Its explicit
+empty variant changes archive identity; the 147 ELF proof entries remain unchanged.
+The CA trust-data change is described in [the licence review](dependency-licences.md)
+and remains separate from native binary identity.
+
 Wheel archive bytes are obtained from the public locked registry URLs and checked
 against their `uv.lock` SHA-256 before ZIP inspection. Supported archive evidence
 covers standard CPython 3.12, 3.13 and 3.14 manylinux x86_64 wheels and compatible
