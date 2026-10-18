@@ -944,6 +944,7 @@ def api_service_acceptance(account, units, shared_gid, owned):
     from psycopg.rows import dict_row
     from reference_network import API_CERT, API_PAGES, ReferenceNetwork
 
+    from osint_workbench.errors import WorkbenchError
     from osint_workbench.evidence import EvidenceStore
     from osint_workbench.text import digest
 
@@ -1145,7 +1146,8 @@ def api_service_acceptance(account, units, shared_gid, owned):
         )
         store = EvidenceStore(STATE / "evidence", read_only=True)
         require(
-            all(store.get(digest(raw)) == raw for raw in API_PAGES.values()), "API_RAW_MISMATCH"
+            all(store.get(digest(API_PAGES[p])) == API_PAGES[p] for p in ("v1", "v2")),
+            "API_RAW_MISMATCH",
         )
         require(
             all(o["authorized"] and o["path_ok"] for o in network.observations()),
@@ -1223,6 +1225,38 @@ def api_service_acceptance(account, units, shared_gid, owned):
         command(["systemctl", "start", HEALTH_SERVICE], timeout=30)
         # The actual isolated reader probe exits nonzero unless search and exact
         # text evidence agree; no provider or writer credentials enter its unit.
+        config["adapter"] = "cisa-kev/1"
+        configuration.write_text(json.dumps(config))
+        network.set_phase("kev")
+        tick("success")
+        kev = state()
+        record = json.loads(API_PAGES["kev"])["vulnerabilities"][0]
+        require(
+            len(kev[2]) == 3
+            and len(kev[3]) == 3
+            and any(
+                json.loads(d["body"]) == record for d in kev[2] if d["title"].startswith("CVE-")
+            )
+            and store.get(digest(API_PAGES["kev"])) == API_PAGES["kev"],
+            "KEV_SERVICE_EVIDENCE_MISMATCH",
+        )
+        force_due()
+        tick("success")
+        require(state()[2:] == kev[2:], "KEV_REPLAY_DUPLICATED_DOCUMENTS")
+        network.set_phase("kev-invalid")
+        force_due()
+        tick("API_PARSE_FAILED", failed=True)
+        require(state()[2:] == kev[2:], "KEV_SCHEMA_FAILURE_MUTATED_DOCUMENTS")
+        try:
+            store.get(digest(API_PAGES["kev-invalid"]))
+        except WorkbenchError as exc:
+            require(exc.code == "EVIDENCE_UNAVAILABLE", "KEV_EVIDENCE_CHECK_FAILED")
+        else:
+            raise Rejected("KEV_INVALID_RAW_ADMITTED")
+        command(["systemctl", "start", WORK_SERVICE], timeout=30)
+        require(all(j["status"] == "succeeded" for j in state()[3]), "KEV_WORKER_FAILURE")
+        write_private(probe, API_READ_PROBE + KEV_READ_PROBE, mode=0o644)
+        command(["systemctl", "start", HEALTH_SERVICE], timeout=30)
     return {
         "api_https_service_tested": True,
         "api_loaded_credential_tested": True,
@@ -1233,6 +1267,8 @@ def api_service_acceptance(account, units, shared_gid, owned):
         "api_backoff_recovery_no_duplicates": True,
         "api_worker_reader_tested": True,
         "api_external_provider_tested": False,
+        "kev_format_service_worker_reader_tested": True,
+        "kev_replay_schema_refusal_tested": True,
     }
 
 
@@ -1251,6 +1287,12 @@ assert len(rows) == 2 and {row['title'] for row in rows} == set(expected)
 for row in rows:
     assert row['excerpt'] == expected[row['title']]
 print('API_READER_PROBE_OK')
+"""
+
+KEV_READ_PROBE = r"""
+rows = [row for row in service.search('KEV')['results'] if row['source_id'] == 'reference-api']
+assert len(rows) == 1 and rows[0]['title'] == 'CVE-2099-10001: KEV Fixture'
+print('KEV_READER_PROBE_OK')
 """
 
 

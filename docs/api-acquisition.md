@@ -1,7 +1,8 @@
 # Bounded authenticated API acquisition
 
-This first profile implements one explicit JSON contract, not a generic provider
-SDK or a Janes integration. Core schema **11**, optional retrieval profile **4**
+Acquisition supports the explicit `bounded-json-pages/1` contract and the
+[`cisa-kev/1` catalogue mapping](kev-acquisition.md), not a generic provider SDK
+or a Janes integration. Core schema **11**, optional retrieval profile **4**
 and checkpoint format **2** apply. Run the packaged migration before acquisition.
 There are no bundled endpoints, credentials or enabled sources. An opt-in
 [single-source service/timer](deployment.md#scheduled-api-profile) is available.
@@ -82,9 +83,9 @@ the durable schedule and continuation remain authoritative. `poll_seconds` is
 not-due configurations dispatch no request. The optional API timer is separately
 provisioned; the RSS timer does not automatically discover API configurations.
 
-## Provider page contract
+## Bounded JSON page contract
 
-The response must be HTTP 200 with `application/json` and identity/no content
+For `bounded-json-pages/1`, the response must be HTTP 200 with `application/json` and identity/no content
 encoding. Compressed responses are rejected. Each body is at most 10 MiB. The
 UTF-8 JSON object contains exactly `items` and `next_cursor`:
 
@@ -202,7 +203,7 @@ operational claims. The [scheduled API service receipt](testing/scheduled-api-ha
 records the passing disconnected two-LTS service path at its named revision. A
 parser, unit or synthetic service pass does not establish actual provider operation.
 
-Provider-specific schemas and pagination, documented search POSTs, OAuth/mTLS,
+Provider schemas beyond the bounded KEV mapping, other pagination, documented search POSTs, OAuth/mTLS,
 signed requests, compressed documents, HTML/JSON-LD, JavaScript rendering,
 webhooks/streaming, paid queries, source qualification, rights-domain enforcement,
 query-disclosure policy and broader real-provider acceptance remain outstanding.

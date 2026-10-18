@@ -42,6 +42,30 @@ API_PAGES = {
         b'"next_cursor":null}'
     ),
 }
+API_PAGES["kev"] = json.dumps(
+    {
+        "catalogVersion": "synthetic-1",
+        "dateReleased": "2026-10-18T12:00:00Z",
+        "count": 1,
+        "vulnerabilities": [
+            {
+                "cveID": "CVE-2099-10001",
+                "vendorProject": "Synthetic vendor",
+                "product": "Synthetic product",
+                "vulnerabilityName": "KEV Fixture",
+                "dateAdded": "2026-10-18",
+                "dueDate": "2026-11-01",
+                "shortDescription": "KEV synthetic evidence",
+                "requiredAction": "Synthetic recommendation",
+                "forensicTriage": "No",
+                "knownRansomwareCampaignUse": "Unknown",
+                "notes": "",
+                "cwes": [],
+            }
+        ],
+    }
+).encode()
+API_PAGES["kev-invalid"] = API_PAGES["kev"].replace(b'"count": 1', b'"count": 2')
 MAX_HEADER = 8192
 MAX_REQUESTS = 64
 MODIFIED = "Wed, 14 Oct 2026 12:00:00 GMT"
@@ -216,7 +240,7 @@ def handle_connection(connection, phase, record, *, deadline=None):
 
 def handle_api_connection(connection, phase, expected_digest, record, *, deadline=None):
     """Synthetic provider contract; record only fixed status/boolean observations."""
-    if phase not in ("v1", "v2", "fail"):
+    if phase not in (*API_PAGES, "fail"):
         raise ValueError("INVALID_FIXTURE_PHASE")
     deadline = min(time.monotonic() + 3, deadline or float("inf"))
     data = b""
@@ -306,7 +330,7 @@ def serve(expected_inode, host_inode, *, api=False):
                 continue
             count += 1
             phase = CONTROL.read_text().strip()
-            if phase not in ("v1", "v2", "fail"):
+            if phase not in ((*API_PAGES, "fail") if api else ("v1", "v2", "fail")):
                 raise RuntimeError("INVALID_FIXTURE_PHASE")
 
             def record(row):
@@ -438,7 +462,7 @@ class ReferenceNetwork:
             raise
 
     def set_phase(self, phase):
-        if phase not in ("v1", "v2", "fail"):
+        if phase not in (*API_PAGES, "fail"):
             raise ValueError("INVALID_FIXTURE_PHASE")
         if self._process is None or self._process.poll() is not None:
             raise RuntimeError("FIXTURE_NOT_RUNNING")

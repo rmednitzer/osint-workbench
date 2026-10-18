@@ -24,7 +24,9 @@ exploitation observations. All models are frozen Pydantic v2 models with
 
 It is **not** a CVE JSON 5, OSV, CSAF or vendor parser, an inventory/SBOM matcher,
 an exposure or applicability detector, a prioritizer, a CVSS calculator or a STIX
-implementation. Producing an envelope from an upstream format is future adapter work.
+implementation. Producing this observation envelope from an upstream format remains future work.
+The separate [KEV acquisition adapter](kev-acquisition.md) stores source records
+as ordinary evidence-backed documents, without populating this envelope.
 
 ### Record fields
 
@@ -198,7 +200,7 @@ mode) and enforces the same type, range, count and cross-field rules.
 
 ## Remaining work (not implemented here)
 
-- Upstream adapters (CVE records, vendor/OS advisories, KEV, EPSS, OSV) with
+- Upstream observation adapters (CVE records, vendor/OS advisories, KEV, EPSS, OSV) with
   configured, external endpoint lists; acquisition, snapshot preservation and
   schema-version tracking for those sources.
 - Database storage, migrations, revision/version heads, retraction and

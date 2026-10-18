@@ -684,3 +684,24 @@ source freshness. The guarded fixture cross-checks journal UID, HTTP observation
 private cursor/run state, immutable evidence and worker/reader postconditions;
 ordinary parser tests do not replace candidate-bound two-LTS service evidence.
 Actual providers, operational deployment and sustained capacity remain open.
+
+
+## KEV format acquisition refinement
+
+[ADR-0048](../adr/0048-kev-catalogue-adapter.md) refines the existing API
+allocations without establishing exposure, regulatory applicability or upstream
+authenticity merely from a compatible payload. Relevant process-model errors
+include treating date-only fields as instants, a catalogue revision as a change
+to every item, unknown fields as harmless, and missing items as withdrawals.
+
+| Existing UCA | Constraint allocation | Discriminating evidence and limits |
+| --- | --- | --- |
+| U1/U4 | Endpoint remains private and explicit; source-selected links are inert; adapter selection grants no destination or execution authority | Authored fixtures, source/artifact/message scans and unchanged transport denial tests; no actual publisher-access claim |
+| U8 | Existing checked credentials and exact reflection refusal apply to any configured mirror; no new secret channel | Existing credential/transport regressions; same-UID and arbitrary encoded-secret limits persist |
+| U10 | Validate whole catalogue/count/identity/schema before admission; canonical per-entry text excludes release metadata; retain raw run evidence and absence ambiguity | Native TLS/SQL metadata replay, revisions, empty catalogue, atomic malformed refusal and generic-to-KEV continuation reset; no monotonic upstream revision guarantee |
+| U12 | Bound parser and installed TLS/SQL/service evidence to the candidate; preserve dates and source assertions without inferring exposure or operator obligations | 1001-entry installed/native cases and disconnected two-LTS collector/worker/reader fixture; ceiling is not sustained production capacity or semantic-domain acceptance |
+
+Refusal preserves accepted records and reports failure rather than accepting a
+truncated catalogue. Optional action/triage fields remain source text; they do not
+authorize remediation or forensic execution. Broader E31/E32/E40 controls need
+qualified domain persistence, independent applicability and revision semantics.
