@@ -1,12 +1,26 @@
-> Target specification. See STATUS.md for implemented and verified scope.
+> Target specification. See [STATUS](../../STATUS.md) for current scope and its
+> revision-bound receipts for executed verification.
 
 # Operations, recovery and lifecycle specification
 
 Use one operational ownership model for configuration, migrations, code/model artifacts, data and generated products. Each installed profile declares dependencies, startup/health/ready semantics, authorities, limits, secret sources, storage and recovery. Enabled but failing is degraded/unavailable; intentionally disabled is disabled; empty source/provider config is unconfigured. Liveness alone is insufficient.
 
+Current bounded contracts cover [checkpoint/restore](../recovery.md),
+[retention/holds/retirement](../lifecycle.md), [orphan GC](../garbage-collection.md)
+and [retired-record SQL purge](../retired-record-purge.md). Those implementations
+do not establish this whole target profile: full-host/PITR recovery, copy expiry,
+metrics/dashboard/alert delivery and operational acceptance remain open.
+
 ## Database and storage
 
 Use direct PostgreSQL repositories with explicit transaction ownership, foreign keys/unique constraints, query limits/timeouts and workload indexes supported by EXPLAIN/observed tests. Review extension ownership and migrations; do not run arbitrary privileged extension code from MCP. Separate DDL/collector/enrichment/vector/provider/accounting/reader roles and test actual grants/functions. RLS is an optional additional control, never a substitute for authenticating caller/workspace. Avoid SECURITY DEFINER by default; if necessary, pin owner/search_path/execute grants and review reachable writes.
+
+This is a target separation of concerns, not the current role inventory. Current
+enrichment, vector and provider workers use trusted writer authority; collection,
+lifecycle changes, purge, accounting settlement and reads have separate authority
+contracts. Current checkpoint/purge and relevant index/collector paths reject
+unsupported row-level security rather than treating it as an implemented tenancy
+profile.
 
 Back up database, evidence and relevant job/model/index manifests as a consistent generation. Define accepted-write checkpoint and quiesce/snapshot protocol; hashing a file set alone does not establish transactional consistency. Derived indexes can be rebuilt only when source snapshots, chunking/model versions and code are preserved. Back up configured workspaces, routing policy and encrypted credentials separately; do not publish their values. WAL/PITR is an explicit profile requiring restore testing. Restore on a fresh isolated installation, verify all references/hashes and query through MCP before readiness.
 
@@ -26,6 +40,6 @@ Backups and remote provider/published copies have separate retention and deletio
 
 ## Configuration and supply chain
 
-Version configuration schemas with migration validation and explicit secret references. Default secrets/env/source/model download paths are empty. Pin and verify code/container/package/model artifacts, preserve required notices and review custom executable model code. Dependency update proposals run regression and quality gates before activation; model catalogue refresh never updates active routes automatically. All checks are runnable outside GitHub and distribution can be mirrored without proprietary runtime control planes.
+Version configuration schemas with migration validation and explicit secret references. Default secrets/env/source/model download paths are empty. Pin and verify code/container/package/model artifacts, preserve required notices and review custom executable model code. Dependency update proposals run regression and quality gates before activation; model catalogue refresh never updates active routes automatically. Keep routine source/build checks runnable outside GitHub and allow mirrored distribution without a proprietary runtime control plane. The current privileged reference-service acceptance harness deliberately requires a disposable GitHub runner; a generally portable privileged harness remains separate work.
 
 End-to-end tests include loss of database/object/model/provider dependencies, restart/partition, overlapping schedules, stale caches, cancellation, disk-full/permission errors in disposable volumes, restored stale jobs and accounting unknowns. Cleanup deletes only resources created by the harness. No live fault injection, fleet modifications or unsolicited notifications are authorized by this design.

@@ -1,4 +1,4 @@
-"""Evidence-located model proposals, explicit reviews and deterministic cited digests."""
+"""Quote-located model proposals, explicit reviews and deterministic cited digests."""
 
 import json
 from datetime import UTC
@@ -248,6 +248,8 @@ def assertions(db, *, document_id=None, subject=None, limit=20, offset=0):
             (document_id, document_id, subject, subject, limit, offset),
         ).fetchall()
     for row in rows:
+        # These hashes bind a label/role to the supporting quotation span. The
+        # labels are not validated as occurring there; they are not entity IDs.
         for role in ("subject", "object"):
             row[role + "_mention_id"] = digest(
                 json.dumps(
@@ -262,6 +264,7 @@ def assertions(db, *, document_id=None, subject=None, limit=20, offset=0):
 
 
 def review(db, assertion_id, decision, actor, rationale):
+    """Append writer-authorized review; actor is attribution, not authentication."""
     if (
         decision not in {"accept", "reject"}
         or not isinstance(actor, str)

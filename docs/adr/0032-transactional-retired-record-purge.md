@@ -135,3 +135,14 @@ suppressed reingestion. Exercise core-only and retrieval installations, retained
 schema upgrades, exact historical adoption, post-purge checkpoint restore and
 pre-purge rejection before object acceptance. Private plans/receipts and public
 diagnostics need failure/redaction tests. The named revision-bound receipt records these native checks and their limits. Full-copy erasure remains a separate acceptance obligation.
+
+## Successor context (2026-10-18)
+
+[ADR-0041](0041-explicit-retrieval-exclusions.md) extends the optional-profile
+purge closure to retrieval exclusions. Remote accounting and settlements remain
+retained under [ADR-0042](0042-governed-compatible-cloud-route.md) through
+[ADR-0044](0044-ledger-integration-boundaries.md); their exact inventory affects
+plan freshness but their rows are never content-purge targets. Current exact
+schema/recovery rules are core10/profile4 in the
+[purge](../retired-record-purge.md) and [recovery](../recovery.md) runbooks.
+The 572-case/core7/profile3 evidence above keeps its original scope.

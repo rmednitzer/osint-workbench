@@ -40,7 +40,7 @@ cases. The [revision-bound receipt](verification-evidence.json) identifies sourc
 Local/component checks alone are not the native release evidence; any failed
 attempts and exact code/artifact identities remain recorded.
 
-## Audit dispositions still open
+## Dispositions open at that revision
 
 The initial commit's author contact identifier remains in Git metadata. No address
 is repeated here. Removing it requires coordinated history rewriting and revised
@@ -59,3 +59,21 @@ their own requirements and acceptance decisions. They are not silently fixed by
 changing semantics in this patch. Purge replay keeps its full current-state
 admission/anti-resurrection checks; historical outcome-query availability beyond
 the bounded profile remains open and is now explicit in the operator procedure.
+
+## Successor scope at the documentation audit
+
+The 630-test count and service receipt above remain evidence for `064be8bb`,
+not the current schema or dependency closure. Repository rulesets, selected type
+and security gates, Python-profile SBOM, exact licence/native-file evidence and
+main-push provenance were added later; see [maintenance](../repository-maintenance.md)
+and the [executed verification subset](verification-plan.md#executed-subset-at-the-audit-baseline).
+The dated [dependency advisory diagnostic](dependency-audit-2026-10-18.json)
+has its own lock, interpreter, audit result and coverage exclusions; it does not
+establish an evergreen clean result for every future lock/profile.
+
+Later marker custody, retrieval exclusions and ledger integration have separate
+ADRs and regression evidence. The open list above records the initial review's
+state, not an assertion that each item remains unimplemented. Follow the current
+[implementation backlog](../implementation-backlog.md) and
+[later audit dispositions](audit-remediation-2026-10-18.md) for remaining work.
+The historical Git metadata/privacy finding is not erased by these successors.

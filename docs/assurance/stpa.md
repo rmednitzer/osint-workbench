@@ -77,7 +77,7 @@ CA1/N is not hazardous for excluded functionality; N can become hazardous if a n
 
 ## Coverage and residual uncertainty
 
-This covers the complete proposed profile boundary and publication lifecycle. It does not prove completeness, source truth, independent publisher corroboration, hostile model resistance or multi-tenant isolation. The remote transport profile is included under ADR-0017; future unregistered adapters require a new authority review. The ML/claims/cloud/lifecycle extensions below are part of this revision, not deferred scope. Stop release if a safety/security constraint lacks implementation allocation or mandatory verification evidence. A second human review of the model is recommended where available, but no independent review has occurred in this planning task.
+This covers the complete proposed profile boundary and publication lifecycle. It does not prove completeness, source truth, independent publisher corroboration, hostile model resistance or multi-tenant isolation. The remote transport profile is included under ADR-0017; future unregistered adapters require a new authority review. The ML/claims/cloud/lifecycle extensions below are part of this revision, not deferred scope. Stop release if a safety/security constraint lacks implementation allocation or mandatory verification evidence. A second human review of the model is recommended where available, but no independent human review or formal completeness assessment is established by this document.
 
 
 ## Revision 2: full inference, enrichment and cloud control model
@@ -122,7 +122,7 @@ not close the full-system STPA scenarios or semantic-quality requirements.
 | Unsafe control action | Implemented constraint | Executable evidence |
 | --- | --- | --- |
 | Release shared inference ownership on client timeout/crash while the daemon can still run | Fsync a private owner receipt before dispatch; retain on unknown outcome; reconcile owner/process/idle slot before release | `test_killed_generation_client_preserves_uncertain_reservation`, native wire reconciliation tests |
-| Promote a schema-valid model statement solely because some quoted text exists | Preserve typed proposals, exact source spans and polarity; require an independent operator review before cited factual products | `test_proposals_review_cited_product_rejection_and_source_updates`, invalid-result and abstention tests |
+| Promote a schema-valid model statement solely because some quoted text exists | Preserve typed proposals, exact source spans and polarity; require an explicit operator-attributed review before cited products; current writer credentials can self-review, so independence remains a target | `test_proposals_review_cited_product_rejection_and_source_updates`, invalid-result and abstention tests |
 | Accept late output after cancellation, lease loss or source replacement | Lock/recheck the fence and current source head in the transaction accepting proposals/completion | `test_abstention_and_cancelled_completion_are_distinct`, workflow fencing tests |
 | Present withdrawn/stale source-derived statements as current | Active-document views and latest append-only review state constrain reads; product reads revalidate evidence and dependencies | Product withdrawal/source update tests and real MCP cited-product test |
 | Disclose generator runtime paths, private actor/rationale or operational configuration through agent reads/errors | No generator/operator write tools in MCP; bounded error codes and product projections exclude those fields | Real MCP tool inventory/product assertions; source/package publication scans |
@@ -146,8 +146,10 @@ the target lifecycle analysis:
 | Publish a backup as a sanitized consumer export | Explicit private classification, file mode 0600, ignored checkpoint extension, no publisher/MCP recovery tool; encrypted storage remains operator responsibility | Atomic/no-overwrite file test; publication scanner; review of recovery CLI/tool inventory |
 | Treat capture timestamp as recovery of all subsequent accepted writes | State checkpoint boundary and excluded later writes; no PITR or zero-data-loss claim | Concurrent acceptance test demonstrates later data remains on source and is absent from restore |
 
-Retention/holds/tombstones, old-host computation ownership, source re-enablement,
-external effect reconciliation and host-level configuration recovery remain open.
+At the ADR-0020 increment, retention/holds/tombstones and wider recovery were
+open. The logical-lifecycle refinement below implements bounded policy controls;
+old-host computation ownership, safe source re-enablement, external effect
+reconciliation and host-level configuration recovery still need separate evidence.
 See ADR-0020 and `docs/recovery.md`; a successful file hash alone is not recovery
 evidence.
 
@@ -216,8 +218,9 @@ headers remain untrusted; only an explicit external invocation starts a tick.
 | U35: send source-specific validators to another redirect resource or retain them after configuration/restore changes | C35: strip on redirects, reset on resource change and isolated restore, deny SQL/MCP access | Redirect, changed-resource, scoped-reader and recovery tests |
 | U36: restart collection without retaining retry delay, dispatch unbounded work or hide independent sources after one failure | C36: reserve due state before dispatch, bound backoff/counter/tick size, retain per-source failure feedback | Killed collector, restart, bounded tick/backoff and independent-source tests |
 
-No timer deployment, global host quota, Retry-After enforcement or complete
-acquisition acceptance is implied. A freshness success means representation
+The acquisition increment alone did not establish timer deployment or Retry-After
+enforcement. Later supervisor/collector fixtures and ADR-0029 add bounded evidence;
+global host quotas and complete operational acquisition acceptance remain open. A freshness success means representation
 validation, not factual currency or independently verified content.
 
 ## Source reconciliation, diagnostics and supervisor refinement
@@ -250,7 +253,8 @@ Quality evidence remains bounded: exact normalized query/group checks cannot
 establish independently labelled holdout provenance or detect all paraphrases;
 public synthetic cases cannot establish pretrained utility. The local diagnostic
 budget is cooperative and can be exceeded by one already admitted native call's
-existing timeout. Process preparation and validation are outside that timer.
+existing timeout. Suite/protocol preparation is outside that timer; native artifact loading during
+encoder calls is inside it and can consume or exceed the remaining budget.
 Retained partial observations do not make an incomplete run complete.
 
 Supervisor probes on a disposable runner, when executed, cover only their observed
@@ -452,8 +456,8 @@ backup expiry, remote-copy disposal or whole-host recovery.
 
 ## Store admission after database-backend loss
 
-[ADR-0033](../adr/0033-durable-store-admission.md) refines CA17 orphan deletion
-and CA3/CA8 evidence publication/restore against H4 and SC4. The GC controller's
+[ADR-0033](../adr/0033-durable-store-admission.md) refines CA19 orphan deletion
+and CA4/CA8 evidence acceptance/restore against H4 and SC4. The GC controller's
 process model can incorrectly retain "exclusive admission owned" after the SQL
 backend disappears. The controlled filesystem is still active, and a cooperative
 database writer can be admitted before GC observes that feedback loss. A prior
@@ -461,10 +465,10 @@ SQL snapshot or heartbeat does not atomically authorize a later unlink.
 
 | UCA | Hazardous context / category | Derived constraint and allocation | Required discriminating evidence |
 | --- | --- | --- | --- |
-| U72 | CA17/P or T: unlink a formerly unreferenced object after backend loss admits a writer that reuses it | C72: retain independent exclusive store-root inode admission across final reference validation, unlink and directory fsync; producers retain shared admission through acceptance commit | Actual backend termination after validation, cross-process reuse attempt and evidence/reference postconditions |
-| U73 | CA3/CA8/P or T: release filesystem admission after put but before metadata commit, or accept a cached raw pointer without new put | C73: shared admission covers the complete ingest/collection/restore transaction lifetime, including 304 reuse and collector intermediate/final commits; standalone put is not a future acceptance token | Commit-boundary, cached-304, multi-commit and restore interleavings with real processes/SQL |
-| U74 | CA17/P or T: validate SQL references before waiting for filesystem exclusion, then use that stale snapshot after ownership loss | C74: database admission then filesystem admission then final state; reject failed validation before deletion; never reverse the lock order | Backend loss during admission wait and writer-before-validation cases; bounded refusal without unlink |
-| U75 | CA17/CA3/P: lock one inode but mutate a substituted root, or let nested/thread contexts release another operation's ownership | C75: anchored no-follow directory identity, explicit active ownership and deterministic descriptor lifetime; unsupported locking fails closed | Symlink/root-identity, independent instance/process, nesting, timeout and cleanup cases |
+| U72 | CA19/P or T: unlink a formerly unreferenced object after backend loss admits a writer that reuses it | C72: retain independent exclusive store-root inode admission across final reference validation, unlink and directory fsync; producers retain shared admission through acceptance commit | Actual backend termination after validation, cross-process reuse attempt and evidence/reference postconditions |
+| U73 | CA4/CA8/P or T: release filesystem admission after put but before metadata commit, or accept a cached raw pointer without new put | C73: shared admission covers the complete ingest/collection/restore transaction lifetime, including 304 reuse and collector intermediate/final commits; standalone put is not a future acceptance token | Commit-boundary, cached-304, multi-commit and restore interleavings with real processes/SQL |
+| U74 | CA19/P or T: validate SQL references before waiting for filesystem exclusion, then use that stale snapshot after ownership loss | C74: database admission then filesystem admission then final state; reject failed validation before deletion; never reverse the lock order | Backend loss during admission wait and writer-before-validation cases; bounded refusal without unlink |
+| U75 | CA19/CA4/P: lock one inode but mutate a substituted root, or let nested/thread contexts release another operation's ownership | C75: anchored no-follow directory identity, explicit active ownership and deterministic descriptor lifetime; unsupported locking fails closed | Symlink/root-identity, independent instance/process, nesting, timeout and cleanup cases |
 | U76 | CA9/P: report advisory local filesystem admission as protection from old binaries, another database's references or arbitrary privileged writers | C76: one authoritative dataset/store pairing, local-Linux evidence scope, old-process quiescence and explicit nonparticipant exclusion; suspend GC when protocol compatibility is uncertain | Deployment/rollback review and stated filesystem/UID/process assumptions; no universal or cross-host guarantee |
 
 Causal sequence S-GC1: GC validates a candidate, its SQL backend terminates, a
@@ -584,16 +588,16 @@ composition remain bounded by their separate acceptance evidence.
 | --- | --- | --- | --- |
 | U89 | CA4/P: accept every unchanged item in a changed feed container as a new immutable version and outbox event | H8,H9; C89: collector compares each item with its current head by recomputed identity under scoped column grants; unchanged content keeps the head and enqueues nothing; ADR-0040 | Writer and validated collector feed-window regressions with exact document, snapshot, job and retained-container counts |
 | U90 | CA5/P: resolve repeated `Content-Encoding` or `Location` fields by the last occurrence | H2,H3; C90: repeated framing fields fail closed with typed errors; redirect fragments are removed before validation, never sent | Raw-wire duplicate, non-ASCII, fragment and downgrade controls through the actual client |
-| U91 | CA7/N: deny all search because ordinary collection grew the corpus past reference build bounds | H2,H6; C91: an over-limit corpus is reported as degraded drift while builds and activation keep enforcing bounds | Native growth-past-limit search, build and activation regression |
+| U91 | CA6/N: deny all search because ordinary collection grew the corpus past reference build bounds | H2,H6; C91: an over-limit corpus is reported as degraded drift while builds and activation keep enforcing bounds | Native growth-past-limit search, build and activation regression |
 | U92 | CA15/P: serve a briefing whose digest is self-consistent but whose items misstate the accepted assertions they cite | H8; C92: every read compares each cited item with the live accepted assertion projection | Writer-authority forged statement, polarity and source cases |
-| U93 | CA10/P: release single-slot inference admission when the admitting parent dies while its model child continues computing | H9; C93: children bind their own lifetime to the expected admitting parent and refuse unbound work; exits are classified before result decoding | Actual SIGKILL of an intermediate parent with a blocked child, unbound-child refusal and exit/shape classification cases |
+| U93 | CA11/P: release single-slot inference admission when the admitting parent dies while its model child continues computing | H9; C93: children bind their own lifetime to the expected admitting parent and refuse unbound work; exits are classified before result decoding | Actual SIGKILL of an intermediate parent with a blocked child, unbound-child refusal and exit/shape classification cases |
 | U94 | CA10/P: retry deterministic invalid model output as a backend fault | H9; C94: unstorable model text is invalid model output and terminal | NUL claim cases leave no assertions and do not rerun inference |
-| U95 | CA9/P or CA7/N: let one content-refused document block every index generation, or hide its absence from semantic coverage | H2,H8; C95: content-determined encoder refusals become recorded member exclusions with fixed reasons; runtime failures and a majority-excluded corpus still fail; coverage is reported | Real-encoder zero-width and over-length exclusions, majority and runtime-failure refusals, purge and profile3 adoption cases |
-| U96 | CA11/P: dispatch remote work with unknown sovereignty facts, an unallowed data class or task, a missing credential, or without a persisted decision | H7; C96: deny by default; record every decision before any connection; unknown facts deny even with an exception; exceptions are task-scoped and recorded as exceptions | Denial matrix with a backend that fails on any connection attempt; recorded denial rows |
-| U97 | CA12/P or CA7/N: exceed a hard cap under concurrent workers, or count unreported or unknown usage as zero | H9; C97: per-route-and-currency transactional lock; exposure counts reservations for every attempt that may have reached the provider; currencies never combined | Twelve concurrent reservations across two currencies; missing/negative usage and dropped-response exposure; mutation check of the lock |
+| U95 | CA14/P or CA7/N: let one content-refused document block every index generation, or hide its absence from semantic coverage | H2,H8; C95: content-determined encoder refusals become recorded member exclusions with fixed reasons; runtime failures and a majority-excluded corpus still fail; coverage is reported | Real-encoder zero-width and over-length exclusions, majority and runtime-failure refusals, purge and profile3 adoption cases |
+| U96 | CA12/P: dispatch remote work with unknown sovereignty facts, an unallowed data class or task, a missing credential, or without a persisted decision | H7; C96: deny by default; record every decision before any connection; unknown facts deny even with an exception; exceptions are task-scoped and recorded as exceptions | Denial matrix with a backend that fails on any connection attempt; recorded denial rows |
+| U97 | CA13/P or CA7/N: exceed a hard cap under concurrent workers, or count unreported or unknown usage as zero | H9; C97: per-route-and-currency transactional lock; exposure counts reservations for every attempt that may have reached the provider; currencies never combined | Twelve concurrent reservations across two currencies; missing/negative usage and dropped-response exposure; mutation check of the lock |
 | U98 | CA10/P: replay a remote attempt whose outcome is unknown or failed, or let a local failure create remote work | H7,H9; C98: one logical operation per job, prior non-released attempt blocks dispatch, terminal job failure, distinct local and route job kinds | Dropped-response replay refusal with zero connection; second worker pass idle after each provider outcome |
-| U99 | CA12/P: lower remote exposure without provider evidence, or let the spending identity settle its own attempts | H9; C99: settlement only by a separate accounting role that is not a writer; provider bases require an evidence digest; only a still-reserved attempt settles at zero; settled rows are final; ADR-0043 | Writer, reader, collector, lifecycle and dual-role refusals; column-grant refusals; basis, currency and conflict cases; mutation of the writer check |
-| U100 | CA10/P: settle an attempt a live worker can still send or complete, so spending escapes the ledger | H7,H9; C100: database refuses settlement of reserved or dispatched rows younger than ten minutes of database time the writer cannot set; the request deadline starts before dispatch commits and expires before sending; the attempt row lock orders settlement against late outcomes | Code and database in-flight refusals; writer `updated_at` refusal; stalled-worker release with zero connection; settlement-versus-late-outcome race under read committed and repeatable read; busy lock refusal |
+| U99 | CA13/P: lower remote exposure without provider evidence, or let the spending identity settle its own attempts | H9; C99: settlement only by a separate accounting role that is not a writer; provider bases require an evidence digest; only a still-reserved attempt settles at zero; settled rows are final; ADR-0043 | Writer, reader, collector, lifecycle and dual-role refusals; column-grant refusals; basis, currency and conflict cases; mutation of the writer check |
+| U100 | CA10/CA13/P: settle an attempt a live worker can still send or complete, so spending escapes the ledger | H7,H9; C100: database refuses settlement of reserved or dispatched rows younger than ten minutes of database time the writer cannot set; the request deadline starts before dispatch commits and expired work is refused before send admission; partial sends and host suspend remain transport limits; the attempt row lock orders settlement against late outcomes | Code and database in-flight refusals; writer `updated_at` refusal; stalled-worker release with zero connection; settlement-versus-late-outcome race under read committed and repeatable read; busy lock refusal |
 
 The ledger integration review in [ADR-0044](../adr/0044-ledger-integration-boundaries.md)
 refines C97/C98: reservation admission selects Read Committed before waiting
@@ -602,8 +606,8 @@ Read defaults must admit only one attempt for the cap or unresolved operation.
 
 | UCA | Hazardous context / category | Derived constraint and allocation | Discriminating evidence |
 | --- | --- | --- | --- |
-| U101 | CA9/N: retained cloud accounting makes every content purge unavailable | H2,H6; C101: every inventoried table has a fixed primary key; ledger attempts and settlements remain outside the deletion closure; ADR-0044 | Scoped purge plan/apply/replay with five real ledger states preserves exact accounting rows and exposure |
-| U102 | CA1/P: publish a merge message containing an agent session link after a clean branch scan | H1; C102: preflight exact planned public text and use explicit reviewed merge messages; preserve historical findings and full metadata checks | Clean native Git branch followed by a synthetic session-linked merge is refused by both preflight and metadata scan; unsafe input and redaction controls |
+| U101 | CA17/N: retained cloud accounting makes every content purge unavailable | H2,H6; C101: every inventoried table has a fixed primary key; ledger attempts and settlements remain outside the deletion closure; ADR-0044 | Scoped purge plan/apply/replay with five real ledger states preserves exact accounting rows and exposure |
+| U102 | CA2/P: publish a merge message containing an agent session link after a clean branch scan | H1; C102: preflight exact planned public text and use explicit reviewed merge messages; preserve historical findings and full metadata checks | Clean native Git branch followed by a synthetic session-linked merge is refused by both preflight and metadata scan; unsafe input and redaction controls |
 
 The U89 scenario starts with a feed that changes one entry or a channel
 timestamp at every poll. Hash identity correctly distinguishes containers, but

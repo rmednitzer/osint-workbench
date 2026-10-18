@@ -1,8 +1,9 @@
 # Offline advisory record envelope (foundation only)
 
 Status: bounded foundation for the vulnerability profile. It does **not** complete
-the vulnerability profile or any of its acceptance scenarios. See `STATUS.md` for
-authoritative implemented/verified scope; this document is not an execution receipt.
+the vulnerability profile or any of its full acceptance scenarios. See
+[STATUS](../STATUS.md) for the current scope index and its revision-bound receipts
+for executed verification; this document is not an execution receipt.
 
 Module: `osint_workbench.advisory`. Public API:
 
@@ -11,7 +12,8 @@ Module: `osint_workbench.advisory`. Public API:
 - `parse_advisory_record(payload: bytes) -> AdvisoryRecord`
 - `serialize_advisory_record(record: AdvisoryRecord) -> bytes`
 
-No CLI, MCP, database, migration or dependency changes accompany this module.
+The module has no CLI, MCP or database integration and requires no module-specific
+migration. Its Pydantic dependency is shared with the application.
 
 ## What is implemented
 
@@ -208,3 +210,9 @@ mode) and enforces the same type, range, count and cross-field rules.
 - Interoperable JSON/STIX export with real schema and semantic tests.
 - Full domain acceptance. The revision-bound verification receipt records which
   installed-wheel checks have actually executed.
+
+`tests/test_advisory.py` exercises the envelope and its hostile-input boundaries
+offline. These cases do not exercise acquisition, record storage or a domain
+query pipeline. Advisory evidence uses UTF-8 byte spans; application document
+chunks and quoted assertions use original-text code-point offsets. A future
+adapter must convert and verify those coordinates explicitly.

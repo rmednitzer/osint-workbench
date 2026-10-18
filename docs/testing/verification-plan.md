@@ -6,8 +6,36 @@ Revision 3: E01-E51 remain the complete target acceptance scenarios. Per-scenari
 NOT RUN markers mean the full specified scenario has not been closed. Implemented
 regressions cover subsets; the revision-bound `verification-evidence.json` and
 STATUS.md identify executed evidence. Do not infer either full programme acceptance
-or absence of all testing from these target markers. No paid/cloud/operational
-infrastructure test has been performed.
+or absence of all testing from these target markers. No live paid-provider or
+operational-infrastructure acceptance is claimed. Disposable hosted runners,
+real local synthetic inference and synthetic HTTPS provider/database fixtures
+have been exercised separately.
+
+## Executed subset at the audit baseline
+
+The merged audit baseline is `d01f80ac88da50c9f826b1a15cb18c75bd1db75f`.
+[Foundation run 39133727926](https://github.com/rmednitzer/osint-workbench/actions/runs/39133727926)
+completed all three required installed/native profiles, and
+[CodeQL run 39133727466](https://github.com/rmednitzer/osint-workbench/actions/runs/39133727466)
+completed successfully. PR #13's preceding
+[run 39132871377](https://github.com/rmednitzer/osint-workbench/actions/runs/39132871377)
+reported 1031 passing tests with no skips in each profile. These are distinct
+source-bound runs; this documentation audit does not transfer their result to
+its own later revision or change the historical JSON receipts.
+
+The executed suite includes seven-tool stdio MCP, native synthetic inference,
+SQL migration/recovery/roles, scoped cloud-compatible HTTPS and ledger contracts,
+and v3 evidence generation. It does not close the larger scenarios below:
+remote MCP, real assistant/vendor interoperability, independent pretrained
+semantic quality, batch processing, full export/publisher/host recovery, native
+composition/licence clearance and operational deployment remain separate scope.
+A successful foundation run also does not run the privileged systemd-service
+workflow. Its historical [collector receipt](collector-deployment.json) has a
+separate older source/wheel; the
+[core-10 successor](documentation-service-2026-10-18.json) records successful
+service-only checks on both LTS defaults at `ebdbf666e0f4001dca59ce8760386aae80408d61`.
+Neither receipt is foundation CI or full operational deployment acceptance.
+See [deployment](../deployment.md) for the fixture boundary.
 
 ## Test strata and proof limits
 

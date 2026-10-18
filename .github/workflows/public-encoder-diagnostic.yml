@@ -65,6 +65,8 @@ jobs:
           path: outputs/public-diagnostic/
           if-no-files-found: warn
           retention-days: 14
+  # Selecting reference-service runs both LTS service legs without the encoder job.
+  # Its synthetic HTTP namespace has no external route; this is not deployment approval.
   reference-service:
     if: ${{ inputs.profile == 'reference-service' || inputs.profile == 'both' }}
     name: Reference service / Ubuntu ${{ matrix.ubuntu }} / system Python ${{ matrix.python }}

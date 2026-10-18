@@ -2,7 +2,7 @@ from datetime import UTC, datetime, timedelta
 
 
 class WorkbenchError(Exception):
-    """A bounded error code suitable for CLI/MCP output; never include secrets."""
+    """Public error-code container; callers must supply fixed, secret-free codes."""
 
     def __init__(self, code: str):
         self.code = code

@@ -1060,8 +1060,8 @@
       "evidence": [
         {
           "path": "osint_workbench-0.1.0.dev1.dist-info/METADATA",
-          "sha256": "388f657797bb305a0e7d0c13486c901d829b20a5fe9be34af034d960ffd1ed9c",
-          "bytes": 7555,
+          "sha256": "cafd691e48e9020a5034fb5a45bc2251c192cc097625906b2ec8b3986150d37e",
+          "bytes": 8828,
           "kind": "metadata"
         },
         {

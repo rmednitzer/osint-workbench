@@ -285,6 +285,7 @@ def bind_parent_lifetime():
     parent releases admission while its child keeps computing. The child sets
     the Linux parent-death signal itself (no preexec in a threaded parent),
     then confirms the expected parent still exists to close the fork race.
+    Signal delivery and admission release are not an atomic scheduler barrier.
     """
     import ctypes
     import signal

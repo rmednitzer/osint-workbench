@@ -1,4 +1,7 @@
-"""Optional exact pgvector generations. Active metadata never points at a partial build."""
+"""Exact pgvector generations: only fully accounted builds may activate.
+
+Explicit content exclusions can leave an active generation semantically partial.
+"""
 
 import json
 import uuid

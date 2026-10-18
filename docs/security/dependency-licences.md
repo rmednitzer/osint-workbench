@@ -69,7 +69,11 @@ reviewed variant rather than combining individual matching files across wheels.
 The report emits only fixed scope/status fields, package names/versions and policy
 hash; it does not copy contacts, full licence texts, paths or arbitrary metadata.
 A zero exit means the exact installed evidence is accounted for, including its
-explicit unresolved outcomes. It never means every distribution is cleared.
+explicit unresolved outcomes. It never means every distribution is cleared. Input
+reads refuse final-component symlinks and nonregular files and are byte bounded;
+the operator must protect parent directories and the environment throughout the
+check. The output uses exclusive creation but does not establish parent-directory
+custody or an atomic snapshot of every inspected file.
 
 ## Conditions requiring action
 

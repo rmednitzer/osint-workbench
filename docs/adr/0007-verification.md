@@ -19,3 +19,13 @@ Keep local commands independent of CI provider; preserve revision-bound evidence
 
 ## Verification
 R13,R18,R24,R53; E01-E51. Implementation and acceptance tests pending.
+
+## Successor context (2026-10-18)
+
+Installed-wheel, native database/model and runtime-matrix execution now exist;
+[ADR-0035](0035-python-ubuntu-runtime-support.md) defines the supported profiles.
+The real local model fixtures use authored synthetic weights and establish
+execution contracts. The exposed diagnostic under
+[ADR-0025](0025-frozen-offline-quality-diagnostics.md) is separate from independent
+held-out quality acceptance. Read current [STATUS](../../STATUS.md) and exact
+revision receipts; the original E01–E51 programme is not closed by those runs.

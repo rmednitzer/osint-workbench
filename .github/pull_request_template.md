@@ -8,6 +8,8 @@ ADR/requirement for a material design or authority change.
 Record actual commands/results, tested revision/artifact identity and any missing
 native, provider, hardware or semantic evidence. Explain dependency/lock/build
 constraint changes and relevant failure, permission or recovery checks.
+For MCP changes, distinguish modern and legacy protocol results and verify that
+the seven-tool read boundary and sanitized errors remain intact.
 
 ## Impact and recovery
 

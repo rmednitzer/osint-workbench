@@ -19,3 +19,12 @@ Version contracts and regenerate derived records from immutable snapshots; do no
 
 ## Verification
 R04,R11,R12,R27,R32-R35; E03,E11,E25-E30. Implementation and acceptance tests pending.
+
+## Successor context (2026-10-18)
+
+The original full-profile verification remains proposed. The accepted bounded
+proposal, original-coordinate, operator-review and cited-product implementation
+is described in [ADR-0019](0019-proposals-and-local-generation.md). The separate
+[advisory envelope](0031-offline-advisory-observations.md) preserves attributed
+domain observations without establishing target applicability. Neither slice
+turns quotation matching, a hash or schema validation into factual verification.

@@ -20,3 +20,13 @@ Block before push on findings. After disclosure, rotate secrets first and assess
 ## Verification
 R16, R18; E16, E18. All acceptance evidence remains NOT RUN until implementation. Revisit this ADR if these assumptions fail or scope changes.
 > Planning-baseline note (2026-10-17): NOT RUN statements in this ADR describe the original planning state. Current bounded implementation evidence is indexed by [STATUS](../../STATUS.md); it does not close the full programme.
+
+## Successor context (2026-10-18)
+
+[ADR-0036](0036-publication-security-evidence.md) implements bounded new-commit
+metadata, source and package checks plus build evidence.
+[ADR-0044](0044-ledger-integration-boundaries.md) adds exact planned-message
+preflight after a merge-message disclosure. Those incremental gates do not
+establish that every historical surface was cleared, retract already public
+metadata or intercept all server-generated GitHub messages automatically.
+The full-publication acceptance statement above remains an original target.

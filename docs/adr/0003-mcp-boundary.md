@@ -19,3 +19,12 @@ Replace the adapter without changing storage/enrichment. Remote transport follow
 
 ## Verification
 R05-R08,R19,R33,R48; E07,E08,E30,E44. Implementation and acceptance tests pending.
+
+## Successor context (2026-10-18)
+
+The current adapter implements seven bounded stdio reads, with the maintained
+SDK v2 migration and telemetry boundary recorded in
+[ADR-0039](0039-mcp-v2-dependency-refresh.md). The original pending statement is
+not a statement that no adapter exists. The wider capability profiles and
+[remote authentication](0017-remote-mcp.md) remain proposed; SDK protocol tests
+do not establish real assistant-product compatibility.

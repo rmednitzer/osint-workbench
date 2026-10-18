@@ -24,3 +24,11 @@ cleanup. Full retained-record purge, backup expiry and outbound publication rema
 proposed; its revision-bound evidence does not close this ADR's
 whole target scope.
 > Implementation follow-up (2026-10-17): [ADR-0032](0032-transactional-retired-record-purge.md) implements bounded retired-record SQL purge, while [recovery](../recovery.md) and [lifecycle](../lifecycle.md) have bounded implementations. Full erasure, public export/publishing and operational recovery remain open.
+
+## Successor context (2026-10-18)
+
+The later compatible-route accounting ledger remains retained even when its
+associated content is purged. [ADR-0044](0044-ledger-integration-boundaries.md)
+includes those rows in plan freshness while keeping them outside the deletion
+closure. The older purge deferral above is historical; bounded SQL purge is
+implemented, while all-copy erasure and outbound publication remain open.

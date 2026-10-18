@@ -100,7 +100,9 @@ The report explicitly leaves native dependency closure unresolved. It does not
 establish static or Rust transitive composition, operating-system libraries,
 container layers, model weights, the native test server, vulnerability freedom,
 legal approval or complete SBOM coverage. The existing Python SBOM remains scoped
-to its 49 distribution components and retains its incomplete composition marker.
+to the current 47 distribution components and retains its incomplete composition
+marker. Older source-bound receipts may describe the preceding 49-component
+profile; they are not current inventory evidence.
 
 Rollback removes the native review invocation and corresponding supplementary
 artifact handling. Application behavior and stored data are unaffected. Preserve

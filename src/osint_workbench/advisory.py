@@ -73,7 +73,7 @@ RECORD_NOT_SERIALIZABLE = "ADVISORY_RECORD_NOT_SERIALIZABLE"
 
 
 class AdvisoryFormatError(ValueError):
-    """Redacted parse/serialize failure. ``str()`` and ``args`` hold one fixed code only."""
+    """Parse/serialize failure carrying a code rather than raw validation details."""
 
     def __init__(self, code: str):
         self.code = code

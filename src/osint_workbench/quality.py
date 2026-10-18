@@ -118,8 +118,9 @@ def run(
     """Run frozen lexical and optional local-model diagnostics into a new private dir.
 
     Budget is cooperative: checked before each call; one native encoder call can
-    take up to its existing 45-second timeout beyond that budget. Loading encoder
-    artifacts and input validation are outside this execution timer. Never retry
+    take up to its existing 45-second timeout beyond that budget. Suite validation
+    and protocol-file setup precede the timer; native artifact verification/loading
+    occurs inside each timed encoder call. Never retry
     into an existing output directory. Incomplete journals require operator review.
     """
     if (

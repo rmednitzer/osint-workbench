@@ -1,6 +1,7 @@
 name: Audit locked dependencies
 on:
   schedule:
+    # GitHub cron is UTC; Renovate's Europe/Vienna schedule is a separate policy.
     - cron: "23 5 * * 2"
   workflow_dispatch:
 permissions:

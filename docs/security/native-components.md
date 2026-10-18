@@ -11,10 +11,11 @@ clearance or proof of the libraries that a running process actually loads.
 [The policy](native-components.json) records complete per-distribution ELF-file
 sets, with wheel-relative paths, sizes, SHA-256 values and parsed ELF metadata.
 A variant is a whole set: the verifier must not combine individual matching files
-from different variants. Installed WHEEL tags must also match the proof archive's
-tags; an extension-bearing ABI3 installation cannot fall back to a universal
+from different variants. The installed WHEEL expanded tag set must equal the
+proof archive filename's expanded tag set; an extension-bearing ABI3 installation cannot fall back to a universal
 empty-set proof merely by losing its extension and RECORD entry. WHEEL tags are
-publisher-supplied metadata, not cryptographic archive-origin proof. An empty set is also explicit, so adding a RECORD-listed
+publisher-supplied metadata, not cryptographic archive-origin proof. An empty set
+is also explicit, so adding a RECORD-listed
 ELF object to a previously non-ELF distribution requires review. Distribution
 names and versions must match the exact runtime inventory.
 

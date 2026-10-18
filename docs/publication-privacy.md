@@ -100,7 +100,9 @@ python scripts/check_publication.py --message-file "$PLANNED_MESSAGE_FILE"
 
 The selected file must be a regular UTF-8 file of at most 256 KiB without NUL.
 It is opened without following the final symlink and without blocking on special
-files. Findings contain a fixed label and categories, never its path or content.
+files. Parent-directory custody and stability through publication remain the
+operator's responsibility; the reader does not lock the selected file against
+edits. Findings contain a fixed label and categories, never its path or content.
 The external private denylist applies. Optional email trailers must use the
 reserved public identities admitted by the metadata policy; base-identity
 inheritance does not apply to this preflight. Public documentation URLs still

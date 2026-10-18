@@ -53,7 +53,9 @@ entire bundle against a fresh deterministic reconstruction.
 The bundle contains the policy SHA-256, fixed component identities, immutable
 upstream commit/path, source byte counts/hashes and each exact source byte sequence.
 Explicit section markers and separator newlines are outside those source bytes.
-It omits timestamps, local checkout paths, contacts and installed-package metadata.
+It adds no timestamps, local checkout paths, contacts or installed-package
+metadata. The pinned upstream text remains verbatim; this mechanism does not
+redact publisher notices or replace their terms with a generic template.
 Changing any policy byte changes the bundle's policy binding even if the two texts
 remain unchanged. The build receipt must bind the actual generated bundle, and the
 bundle verifier must pass before accepting that receipt.

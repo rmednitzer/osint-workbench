@@ -25,6 +25,7 @@ class ReviewError(Exception):
 
 
 def read_regular(path):
+    """Bound a final-component regular-file read; ancestors remain trusted."""
     fd = None
     try:
         fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)

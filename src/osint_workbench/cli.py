@@ -51,8 +51,8 @@ def _manifest(path, model):
 
 def _operator_bytes(path):
     # The operator selects configuration paths; MCP/source/model text does not.
-    # Refuse final symlinks, devices and FIFOs before reading so configuration
-    # loading cannot block outside the native inference deadline.
+    # Refuse final symlinks, devices and FIFOs before reading, avoiding special-file
+    # waits before inference deadlines apply. Regular-file I/O has no application deadline.
     fd = None
     try:
         fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)

@@ -318,7 +318,10 @@ def collect(source: Source, db: Database, store: EvidenceStore, *, due_only=Fals
 
 
 def collect_due(sources, db, store, *, limit=32):
-    """One bounded tick; earliest durable due times first, external sources stay external."""
+    """One count-bounded tick: unknown/changed resources, then earliest durable due times.
+
+    Sources run sequentially; this is not a whole-tick wall-clock deadline.
+    """
     if type(limit) is not int or not 1 <= limit <= 128 or len(sources) > 1000:
         raise WorkbenchError("INVALID_COLLECTION_LIMIT")
     if len({s.source_id for s in sources}) != len(sources):

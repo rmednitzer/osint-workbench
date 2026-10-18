@@ -17,8 +17,10 @@ Foundation CI builds and installs the wheel, verifies the core without optional
 inference dependencies, and executes the full native CPU/database suite in every
 profile. Each profile has its own PostgreSQL 18/pgvector service and native server
 build. PostgreSQL remains an explicitly provisioned dependency; the host's default
-database version is not the application contract. There is no model download or
-provider request. The stable required `installed-artifact` check succeeds only
+database version is not the application contract. Tests generate synthetic ONNX/GGUF
+weights; no pretrained inference weights or provider requests are used. Explicit
+native source preparation downloads the pinned source archive, which includes
+upstream vocabulary/test fixtures. The stable required `installed-artifact` check succeeds only
 when the complete matrix succeeds; skipped, cancelled or failed matrix work is
 not accepted. See [the workflow](../.github/workflows/ci.yml).
 
@@ -34,7 +36,10 @@ Do not replace the OS Python or install into its externally managed environment.
 Use a dedicated virtual environment. Service environments must use a reviewed
 base interpreter under `/usr` or `/opt`, readable with `ProtectHome=yes`; a
 home-directory-managed interpreter is unsuitable for this reference unit.
-The core collector sandbox is not an inference-worker deployment template.
+The foundation matrix uses uv-selected patch releases; the manual service profile
+uses the distribution-maintained system interpreter. A distro version string alone
+does not establish absence of vendor security backports. Neither profile replaces
+the OS Python. The core collector sandbox is not an inference-worker deployment template.
 
 ## Compatibility boundaries
 
@@ -69,3 +74,12 @@ Stop affected processes before switching environments. This change adds no SQL
 migration and authorizes no OS upgrade or operational deployment. A package
 rollback must still respect current schema and policy semantics; preserve the
 original source-bound receipts rather than relabeling them.
+
+The audit baseline `d01f80ac88da50c9f826b1a15cb18c75bd1db75f` completed
+[foundation CI](https://github.com/rmednitzer/osint-workbench/actions/runs/39133727926)
+with all required profiles successful. This is installed/native suite evidence,
+not a systemd-service receipt. The separate
+[core-10 two-LTS service receipt](testing/documentation-service-2026-10-18.json)
+records both protected distro interpreters at source `ebdbf666e0f4001dca59ce8760386aae80408d61`.
+Its fixture and wheel scope remains separate from foundation CI and operational
+acceptance; earlier service receipts retain their older source and wheel.

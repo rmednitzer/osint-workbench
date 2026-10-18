@@ -15,7 +15,9 @@ Only approved public build inputs belong in this workflow.
 
 Run after the installed-wheel tests and publication scans. Use a dedicated
 runtime plus retrieval environment, rather than the test environment containing
-development dependencies. From the clean repository checkout:
+development dependencies. Create an empty `assurance` directory before these
+commands; report generation refuses existing files. From the clean repository
+checkout:
 
 ```sh
 uv venv /tmp/ow-evidence --python "$OW_EVIDENCE_PYTHON"
@@ -56,14 +58,20 @@ omitting supplements produces an `integrity-only` provisional receipt. The
 supplement files remain in their own directory. Upload the distribution pair,
 two final receipt files and four supplementary files after successful validation.
 A later verifier needs the same source, artifact bytes and matching isolated
-inventory environment to recompute the receipt.
+inventory environment to recompute the receipt. Supplement hashes bind observed
+bytes; they do not replace each producer's semantic verification or protect files
+against later replacement. Keep the build workspace and evidence under trusted
+custody from generation through scanning, hashing and upload.
 
-Input reads open with no-follow and nonblocking flags, reject non-regular files
-before reading, and close descriptors on every outcome. Artifact and lock reads
+Input reads guard the final path component with no-follow and nonblocking flags,
+reject non-regular files before reading, and close descriptors on every outcome. Artifact and lock reads
 consume at most 256 MiB plus one refusal byte, even if a file grows after its
-initial size check. Receipt and supplementary file reads have a 4 MiB limit; the checksum limit is 65 bytes. Observed
+initial size check. Receipt and supplementary file reads have a 4 MiB limit; the
+checksum limit is 65 bytes. Observed
 size or modification-time changes during a read cause refusal; these checks do
-not provide an immutable filesystem snapshot against a malicious writer.
+not provide an immutable filesystem snapshot against a malicious writer. Parent
+directories remain caller-trusted, including the parents used to create the
+receipt directory; this helper does not walk every ancestor with no-follow opens.
 
 ## Limits and unresolved licensing
 

@@ -23,7 +23,7 @@ Use NIST SSDF SP 800-218 v1.1 as a lifecycle practice reference [S2](../referenc
 
 ## Threat boundary review
 
-| Boundary | STRIDE concern | Enforcement / test |
+| Boundary | STRIDE concern | Required control / verification target |
 | --- | --- | --- |
 | Publisher to collector | Spoofing/tampering: redirects, parser payloads, forged dates | TLS plus per-hop destination validation; record date provenance; E09/12 |
 | Collector to persistence | Tampering/repudiation: partial commit or duplicate writers | Hashes, run ledger, constraints, atomic publication; E02/03/06 |
@@ -55,4 +55,4 @@ Every workflow output needs schema, input and model/prompt lineage plus evidence
 
 Cloud dispatch requires data/sovereignty/capability and budget enforcement in code, with no silent fallback. Persistent quotas fail closed when required state is unavailable; logs cannot reconstruct missing accounting as zero spend. Validate streaming and batch identity/outcome independently of completion text. Caches, graph expansion and approximate retrieval must enforce scope before returning candidates.
 
-Use generic public profile templates, not original model/hardware/provider inventories. SBOMs include core/ML/provider/model-code dependencies and license dispositions; build inputs and public workflow metadata are scanned. Real API/model tests must record exact identities and limitations; protocol mocks and LLM judges are not substitutes for actual local inference and independent quality labels.
+Use generic public profile templates, not original model/hardware/provider inventories. Target SBOM coverage includes core/ML/provider/model-code dependencies and license dispositions; the current [Python profile SBOM](../sbom.md) and [native review](../native-inventory.md) retain their narrower, incomplete scopes; build inputs and public workflow metadata are scanned. Real API/model tests must record exact identities and limitations; protocol mocks and LLM judges are not substitutes for actual local inference and independent quality labels.

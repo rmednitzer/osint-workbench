@@ -58,3 +58,13 @@ complete recovery remain required. See STATUS.md and docs/local-retrieval.md.
 > Implementation follow-up (2026-10-17): [ADR-0019](0019-proposals-and-local-generation.md) implements bounded native local pair scoring. Persistent caches, ANN, automatic backfill and pretrained semantic acceptance remain open; pending statements in the original record retain this ADR's original increment scope.
 
 > Successor note (2026-10-18): [ADR-0041](0041-explicit-retrieval-exclusions.md) records content-refused documents as explicit generation exclusions; activation accepts a member with either vectors or a recorded exclusion.
+
+## Successor context (2026-10-18)
+
+[ADR-0019](0019-proposals-and-local-generation.md) also implements bounded local
+Unix-socket generation, beyond the pair-scoring follow-up above. Recovery and
+current-policy enforcement have bounded successors under
+[ADR-0020](0020-bounded-private-recovery.md),
+[ADR-0021](0021-logical-lifecycle-and-restore-policy.md) and
+[ADR-0032](0032-transactional-retired-record-purge.md). These additions do not
+close complete operational recovery, GPU serving or pretrained quality acceptance.

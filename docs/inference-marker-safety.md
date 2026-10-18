@@ -35,6 +35,13 @@ admission. The held lock inode is exclusively flocked. A second process gets
 `INFERENCE_BUSY`; any existing marker blocks normal admission with
 `INFERENCE_OUTCOME_UNKNOWN`, including malformed or unsafe markers.
 
+The persistent uncertain-work marker belongs to the externally managed local
+generation daemon, not disposable encoder/reranker calls. Those children bind
+their lifetime to the admission-holding parent with Linux parent-death SIGKILL and
+refuse a missing or mismatched parent identity. That signal and lock release are
+not atomic; short scheduling overlap remains possible. They do not create a
+durable generation receipt or provide a cross-host resource scheduler.
+
 Before completion dispatch, generation exclusively creates and fsyncs the marker,
 then fsyncs its directory. The receipt contains only a random operation UUID,
 generator identity digest, native peer PID and process-start token. Prompts,
@@ -80,8 +87,9 @@ with missing/unavailable process-start identity are deliberately not silently
 adopted. An idle slot on an unrelated runtime does not establish that prior work
 stopped. Do not switch lock paths to bypass an uncertain reservation.
 
-The implementation preserves the existing lock path and receipt field names and
-adds no database migration. Rollback requires stopping clients, establishing that
+This filesystem protocol preserves the existing lock path and receipt field
+names and adds no database migration. That statement does not waive migrations
+required by other application features or make an older binary schema-compatible. Rollback requires stopping clients, establishing that
 all native work has stopped, and resolving reservations under the current
 procedure before replacing the binary. Keep the same lock path and safe custody;
 restoring older code also restores its weaker filesystem checks. Never remove a

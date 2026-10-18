@@ -1,4 +1,4 @@
-"""Synthetic ephemeral TLS PKI and loopback peers; importing has no effects."""
+"""Synthetic TLS fixtures; certificates and loopback peers are created only on invocation."""
 
 import shutil
 import socket

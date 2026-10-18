@@ -1,9 +1,11 @@
 # Bounded orphan-object cleanup
 
 This operator-only feature removes old, unreferenced immutable CAS files. It does
-not purge document records, derivative history, held evidence, expired/retired
-snapshots, shared raw feeds, backups, models or inference receipts. It establishes
-neither physical media sanitization nor a right-to-erasure outcome. See ADR-0022.
+not purge document records or derivative history. Objects referenced by retained
+snapshots, held/expired/retired records, shared raw feeds or collection state remain
+protected. Backups, models and inference receipts are outside its CAS scope. It
+establishes neither physical media sanitization nor a right-to-erasure outcome.
+See ADR-0022.
 
 ## Authority and assumptions
 
@@ -44,8 +46,8 @@ GC or new acceptance is active is unsupported. See
 
 Set `OW_EVIDENCE_ROOT` externally. Keep plans and journal directories outside the
 store and outside Git, with private custody. They contain object hashes and
-filesystem identities. Minimum object age defaults to one day and cannot be less
-than one hour. No download, collection, inference or network-provider action occurs.
+filesystem identities. Minimum object age defaults to one day and must be between
+one hour and 31 days. No download, collection, inference or network-provider action occurs.
 
 ```sh
 osint-workbench gc plan --file private/cleanup.owgc --operation-id cleanup-001
@@ -71,8 +73,9 @@ revision requires a new review; adding a hold cannot be silently ignored.
 
 Scanning is streaming and limited to 10,000 total directory entries (shards count
 too), 100,000 distinct references and 64 MiB of candidate data. Objects are bounded
-to 20 MiB. Unexpected names, staging leftovers, symlinks, hardlinks, non-regular
-files, cross-device objects and integrity mismatches require investigation; no
+to 20 MiB; apply accepts a plan envelope of at most 8 MiB. These limits do not
+establish a whole-command wall-clock deadline. Unexpected names, staging leftovers,
+symlinks, hardlinks, non-regular files, cross-device objects and integrity mismatches require investigation; no
 implicit cleanup of those entries occurs. Recent/future-dated objects are retained.
 Plans and receipts are created with mode 0600, journals with mode 0700, without
 replacing existing files. Existing parent directory permissions remain the

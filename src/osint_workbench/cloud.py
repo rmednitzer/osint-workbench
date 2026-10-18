@@ -1,7 +1,7 @@
 """Governed declared-compatible remote generation: policy, ledger and adapter.
 
-Dispatch is denied by default. Every attempt records its decision and a
-conservative reservation before any network activity; see ADR-0042.
+Dispatch is denied by default. Validated route invocations persist a decision;
+allowed attempts reserve exposure before provider network activity. See ADR-0042.
 """
 
 import hashlib
@@ -28,8 +28,8 @@ from .database import Database
 from .errors import WorkbenchError
 from .text import digest
 
-# EU member states plus EEA EFTA states. Controlling-entity jurisdiction is a
-# legal-control fact, not a hosting location.
+# EU member states plus EEA EFTA states. The operator declares controlling-entity
+# jurisdiction separately from processing location; the code verifies neither.
 EU_EEA = frozenset(
     "AT BE BG HR CY CZ DK EE FI FR DE GR HU IE IT LV LT LU MT NL PL PT RO SK SI ES SE "
     "IS LI NO".split()
@@ -179,7 +179,7 @@ def load_policy(data: bytes):
 
 
 def decide(route: Route | None, task, data_class, *, environ=None):
-    """Return (decision, reason). Unknown or missing facts always deny."""
+    """Classify operator-declared facts; unknown or missing inputs deny dispatch."""
     environ = os.environ if environ is None else environ
     if route is None:
         return "denied", "ROUTE_UNKNOWN"
@@ -227,7 +227,7 @@ def observed_cost(route: Route, input_tokens: int, output_tokens: int):
 
 
 # Anything that could have cost money counts at its reservation unless usage
-# was reported; denied and released attempts never reached the provider. An
+# was reported; denied and released attempts sent no application request bytes. An
 # operator settlement bound to provider evidence replaces either estimate.
 _EXPOSURE = """SELECT coalesce(sum(CASE
     WHEN settlement_basis IS NOT NULL THEN settled_cost
@@ -425,7 +425,7 @@ def _view(row):
 
 
 def unsettled(db: Database, *, route_id=None, include_estimated=False, limit=MAX_LISTED):
-    """Attempts that still hold estimated exposure, oldest first."""
+    """List unsettled exposure, optionally including reported estimates, oldest first."""
     if not 1 <= limit <= MAX_LISTED:
         raise WorkbenchError("INVALID_LIST_LIMIT")
     with db.connect() as conn:
@@ -653,8 +653,9 @@ class GovernedGenerator:
         if decision == "denied":
             raise WorkbenchError("REMOTE_" + reason)
         credential = self.environ.get(route.credential_env, "")
-        # The deadline starts before the dispatched row commits, so no request
-        # byte leaves after the settlement window for in-flight attempts opens.
+        # Anchor the deadline before dispatch commits so a stalled worker cannot
+        # begin a new send after expiry. Partial sends and host suspend retain
+        # the transport limits documented in the cloud runbook.
         deadline = time.monotonic() + route.timeout_seconds
         self.ledger.transition(attempt, "reserved", "dispatched")
         try:
@@ -686,8 +687,8 @@ class GovernedGenerator:
         }
 
     def _classify(self, status, content, schema, request_bytes):
-        """Pure classification of a complete response; it cannot leave a paid
-        attempt in `dispatched`. Any unexpected shape is a protocol failure."""
+        """Classify complete response bytes without database effects. The caller
+        persists the outcome; a persistence failure can leave `dispatched`."""
         fields = {"response_sha256": digest(content), "usage": "missing"}
         if status != 200:
             recorded = f"HTTP_{status}" if 100 <= status <= 599 else "HTTP_INVALID"
