@@ -202,6 +202,21 @@ def test_checkpoint_excludes_concurrent_acceptance(databases, destination, tmp_p
     assert writer.document(later)["document_id"] == later
 
 
+def published_pair(payload, core):
+    """Reduce a current checkpoint to an exact published core/profile pair.
+
+    Later migrations add grants, defaults or the empty-at-adoption exclusion table
+    only; the retained record layout is otherwise identical.
+    """
+    profile = recovery.PUBLISHED_PAIRS[core]
+    for key in list(payload["migrations"]):
+        version = int(key.removeprefix("retrieval/"))
+        if version > (profile if key.startswith("retrieval/") else core):
+            del payload["migrations"][key]
+    if profile < 4:
+        payload["tables"].pop("retrieval_exclusions", None)
+
+
 def _rewrite(path, change):
     bundle = json.loads(path.read_bytes())
     change(bundle["payload"])
@@ -396,34 +411,31 @@ def test_non_regular_objects_and_oversize_bundles_fail_without_blocking(tmp_path
         recovery._read(large, "0" * 64)
 
 
-@pytest.mark.parametrize("version", [4, 5, 6, 7])
+@pytest.mark.parametrize("version", sorted(recovery.PUBLISHED_PAIRS))
 def test_legacy_checkpoint_history_requires_complete_exact_known_pair(version):
     current = {str(i): digest(f"published migration {i}".encode()) for i in range(1, 9)}
-    current.update({"retrieval/1": "a" * 64, "retrieval/2": "b" * 64, "retrieval/3": "c" * 64})
+    current.update({f"retrieval/{i}": str(i) * 64 for i in range(1, 5)})
+    profile = recovery.PUBLISHED_PAIRS[version]
     known = {
         key: value
         for key, value in current.items()
-        if (key.startswith("retrieval/") and (key != "retrieval/3" or version == 7))
-        or (not key.startswith("retrieval/") and int(key) <= version)
+        if int(key.removeprefix("retrieval/")) <= (profile if "/" in key else version)
     }
     assert recovery._known_legacy_history(known, current, version)
     assert not recovery._known_legacy_history({**known, "2": "f" * 64}, current, version)
-    assert not recovery._known_legacy_history(
-        {**known, str(version + 1): current[str(version + 1)]}, current, version
-    )
     assert not recovery._known_legacy_history({**known, "retrieval/2": "f" * 64}, current, version)
     missing_profile = {key: value for key, value in known.items() if key != "retrieval/2"}
     assert not recovery._known_legacy_history(missing_profile, current, version)
-    assert not recovery._known_legacy_history(known, current, 3)
-    assert not recovery._known_legacy_history(known, current, 8)
-    # Core7 shipped with profile3; neither may be mixed with the other's predecessor.
-    if version == 7:
-        older = {key: value for key, value in known.items() if key != "retrieval/3"}
-        assert not recovery._known_legacy_history(older, current, version)
-    else:
+    # A newer profile than the one that shipped with this core is a mixed history.
+    newer = f"retrieval/{profile + 1}"
+    assert not recovery._known_legacy_history({**known, newer: current[newer]}, current, version)
+    if version < 8:
         assert not recovery._known_legacy_history(
-            {**known, "retrieval/3": current["retrieval/3"]}, current, version
+            {**known, str(version + 1): current[str(version + 1)]}, current, version
         )
+    assert not recovery._known_legacy_history(known, current, 3)
+    # The current pair itself is not legacy; it takes the ordinary exact path.
+    assert not recovery._known_legacy_history(current, current, 8)
 
 
 @pytest.mark.integration
@@ -437,12 +449,7 @@ def test_known_v5_checkpoint_restores_retained_data_with_current_policy(
     path = tmp_path / "known-v5.owcp"
     recovery.checkpoint(Database(roles["admin"]), store, path)
     # V6 changes only grants and a default: a V5 format2 record layout is identical.
-    sha = _rewrite(
-        path,
-        lambda payload: [
-            payload["migrations"].pop(k, None) for k in ("6", "7", "8", "retrieval/3")
-        ],
-    )
+    sha = _rewrite(path, lambda payload: published_pair(payload, 5))
     operator = Database(roles["lifecycle"])
     lifecycle.apply(
         operator,
@@ -513,8 +520,7 @@ def test_unknown_v5_history_refused_before_object_or_metadata_acceptance(
     policy_args = policy_arguments(roles, path)
 
     def corrupt(payload):
-        for key in ("6", "7", "8", "retrieval/3"):
-            payload["migrations"].pop(key, None)
+        published_pair(payload, 5)
         if corruption == "old-hash":
             payload["migrations"]["1"] = "f" * 64
         elif corruption == "mixed-core":

@@ -38,6 +38,7 @@ KEYS = {
     "embedding_spaces": ("space_id",),
     "retrieval_generations": ("generation_id",),
     "retrieval_members": ("generation_id", "document_id"),
+    "retrieval_exclusions": ("generation_id", "document_id"),
     "retrieval_vectors": ("generation_id", "document_id", "ordinal"),
     "retrieval_active": ("singleton",),
 }
@@ -51,6 +52,7 @@ DELETE_ORDER = (
     "chunks",
     "retrieval_active",
     "retrieval_vectors",
+    "retrieval_exclusions",
     "retrieval_members",
     "document_heads",
     "documents",
@@ -93,6 +95,7 @@ COLUMNS = {
     "retrieval_generations": "generation_id space_id dimensions corpus_sha256 status "
     "error_code created_at",
     "retrieval_members": "generation_id document_id",
+    "retrieval_exclusions": "generation_id document_id reason",
     "retrieval_vectors": "generation_id space_id dimensions document_id ordinal start_offset "
     "end_offset text_sha256 embedding",
     "retrieval_active": "singleton generation_id",
@@ -438,7 +441,7 @@ def _closure(tables, request):
     chosen["snapshots"] = [s for s in tables["snapshots"] if s["snapshot_id"] in snapshots - shared]
     generations = set()
     if "retrieval_members" in tables:
-        for name in ("retrieval_members", "retrieval_vectors"):
+        for name in ("retrieval_members", "retrieval_exclusions", "retrieval_vectors"):
             chosen[name] = [r for r in tables[name] if r["document_id"] in documents]
             generations.update(r["generation_id"] for r in chosen[name])
         chosen["retrieval_active"] = [

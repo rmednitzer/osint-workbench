@@ -72,14 +72,23 @@ before model session creation. Character, token and result bounds remain separat
 
 Index builds are explicit operator operations, bounded to 1000 current documents,
 2 million code points in aggregate, 200000 per document, 512 chunks per document
-and 4096 chunks per generation. Limits fail instead of truncating the corpus. Partial
+and 4096 chunks per generation. Aggregate limits fail instead of truncating the
+corpus. A document the encoder refuses because of its own content (blank or
+over-long input, packet/chunk/result bounds, tokenizer offsets, or a zero-norm
+vector from unknown-only text) is kept as a member with a recorded reason in
+`ow.retrieval_exclusions` instead of failing the build. Integrity,
+compatibility, timeout and availability failures still fail it, and a build in
+which more than half the members would be excluded fails with
+`RETRIEVAL_EXCLUSION_LIMIT`. Builds, index status and hybrid search report
+`excluded_documents`; excluded documents remain lexically searchable and
+readable as evidence. See [ADR-0041](adr/0041-explicit-retrieval-exclusions.md). Partial
 builds stay inactive and are marked failed; a process crash can leave an inactive
 building record. No automatic resumer/cleanup exists yet. Search uses exact pgvector
 scans and PostgreSQL statement timeouts; no ANN performance claim is made.
 
 The build retains immutable document IDs and model identity. Activation requires ready
-state, compatible encoder identity, matching current document set and vectors for every
-member. Active generation changes in one transaction. Rollback uses the same activation
+state, compatible encoder identity, matching current document set and vectors or a
+recorded exclusion for every member. Active generation changes in one transaction. Rollback uses the same activation
 checks; a generation for an outdated corpus cannot be activated. Search checks its
 own repeatable-read corpus snapshot, excludes obsolete document heads and explicitly
 marks corpus drift degraded. Later concurrent collection can create normal drift;

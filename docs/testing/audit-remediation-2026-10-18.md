@@ -21,6 +21,21 @@ run of the candidate commit, not to this file.
 | Model-output NUL | A schema-valid claim containing NUL failed at INSERT as a retryable backend fault, rerunning deterministic inference | Rejected as non-retryable `INVALID_MODEL_RESULT` | `test_invalid_models_accept_no_partial_assertions` NUL cases |
 | Briefing field binding | A briefing with a recomputed digest could misstate statement, polarity, source or document of a real accepted assertion, or carry malformed items and an inconsistent empty disposition, and still be served | Each item must have the exact item fields, belong to the recorded selection and equal the live accepted assertion projection; degraded/omission state must match; else `BRIEFING_EVIDENCE_MISMATCH` | `test_self_consistent_briefing_cannot_misstate_its_cited_assertion` |
 
+## Corrected after the first increment
+
+| Finding | Observed behaviour | Correction | Discriminating test |
+| --- | --- | --- | --- |
+| One unencodable document fails every index build | A zero-width-only feed entry, a document over 200,000 code points, or other content-determined encoder refusal failed the whole generation; semantic maintenance stayed blocked until the document was retired | Retrieval-profile migration 4 records such refusals as explicit member exclusions with a fixed reason; runtime failures and a majority-excluded corpus still fail; coverage is reported ([ADR-0041](../adr/0041-explicit-retrieval-exclusions.md)) | `test_content_refusals_become_explicit_exclusions_not_build_failures`, `test_majority_exclusion_and_runtime_failures_still_fail_the_build`, `test_purge_removes_an_excluded_member_and_records_its_count` |
+
+## Integration incident
+
+The PR #9 merge commit `e594e949` took its message from a PR description that
+ended with attribution and session URLs. The required new-commit metadata scan
+correctly reported `unclassified-url` on `main`, and the dependent build
+attestation was skipped for that commit; every branch commit had passed the
+scan. The history was not rewritten. PR descriptions for this repository now
+omit URLs; the next merge scans only commits after `e594e949`.
+
 ## Open, with rationale
 
 | Finding | Severity | Disposition |
@@ -30,7 +45,6 @@ run of the candidate commit, not to this file.
 | MCP 64 KiB result cap is reachable inside advertised schema maxima (search/briefing/assertion pages) | Low-Medium | Needs size-aware pagination or lower schema maxima |
 | `parse_special` applies to embedded source text in local generation prompts | Low-Medium | Tokenize manifest template separately from untrusted text |
 | Retrieval writer has whole-row UPDATE on generations/active pointer | Low | Additive retrieval-profile migration narrowing to status/error columns |
-| Blank or tokenizer-erased document fails the whole index build; one long rerank candidate fails the request | Medium | Reachable from hostile feeds: an entry whose text is only `&#8203;` passes extraction and the encoder blank check. Needs an explicit unencodable-member disposition (retrieval-profile migration, since activation requires members to equal the corpus) or a visible-text extraction rule |
 | `enqueue` on terminal job returns old ID; lock wait surfaces raw `LockNotAvailable` | Low | Return status explicitly; map lock timeout |
 | `document_heads` not bound to its key by a composite FK | Low | Hardening migration; no tenancy claim exists |
 | Reader validation is a denylist | Low | Exact allowlist like collector validation |

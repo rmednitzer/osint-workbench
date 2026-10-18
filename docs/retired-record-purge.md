@@ -8,7 +8,8 @@ copies. It is separate from logical retirement and orphan-object GC.
 ## Authority and upgrade
 
 Install core migration 7 and, if configured, retrieval-profile migration 3 using
-the existing explicit migration commands. Published earlier migrations are
+the existing explicit migration commands. Retrieval-profile migration 4 later adds
+purger SELECT/DELETE on `ow.retrieval_exclusions`. Published earlier migrations are
 unchanged. Checkpoint format 2 and lifecycle-policy format 1 keep their data layout;
 the new `purge` event extends the accepted event vocabulary. Earlier binaries
 cannot validate that event and must not operate a dataset after adoption.
@@ -84,7 +85,9 @@ the operation; they are never silently rewritten. Shared snapshots survive when
 any other document still references them. Sources, collection runs/state, lifecycle
 items, holds, tombstones and decision events remain.
 
-For optional retrieval, only target vectors/members are deleted. Affected
+For optional retrieval, only target vectors, exclusions and members are deleted.
+Purge events recorded under profile 4 carry a `retrieval_exclusions` count;
+earlier events without that key remain valid. Affected
 generations are marked failed with `RETIRED_RECORD_PURGED`; their active alias is
 removed. Other members/vectors and generation/corpus identities remain. Hybrid
 retrieval therefore needs an explicitly rebuilt and activated compatible generation.

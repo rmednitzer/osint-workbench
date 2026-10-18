@@ -27,7 +27,7 @@ from osint_workbench.jobs import Jobs
 from osint_workbench.service import ReadService
 from osint_workbench.text import digest
 from osint_workbench.vector_index import VectorIndex
-from tests.test_recovery import _fixture, _input, policy_arguments
+from tests.test_recovery import _fixture, _input, policy_arguments, published_pair
 from tests.test_recovery import destination as destination
 
 pytestmark = pytest.mark.integration
@@ -706,7 +706,7 @@ def test_post_purge_checkpoint_restores_but_older_data_cannot_be_reintroduced(co
         )
 
 
-@pytest.mark.parametrize("version", [6, 7])
+@pytest.mark.parametrize("version", [6, 7, 8])
 def test_known_core_checkpoint_adopts_into_current_schema(
     context, destination, encoder_bundle, version
 ):
@@ -726,10 +726,7 @@ def test_known_core_checkpoint_adopts_into_current_schema(
     # Preserve real document/vector rows and change only the exact known
     # published migration pair for adoption.
     bundle = json.loads(path.read_bytes())
-    for key in [str(v) for v in range(version + 1, 9)]:
-        del bundle["payload"]["migrations"][key]
-    if version < 7:
-        del bundle["payload"]["migrations"]["retrieval/3"]
+    published_pair(bundle["payload"], version)
     bundle["sha256"] = digest(recovery._json(bundle["payload"]))
     path.write_bytes(recovery._json(bundle))
     change(context, document, "retire")
@@ -739,7 +736,7 @@ def test_known_core_checkpoint_adopts_into_current_schema(
         Database(destination["admin"]), path, bundle["sha256"], restored, **policy
     )
     assert result[f"adopted_core_v{version}"] is True
-    assert sum(result[f"adopted_core_v{v}"] for v in (4, 5, 6, 7)) == 1
+    assert sum(result[f"adopted_core_v{v}"] for v in recovery.PUBLISHED_PAIRS) == 1
     service = ReadService(Database(destination["reader"]), EvidenceStore(restored, read_only=True))
     assert service.document(neighbour)["integrity"] == "verified"
     with pytest.raises(WorkbenchError, match="DOCUMENT_NOT_FOUND"):
@@ -748,7 +745,11 @@ def test_known_core_checkpoint_adopts_into_current_schema(
         assert conn.execute("SELECT max(version) AS v FROM ow.migrations").fetchone()["v"] == 8
         assert (
             conn.execute("SELECT max(version) AS v FROM ow.retrieval_migrations").fetchone()["v"]
-            == 3
+            == 4
+        )
+        # No profile before 4 recorded exclusions; adoption must not invent any.
+        assert (
+            conn.execute("SELECT count(*) AS n FROM ow.retrieval_exclusions").fetchone()["n"] == 0
         )
         assert conn.execute(
             "SELECT assertion_id FROM ow.assertions WHERE assertion_id=%s", (assertion,)
@@ -794,3 +795,48 @@ def test_exported_purge_history_rejects_tampering_and_duplicate_logical_purge(co
     with pytest.raises(WorkbenchError, match="HISTORY_MISMATCH"):
         lifecycle.validate_policy(payload)
     assert state(context) == before
+
+
+def test_purge_removes_an_excluded_member_and_records_its_count(context, encoder_bundle):
+    if os.environ.get("OW_TEST_RETRIEVAL") != "1":
+        pytest.skip("native optional retrieval profile unavailable")
+    writer, store = context["writer"], context["store"]
+    excluded = writer.ingest(_input("\u2060"), b"zero width", store)
+    writer.ingest(_input("vulnerability patch", "neighbour"), b"other", store)
+    writer.ingest(_input("storage disk", "third"), b"third", store)
+    built = VectorIndex(writer, encoder_bundle).build(store)
+    assert built["excluded_documents"] == 1
+    change(context, excluded, "retire")
+    result = apply(context, excluded)
+    assert result["counts"]["retrieval_exclusions"] == 1
+    assert result["counts"]["retrieval_members"] == 1
+    with context["admin"].connect() as conn:
+        assert not conn.execute(
+            "SELECT 1 FROM ow.retrieval_exclusions WHERE document_id=%s", (excluded,)
+        ).fetchone()
+
+
+def test_profile3_purge_event_counts_remain_valid():
+    """Historical events recorded before retrieval profile 4 have no exclusion count."""
+    base = {
+        "format": 1,
+        "kind": "retired_record_purge",
+        "operation_id": "historical",
+        "plan_sha256": "a" * 64,
+        "dataset_id": str(uuid.uuid4()),
+        "source_id": "fixture",
+        "external_key": "b" * 64,
+        "policy_revision_before": 1,
+        "revision": 2,
+        "sql_deleted": True,
+        "physical_erasure": False,
+        "cas_objects_deleted": 0,
+        "backup_erasure": False,
+    }
+    current = {key: 0 for key in lifecycle.PURGE_COUNT_KEYS} | {"documents": 1}
+    historical = {k: v for k, v in current.items() if k != "retrieval_exclusions"}
+    for counts in (current, historical):
+        lifecycle.PurgeResult.model_validate_json(recovery._json({**base, "counts": counts}))
+    for counts in ({**current, "unknown": 0}, {k: v for k, v in historical.items() if k != "jobs"}):
+        with pytest.raises(ValueError):
+            lifecycle.PurgeResult.model_validate_json(recovery._json({**base, "counts": counts}))

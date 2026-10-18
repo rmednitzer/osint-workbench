@@ -272,7 +272,8 @@ def databases(roles):
             conn.execute(
                 "TRUNCATE ow.briefings,ow.assertion_reviews,ow.assertions,ow.enrichments,"
                 "ow.retrieval_active,ow.retrieval_vectors,"
-                "ow.retrieval_members,ow.retrieval_generations,ow.embedding_spaces,"
+                "ow.retrieval_exclusions,ow.retrieval_members,ow.retrieval_generations,"
+                "ow.embedding_spaces,"
                 "ow.collection_state,ow.collection_runs,ow.job_events,ow.chunks,ow.jobs,ow.document_heads,"
                 "ow.documents,ow.snapshots,ow.sources"
             )

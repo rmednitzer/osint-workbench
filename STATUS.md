@@ -19,7 +19,7 @@ complete merely because its design documents or interfaces exist.
 | Export/recovery/retention | Bounded private checkpoint, empty-target restore, operator retention/holds/logical tombstones and mandatory current-policy reconciliation | Native SQL-reader, job/fence, inference, collector and restored-policy regressions passed in installed-wheel CI. Reviewed orphan-object GC and transactional retired-record SQL purge passed native failure/restart, recovery and scoped-role tests. Full record erasure, legacy format-1 adoption, public export, publisher and full-host/PITR remain pending |
 | Publication controls | Positive file selection and source/artifact scanning | File/archive checks plus bounded new-commit metadata scanning; private exact-value checks run outside public CI and do not establish anonymity |
 
-Core schema v8 and retrieval-profile v3 are additive; earlier published migrations
+Core schema v8 and retrieval-profile v4 are additive; earlier published migrations
 remain byte-identical. Checkpoint format 2 requires separate policy receipts;
 legacy format-1 restore/adoption is not silently accepted. Job cancellation
 revokes acceptance authority; it does not prove a running computation has stopped.
@@ -240,3 +240,11 @@ claims is terminal invalid output instead of a retried backend fault. Remaining
 findings and their dispositions are listed in
 [the audit record](docs/testing/audit-remediation-2026-10-18.md); they are not
 closed by this increment.
+
+Retrieval-profile migration 4 records content-determined encoder refusals,
+such as zero-width-only or over-length documents, as explicit generation
+exclusions instead of failing the whole build; runtime failures and a corpus
+with more than half its members excluded still fail. Status and hybrid search
+report excluded documents, which remain lexically searchable
+([ADR-0041](docs/adr/0041-explicit-retrieval-exclusions.md)). Exact
+core8/profile3 checkpoints are adopted with no exclusions.

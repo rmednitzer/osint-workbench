@@ -44,6 +44,7 @@ RETRIEVAL = (
     "embedding_spaces",
     "retrieval_generations",
     "retrieval_members",
+    "retrieval_exclusions",
     "retrieval_vectors",
     "retrieval_active",
 )
@@ -83,6 +84,7 @@ def _history(conn):
             "retrieval.sql",
             "migrations/retrieval_002_lifecycle.sql",
             "migrations/retrieval_003_purge_role.sql",
+            "migrations/retrieval_004_member_exclusions.sql",
         ]
         hashes = {
             i: digest(files("osint_workbench").joinpath(p).read_bytes())
@@ -305,19 +307,23 @@ def _read(path, expected_sha):
     return payload
 
 
+# Published core version -> the optional retrieval profile it shipped with.
+PUBLISHED_PAIRS = {4: 2, 5: 2, 6: 2, 7: 3, 8: 3}
+
+
 def _known_legacy_history(observed, current, version):
-    """Only exact published core4-core7 with their optional profile2/profile3 digests.
+    """Only exact published core/profile pairs older than the current history.
 
     The current target history has already been checked against every packaged
     migration. Do not treat an arbitrary prefix, missing profile or unknown hash
-    as proof of a compatible earlier data contract. Core7 shipped with profile3.
+    as proof of a compatible earlier data contract.
     """
-    if version not in (4, 5, 6, 7):
+    if version not in PUBLISHED_PAIRS:
         return False
     keys = {str(i) for i in range(1, version + 1)}
-    profile = {"retrieval/1", "retrieval/2"} | ({"retrieval/3"} if version == 7 else set())
-    expected = {key: value for key, value in current.items() if key in keys or key in profile}
-    return observed == expected
+    keys |= {f"retrieval/{i}" for i in range(1, PUBLISHED_PAIRS[version] + 1)}
+    expected = {key: value for key, value in current.items() if key in keys}
+    return observed == expected and observed != current
 
 
 def restore(
@@ -343,20 +349,18 @@ def restore(
         _full_visibility(conn)
         names = CORE + (RETRIEVAL if "retrieval/1" in history else ())
         # V6/V7/V8 change defaults, grants and allowed lifecycle actions only.
-        # Exact known v5/v6 retain the same table layout; v4 needs an empty schedule.
+        # Exact known v5-v8 retain the same core layout; v4 needs an empty schedule.
+        # Profiles before 4 have no exclusion table: no generation excluded anything.
         # No schema3/format1 inference or mixed migration history is accepted.
-        adopted_v4 = _known_legacy_history(payload["migrations"], history, 4) and set(
-            tables
-        ) == set(names) - {"collection_state"}
-        adopted_v5 = _known_legacy_history(payload["migrations"], history, 5) and set(
-            tables
-        ) == set(names)
-        adopted_v6 = _known_legacy_history(payload["migrations"], history, 6) and set(
-            tables
-        ) == set(names)
-        adopted_v7 = _known_legacy_history(payload["migrations"], history, 7) and set(
-            tables
-        ) == set(names)
+        legacy = set(names) - {"retrieval_exclusions"}
+        adopted = {
+            version: _known_legacy_history(payload["migrations"], history, version)
+            and set(tables) == (legacy - {"collection_state"} if version == 4 else legacy)
+            for version in PUBLISHED_PAIRS
+        }
+        adopted_v4 = adopted[4]
+        if any(adopted.values()) and "retrieval_exclusions" in names:
+            tables["retrieval_exclusions"] = []
         if adopted_v4:
             tables["collection_state"] = []
             if any("http_status" in row for row in tables["collection_runs"]):
@@ -364,13 +368,7 @@ def restore(
             for row in tables["collection_runs"]:
                 row["http_status"] = None
         if (
-            (
-                history != payload["migrations"]
-                and not adopted_v4
-                and not adopted_v5
-                and not adopted_v6
-                and not adopted_v7
-            )
+            (history != payload["migrations"] and not any(adopted.values()))
             or set(tables) != set(names)
             or _database_identity(conn, history) != payload["database"]
         ):
@@ -471,8 +469,5 @@ def restore(
         "status": "restored_requires_operator_reconciliation",
         "policy_sha256": policy_sha,
         "policy_revision": policy["control"]["revision"],
-        "adopted_core_v4": adopted_v4,
-        "adopted_core_v5": adopted_v5,
-        "adopted_core_v6": adopted_v6,
-        "adopted_core_v7": adopted_v7,
+        **{f"adopted_core_v{version}": value for version, value in adopted.items()},
     }

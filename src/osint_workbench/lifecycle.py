@@ -83,8 +83,11 @@ PURGE_COUNT_KEYS = frozenset(
         "retrieval_members",
         "retrieval_active",
         "retrieval_generations_invalidated",
+        "retrieval_exclusions",
     }
 )
+# Events recorded before retrieval profile 4 have no exclusion count.
+_PROFILE3_PURGE_COUNT_KEYS = PURGE_COUNT_KEYS - {"retrieval_exclusions"}
 
 
 class PurgeResult(StrictModel):
@@ -106,7 +109,9 @@ class PurgeResult(StrictModel):
     @field_validator("counts")
     @classmethod
     def exact_count_keys(cls, value):
-        if set(value) != PURGE_COUNT_KEYS or value.get("documents", 0) < 1:
+        if set(value) not in (PURGE_COUNT_KEYS, _PROFILE3_PURGE_COUNT_KEYS) or (
+            value.get("documents", 0) < 1
+        ):
             raise ValueError("complete fixed purge counts and deleted documents required")
         return value
 
