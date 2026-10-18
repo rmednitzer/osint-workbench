@@ -174,26 +174,31 @@ checks; exact v4 normalization remains supported. Mixed, modified or incomplete
 histories are rejected. Restore does not provision an operational login or enable
 sources. Provision and validate the separate collector principal after recovery.
 
-The current supported layout is core v10 and, when enabled, retrieval-profile v4,
+The current supported layout is core v11 and, when enabled, retrieval-profile v4,
 using checkpoint format 2. Core v7 adds purge history and the separately scoped
 purger; core v8 adds collector item-reuse grants only; core v9 adds the remote
 attempt ledger; core v10 adds settlement columns and the accounting role;
+core v11 adds private API cursor/profile/page/history state;
 profile v4 adds explicit retrieval exclusions. Exact published legacy pairs
 are admitted only when every recorded migration digest and expected column/table
 set matches:
 
-| Checkpoint core | Optional retrieval profile | Normalization into core 10/profile 4 |
+| Checkpoint core | Optional retrieval profile | Normalization into core 11/profile 4 |
 | --- | --- | --- |
 | 4 | 2 | Empty collection schedule, unknown historical HTTP status, empty ledger/exclusions |
 | 5–6 | 2 | Empty ledger/exclusions |
 | 7 | 3 | Empty ledger/exclusions |
 | 8 | 3 or 4 | Empty ledger; empty exclusions only for profile 3 |
-| 9 | 4 | Preserve attempts; add unset settlement columns |
+| 9 | 4 | Preserve attempts; add unset settlement columns and empty API progress |
+| 10 | 4 | Preserve attempts/settlements; add empty API progress |
 
 Core-only historical checkpoints may also adopt into a core-only target with
 their exact published core history. These rules do not convert a core-only
 checkpoint into a retrieval-profile checkpoint or admit arbitrary mixed histories.
 Current checkpoints take the exact-history path without legacy normalization.
+All restored collection schedules clear API continuation, profile hash, page count
+and cursor history as well as HTTP validators, and sources remain disabled. A
+restored cursor never silently resumes an external collection.
 Restore does not provision the accounting login. It checks current independently
 retained lifecycle policy before accepting historical content. A pre-purge
 checkpoint containing records forbidden by that

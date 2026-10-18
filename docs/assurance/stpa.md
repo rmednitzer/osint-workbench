@@ -646,3 +646,28 @@ CAS disclosure and separately provisioned egress/alerting remain assumptions.
 These are discrete return/report/accept/dispatch actions; duration categories do
 not apply to the actions themselves. Halt/refusal preserves prior accepted data
 and reports failure; it does not establish useful model quality or recoverability.
+
+
+## Authenticated API first-slice allocation
+
+[ADR-0046](../adr/0046-authenticated-api-acquisition.md) refines existing controls
+for the bounded JSON-page profile. It does not establish licensed-provider
+operation, complete rights enforcement or full STPA closure.
+
+| Existing UCA | First-slice constraint allocation | Discriminating evidence and limits |
+| --- | --- | --- |
+| U1 / C1 | Public code/configuration contains no operational endpoint, credential value, provider response or private source catalogue; authentication references remain operator-controlled | Synthetic fixtures and exact source/artifact/message review; scans do not prove arbitrary content anonymous |
+| U4 / C4 | HTTPS-only configured endpoint, public pinned destination/TLS identity, no redirect or response-selected destination; only a bounded encoded continuation parameter | Native denied-origin/redirect/auth-header cases; no generic SDK behaviour or alternate provider operation inferred |
+| U8 / C8 | Credential references resolve through checked file custody, including exact UID-only ACLs for root-owned systemd delivery; fixed diagnostics and stripped parser environment; reader cannot select credential paths or read API state | Unsafe file/symlink/mode/change cases, reader SQL denial and active-token reflection canaries; no arbitrary encoded-secret detection or same-UID sandbox claim |
+| U10 / C10 | Commit accepted page and continuation together; terminal page alone refreshes success; expose partial/failure; reject repeated cursors and exhausted cycle budget | Native interrupted/resumed pagination, transaction rollback, cross-tick loop and freshness cases; no snapshot completeness, watermark or absence-as-deletion inference |
+| U12 / C12 | Bind installed parser/transport/database outcomes and both LTS delivery tests to the candidate before operational acceptance | Unit tests alone do not establish service credential delivery, provider entitlement, licence clearance or upstream API compatibility |
+
+A relevant process-model error is treating possession of an API key as permission
+for every downstream consumer. The implemented profile rejects narrower rights
+instead of pretending existing shared storage/readers enforce them. Paid requests
+are also rejected; an unmetered operator declaration is not independently verified
+billing evidence. Failure/refusal preserves prior accepted pages and private
+continuation rather than skipping missing records. Restore clears continuation
+and disables acquisition pending reconciliation. Requests still disclose the
+operator's queries to the upstream provider; query-disclosure policy and separately
+isolated rights domains remain unfinished controls.

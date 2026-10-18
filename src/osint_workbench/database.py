@@ -10,7 +10,7 @@ from .contracts import DocumentInput
 from .errors import WorkbenchError
 from .evidence import EvidenceStore
 
-SCHEMA_VERSION = 10
+SCHEMA_VERSION = 11
 LIFECYCLE_LOCK = 418287408
 MIGRATIONS = (
     "schema.sql",
@@ -23,6 +23,7 @@ MIGRATIONS = (
     "migrations/008_collector_item_reuse.sql",
     "migrations/009_cloud_ledger.sql",
     "migrations/010_cloud_settlement.sql",
+    "migrations/011_api_collection_state.sql",
 )
 
 
@@ -221,9 +222,10 @@ class Database:
             },
             "collection_state": {
                 "SELECT": "source_id resource_sha256 next_attempt failures etag "
-                "last_modified raw_sha256",
+                "last_modified raw_sha256 api_cursor api_profile_sha256 api_page api_seen_cursors",
                 "INSERT": "source_id resource_sha256",
-                "UPDATE": "resource_sha256 next_attempt failures etag last_modified raw_sha256",
+                "UPDATE": "resource_sha256 next_attempt failures etag last_modified raw_sha256 "
+                "api_cursor api_profile_sha256 api_page api_seen_cursors",
             },
         }
         allowed = {

@@ -1,7 +1,8 @@
 # Scheduled RSS/Atom acquisition
 
-Core schema v5 introduced the private durable schedule. The current supported
-layout is core v10 and, when enabled, retrieval-profile v4. Run the explicit
+Core schema v5 introduced the private durable schedule. Core v11 adds private
+API progress alongside this feed state; see [API acquisition](api-acquisition.md). The current supported
+layout is core v11 and, when enabled, retrieval-profile v4. Run the explicit
 migrations before using the current code. No sources, URLs, network
 calls, host timers or model downloads are supplied or enabled by package import.
 

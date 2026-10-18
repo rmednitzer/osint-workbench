@@ -119,10 +119,11 @@ envelope, just like checkpoint receipts. A raw-file checksum is a separate value
 
 ## Recovery policy and compatibility
 
-The current compatibility pair is core schema v10 and retrieval-profile v4, with
+The current compatibility pair is core schema v11 and retrieval-profile v4, with
 checkpoint format 2 and lifecycle-policy format 1. Core v5 introduced collection
 scheduling; core v6/v7/v8 add collector/purge authority and item-reuse grants;
-core v9/v10 add remote accounting and settlement. Retrieval v3/v4 add scoped
+core v9/v10 add remote accounting and settlement; core v11 adds private API
+progress that restore clears before reconciliation. Retrieval v3/v4 add scoped
 purge authority and explicit exclusions. Published earlier migration bytes remain
 unchanged. Provision the lifecycle login separately and
 run `migrate-retrieval` when that optional profile is installed. Core-only migration

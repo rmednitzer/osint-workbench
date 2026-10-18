@@ -110,3 +110,31 @@ reviews; this file is not an exhaustive current alert inventory. The successful
 at `d01f80ac88da50c9f826b1a15cb18c75bd1db75f` does not itself demonstrate zero
 open alerts or authorize blanket dismissal. Preserve each alert's actual
 revision, authority setter and independently reviewed disposition.
+
+## Authenticated-acquisition successor
+
+Python analysis `1976366052` at
+`a25ee85e7e999834fd65d8e1700d9b71411c3e1f` reported alert 42,
+`py/path-injection`, at the credential leaf open. Review inspected every SARIF
+flow and the production callers, with independent read-only cross-checking.
+Flows originate in the process/service environment or explicitly supplied
+`GovernedGenerator.environ`; the latter paths include test construction.
+Production CLI callers load references from operator-selected API manifests or
+cloud policies. Acquired content, model output and the seven MCP requests have
+no directory/reference/environment setter.
+
+This is an intended bounded credential read using a trusted operator selector,
+so the individual disposition is false positive under that authority boundary.
+Absolute paths reject traversal; credential names exclude separators. The
+descriptor walk checks every ancestor without following symlinks, and the
+relative leaf open is non-following/nonblocking. Regular-file, owner, private
+mode, single-link, byte/content and identity-stability checks precede use.
+Synthetic tests exercise these denial paths and absence of fallback. No query
+family, source path or security gate is excluded.
+
+This does not authenticate a directory as a genuine systemd credential mount.
+Same-UID compromise, privileged administrators and malicious trusted launch
+configuration remain outside the boundary. Reassess if another deployment actor,
+network client, MCP parameter or source/model content can select these inputs.
+Actual systemd delivery and cross-unit isolation require their separate LTS
+fixture results; the static disposition does not establish service acceptance.
