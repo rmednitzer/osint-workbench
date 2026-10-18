@@ -2,8 +2,8 @@
 
 Never run this as ordinary pytest or on an operational host. It creates random
 synthetic credentials, distinct transient DynamicUser services and owned /run
-directories. PrivateTmp is deliberately disabled to execute the installed fixture
-venv in /tmp; strict read-only filesystem protection still applies. No provider
+directories. The installed fixture venv is copied into its owned /run tree so
+services retain private temporary storage and strict filesystem protection. No provider
 requests, operational secrets or environment values are copied into services.
 """
 
@@ -163,6 +163,25 @@ def acceptance(venv):
     state = Path("/run") / (prefix + "-positive-state")
     failure = None
     try:
+        # DynamicUser sandbox setup must not depend on the host /tmp view. Copy
+        # only the explicitly installed fixture runtime into this owned /run tree,
+        # as the reference-service harness does for its /opt installation. Preserve
+        # the verified /usr interpreter symlink and make every copied inode
+        # non-writable to group/other; services receive a read-only mount.
+        runtime = root / "runtime"
+        shutil.copytree(venv, runtime, symlinks=True)
+        for directory, directories, files in os.walk(runtime):
+            for name in [*directories, *files]:
+                entry = Path(directory) / name
+                if entry.is_symlink():
+                    target = entry.resolve()
+                    require(
+                        target.is_relative_to("/usr") or target.is_relative_to(runtime),
+                        "RUNTIME_SYMLINK_TARGET_REFUSED",
+                    )
+                else:
+                    entry.chmod(entry.stat().st_mode & ~0o022)
+        runtime.chmod(runtime.stat().st_mode & ~0o022)
         private = root / "private"
         private.mkdir(mode=0o700)
         source = private / "token"
@@ -189,7 +208,7 @@ def acceptance(venv):
                 "--property=Type=exec",
                 "--property=DynamicUser=yes",
                 "--property=User=" + name,
-                "--property=PrivateTmp=no",
+                "--property=PrivateTmp=yes",
                 "--property=PrivateNetwork=yes",
                 "--property=PrivateDevices=yes",
                 "--property=ProtectHome=yes",
@@ -203,7 +222,7 @@ def acceptance(venv):
                 "--property=TasksMax=16",
                 "--property=LimitCORE=0",
                 "--property=WorkingDirectory=/",
-                "--property=ReadOnlyPaths=" + str(venv),
+                "--property=ReadOnlyPaths=" + str(runtime),
             ]
             if case == "positive":
                 require(not os.path.lexists(state), "STATE_ALREADY_EXISTS")
@@ -213,7 +232,7 @@ def acceptance(venv):
                 ]
             if delivery:
                 argv += ["--property=LoadCredential=source-token:" + str(source)]
-            argv += [str(venv / "bin/python"), "-I", str(probe), case, expected, *arguments]
+            argv += [str(runtime / "bin/python"), "-I", str(probe), case, expected, *arguments]
             units.append(unit)
             if asynchronous:
                 return subprocess.Popen(
