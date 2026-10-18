@@ -108,3 +108,11 @@ receipts rather than relabeling them as current evidence.
 Primary references: [generator usage](https://github.com/CycloneDX/cyclonedx-python/blob/v7.5.0/docs/usage.rst),
 [generator implementation](https://github.com/CycloneDX/cyclonedx-python/blob/v7.5.0/cyclonedx_py/_internal/environment.py)
 and [CycloneDX Python library](https://github.com/CycloneDX/cyclonedx-python-lib).
+
+The successor [native ELF inventory](native-inventory.md) is a separate report,
+not additional verified component/version nodes in this Python SBOM. It records
+exact observed files and declared dynamic names while retaining incomplete
+composition. The v3 build receipt binds that report and the
+[two-package notice supplement](security/supplementary-notices.md) alongside the
+Python SBOM and licence review. Their presence does not change the graph's
+marker/extra limitations or clear native/OS/model redistribution obligations.

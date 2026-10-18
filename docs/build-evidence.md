@@ -29,9 +29,14 @@ export OW_EVIDENCE_RUN_ATTEMPT="$GITHUB_RUN_ATTEMPT"
 /tmp/ow-evidence/bin/python scripts/build_evidence.py generate --artifacts dist --output /tmp/ow-pre-evidence
 .venv/bin/python scripts/check_sbom.py generate --python /tmp/ow-evidence/bin/python --manifest /tmp/ow-pre-evidence/manifest.json --output assurance/sbom.cdx.json
 /tmp/ow-evidence/bin/python scripts/check_licences.py --policy docs/security/dependency-licences.json --output assurance/licence-review.json
+.venv/bin/python scripts/check_native.py generate --python /tmp/ow-evidence/bin/python --manifest /tmp/ow-pre-evidence/manifest.json --policy docs/security/native-components.json --output assurance/native-review.json
+/tmp/ow-evidence/bin/python scripts/build_notices.py generate --policy docs/security/dependency-licences.json --output assurance/missing-wheel-notices.txt
 /tmp/ow-evidence/bin/python scripts/build_evidence.py generate --artifacts dist --supplements assurance --output outputs/build-evidence
 /tmp/ow-evidence/bin/python scripts/build_evidence.py verify --artifacts dist --supplements assurance --output outputs/build-evidence
 .venv/bin/python scripts/check_sbom.py verify --python /tmp/ow-evidence/bin/python --manifest outputs/build-evidence/manifest.json --output assurance/sbom.cdx.json
+.venv/bin/python scripts/check_native.py verify --python /tmp/ow-evidence/bin/python --manifest outputs/build-evidence/manifest.json --policy docs/security/native-components.json --output assurance/native-review.json
+/tmp/ow-evidence/bin/python scripts/build_notices.py verify --policy docs/security/dependency-licences.json --output assurance/missing-wheel-notices.txt
+.venv/bin/python scripts/check_publication.py --evidence assurance --evidence outputs/build-evidence
 ```
 
 The caller sets `OW_EVIDENCE_PYTHON` to the selected minor version, such as `3.14`,
@@ -43,19 +48,20 @@ public package registry artifacts.
 
 Keep the receipt outside `dist`, which must contain exactly one selected project
 wheel and one source distribution. The output directory must not already exist.
-The v2 final receipt requires exactly `sbom.cdx.json` and `licence-review.json`
-when `--supplements` is supplied and binds their sizes and SHA-256 hashes in
-`related_evidence`. It labels that profile `python-sbom-and-licence-review`;
+The v3 final receipt requires exactly `sbom.cdx.json`, `licence-review.json`,
+`native-review.json` and `missing-wheel-notices.txt` when `--supplements` is
+supplied and binds their sizes and SHA-256 hashes in `related_evidence`. It
+labels that profile `python-sbom-native-and-notices`;
 omitting supplements produces an `integrity-only` provisional receipt. The
 supplement files remain in their own directory. Upload the distribution pair,
-two final receipt files and two supplementary reports after successful validation.
+two final receipt files and four supplementary files after successful validation.
 A later verifier needs the same source, artifact bytes and matching isolated
 inventory environment to recompute the receipt.
 
 Input reads open with no-follow and nonblocking flags, reject non-regular files
 before reading, and close descriptors on every outcome. Artifact and lock reads
 consume at most 256 MiB plus one refusal byte, even if a file grows after its
-initial size check. Receipt and supplementary JSON reads have a 4 MiB limit; the checksum limit is 65 bytes. Observed
+initial size check. Receipt and supplementary file reads have a 4 MiB limit; the checksum limit is 65 bytes. Observed
 size or modification-time changes during a read cause refusal; these checks do
 not provide an immutable filesystem snapshot against a malicious writer.
 
@@ -82,7 +88,11 @@ The inventory does not cover bundled native libraries, the native test server,
 container layers, operating-system packages, development/build tools, model
 weights or acquisition data. The separately verified [CycloneDX Python SBOM](sbom.md) and
 [licence evidence policy](security/dependency-licences.md) add bounded Python
-profile coverage. They explicitly retain incomplete native/OS/model composition
+profile coverage. The [native inventory](native-inventory.md) adds exact
+recorded ELF-file identity and declared dynamic names; it does not resolve the
+complete native component graph. The [notice supplement](security/supplementary-notices.md)
+supplies two separately retained upstream licence texts. All these mechanisms
+explicitly retain incomplete native/OS/model composition
 and unresolved redistribution obligations. They do not close those broader outcomes. Inventory scope
 also depends on correctly preparing the dedicated environment; the script cannot
 infer why a distribution was installed. Remove the workflow invocation and its
@@ -92,21 +102,21 @@ behavior and stored data are unaffected.
 ## CI retention and signed main builds
 
 The foundation matrix uploads each successfully tested distribution pair and
-verified v2 receipt and two supplementary reports as a separate `build-evidence-` artifact, retained for 30 days.
+verified v3 receipt and four supplementary files as a separate `build-evidence-` artifact, retained for 30 days.
 A failed test or publication scan prevents that upload. PR receipts identify the
 synthetic merge checkout; they are not signed main builds.
 
 A separate job runs only after a successful push to protected main and all native
 matrix legs. It downloads only this run's artifacts, does not check out or execute
-repository code, and signs distributions, receipt files and supplementary JSON bytes with the SHA-pinned
+repository code, and signs distributions, receipt files and supplementary file bytes with the SHA-pinned
 `actions/attest` action. Only that job has OIDC/attestation write permissions. Its
 portable Sigstore bundle is retained separately for 30 days; public attestations
 are also registered with GitHub and public Sigstore transparency infrastructure.
 Those records can be permanent. Only public source/artifact identities belong in
 them. Neither mechanism publishes a package release. Signing the SBOM JSON with this
 provenance predicate is not a separate CycloneDX SBOM-predicate attestation.
-Historical v1 receipts retain their original scope and source; v2 does not
-retroactively attach reports to those older builds.
+Historical v1 and v2 receipts retain their original scope and source; v3 does
+not retroactively attach reports to older builds.
 
 Verify a downloaded distribution using the GitHub CLI, and inspect the returned
 source revision and workflow identity against the intended reviewed main run:

@@ -518,3 +518,20 @@ edges, and a valid signature can bind incomplete or misleading content; schema
 validation alone therefore cannot close U83/U84. Regeneration, reviewed policy,
 explicit limits and independently verified signing identity provide distinct
 feedback. Exact successful results remain revision-bound.
+
+## Recorded native files and supplementary notices
+
+[ADR-0038](../adr/0038-native-file-evidence-notices.md) refines C83/C84 without
+equating file identity, component lineage and redistribution clearance.
+
+| UCA | Hazardous context / category | Derived constraint and allocation | Discriminating evidence |
+| --- | --- | --- | --- |
+| U85 | Accept changed native bytes because package metadata/text hashes still match, or combine files from distinct reviewed wheel variants | C85: compare the complete recorded ELF set and bytes to one reviewed supported variant; retain the RECORD-derived and static/loader limits | Changed/missing/added ELF, mixed variants, unsupported ABI and malformed data refusal; actual installed profile comparison |
+| U86 | Publish inferred native versions or supplementary upstream text as a complete resolved graph, complete notices or legal approval | C86: separate observed ELF identity and declared dynamic names from unresolved lineage; bind exact upstream identities/texts and keep missing NOTICE/source/composition work visible | No execution/import of inspected code, public-field checks, changed source/text/version refusal and explicit incomplete outcomes |
+
+V3 allocates C84 to four supplementary files and an exact eight-file set per
+profile. Test the actual isolated signer admission script, including requested
+Python optimization, byte substitution, special files and incorrect run/source
+identities. These checks supplement producer semantics; they do not replace
+independent component identification, complete release review or operational
+runtime observation.

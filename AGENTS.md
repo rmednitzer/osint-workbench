@@ -71,7 +71,11 @@ agent mutates. Do not run `uv run pytest` after installing a wheel and assume it
 still tests that wheel.
 
 Dependency changes require review of the actual selected wheel licence texts and
-metadata before changing exact evidence hashes. Preserve incomplete SBOM scope
+metadata before changing exact evidence hashes. Review complete recorded native
+ELF variants against [native policy](docs/security/native-components.md); do not
+infer versions from SONAMEs or call declared dynamic names the resolved loader
+graph. Keep [supplementary notices](docs/security/supplementary-notices.md) distinct
+from complete licence/NOTICE/source clearance. Preserve incomplete SBOM scope
 and unresolved legal/native outcomes; a new hash is not an approval. Marker
 custody and recovery follow [the host-local protocol](docs/inference-marker-safety.md).
 

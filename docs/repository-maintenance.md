@@ -206,3 +206,11 @@ establish same-UID isolation or authorize removing an uncertain reservation.
 Dependency PRs must update exact licence evidence through actual reviewed wheel
 inspection, preserving unresolved outcomes. The maintained CycloneDX generator is
 a locked development tool; its packages do not belong to the runtime inventory.
+
+The [native evidence refinement](adr/0038-native-file-evidence-notices.md) adds an
+exact recorded-ELF variant policy and separate two-package notice supplement.
+Review actual wheel bytes before updating those variants; preserve unsupported
+ABI distinctions and unresolved static/native/OS/model composition. V3 receipts
+retain eight fixed files per leg, and the isolated main signer admits exactly
+that set. The actual inline admission script is exercised by synthetic positive
+and refusal fixtures, including optimization, substitution and wrong identities.

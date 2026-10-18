@@ -22,12 +22,15 @@ evidence nor classifiers/legacy declarations resolve missing wheel notices.
 
 The initial evidence comes from the hashed, no-development runtime plus retrieval
 installation on CPython 3.12/Linux x86_64. Separately, 31 locked manylinux x86_64
-wheels covering CPython 3.12, 3.13 and 3.14 and compatible ABI3 tags were downloaded
-from their exact public registry artifact URLs and checked against `uv.lock`
-SHA-256 values before ZIP inspection. Their referenced METADATA and licence-text
+wheels were downloaded from their exact public registry artifact URLs and
+checked against `uv.lock` SHA-256 values before ZIP inspection. Thirty cover
+standard CPython 3.12, 3.13 and 3.14 and compatible ABI3 tags; the remaining
+ONNX Runtime archive uses the free-threaded CPython 3.13 ABI and is outside the
+supported runtime profiles. Their referenced METADATA and licence-text
 bytes match the initial evidence. The policy records those wheel filenames and
-hashes. Free-threaded, musl, Windows, macOS, other architectures and source builds
-are outside that wheel inspection. Hashes establish byte identity, not publisher
+hashes. The additional free-threaded archive inspection does not establish runtime
+support. Musl, Windows, macOS, other architectures and source builds are outside
+that wheel inspection. Hashes establish byte identity, not publisher
 truth, completeness of notices or legal compatibility.
 
 `locked_wheel_sha256` lists registry candidates present in the lock, including
@@ -97,3 +100,10 @@ The SBOM, build inventory and this review answer different questions. Preserve
 all three and their unresolved outcomes. Removing this additive gate and receipt
 rolls back its enforcement; it changes no application runtime or stored data and
 does not remove obligations associated with software already distributed.
+
+The successor [native policy](native-components.md) pins supported recorded ELF
+file sets and exposes declared dynamic names; it does not close the transitive
+native obligations above. [Supplementary notices](supplementary-notices.md)
+retain the exact two upstream texts separately. Those files supplement this
+project's source and retained evidence; they do not modify the publisher wheels
+or establish that all applicable NOTICE/source material has been collected.

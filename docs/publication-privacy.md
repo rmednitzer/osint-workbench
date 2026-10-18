@@ -86,3 +86,23 @@ Foundation PR CI explicitly selects the PR base SHA and fetches complete history
 Push CI uses the event's previous SHA; manual runs select `HEAD^`. A manual check
 therefore covers only that selected range, not all unpublished branch history,
 and cannot trigger the main-push signing job.
+
+## Generated assurance files
+
+After producer verification, scan the exact supplementary and final receipt sets:
+
+```sh
+.venv/bin/python scripts/check_publication.py --evidence assurance --evidence build-evidence
+```
+
+Each selected directory must contain exactly its four supplementary files or its
+two final receipt files. Reads are bounded, no-follow and nonblocking; unknown,
+missing, oversized, nonregular or invalid UTF-8 inputs fail. This scan checks
+public-content policy; producer verifiers still own SBOM, native and receipt
+semantics. Trusted operator-selected parent directories remain required.
+
+The two literal Apache URLs in the notice supplement receive a generated-file
+allowance only after the entire bundle matches independently rebuilt content
+from the pinned source texts and current reviewed policy. Matching a filename
+alone grants no allowance. Substituted content fails provenance and is still
+scanned for private identifiers. No private-value file is uploaded to public CI.
