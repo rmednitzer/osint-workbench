@@ -2,7 +2,7 @@
   "schema_version": 1,
   "review_date": "2026-10-18",
   "scope": "RECORD-listed ELF file-set identity; standard CPython3.12-3.14 manylinux x86_64 and compatible ABI3; no native dependency closure or legal approval",
-  "lock_sha256": "3487aad2b6d8e5a83f5a43dda945abed1dd146d7bba78254a72a380091ae5918",
+  "lock_sha256": "a650c080ad3ca32ed1498ca0b2f253b6f239411d417d6cc68fd589765581c428",
   "review_history": [
     {
       "source_commit": "331d597",
@@ -3018,12 +3018,12 @@
     },
     {
       "name": "starlette",
-      "version": "1.8.0",
+      "version": "1.9.0",
       "native_dependency_closure": "not-established-by-empty-ELF-set",
       "variants": [
         {
-          "wheel_filename": "starlette-1.8.0-py3-none-any.whl",
-          "wheel_sha256": "dfdd6b29c26483288088d990eee59631dedadd66ce20d203402a7ca8e3c4656f",
+          "wheel_filename": "starlette-1.9.0-py3-none-any.whl",
+          "wheel_sha256": "fd3f159936e882d06c1108f84688f7cda2cf85fc6a592a50edbd175e882c2ddc",
           "files": []
         }
       ]
