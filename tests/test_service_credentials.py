@@ -2,6 +2,7 @@
 
 import importlib.util
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -55,5 +56,34 @@ def test_actual_child_failure_does_not_publish_stdout_stderr_or_arguments(capsys
                 canary,
             ]
         )
+    captured = capsys.readouterr()
+    assert captured.out == captured.err == ""
+
+
+@pytest.mark.parametrize(
+    "marker,expected",
+    [
+        ("RESOLVE:CREDENTIAL_UNSAFE", "DELIVERY_PROBE_RESOLVE_CREDENTIAL_UNSAFE"),
+        ("IMPORT:UNEXPECTED", "DELIVERY_PROBE_IMPORT_UNEXPECTED"),
+        ("RESOLVE:synthetic-private-canary", "DELIVERY_SERVICE_FAILED"),
+        ("synthetic-private-canary:CREDENTIAL_UNSAFE", "DELIVERY_SERVICE_FAILED"),
+    ],
+)
+def test_actual_failed_producer_exposes_only_authored_fixed_diagnostic(marker, expected, capsys):
+    helper = _helper()
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            "-c",
+            "import sys;print('private-canary');"
+            "print('CREDENTIAL_PROBE_FAILURE='+sys.argv[1],file=sys.stderr);sys.exit(1)",
+            marker,
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    process.wait(timeout=5)
+    assert helper.producer_failure(process) == expected
     captured = capsys.readouterr()
     assert captured.out == captured.err == ""

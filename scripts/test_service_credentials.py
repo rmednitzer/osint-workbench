@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import secrets
 import shutil
 import subprocess
@@ -30,6 +31,15 @@ import os
 import sys
 import time
 from pathlib import Path
+
+stage = "IMPORT"
+def safe_exception(kind, value, traceback):
+    code = getattr(value, "code", None)
+    if code not in {"CREDENTIAL_UNAVAILABLE", "CREDENTIAL_UNSAFE", "CREDENTIAL_INVALID"}:
+        code = "ASSERTION" if kind is RuntimeError else "UNEXPECTED"
+    print("CREDENTIAL_PROBE_FAILURE=" + stage + ":" + code, file=sys.stderr, flush=True)
+sys.excepthook = safe_exception
+
 from osint_workbench.credentials import CredentialError, CredentialRef, resolve_credential
 
 def require(condition):
@@ -37,21 +47,28 @@ def require(condition):
         raise RuntimeError("CREDENTIAL_PROBE_FAILED")
 
 case, expected = sys.argv[1:3]
+stage = "CONTEXT"
 require(os.geteuid() != 0)
 require("site-packages" in __import__("osint_workbench").__file__)
 require(not any(key.startswith("OW_") for key in os.environ))
 if case == "positive":
+    print("CREDENTIAL_PROBE_STARTED", flush=True)
+    stage = "RESOLVE"
     secret = resolve_credential(CredentialRef(kind="systemd", name="source-token"))
+    stage = "TOKEN"
     require(hashlib.sha256(secret.get_secret_value().encode()).hexdigest() == expected)
+    stage = "READY"
     state = Path(sys.argv[3])
     (state / "ready").write_text(json.dumps({
         "uid": os.geteuid(), "pid": os.getpid(),
         "directory": os.environ["CREDENTIALS_DIRECTORY"]}))
     deadline = time.monotonic() + 30
+    stage = "WAIT"
     while not (state / "release").exists():
         require(time.monotonic() < deadline)
         time.sleep(0.1)
 elif case in {"no-delivery", "missing-name"}:
+    stage = "DENIAL"
     try:
         resolve_credential(CredentialRef(kind="systemd", name="missing-token"))
     except CredentialError as error:
@@ -59,6 +76,7 @@ elif case in {"no-delivery", "missing-name"}:
     else:
         require(False)
 elif case == "cross-unit":
+    stage = "ISOLATION"
     producer_uid, *paths = sys.argv[3:]
     require(os.geteuid() != int(producer_uid))
     for value in paths:
@@ -110,6 +128,27 @@ def run(argv, *, timeout=15, allowed=(0,)):
     )
     require(result.returncode in allowed, "FIXTURE_COMMAND_FAILED")
     return result.stdout
+
+
+def producer_failure(process):
+    """Classify only an authored fixed marker; captured output is never relayed."""
+    _, error = process.communicate(timeout=5)
+    pattern = re.compile(
+        r"CREDENTIAL_PROBE_FAILURE=(IMPORT|CONTEXT|RESOLVE|TOKEN|READY|WAIT|DENIAL|ISOLATION):"
+        r"(CREDENTIAL_UNAVAILABLE|CREDENTIAL_UNSAFE|CREDENTIAL_INVALID|ASSERTION|UNEXPECTED)"
+    )
+    for line in error.splitlines():
+        match = pattern.fullmatch(line)
+        if match is not None:
+            return "DELIVERY_PROBE_" + match[1] + "_" + match[2]
+    return {
+        200: "DELIVERY_SYSTEMD_CHDIR_FAILED",
+        203: "DELIVERY_SYSTEMD_EXEC_FAILED",
+        216: "DELIVERY_SYSTEMD_GROUP_FAILED",
+        217: "DELIVERY_SYSTEMD_USER_FAILED",
+        218: "DELIVERY_SYSTEMD_CAPABILITIES_FAILED",
+        226: "DELIVERY_SYSTEMD_NAMESPACE_FAILED",
+    }.get(process.returncode, "DELIVERY_SERVICE_FAILED")
 
 
 def acceptance(venv):
@@ -195,7 +234,8 @@ def acceptance(venv):
         process = launch("positive", delivery=True, arguments=(str(state),), asynchronous=True)
         deadline = time.monotonic() + 10
         while not (state / "ready").exists():
-            require(process.poll() is None, "DELIVERY_SERVICE_FAILED")
+            if process.poll() is not None:
+                raise Rejected(producer_failure(process))
             require(time.monotonic() < deadline, "DELIVERY_SERVICE_TIMEOUT")
             time.sleep(0.1)
         identity = json.loads((state / "ready").read_text())
@@ -219,7 +259,10 @@ def acceptance(venv):
         (state / "release").touch(mode=0o600)
         output, _ = process.communicate(timeout=10)
         require(process.returncode == 0, "DELIVERY_SERVICE_FAILED")
-        require(output.strip() == "CREDENTIAL_PROBE_OK", "PROBE_OUTPUT_INVALID")
+        require(
+            output.strip() == "CREDENTIAL_PROBE_STARTED\nCREDENTIAL_PROBE_OK",
+            "PROBE_OUTPUT_INVALID",
+        )
     except BaseException as error:
         failure = error
     finally:
