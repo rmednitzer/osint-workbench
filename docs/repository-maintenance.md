@@ -157,11 +157,13 @@ clearance, complete release assurance and the wider implementation
 backlog remain open. Main-push attestations are separate from PR receipts and do
 not establish operational runtime or independent quality.
 
-The reviewed runtime-compatibility change updates SHA-pinned checkout, artifact
-upload and setup-uv actions, and pins uv 0.13.1. It also reviews the two targeted
-filelock/platformdirs patch updates. This explicit compatibility review is separate
-from routine bot scheduling/release-age eligibility; MCP remains on its reviewed
-1.x API contract and native source/checksum remain unchanged.
+The earlier runtime-compatibility increment updated SHA-pinned checkout,
+artifact upload and setup-uv actions, pinned uv 0.13.1 and reviewed targeted
+filelock/platformdirs patches. It retained the 1.x MCP API and native source at
+that revision. [ADR-0039](adr/0039-mcp-v2-dependency-refresh.md) supersedes those
+two retained selections with the MCP v2 and stable native-source transition.
+Explicit compatibility review remains separate from routine bot scheduling and
+release-age eligibility.
 
 ## Official guidance
 

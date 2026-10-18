@@ -33,7 +33,7 @@ Exact retrieval is the current oracle; filtered ANN acceptance remains open.
 
 ## S8
 
-llama.cpp [server documentation at the tested native-source revision](https://github.com/ggml-org/llama.cpp/blob/f2f667b02dc76d675395ae3b14546c8108d26387/tools/server/README.md).
+llama.cpp [server documentation at the tested native-source revision](https://github.com/ggml-org/llama.cpp/blob/620d2225cc436ab0b001e3200e590e3b286ef9ab/tools/server/README.md).
 The preparation script also verifies the source archive digest. This is not a
 claim of compatibility with arbitrary future server versions.
 

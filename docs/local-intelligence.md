@@ -129,4 +129,4 @@ operational backup/restore and all-copy erasure remain open beyond the implement
 [SQL purge](retired-record-purge.md). Autonomous quality gates, full GPU resource
 ownership and remote/cloud support remain unimplemented roadmap work.
 
-Native API reference: [llama.cpp server](https://github.com/ggml-org/llama.cpp/blob/f2f667b02dc76d675395ae3b14546c8108d26387/tools/server/README.md).
+Native API reference: [llama.cpp server](https://github.com/ggml-org/llama.cpp/blob/620d2225cc436ab0b001e3200e590e3b286ef9ab/tools/server/README.md).
