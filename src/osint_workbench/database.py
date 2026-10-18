@@ -10,7 +10,7 @@ from .contracts import DocumentInput
 from .errors import WorkbenchError
 from .evidence import EvidenceStore
 
-SCHEMA_VERSION = 8
+SCHEMA_VERSION = 9
 LIFECYCLE_LOCK = 418287408
 MIGRATIONS = (
     "schema.sql",
@@ -21,6 +21,7 @@ MIGRATIONS = (
     "migrations/006_collector_role.sql",
     "migrations/007_retired_record_purge.sql",
     "migrations/008_collector_item_reuse.sql",
+    "migrations/009_cloud_ledger.sql",
 )
 
 
@@ -103,6 +104,7 @@ class Database:
                         "retrieval_vectors",
                         "retrieval_members",
                         "retrieval_exclusions",
+                        "remote_operations",
                         "lifecycle_control",
                         "lifecycle_items",
                         "lifecycle_holds",

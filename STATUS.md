@@ -14,12 +14,12 @@ complete merely because its design documents or interfaces exist.
 | Local inference | CPU embedding/rerank runtimes, native Unix-socket generation and durable shared admission | Actual synthetic ONNX/GGUF execution and Unix transport/crash tests in CI; no GPU, pretrained quality or complete cross-host scheduler |
 | Enrichment/graph/briefings | Durable typed proposals, evidence spans, operator reviews and cited assertion digests | PostgreSQL/MCP proposal, review, withdrawal and cited-digest tests passed; pretrained semantic acceptance, aliases/merge and diversity pending |
 | Vulnerability/regulatory profiles | Offline advisory observation envelope; broader domain specifications | Authored strict-contract tests; no upstream adapters or applicability verification yet |
-| Cloud APIs/accounting/batches | Target specification | No credential access, native adapters, remote requests or spending |
+| Cloud APIs/accounting/batches | One declared-compatible chat route behind a deny-by-default policy and a transactional per-currency reservation ledger, used only by explicitly routed and classified enrichment jobs | Native contract tests against a synthetic HTTPS provider through the real transport and PostgreSQL; no native vendor adapters, streaming, batches, reconciliation command, live provider call or spending |
 | Remote MCP | Target authentication design | No HTTP listener or remote client compatibility claim |
 | Export/recovery/retention | Bounded private checkpoint, empty-target restore, operator retention/holds/logical tombstones and mandatory current-policy reconciliation | Native SQL-reader, job/fence, inference, collector and restored-policy regressions passed in installed-wheel CI. Reviewed orphan-object GC and transactional retired-record SQL purge passed native failure/restart, recovery and scoped-role tests. Full record erasure, legacy format-1 adoption, public export, publisher and full-host/PITR remain pending |
 | Publication controls | Positive file selection and source/artifact scanning | File/archive checks plus bounded new-commit metadata scanning; private exact-value checks run outside public CI and do not establish anonymity |
 
-Core schema v8 and retrieval-profile v4 are additive; earlier published migrations
+Core schema v9 and retrieval-profile v4 are additive; earlier published migrations
 remain byte-identical. Checkpoint format 2 requires separate policy receipts;
 legacy format-1 restore/adoption is not silently accepted. Job cancellation
 revokes acceptance authority; it does not prove a running computation has stopped.
@@ -248,3 +248,16 @@ with more than half its members excluded still fail. Status and hybrid search
 report excluded documents, which remain lexically searchable
 ([ADR-0041](docs/adr/0041-explicit-retrieval-exclusions.md)). Exact
 core8/profile3 checkpoints are adopted with no exclusions.
+
+The governed remote route ([ADR-0042](docs/adr/0042-governed-compatible-cloud-route.md),
+[runbook](docs/cloud-routes.md)) adds core migration 9 and an OpenAI-compatible
+chat-completions adapter. Dispatch requires an operator policy, a credential in
+the environment, an explicitly routed job and an explicit data class; unknown
+sovereignty facts, unallowed classes or tasks, missing credentials and
+exhausted caps are recorded denials with no connection. Every attempt reserves
+its worst-case Decimal cost under a per-route-and-currency lock before
+sending; unreported usage keeps the reservation as exposure, and no attempt
+that may have reached the provider is replayed. Contract tests use a
+synthetic provider with fixture trust. Native vendor adapters, streaming,
+batches, reconciliation, a separate dispatcher identity and any live-provider,
+sovereignty or invoice evidence remain open.

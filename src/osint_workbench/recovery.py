@@ -39,6 +39,7 @@ CORE = (
     "assertions",
     "assertion_reviews",
     "briefings",
+    "remote_operations",
 )
 RETRIEVAL = (
     "embedding_spaces",
@@ -65,6 +66,7 @@ def _history(conn):
         "migrations/006_collector_role.sql",
         "migrations/007_retired_record_purge.sql",
         "migrations/008_collector_item_reuse.sql",
+        "migrations/009_cloud_ledger.sql",
     ]
     expected = {
         str(i): digest(files("osint_workbench").joinpath(p).read_bytes())
@@ -307,8 +309,8 @@ def _read(path, expected_sha):
     return payload
 
 
-# Published core version -> the optional retrieval profile it shipped with.
-PUBLISHED_PAIRS = {4: 2, 5: 2, 6: 2, 7: 3, 8: 3}
+# Published core version -> the optional retrieval profiles it shipped with.
+PUBLISHED_PAIRS = {4: (2,), 5: (2,), 6: (2,), 7: (3,), 8: (3, 4)}
 
 
 def _known_legacy_history(observed, current, version):
@@ -320,10 +322,13 @@ def _known_legacy_history(observed, current, version):
     """
     if version not in PUBLISHED_PAIRS:
         return False
-    keys = {str(i) for i in range(1, version + 1)}
-    keys |= {f"retrieval/{i}" for i in range(1, PUBLISHED_PAIRS[version] + 1)}
-    expected = {key: value for key, value in current.items() if key in keys}
-    return observed == expected and observed != current
+    for profile in PUBLISHED_PAIRS[version]:
+        keys = {str(i) for i in range(1, version + 1)}
+        keys |= {f"retrieval/{i}" for i in range(1, profile + 1)}
+        expected = {key: value for key, value in current.items() if key in keys}
+        if observed == expected and observed != current:
+            return True
+    return False
 
 
 def restore(
@@ -352,15 +357,27 @@ def restore(
         # Exact known v5-v8 retain the same core layout; v4 needs an empty schedule.
         # Profiles before 4 have no exclusion table: no generation excluded anything.
         # No schema3/format1 inference or mixed migration history is accepted.
-        legacy = set(names) - {"retrieval_exclusions"}
+        # Tables introduced after a legacy pair are empty at adoption: no older
+        # release recorded remote attempts or retrieval exclusions.
+        profile = max(
+            (
+                int(k.removeprefix("retrieval/"))
+                for k in payload["migrations"]
+                if k.startswith("retrieval/") and k.removeprefix("retrieval/").isdigit()
+            ),
+            default=0,
+        )
+        absent = {"remote_operations"} | ({"retrieval_exclusions"} if profile < 4 else set())
+        legacy = set(names) - absent
         adopted = {
             version: _known_legacy_history(payload["migrations"], history, version)
             and set(tables) == (legacy - {"collection_state"} if version == 4 else legacy)
             for version in PUBLISHED_PAIRS
         }
         adopted_v4 = adopted[4]
-        if any(adopted.values()) and "retrieval_exclusions" in names:
-            tables["retrieval_exclusions"] = []
+        if any(adopted.values()):
+            for name in absent & set(names):
+                tables[name] = []
         if adopted_v4:
             tables["collection_state"] = []
             if any("http_status" in row for row in tables["collection_runs"]):

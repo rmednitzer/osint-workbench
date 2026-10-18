@@ -85,6 +85,11 @@ the operation; they are never silently rewritten. Shared snapshots survive when
 any other document still references them. Sources, collection runs/state, lifecycle
 items, holds, tombstones and decision events remain.
 
+Remote-attempt ledger rows (core v9) are retained: they hold route, policy and
+packet digests with accounting, not document identifiers or content, and their
+exposure must survive purge. The purger may only read them for its exact
+authority checks.
+
 For optional retrieval, only target vectors, exclusions and members are deleted.
 Purge events recorded under profile 4 carry a `retrieval_exclusions` count;
 earlier events without that key remain valid. Affected

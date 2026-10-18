@@ -270,7 +270,8 @@ def databases(roles):
         conn.execute("UPDATE ow.lifecycle_control SET revision=0,dataset_id=gen_random_uuid()")
         if os.environ.get("OW_TEST_RETRIEVAL") == "1":
             conn.execute(
-                "TRUNCATE ow.briefings,ow.assertion_reviews,ow.assertions,ow.enrichments,"
+                "TRUNCATE ow.remote_operations,ow.briefings,ow.assertion_reviews,ow.assertions,"
+                "ow.enrichments,"
                 "ow.retrieval_active,ow.retrieval_vectors,"
                 "ow.retrieval_exclusions,ow.retrieval_members,ow.retrieval_generations,"
                 "ow.embedding_spaces,"
@@ -279,7 +280,8 @@ def databases(roles):
             )
             return Database(roles["writer"]), Database(roles["reader"]), roles
         conn.execute(
-            "TRUNCATE ow.briefings,ow.assertion_reviews,ow.assertions,ow.enrichments,"
+            "TRUNCATE ow.remote_operations,ow.briefings,ow.assertion_reviews,ow.assertions,"
+            "ow.enrichments,"
             "ow.collection_state,ow.collection_runs,ow.job_events,ow.chunks,ow.jobs,ow.document_heads,"
             "ow.documents,ow.snapshots,ow.sources"
         )
