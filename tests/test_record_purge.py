@@ -706,8 +706,9 @@ def test_post_purge_checkpoint_restores_but_older_data_cannot_be_reintroduced(co
         )
 
 
-def test_known_core_six_profile_two_checkpoint_adopts_into_current_schema(
-    context, destination, encoder_bundle
+@pytest.mark.parametrize("version", [6, 7])
+def test_known_core_checkpoint_adopts_into_current_schema(
+    context, destination, encoder_bundle, version
 ):
     if os.environ.get("OW_TEST_RETRIEVAL") != "1":
         pytest.skip("native optional retrieval profile unavailable")
@@ -718,29 +719,33 @@ def test_known_core_six_profile_two_checkpoint_adopts_into_current_schema(
     index = VectorIndex(context["writer"], encoder_bundle)
     generation = index.build(context["store"])["generation_id"]
     index.activate(generation)
-    path = context["tmp"] / "known-core-six.owcp"
+    path = context["tmp"] / f"known-core-{version}.owcp"
     recovery.checkpoint(context["admin"], context["store"], path)
-    # Core7/profile3 add operator authority and event vocabulary; no purge event
-    # exists in this captured dataset. Preserve real document/vector rows and
-    # change only the exact known published migration pair for adoption.
+    # Core7/profile3 add operator authority and event vocabulary; core8 adds
+    # collector grants only. No purge event exists in this captured dataset.
+    # Preserve real document/vector rows and change only the exact known
+    # published migration pair for adoption.
     bundle = json.loads(path.read_bytes())
-    del bundle["payload"]["migrations"]["7"]
-    del bundle["payload"]["migrations"]["retrieval/3"]
+    for key in [str(v) for v in range(version + 1, 9)]:
+        del bundle["payload"]["migrations"][key]
+    if version < 7:
+        del bundle["payload"]["migrations"]["retrieval/3"]
     bundle["sha256"] = digest(recovery._json(bundle["payload"]))
     path.write_bytes(recovery._json(bundle))
     change(context, document, "retire")
     policy = policy_arguments(context["roles"], path)
-    restored = context["tmp"] / "adopted-core-six"
+    restored = context["tmp"] / f"adopted-core-{version}"
     result = recovery.restore(
         Database(destination["admin"]), path, bundle["sha256"], restored, **policy
     )
-    assert result["adopted_core_v6"] is True
+    assert result[f"adopted_core_v{version}"] is True
+    assert sum(result[f"adopted_core_v{v}"] for v in (4, 5, 6, 7)) == 1
     service = ReadService(Database(destination["reader"]), EvidenceStore(restored, read_only=True))
     assert service.document(neighbour)["integrity"] == "verified"
     with pytest.raises(WorkbenchError, match="DOCUMENT_NOT_FOUND"):
         service.document(document)
     with Database(destination["admin"]).connect() as conn:
-        assert conn.execute("SELECT max(version) AS v FROM ow.migrations").fetchone()["v"] == 7
+        assert conn.execute("SELECT max(version) AS v FROM ow.migrations").fetchone()["v"] == 8
         assert (
             conn.execute("SELECT max(version) AS v FROM ow.retrieval_migrations").fetchone()["v"]
             == 3

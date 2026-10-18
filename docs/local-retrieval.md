@@ -76,7 +76,9 @@ member. Active generation changes in one transaction. Rollback uses the same act
 checks; a generation for an outdated corpus cannot be activated. Search checks its
 own repeatable-read corpus snapshot, excludes obsolete document heads and explicitly
 marks corpus drift degraded. Later concurrent collection can create normal drift;
-operators must rebuild and activate. Old generations remain retained for review.
+operators must rebuild and activate. Growth past the reference build bounds also
+reports degraded drift rather than failing search, because no generation can
+exceed those bounds; builds and activation still refuse the oversized corpus. Old generations remain retained for review.
 
 ## Supply-chain and sovereignty boundary
 

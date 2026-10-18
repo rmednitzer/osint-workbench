@@ -196,3 +196,37 @@ def test_explicit_resubmission_keeps_failed_operation_history(databases, tmp_pat
             == "failed"
         )
     assert len(intel.assertions(reader)["results"]) == 1
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("statement", "The source says storage is fully available."),
+        ("polarity", "asserted"),
+        ("source_id", "other-source"),
+    ],
+)
+def test_self_consistent_briefing_cannot_misstate_its_cited_assertion(
+    databases, tmp_path, field, value
+):
+    writer, reader, roles, store, doc = setup(databases, tmp_path)
+    generator = FixtureGenerator([claim()])
+    intel.enqueue(writer, generator, doc)
+    intel.enrich_once(writer, store, generator)
+    row = intel.assertions(reader)["results"][0]
+    intel.review(writer, row["assertion_id"], "accept", "fixture-reviewer", "Reviewed")
+    genuine = intel.create_briefing(writer, [doc])
+    service = ReadService(reader, EvidenceStore(store.root, read_only=True))
+    assert service.briefing(genuine["briefing_id"])["items"][0]["statement"] == row["statement"]
+    # A writer-authority row can carry a recomputed digest over altered content.
+    content = {k: v for k, v in genuine.items() if k != "briefing_id"}
+    content["items"] = [{**content["items"][0], field: value}]
+    forged = digest(json.dumps(content, sort_keys=True).encode())
+    with psycopg.connect(roles["admin"]) as conn:
+        conn.execute(
+            "INSERT INTO ow.briefings VALUES (%s,%s,DEFAULT)",
+            (forged, psycopg.types.json.Jsonb(content)),
+        )
+    with pytest.raises(WorkbenchError, match="BRIEFING_EVIDENCE_MISMATCH"):
+        service.briefing(forged)
+    assert service.briefing(genuine["briefing_id"])["briefing_id"] == genuine["briefing_id"]

@@ -87,7 +87,8 @@ It contains accepted statements, polarity and exact quotations with document/sna
 IDs and offsets. It records a corpus cutoff and explicitly unassessed source diversity.
 The projection is deterministic given accepted assertions and its recorded cutoff;
 a new creation records a new cutoff. No accepted assertions yields a degraded empty digest; pending claims are never promoted
-as fallback. Reads verify the content digest and evidence. Withdrawn reviews or obsolete
+as fallback. Reads verify the content digest, compare every item with the live
+accepted assertion it cites and verify the quoted evidence. Withdrawn reviews or obsolete
 source versions make a cited product stale. Private reviewer rationale and actor labels
 are excluded from MCP/products. Old source evidence and review history remain retained.
 No outbound publication is enabled. Full topic selection, MMR/family independence,

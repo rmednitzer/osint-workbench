@@ -76,3 +76,5 @@ asserts that replaying A after B does not rewind the generic head. Native tests
 must pass against the installed candidate wheel; unavailable local PostgreSQL is
 recorded as unverified rather than a pass. These fixtures establish execution
 contracts, not public-source or model quality.
+
+> Successor note (2026-10-18): [ADR-0040](0040-feed-item-version-reuse.md) keeps the current head for items unchanged inside a changed feed container. The A/B/exact-A and partial-B cases above are unchanged.

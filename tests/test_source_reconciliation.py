@@ -3,6 +3,7 @@
 import pytest
 
 from osint_workbench.collection import collect
+from osint_workbench.database import Database
 from osint_workbench.errors import WorkbenchError
 from osint_workbench.evidence import EvidenceStore
 from tests.test_scheduled_collection import ResponseWire, due, install, source
@@ -123,3 +124,68 @@ def test_dirty_run_refuses_304_without_claiming_success(databases, tmp_path, mon
         assert conn.execute(
             "SELECT status,error_code FROM ow.collection_runs ORDER BY started_at DESC LIMIT 1"
         ).fetchone() == {"status": "failed", "error_code": "UNSOLICITED_NOT_MODIFIED"}
+
+
+@pytest.mark.parametrize("identity", ["writer", "collector"])
+def test_feed_revision_reuses_unchanged_item_versions(databases, tmp_path, monkeypatch, identity):
+    """A changed feed container must not re-version or re-enqueue unchanged items."""
+    writer, reader, roles = databases
+    store = EvidenceStore(tmp_path / "objects")
+    acquirer = writer
+    if identity == "collector":
+        # The production identity: column-scoped grants, exact history checks.
+        acquirer = Database(roles["collector"])
+        acquirer.validate_collector()
+    install(monkeypatch, ResponseWire(headers=[(b"etag", b'"original"')]))
+    original = collect(source(), acquirer, store, due_only=True)
+    assert job_count(writer) == 2
+    # Channel metadata changes, item 2 is revised and item 3 appears; item 1 is
+    # byte-identical in content but arrives inside a different raw feed body.
+    window = (
+        FEED.replace(b"<title>Fixture</title>", b"<title>Fixture window</title>")
+        .replace(b"Second evidence", b"Revised second evidence")
+        .replace(
+            b"</channel>",
+            b"<item><guid>3</guid><title>Three</title>"
+            b"<description>Third evidence</description></item></channel>",
+        )
+    )
+    due(writer)
+    install(monkeypatch, ResponseWire(body=window, headers=[(b"etag", b'"window"')]))
+    revised = collect(source(), acquirer, store, due_only=True)
+    assert revised["status"] == "success" and len(revised["document_ids"]) == 3
+    assert revised["document_ids"][0] == original["document_ids"][0]
+    assert revised["document_ids"][1] != original["document_ids"][1]
+    assert job_count(writer) == 4
+    with writer.connect() as conn:
+        counts = conn.execute(
+            "SELECT count(*) AS documents, count(DISTINCT snapshot_id) AS snapshots "
+            "FROM ow.documents WHERE source_id='fixture'"
+        ).fetchone()
+        runs = conn.execute(
+            "SELECT count(DISTINCT raw_sha256) AS n FROM ow.collection_runs "
+            "WHERE source_id='fixture' AND status='succeeded'"
+        ).fetchone()["n"]
+    assert counts == {"documents": 4, "snapshots": 4}
+    # Both container bodies remain retained run evidence for GC and recovery.
+    assert runs == 2
+    assert reader.search("First")[0]["document_id"] == original["document_ids"][0]
+    assert len(reader.search("evidence")) == 3
+    # Returning to older item content inside a new container is a change from
+    # the current head: it is recorded as a new version, while unchanged item 1
+    # keeps its first identity. Content equal to the head never re-versions.
+    due(writer)
+    back_feed = FEED.replace(b"<title>Fixture</title>", b"<title>Back</title>")
+    install(monkeypatch, ResponseWire(body=back_feed, headers=[(b"etag", b'"back"')]))
+    back = collect(source(), acquirer, store, due_only=True)
+    assert back["document_ids"][0] == original["document_ids"][0]
+    assert back["document_ids"][1] not in (original["document_ids"][1], revised["document_ids"][1])
+    assert job_count(writer) == 5
+    assert reader.search("Revised") == []
+    # The exact first container repeats current content for both items, so the
+    # current heads remain and nothing is enqueued.
+    due(writer)
+    install(monkeypatch, ResponseWire(headers=[(b"etag", b'"exact"')]))
+    exact = collect(source(), acquirer, store, due_only=True)
+    assert exact["document_ids"] == back["document_ids"]
+    assert job_count(writer) == 5

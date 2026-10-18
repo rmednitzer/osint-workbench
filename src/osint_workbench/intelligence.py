@@ -252,6 +252,25 @@ def review(db, assertion_id, decision, actor, rationale):
     return {"assertion_id": assertion_id, "review_state": decision}
 
 
+_ACCEPTED_ITEMS = """SELECT a.*,d.snapshot_id,d.source_id FROM ow.current_assertions a
+    JOIN ow.active_documents d USING(document_id) WHERE a.review_state='accept'"""
+
+
+def _briefing_item(r):
+    return {
+        "assertion_id": r["assertion_id"],
+        "document_id": r["document_id"],
+        "snapshot_id": r["snapshot_id"],
+        "source_id": r["source_id"],
+        "statement": r["statement"],
+        "polarity": r["polarity"],
+        "quote": r["quote"],
+        "start_offset": r["start_offset"],
+        "end_offset": r["end_offset"],
+        "review": "accepted",
+    }
+
+
 def create_briefing(db, document_ids):
     if (
         not isinstance(document_ids, list)
@@ -268,28 +287,12 @@ def create_briefing(db, document_ids):
             # before this shared transaction. Never persist a dangling selection.
             assert_document_visible(conn, identifier)
         rows = conn.execute(
-            """SELECT a.*,d.snapshot_id,d.source_id FROM ow.current_assertions a
-            JOIN ow.active_documents d USING(document_id) WHERE a.document_id=ANY(%s)
-            AND review_state='accept' ORDER BY assertion_id LIMIT 101""",
+            _ACCEPTED_ITEMS + " AND a.document_id=ANY(%s) ORDER BY assertion_id LIMIT 101",
             (document_ids,),
         ).fetchall()
         if len(rows) > 100:
             raise WorkbenchError("BRIEFING_CLAIM_LIMIT")
-        items = [
-            {
-                "assertion_id": r["assertion_id"],
-                "document_id": r["document_id"],
-                "snapshot_id": r["snapshot_id"],
-                "source_id": r["source_id"],
-                "statement": r["statement"],
-                "polarity": r["polarity"],
-                "quote": r["quote"],
-                "start_offset": r["start_offset"],
-                "end_offset": r["end_offset"],
-                "review": "accepted",
-            }
-            for r in rows
-        ]
+        items = [_briefing_item(r) for r in rows]
         cutoff = conn.execute("SELECT clock_timestamp() AS now").fetchone()["now"]
         content = {
             "schema_version": 1,
@@ -327,12 +330,14 @@ def get_briefing(db, store, briefing_id):
             raise WorkbenchError("BRIEFING_INTEGRITY_MISMATCH")
         for item in content["items"]:
             active = conn.execute(
-                "SELECT 1 FROM ow.current_assertions WHERE assertion_id=%s "
-                "AND review_state='accept'",
-                (item["assertion_id"],),
+                _ACCEPTED_ITEMS + " AND a.assertion_id=%s", (item["assertion_id"],)
             ).fetchone()
             if not active:
                 raise WorkbenchError("BRIEFING_STALE")
+            # A self-consistent digest proves only the stored bytes. Every cited
+            # field must still equal the live accepted assertion it names.
+            if _briefing_item(active) != item:
+                raise WorkbenchError("BRIEFING_EVIDENCE_MISMATCH")
             snapshot = conn.execute(
                 "SELECT text_sha256 FROM ow.visible_snapshots WHERE snapshot_id=%s",
                 (item["snapshot_id"],),

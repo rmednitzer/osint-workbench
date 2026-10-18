@@ -277,7 +277,15 @@ class VectorIndex:
             if active["space_id"] != self.space_id or active["status"] != "ready":
                 raise WorkbenchError("INCOMPATIBLE_GENERATION")
             vector = self.encoder.query(query)
-            _, sha = corpus(conn)
+            try:
+                _, sha = corpus(conn)
+                drifted = sha != active["corpus_sha256"]
+            except WorkbenchError as exc:
+                if exc.code != "REFERENCE_CORPUS_LIMIT":
+                    raise
+                # No generation can exceed the build bounds and document IDs bind
+                # immutable content, so an over-limit corpus has necessarily drifted.
+                drifted = True
             semantic = conn.execute(
                 """SELECT v.document_id,
                 min(v.embedding OPERATOR(ow_vector.<=>) %s::ow_vector.vector) AS distance
@@ -308,7 +316,7 @@ class VectorIndex:
                 "strategy": "hybrid-exact",
                 "generation_id": str(active["generation_id"]),
                 "space_id": self.space_id,
-                "degraded": sha != active["corpus_sha256"],
-                "degradation_reason": "CORPUS_CHANGED" if sha != active["corpus_sha256"] else None,
+                "degraded": drifted,
+                "degradation_reason": "CORPUS_CHANGED" if drifted else None,
                 "results": results,
             }
