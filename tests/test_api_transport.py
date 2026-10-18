@@ -157,6 +157,12 @@ def test_unsupported_destination_rights_or_billing_rejected(changes):
         source(**changes)
 
 
+@pytest.mark.parametrize("delimiter", ["?", "#"])
+def test_empty_endpoint_delimiters_cannot_change_continuation_semantics(delimiter):
+    with pytest.raises(ValidationError):
+        source(endpoint="https://feed.fixture.invalid/records" + delimiter)
+
+
 @pytest.mark.parametrize("limit", [0, 2, 8, 9, True, 1.5])
 def test_page_budget_refused_before_database_or_network(limit):
     with pytest.raises(WorkbenchError, match="^API_LIMIT_INVALID$"):

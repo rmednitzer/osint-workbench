@@ -45,7 +45,9 @@ profile hash, cycle page count and hashed continuation history. Grant only
 collector SELECT/UPDATE on new columns; keep reader exclusion. Commit accepted
 page metadata and continuation together after durable evidence writes. Keep
 partial cycles explicit and mark freshness only on terminal acceptance. Bound a
-tick to exactly one page and at most 120 s; bound a cycle to 128 pages and reject repeated
+tick to exactly one page, with a network/parser/admission deadline of at most
+120 s; filesystem durability, database finalization and failure recording can
+extend total wall time. Bound a cycle to 128 pages and reject repeated
 continuations across ticks. One durable run retains each page response, including
 empty/reused pages; batching pages into a run would lose earlier raw response
 references when no new document retains them. A nonterminal page returns partial

@@ -55,7 +55,7 @@ class ApiSource(StrictModel):
     def destination(self):
         fetch.validate_url(self.endpoint)
         part = urlsplit(self.endpoint)
-        if part.scheme != "https" or part.query:
+        if part.scheme != "https" or "?" in self.endpoint or "#" in self.endpoint:
             raise ValueError("API_ENDPOINT_INVALID")
         return self
 
