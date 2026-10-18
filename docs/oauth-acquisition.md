@@ -110,7 +110,9 @@ This is not a claim of complete OAuth security-profile conformance.
 resource origins. Native acquisition tests reconcile SQL/CAS and denial,
 reflection, backoff, no-dispatch and legacy identity behavior. The guarded
 two-LTS service fixture additionally uses real loaded-secret delivery, grant and
-resource requests, refusal/backoff/recovery and downstream readers. Candidate
-execution results must be bound to their exact revision and artifact. No actual
+resource requests, refusal/backoff/recovery and downstream readers. The [two-LTS service receipt](testing/oauth-service-2026-10-19.json) binds
+passing execution to its named source, wheel and harness/unit hashes. The
+[CodeQL review](testing/oauth-codeql-triage-2026-10-19.md) records two individual
+fixture dispositions without query/path exclusions. No actual
 provider or Janes contract, entitlement, content rights or target-host deployment
 is established. See [ADR-0049](adr/0049-oauth-client-credentials.md).

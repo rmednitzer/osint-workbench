@@ -40,6 +40,14 @@ chunks used by the optional retrieval profile.
 
 ## Verified baseline and evidence scope
 
+The OAuth service candidate `a567d10a72d3830fde2cffb57e3e0745f1bc4c0a` passed
+both LTS service and credential-isolation profiles in run `39170561506`. Its
+[receipt](docs/testing/oauth-service-2026-10-19.json) binds source, wheel and
+harness/unit hashes to loaded-secret token/resource exchange, denial/backoff,
+recovery, non-retention and reader postconditions. Separate-origin TLS and native
+SQL cases belong to foundation checks. This does not establish actual provider
+contracts, restricted content rights or complete OAuth conformance.
+
 The KEV service candidate `2789f99bf00602b3a81c08d6c9acb20272ec71c7` passed
 both LTS service and credential-isolation profiles in run `39166863336`. Its
 [receipt](docs/testing/kev-service-2026-10-18.json) binds source, harness/unit
