@@ -127,8 +127,12 @@ auditing remain separate checks. Broader type coverage and independent security
 review remain unfinished.
 
 After successful installed tests and package scans, reproduce the dedicated
-runtime-inventory environment and receipt verification in [build evidence](docs/build-evidence.md).
-CI retains the tested distributions and receipts for 30 days. Main-push signing
+runtime-inventory environment, CycloneDX generation and exact licence evidence
+verification in [build evidence](docs/build-evidence.md). Review dependency updates
+against [the licence policy](docs/security/dependency-licences.md); changed versions
+or evidence hashes must fail until their actual wheel texts are reviewed. Do not
+copy new hashes merely to obtain green CI. CI retains the tested distributions,
+receipts and two supplementary reports for 30 days. Main-push signing
 runs separately with no repository code execution; PR artifacts remain unsigned.
 
 ## Review and merge

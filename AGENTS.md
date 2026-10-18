@@ -16,6 +16,7 @@ caller before editing; do not invent a path.
 | CLI/configuration/MCP | CLI, configuration, service and MCP modules; [architecture](docs/architecture.md) |
 | SQL, evidence and jobs | `database.py`, `evidence.py`, job modules, `migrations/`; [workflows](docs/workflows.md), [lifecycle](docs/lifecycle.md) |
 | Acquisition | Collection, transport, parser/resolver workers; [scheduled acquisition](docs/scheduled-acquisition.md) |
+| Build/SBOM/licences | `scripts/build_evidence.py`, `scripts/check_sbom.py`, `scripts/check_licences.py`; [build evidence](docs/build-evidence.md), [licence review](docs/security/dependency-licences.md) |
 | Local ML/retrieval | `local_encoder.py`, `encoder_process.py`, `vector_index.py`, local generation/reranker modules; [retrieval](docs/local-retrieval.md), [intelligence](docs/local-intelligence.md) |
 | Recovery/deletion | Recovery, GC and purge modules; [recovery](docs/recovery.md), [GC](docs/garbage-collection.md), [SQL purge](docs/retired-record-purge.md) |
 | Design/security | [ADRs](docs/adr/), [STPA](docs/assurance/stpa.md), [requirements](docs/assurance/requirements.md), [secure development](docs/security/secure-development.md) |
@@ -68,6 +69,11 @@ Use an existing interpreter directly during read-only or concurrent review.
 Installed-artifact verification uses a dedicated environment that no concurrent
 agent mutates. Do not run `uv run pytest` after installing a wheel and assume it
 still tests that wheel.
+
+Dependency changes require review of the actual selected wheel licence texts and
+metadata before changing exact evidence hashes. Preserve incomplete SBOM scope
+and unresolved legal/native outcomes; a new hash is not an approval. Marker
+custody and recovery follow [the host-local protocol](docs/inference-marker-safety.md).
 
 Dependency changes follow [the maintenance policy](docs/repository-maintenance.md).
 The [runtime policy](docs/runtime-support.md) requires full installed/native tests

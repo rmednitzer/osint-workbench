@@ -42,6 +42,7 @@ dev = [
     "gguf>=0.17,<1",
     "cmake>=3.31,<5",
     "mypy>=2.4,<3",
+    "cyclonedx-bom>=7.5,<8",
 ]
 
 [tool.hatch.build.targets.wheel]

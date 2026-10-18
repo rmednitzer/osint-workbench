@@ -134,8 +134,12 @@ jobs:
           OW_EVIDENCE_RUN_ATTEMPT: ${{ github.run_attempt }}
         run: |
           export OW_EVIDENCE_TREE="$(git rev-parse HEAD^{tree})"
-          /tmp/ow-evidence/bin/python scripts/build_evidence.py generate --artifacts dist --output build-evidence
-          /tmp/ow-evidence/bin/python scripts/build_evidence.py verify --artifacts dist --output build-evidence
+          /tmp/ow-evidence/bin/python scripts/build_evidence.py generate --artifacts dist --output /tmp/ow-pre-evidence
+          .venv/bin/python scripts/check_sbom.py generate --python /tmp/ow-evidence/bin/python --manifest /tmp/ow-pre-evidence/manifest.json --output assurance/sbom.cdx.json
+          /tmp/ow-evidence/bin/python scripts/check_licences.py --policy docs/security/dependency-licences.json --output assurance/licence-review.json
+          /tmp/ow-evidence/bin/python scripts/build_evidence.py generate --artifacts dist --supplements assurance --output build-evidence
+          /tmp/ow-evidence/bin/python scripts/build_evidence.py verify --artifacts dist --supplements assurance --output build-evidence
+          .venv/bin/python scripts/check_sbom.py verify --python /tmp/ow-evidence/bin/python --manifest build-evidence/manifest.json --output assurance/sbom.cdx.json
       - name: Retain the tested distributions and public evidence
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -144,6 +148,8 @@ jobs:
             dist/*.whl
             dist/*.tar.gz
             build-evidence/*
+            assurance/sbom.cdx.json
+            assurance/licence-review.json
           if-no-files-found: error
           retention-days: 30
   # Keep the required check stable while requiring every matrix leg to succeed.
@@ -179,37 +185,72 @@ jobs:
       - name: Validate the complete evidence set without executing it
         env:
           SOURCE_SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
         run: |
-          python3 - <<'PYTHON'
-          import hashlib, json, os
+          python3 -I - <<'PYTHON'
+          import hashlib, json, os, re, stat
           from pathlib import Path
+
+          def require(condition):
+              if not condition:
+                  raise SystemExit('EVIDENCE_SET_REFUSED')
+
+          def read(path, limit):
+              descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+              try:
+                  before = os.fstat(descriptor)
+                  require(stat.S_ISREG(before.st_mode) and before.st_size <= limit)
+                  data = bytearray()
+                  while len(data) <= limit:
+                      block = os.read(descriptor, min(1024 * 1024, limit - len(data) + 1))
+                      if not block:
+                          break
+                      data.extend(block)
+                  after = os.fstat(descriptor)
+                  require(len(data) == before.st_size <= limit)
+                  require((before.st_size, before.st_mtime_ns) == (after.st_size, after.st_mtime_ns))
+                  return bytes(data)
+              finally:
+                  os.close(descriptor)
+
           root = Path('evidence')
           expected = {f'build-evidence-{runner}-python{version}-{os.environ["SOURCE_SHA"]}'
                       for runner, version in [('ubuntu-24.04', '3.12'), ('ubuntu-24.04', '3.13'), ('ubuntu-26.04', '3.14')]}
-          assert {p.name for p in root.iterdir()} == expected
+          require({p.name for p in root.iterdir()} == expected)
           for leg in root.iterdir():
-              files = [p for p in leg.rglob('*') if p.is_file()]
-              assert len(files) == 4 and not any(p.is_symlink() for p in leg.rglob('*'))
-              manifest = leg / 'build-evidence/manifest.json'
-              checksum = leg / 'build-evidence/manifest.sha256'
-              assert manifest.stat().st_size <= 4 * 1024 * 1024
-              raw = manifest.read_bytes()
-              assert checksum.read_text() == hashlib.sha256(raw).hexdigest() + '\n'
+              paths = list(leg.rglob('*'))
+              require(not leg.is_symlink() and not any(p.is_symlink() for p in paths))
+              files = [p for p in paths if p.is_file()]
+              require(len(files) == 6)
+              raw = read(leg / 'build-evidence/manifest.json', 4 * 1024 * 1024)
+              require(read(leg / 'build-evidence/manifest.sha256', 65) == (hashlib.sha256(raw).hexdigest() + '\n').encode())
               receipt = json.loads(raw)
-              assert receipt['source']['commit'] == os.environ['SOURCE_SHA']
-              assert len(receipt['artifacts']) == 2
+              require(receipt['format'] == 'osint-workbench-build-evidence-v2')
+              require(receipt['assurance_profile'] == 'python-sbom-and-licence-review')
+              require(receipt['source']['commit'] == os.environ['SOURCE_SHA'])
+              require(receipt['workflow'] == {'run_id': os.environ['RUN_ID'], 'run_attempt': os.environ['RUN_ATTEMPT']})
+              runtime = receipt['runtime']
+              require(runtime['implementation'] == 'CPython')
+              require(re.fullmatch(r'3\.(12|13|14)\.[0-9]{1,3}', runtime['python']) is not None)
+              require(leg.name == f'build-evidence-{runtime["os"]}-python{".".join(runtime["python"].split(".")[:2])}-{os.environ["SOURCE_SHA"]}')
+              require(len(receipt['artifacts']) == 2)
               names = [item['filename'] for item in receipt['artifacts']]
-              assert sum(name.endswith('.whl') for name in names) == 1
-              assert sum(name.endswith('.tar.gz') for name in names) == 1
-              assert {p.relative_to(leg).as_posix() for p in files} == {
+              require(sum(name.endswith('.whl') for name in names) == 1)
+              require(sum(name.endswith('.tar.gz') for name in names) == 1)
+              supplements = receipt['related_evidence']
+              require(len(supplements) == 2 and {item['filename'] for item in supplements} == {'sbom.cdx.json', 'licence-review.json'})
+              require({p.relative_to(leg).as_posix() for p in files} == {
                   'build-evidence/manifest.json', 'build-evidence/manifest.sha256',
-                  *(f'dist/{name}' for name in names)}
-              for item in receipt['artifacts']:
-                  name = item['filename']
-                  assert Path(name).name == name and name.endswith(('.whl', '.tar.gz'))
-                  artifact = leg / 'dist' / name
-                  assert artifact.is_file() and artifact.stat().st_size == item['bytes'] <= 256 * 1024 * 1024
-                  assert hashlib.sha256(artifact.read_bytes()).hexdigest() == item['sha256']
+                  'assurance/sbom.cdx.json', 'assurance/licence-review.json',
+                  *(f'dist/{name}' for name in names)})
+              for directory, items, limit in [('dist', receipt['artifacts'], 256 * 1024 * 1024),
+                                               ('assurance', supplements, 4 * 1024 * 1024)]:
+                  for item in items:
+                      name = item['filename']
+                      require(Path(name).name == name and re.fullmatch(r'[A-Za-z0-9._+-]+', name) is not None)
+                      data = read(leg / directory / name, limit)
+                      require(len(data) == item['bytes'] and hashlib.sha256(data).hexdigest() == item['sha256'])
           PYTHON
       - name: Attest the tested distributions and integrity evidence
         id: attest
@@ -222,6 +263,8 @@ jobs:
             evidence/**/*.tar.gz
             evidence/**/manifest.json
             evidence/**/manifest.sha256
+            evidence/**/sbom.cdx.json
+            evidence/**/licence-review.json
       - name: Retain the portable signature bundle
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

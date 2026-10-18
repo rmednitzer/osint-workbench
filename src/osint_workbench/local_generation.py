@@ -7,7 +7,6 @@ import socket
 import stat
 import struct
 import time
-import uuid
 from pathlib import Path
 from typing import Literal
 
@@ -68,6 +67,26 @@ def _process_start(pid):
         return None
 
 
+def _check_prior_process(pid, start, peer_pid):
+    if pid == peer_pid:
+        # The identity-checked current peer has already reported its slot idle.
+        return
+    observed = _process_start(pid)
+    if observed is not None:
+        if observed == start:
+            raise WorkbenchError("INFERENCE_PRIOR_PROCESS_ALIVE")
+        return  # A different verified start token establishes PID reuse.
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return
+    except OSError:
+        pass
+    # Missing /proc visibility is not evidence of termination. A live process,
+    # denied liveness check, or other error keeps the uncertain reservation.
+    raise WorkbenchError("INFERENCE_PRIOR_PROCESS_UNKNOWN")
+
+
 class _UnixBackend(httpcore.SyncBackend):
     def __init__(self, manifest, deadline, peer):
         self.manifest, self.deadline = manifest, deadline
@@ -105,22 +124,6 @@ class _UnixBackend(httpcore.SyncBackend):
         except Exception:
             stream.close()
             raise
-
-
-def _unknown(lock_path, generator_id, peer):
-    # Private ownership receipt; never prompts, host paths or credentials.
-    fd = os.open(
-        lock_path + ".unknown", os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600
-    )
-    with os.fdopen(fd, "w") as stream:
-        json.dump({"operation_id": str(uuid.uuid4()), "generator_id": generator_id, **peer}, stream)
-        stream.flush()
-        os.fsync(stream.fileno())
-    directory = os.open(str(Path(lock_path).parent), os.O_RDONLY | os.O_DIRECTORY)
-    try:
-        os.fsync(directory)
-    finally:
-        os.close(directory)
 
 
 class LocalGenerator:
@@ -185,7 +188,7 @@ class LocalGenerator:
         manifest = self.manifest
         prompt = manifest.prompt_prefix + prompt + manifest.prompt_suffix
         submitted = False
-        with admission() as lock_path, self._pool() as pool:
+        with admission() as held, self._pool() as pool:
             try:
                 self._probe(pool)
                 tokens = self._request(
@@ -198,7 +201,7 @@ class LocalGenerator:
                     raise WorkbenchError("INFERENCE_PROTOCOL_ERROR")
                 if len(ids) + manifest.max_output_tokens > manifest.context_tokens:
                     raise WorkbenchError("GENERATION_CONTEXT_EXCEEDED")
-                _unknown(lock_path, manifest.identity(), self._peer)
+                receipt = held.create_marker(manifest.identity(), self._peer)
                 submitted = True
                 result = self._request(
                     pool,
@@ -221,7 +224,7 @@ class LocalGenerator:
                     or result.get("stop_type") not in {"eos", "word", "limit"}
                 ):
                     raise WorkbenchError("INFERENCE_PROTOCOL_ERROR")
-                os.unlink(lock_path + ".unknown")
+                held.remove_marker(receipt)
                 submitted = False
                 if result.get("truncated") is not False or result["stop_type"] == "limit":
                     raise WorkbenchError("GENERATION_INCOMPLETE")
@@ -247,7 +250,7 @@ class LocalGenerator:
                 raise WorkbenchError("INFERENCE_UNAVAILABLE") from None
 
     def reconcile(self):
-        with admission(allow_uncertain=True) as lock_path, self._pool() as pool:
+        with admission(allow_uncertain=True) as held, self._pool() as pool:
             self._probe(pool)
             slots = self._request(pool, "/slots")
             if (
@@ -256,18 +259,11 @@ class LocalGenerator:
                 or slots[0].get("is_processing") is not False
             ):
                 raise WorkbenchError("INFERENCE_STILL_RUNNING")
-            marker = lock_path + ".unknown"
-            if os.path.lexists(marker):
-                info = os.lstat(marker)
-                if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid():
-                    raise WorkbenchError("INFERENCE_LOCK_UNSAFE")
-                with Path(marker).open("rb") as stream:
-                    receipt = json.loads(stream.read(4097))
-                if receipt.get("generator_id") != self.manifest.identity():
+            marker = held.read_marker()
+            if marker is not None:
+                receipt = marker.value
+                if receipt["generator_id"] != self.manifest.identity():
                     raise WorkbenchError("INFERENCE_OWNER_MISMATCH")
-                if receipt.get("pid") != self._peer.get("pid") and _process_start(
-                    receipt.get("pid")
-                ) == receipt.get("start"):
-                    raise WorkbenchError("INFERENCE_PRIOR_PROCESS_ALIVE")
-                os.unlink(marker)
+                _check_prior_process(receipt["pid"], receipt["start"], self._peer.get("pid"))
+                held.remove_marker(marker)
             return {"status": "idle", "generator_id": self.manifest.identity()}
