@@ -31,7 +31,11 @@ semantic quality, batch processing, full export/publisher/host recovery, native
 composition/licence clearance and operational deployment remain separate scope.
 A successful foundation run also does not run the privileged systemd-service
 workflow. Its historical [collector receipt](collector-deployment.json) has a
-separate older source/wheel; see [deployment](../deployment.md).
+separate older source/wheel; the
+[core-10 successor](documentation-service-2026-10-18.json) records successful
+service-only checks on both LTS defaults at `ebdbf666e0f4001dca59ce8760386aae80408d61`.
+Neither receipt is foundation CI or full operational deployment acceptance.
+See [deployment](../deployment.md) for the fixture boundary.
 
 ## Test strata and proof limits
 

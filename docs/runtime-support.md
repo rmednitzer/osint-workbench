@@ -78,5 +78,8 @@ original source-bound receipts rather than relabeling them.
 The audit baseline `d01f80ac88da50c9f826b1a15cb18c75bd1db75f` completed
 [foundation CI](https://github.com/rmednitzer/osint-workbench/actions/runs/39133727926)
 with all required profiles successful. This is installed/native suite evidence,
-not a newer two-LTS systemd-service receipt; the last recorded manual service
-run remains bound to its older source and wheel in [deployment](deployment.md).
+not a systemd-service receipt. The separate
+[core-10 two-LTS service receipt](testing/documentation-service-2026-10-18.json)
+records both protected distro interpreters at source `ebdbf666e0f4001dca59ce8760386aae80408d61`.
+Its fixture and wheel scope remains separate from foundation CI and operational
+acceptance; earlier service receipts retain their older source and wheel.

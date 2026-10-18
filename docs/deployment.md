@@ -128,9 +128,9 @@ can additionally run the collector acceptance script on a disposable GitHub-host
 runner. Earlier receipts record successful empty-config service, sandbox and
 accelerated timeout probes, followed by scoped PostgreSQL/disabled-source checks;
 see [the profile receipt](testing/profile-diagnostics.json) and
-[the collector receipt](testing/collector-deployment.json). Those historical runs
-did not exercise enabled HTTP acquisition or timer activation. Native unit parsing
-is a separate, narrower evidence level.
+[the collector receipt](testing/collector-deployment.json). The earliest empty/disabled-source attempts did not
+exercise enabled HTTP acquisition or timer activation; the later enabled-source
+receipt below did. Native unit parsing is a separate, narrower evidence level.
 
 The enabled-source extension passed at core schema 7 on source
 `064be8bb629a61e50ed9d4708a52a7b13675cb28`, as recorded in the collector receipt.
@@ -138,7 +138,11 @@ That historical receipt preserves failed fixture attempts and their corrections.
 It does not establish service acceptance for the current core schema 10,
 MCP/dependency closure, both LTS runners or this documentation revision. Repeat
 the manual workflow for the intended candidate and retain its observed reports.
-Its synthetic HTTP/timer result remains separate from operational deployment acceptance.
+A successor [2026-10-18 service receipt](testing/documentation-service-2026-10-18.json)
+records core-10 acceptance on both LTS defaults at `ebdbf666e0f4001dca59ce8760386aae80408d61`,
+including current-head reuse after one changed feed item. Its installed wheel
+is identified separately for each runner. This synthetic HTTP/timer result remains
+separate from operational deployment acceptance.
 
 The job must create a core installed-wheel virtual environment using the runner's
 `/usr/bin/python3`, not a home-directory-managed Python hidden by `ProtectHome`.
@@ -304,4 +308,7 @@ wheel. It preserves all failed fixture attempts and the earlier source-bound
 disabled-source receipt, whose manual wheel digest was not recorded. Earlier
 native retirement-test corrections remain in the verification receipt. These
 results establish only the bounded synthetic path at that recorded revision;
-newer schema/dependency changes require fresh manual service acceptance.
+newer schema/dependency changes require fresh manual service acceptance. The
+[core-10 successor receipt](testing/documentation-service-2026-10-18.json) supplies
+that bounded two-LTS evidence for its own named source and wheel, without
+relabeling earlier receipts or proving every subsequent revision.

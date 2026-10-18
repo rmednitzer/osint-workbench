@@ -60,6 +60,7 @@ Older evidence remains deliberately revision-bound:
 | Evidence | What it establishes |
 | --- | --- |
 | [Foundation verification receipt](docs/testing/verification-evidence.json) and [query-coalescing receipt](docs/testing/query-coalescing.json) | Their earlier source, wheel, schema and native regression results; their test counts are historical |
+| [Core-10 service successor](docs/testing/documentation-service-2026-10-18.json) | Both LTS systemd/HTTP/SCRAM/timer/head-reuse fixtures at `ebdbf666`; exact wheel digests retained, no pretrained or operational acceptance |
 | [Profile diagnostics](docs/testing/profile-diagnostics.json) and [collector deployment](docs/testing/collector-deployment.json) | Named disposable service/model probes; not acceptance of every later schema or dependency |
 | [Local quality observations](docs/local-quality.md) | Six document/eight query pretrained diagnostic calls on public authored cases; lexical and encoder aggregates tied, both failed unsupported-query abstention; no model adoption |
 | [Dependency currency](docs/testing/dependency-currency-2026-10-18.json), [tool pins](docs/testing/dependency-tools-2026-10-18.json) and [security settings](docs/testing/security-settings-2026-10-18.json) | Dated reviewed selections and observed settings, not perpetual freshness or conformance |

@@ -61,8 +61,9 @@ individual implementation findings and severities. Priority follow-up includes:
   untrusted source text from local generation special-token parsing.
 - Narrow retrieval writer UPDATE authority, add exact reader-grant validation,
   and make terminal-job deduplication/retry status explicit.
-- Complete current revision service acceptance after feed identity changes;
-  historical unit/collector receipts do not validate a newer harness oracle.
+- Retain revision-bound service acceptance when feed identity or its harness
+  changes; the core-10 two-LTS receipt covers its named wheel, while historical
+  receipts do not validate a newer oracle automatically.
 
 These are unfinished engineering and verification tasks, not claims that an
 exploit or operational incident occurred. New evidence must discriminate the

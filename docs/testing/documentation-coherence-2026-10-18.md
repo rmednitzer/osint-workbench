@@ -74,6 +74,12 @@ synthetic root/systemd/namespace/database fixture work only on disposable hosted
 runners and skips the pretrained encoder diagnostic. Its current result must be
 read from the candidate's named run rather than inferred from old service receipts.
 
+The [new service receipt](documentation-service-2026-10-18.json) records run
+`39136643892`, tested source `ebdbf666e0f4001dca59ce8760386aae80408d61` and both
+installed-wheel digests. Both LTS service jobs passed; the encoder job was
+intentionally not selected. The recorded positive and negative fixture outcomes
+are bounded observations, not whole-host or provider acceptance.
+
 Local checks cover Markdown links, source/register drift controls, syntax/lint,
 static security/type boundaries, relevant offline tests and publication scans.
 Native database and privileged service outcomes are reported separately in the
