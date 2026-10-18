@@ -137,9 +137,14 @@ jobs:
           /tmp/ow-evidence/bin/python scripts/build_evidence.py generate --artifacts dist --output /tmp/ow-pre-evidence
           .venv/bin/python scripts/check_sbom.py generate --python /tmp/ow-evidence/bin/python --manifest /tmp/ow-pre-evidence/manifest.json --output assurance/sbom.cdx.json
           /tmp/ow-evidence/bin/python scripts/check_licences.py --policy docs/security/dependency-licences.json --output assurance/licence-review.json
+          .venv/bin/python scripts/check_native.py generate --python /tmp/ow-evidence/bin/python --manifest /tmp/ow-pre-evidence/manifest.json --policy docs/security/native-components.json --output assurance/native-review.json
+          /tmp/ow-evidence/bin/python scripts/build_notices.py generate --policy docs/security/dependency-licences.json --output assurance/missing-wheel-notices.txt
           /tmp/ow-evidence/bin/python scripts/build_evidence.py generate --artifacts dist --supplements assurance --output build-evidence
           /tmp/ow-evidence/bin/python scripts/build_evidence.py verify --artifacts dist --supplements assurance --output build-evidence
           .venv/bin/python scripts/check_sbom.py verify --python /tmp/ow-evidence/bin/python --manifest build-evidence/manifest.json --output assurance/sbom.cdx.json
+          .venv/bin/python scripts/check_native.py verify --python /tmp/ow-evidence/bin/python --manifest build-evidence/manifest.json --policy docs/security/native-components.json --output assurance/native-review.json
+          /tmp/ow-evidence/bin/python scripts/build_notices.py verify --policy docs/security/dependency-licences.json --output assurance/missing-wheel-notices.txt
+          .venv/bin/python scripts/check_publication.py --evidence assurance --evidence build-evidence
       - name: Retain the tested distributions and public evidence
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -150,6 +155,8 @@ jobs:
             build-evidence/*
             assurance/sbom.cdx.json
             assurance/licence-review.json
+            assurance/native-review.json
+            assurance/missing-wheel-notices.txt
           if-no-files-found: error
           retention-days: 30
   # Keep the required check stable while requiring every matrix leg to succeed.
@@ -222,12 +229,12 @@ jobs:
               paths = list(leg.rglob('*'))
               require(not leg.is_symlink() and not any(p.is_symlink() for p in paths))
               files = [p for p in paths if p.is_file()]
-              require(len(files) == 6)
+              require(len(files) == 8)
               raw = read(leg / 'build-evidence/manifest.json', 4 * 1024 * 1024)
               require(read(leg / 'build-evidence/manifest.sha256', 65) == (hashlib.sha256(raw).hexdigest() + '\n').encode())
               receipt = json.loads(raw)
-              require(receipt['format'] == 'osint-workbench-build-evidence-v2')
-              require(receipt['assurance_profile'] == 'python-sbom-and-licence-review')
+              require(receipt['format'] == 'osint-workbench-build-evidence-v3')
+              require(receipt['assurance_profile'] == 'python-sbom-native-and-notices')
               require(receipt['source']['commit'] == os.environ['SOURCE_SHA'])
               require(receipt['workflow'] == {'run_id': os.environ['RUN_ID'], 'run_attempt': os.environ['RUN_ATTEMPT']})
               runtime = receipt['runtime']
@@ -239,10 +246,11 @@ jobs:
               require(sum(name.endswith('.whl') for name in names) == 1)
               require(sum(name.endswith('.tar.gz') for name in names) == 1)
               supplements = receipt['related_evidence']
-              require(len(supplements) == 2 and {item['filename'] for item in supplements} == {'sbom.cdx.json', 'licence-review.json'})
+              require(len(supplements) == 4 and {item['filename'] for item in supplements} == {'sbom.cdx.json', 'licence-review.json', 'native-review.json', 'missing-wheel-notices.txt'})
               require({p.relative_to(leg).as_posix() for p in files} == {
                   'build-evidence/manifest.json', 'build-evidence/manifest.sha256',
                   'assurance/sbom.cdx.json', 'assurance/licence-review.json',
+                  'assurance/native-review.json', 'assurance/missing-wheel-notices.txt',
                   *(f'dist/{name}' for name in names)})
               for directory, items, limit in [('dist', receipt['artifacts'], 256 * 1024 * 1024),
                                                ('assurance', supplements, 4 * 1024 * 1024)]:
@@ -265,6 +273,8 @@ jobs:
             evidence/**/manifest.sha256
             evidence/**/sbom.cdx.json
             evidence/**/licence-review.json
+            evidence/**/native-review.json
+            evidence/**/missing-wheel-notices.txt
       - name: Retain the portable signature bundle
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

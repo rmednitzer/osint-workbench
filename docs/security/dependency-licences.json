@@ -2,7 +2,7 @@
   "schema_version": 1,
   "scope": "runtime-plus-retrieval; CPython3.12 Linux x86_64 wheel evidence; no legal approval",
   "review_date": "2026-10-18",
-  "lock_sha256": "18453eeca28650ca368f69982bbb27da2d9918832320c5fff814bc7a553cf8d7",
+  "lock_sha256": "b589fb960fb0b93b36720dd484b4c9bb1a66e510703aa52bd9eb9d4e375a62fa",
   "distributions": [
     {
       "name": "annotated-types",

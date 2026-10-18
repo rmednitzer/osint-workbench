@@ -130,9 +130,13 @@ After successful installed tests and package scans, reproduce the dedicated
 runtime-inventory environment, CycloneDX generation and exact licence evidence
 verification in [build evidence](docs/build-evidence.md). Review dependency updates
 against [the licence policy](docs/security/dependency-licences.md); changed versions
-or evidence hashes must fail until their actual wheel texts are reviewed. Do not
+or evidence hashes must fail until their actual wheel texts are reviewed.
+The [native policy](docs/security/native-components.md) also requires review of
+the complete recorded ELF file set and bytes for supported standard ABIs.
+Verify [supplementary notices](docs/security/supplementary-notices.md) independently;
+the two upstream texts do not establish complete native notices or source compliance. Do not
 copy new hashes merely to obtain green CI. CI retains the tested distributions,
-receipts and two supplementary reports for 30 days. Main-push signing
+receipts and four supplementary files for 30 days. Main-push signing
 runs separately with no repository code execution; PR artifacts remain unsigned.
 
 ## Review and merge

@@ -12,8 +12,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-FORMAT = "osint-workbench-build-evidence-v2"
-SUPPLEMENTS = frozenset({"sbom.cdx.json", "licence-review.json"})
+FORMAT = "osint-workbench-build-evidence-v3"
+SUPPLEMENTS = frozenset(
+    {"sbom.cdx.json", "licence-review.json", "native-review.json", "missing-wheel-notices.txt"}
+)
 MAX_MANIFEST = 4 * 1024 * 1024
 MAX_PACKAGES = 512
 MAX_INPUT_BYTES = 256 * 1024 * 1024
@@ -182,10 +184,11 @@ def manifest(root, artifacts, lock, environ, supplements=None):
         "inventory_scope": (
             "All installed distributions in a caller-prepared runtime+retrieval environment"
         ),
-        "assurance_profile": "python-sbom-and-licence-review" if supplements else "integrity-only",
+        "assurance_profile": "python-sbom-native-and-notices" if supplements else "integrity-only",
         "related_evidence": supplementary_inventory(supplements),
         "limitations": [
-            "Integrity receipt; separately verified SBOM and licence report are bound by digest",
+            "Integrity receipt; separately verified SBOM, native inventory and notices "
+            "are bound by digest",
             "License metadata is publisher-declared and is not a reviewed legal disposition",
             "License expressions are recorded without SPDX syntax or identifier validation",
             "Inventory scope depends on the caller preparing the documented isolated environment",

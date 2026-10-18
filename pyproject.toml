@@ -43,6 +43,7 @@ dev = [
     "cmake>=3.31,<5",
     "mypy>=2.4,<3",
     "cyclonedx-bom>=7.5,<8",
+    "pyelftools>=0.33,<0.34",
 ]
 
 [tool.hatch.build.targets.wheel]

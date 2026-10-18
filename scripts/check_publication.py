@@ -199,7 +199,7 @@ def scan_commit_metadata(root, base_revision, private_values=(), *, allow_base_i
         return {"scanned_commits": 0, "findings": [{"category": str(exc)}]}
 
 
-def inspect_text(name: str, content: str, private_values=()) -> list[str]:
+def inspect_text(name: str, content: str, private_values=(), *, verified_notice=False) -> list[str]:
     findings = []
     if any(value and value.casefold() in content.casefold() for value in private_values):
         findings.append("private-identifier")
@@ -231,6 +231,15 @@ def inspect_text(name: str, content: str, private_values=()) -> list[str]:
             continue
         allowed = (
             (
+                verified_notice
+                and name == "missing-wheel-notices.txt"
+                and url
+                in {
+                    "http:" + "//www.apache.org/licenses/",
+                    "http:" + "//www.apache.org/licenses/LICENSE-2.0",
+                }
+            )
+            or (
                 name == "renovate.json"
                 and url == "https:" + "//docs.renovatebot.com/renovate-schema.json"
             )
@@ -272,9 +281,49 @@ def selected_files():
     return [name for name in result.stdout.decode().split("\0") if name]
 
 
+def scan_generated_evidence(directory, private_values=()):
+    """Scan exact generated sets; notice URLs require byte-exact upstream proof."""
+    from build_evidence import EvidenceError, read_regular
+    from build_notices import NoticeError, bundle
+
+    assurance = {
+        "sbom.cdx.json",
+        "licence-review.json",
+        "native-review.json",
+        "missing-wheel-notices.txt",
+    }
+    receipts = {"manifest.json", "manifest.sha256"}
+    findings = []
+    try:
+        names = {path.name for path in directory.iterdir()}
+        if names not in (assurance, receipts):
+            return [{"path": "<generated-evidence>", "category": "invalid-evidence-set"}]
+        for name in sorted(names):
+            _, _, data = read_regular(directory / name, 4 * 1024 * 1024, collect=True)
+            verified_notice = False
+            if name == "missing-wheel-notices.txt":
+                _, _, policy = read_regular(
+                    ROOT / "docs/security/dependency-licences.json", 4 * 1024 * 1024, collect=True
+                )
+                if data == bundle(policy, root=ROOT):
+                    verified_notice = True
+                else:
+                    findings.append({"path": name, "category": "notice-provenance-mismatch"})
+            findings.extend(
+                {"path": name, "category": category}
+                for category in inspect_text(
+                    name, data.decode("utf-8"), private_values, verified_notice=verified_notice
+                )
+            )
+    except (EvidenceError, NoticeError, OSError, ValueError):
+        findings.append({"path": "<generated-evidence>", "category": "evidence-input-refused"})
+    return findings
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--artifacts", type=Path)
+    parser.add_argument("--evidence", type=Path, action="append", default=[])
     parser.add_argument("--base-revision", help="Explicit reviewed ancestor; scan only base..HEAD")
     parser.add_argument("--allow-base-identities", action="store_true")
     args = parser.parse_args()
@@ -355,6 +404,8 @@ def main():
                     {"path": artifact.name, "category": c}
                     for c in inspect_text(relative, content, values)
                 )
+    for directory in args.evidence:
+        findings.extend(scan_generated_evidence(directory, values))
     metadata = (
         scan_commit_metadata(
             ROOT, args.base_revision, values, allow_base_identities=args.allow_base_identities

@@ -34,7 +34,7 @@ concurrency and policy-gated isolated recovery. See
 [the earlier revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
 models establish execution contracts, not pretrained semantic quality.
 
-The full programme covers 28 capability areas, 37 ADRs, 58 requirements and 51
+The full programme covers 28 capability areas, 38 ADRs, 58 requirements and 51
 acceptance scenarios. The tests in this repository currently establish only a
 foundation subset. Detailed future specifications are under `docs/`; they are not
 execution receipts. CI results are authoritative for a particular tested revision.
@@ -199,3 +199,15 @@ bundled native redistribution obligations remain unresolved. See
 [SBOM scope](docs/sbom.md), [licence dispositions](docs/security/dependency-licences.md)
 and [ADR-0037](docs/adr/0037-inference-custody-python-sbom.md). Configuration and
 local focused tests do not replace revision-bound installed/native CI evidence.
+
+Native supply-chain evidence adds exact reviewed identities for recorded ELF files
+in the supported runtime wheels, plus parser-derived ELF headers and declared
+dynamic library names. The v3 receipt binds that report and a separate supplement
+containing the two reviewed upstream licence texts missing from Flatbuffers and
+tokenizers wheels. The Python SBOM remains incomplete: this does not identify all
+statically linked components, resolve loader state, inspect unrecorded files,
+clear redistribution obligations or cover OS/model/test-server composition.
+See [native inventory](docs/native-inventory.md),
+[notice scope](docs/security/supplementary-notices.md) and
+[ADR-0038](docs/adr/0038-native-file-evidence-notices.md). Exact installed/native
+and signature results remain specific to the tested revision.
