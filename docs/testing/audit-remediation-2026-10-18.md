@@ -30,7 +30,7 @@ run of the candidate commit, not to this file.
 | MCP 64 KiB result cap is reachable inside advertised schema maxima (search/briefing/assertion pages) | Low-Medium | Needs size-aware pagination or lower schema maxima |
 | `parse_special` applies to embedded source text in local generation prompts | Low-Medium | Tokenize manifest template separately from untrusted text |
 | Retrieval writer has whole-row UPDATE on generations/active pointer | Low | Additive retrieval-profile migration narrowing to status/error columns |
-| Blank or tokenizer-erased document fails the whole index build; one long rerank candidate fails the request | Low-Medium | Needs explicit per-document skip/exclusion contract |
+| Blank or tokenizer-erased document fails the whole index build; one long rerank candidate fails the request | Medium | Reachable from hostile feeds: an entry whose text is only `&#8203;` passes extraction and the encoder blank check. Needs an explicit unencodable-member disposition (retrieval-profile migration, since activation requires members to equal the corpus) or a visible-text extraction rule |
 | `enqueue` on terminal job returns old ID; lock wait surfaces raw `LockNotAvailable` | Low | Return status explicitly; map lock timeout |
 | `document_heads` not bound to its key by a composite FK | Low | Hardening migration; no tenancy claim exists |
 | Reader validation is a denylist | Low | Exact allowlist like collector validation |
