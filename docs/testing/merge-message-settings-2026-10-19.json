@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-10-18T22:36:52.684449+00:00",
+  "baseline_commit": "02685c1317e271c25b1e17961d294d6144a692a5",
+  "before": {
+    "allow_merge_commit": true,
+    "allow_squash_merge": true,
+    "allow_rebase_merge": false,
+    "allow_auto_merge": true,
+    "delete_branch_on_merge": true,
+    "merge_commit_title": "PR_TITLE",
+    "merge_commit_message": "PR_BODY",
+    "squash_merge_commit_title": "COMMIT_OR_PR_TITLE",
+    "squash_merge_commit_message": "COMMIT_MESSAGES"
+  },
+  "change": {
+    "merge_commit_title": "PR_TITLE",
+    "merge_commit_message": "BLANK",
+    "squash_merge_commit_title": "PR_TITLE",
+    "squash_merge_commit_message": "BLANK"
+  },
+  "readback": {
+    "allow_merge_commit": true,
+    "allow_squash_merge": true,
+    "allow_rebase_merge": false,
+    "allow_auto_merge": true,
+    "delete_branch_on_merge": true,
+    "merge_commit_title": "PR_TITLE",
+    "merge_commit_message": "BLANK",
+    "squash_merge_commit_title": "PR_TITLE",
+    "squash_merge_commit_message": "BLANK"
+  },
+  "unchanged_controls": [
+    "main protection",
+    "required checks",
+    "administrator enforcement",
+    "merge methods",
+    "auto-merge availability"
+  ],
+  "historical_finding": {
+    "commit": "02685c1317e271c25b1e17961d294d6144a692a5",
+    "pull_request": 23,
+    "message_sha256": "60f3f0273b1fe1fa0e86ed79b505264fcfeaf03782127667f81ba44a558799b1",
+    "category": "unclassified-url",
+    "observed_url_hosts": [
+      "developer.mend.io",
+      "mend.io",
+      "octochangelog.com",
+      "redirect.github.com",
+      "renovatebot.com"
+    ],
+    "scope": "Public upstream release-note links copied into the merge message; not operational source configuration. Public history preserved."
+  }
+}
