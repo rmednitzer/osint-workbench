@@ -1,0 +1,698 @@
+{
+  "advisory_service": {
+    "endpoint_prefix": "https://pypi.org/pypi/",
+    "name": "PyPI JSON API"
+  },
+  "audits": {
+    "development_runtime_retrieval": {
+      "advisories": [],
+      "advisory_count": 0,
+      "audit_report_written_at_utc": "2026-10-18T07:50:01.522803+00:00",
+      "exit_status": 0,
+      "inventory": [
+        {
+          "name": "annotated-types",
+          "version": "0.8.0"
+        },
+        {
+          "name": "anyio",
+          "version": "4.15.1"
+        },
+        {
+          "name": "arrow",
+          "version": "1.4.0"
+        },
+        {
+          "name": "ast-serialize",
+          "version": "0.13.1"
+        },
+        {
+          "name": "attrs",
+          "version": "26.1.0"
+        },
+        {
+          "name": "boolean-py",
+          "version": "5.0"
+        },
+        {
+          "name": "build",
+          "version": "1.6.1"
+        },
+        {
+          "name": "cachecontrol",
+          "version": "0.14.4"
+        },
+        {
+          "name": "certifi",
+          "version": "2026.7.22"
+        },
+        {
+          "name": "cffi",
+          "version": "2.1.1"
+        },
+        {
+          "name": "chardet",
+          "version": "7.7.0"
+        },
+        {
+          "name": "charset-normalizer",
+          "version": "3.5.2"
+        },
+        {
+          "name": "click",
+          "version": "8.5.0"
+        },
+        {
+          "name": "cmake",
+          "version": "4.4.4"
+        },
+        {
+          "name": "cryptography",
+          "version": "50.0.2"
+        },
+        {
+          "name": "cyclonedx-bom",
+          "version": "7.5.0"
+        },
+        {
+          "name": "cyclonedx-python-lib",
+          "version": "11.12.0"
+        },
+        {
+          "name": "defusedxml",
+          "version": "0.7.1"
+        },
+        {
+          "name": "feedparser",
+          "version": "6.0.14"
+        },
+        {
+          "name": "feedparser-sgmllib",
+          "version": "2.1.0"
+        },
+        {
+          "name": "filelock",
+          "version": "4.2.2"
+        },
+        {
+          "name": "flatbuffers",
+          "version": "25.12.19"
+        },
+        {
+          "name": "fqdn",
+          "version": "1.6.0"
+        },
+        {
+          "name": "fsspec",
+          "version": "2026.9.0"
+        },
+        {
+          "name": "gguf",
+          "version": "0.19.0"
+        },
+        {
+          "name": "h11",
+          "version": "0.16.0"
+        },
+        {
+          "name": "hf-xet",
+          "version": "1.7.0"
+        },
+        {
+          "name": "httpcore",
+          "version": "1.0.9"
+        },
+        {
+          "name": "httpcore2",
+          "version": "2.13.1"
+        },
+        {
+          "name": "httpx2",
+          "version": "2.13.1"
+        },
+        {
+          "name": "huggingface-hub",
+          "version": "2.2.0"
+        },
+        {
+          "name": "idna",
+          "version": "3.20"
+        },
+        {
+          "name": "iniconfig",
+          "version": "2.3.1"
+        },
+        {
+          "name": "isoduration",
+          "version": "20.11.0"
+        },
+        {
+          "name": "jsonpointer",
+          "version": "3.2.1"
+        },
+        {
+          "name": "jsonschema",
+          "version": "4.26.0"
+        },
+        {
+          "name": "jsonschema-specifications",
+          "version": "2025.9.1"
+        },
+        {
+          "name": "lark",
+          "version": "1.3.1"
+        },
+        {
+          "name": "librt",
+          "version": "0.16.0"
+        },
+        {
+          "name": "license-expression",
+          "version": "30.4.4"
+        },
+        {
+          "name": "lxml",
+          "version": "6.1.3"
+        },
+        {
+          "name": "markdown-it-py",
+          "version": "4.2.0"
+        },
+        {
+          "name": "mcp",
+          "version": "2.3.0"
+        },
+        {
+          "name": "mcp-types",
+          "version": "2.3.0"
+        },
+        {
+          "name": "mdurl",
+          "version": "0.1.2"
+        },
+        {
+          "name": "ml-dtypes",
+          "version": "0.6.0"
+        },
+        {
+          "name": "msgpack",
+          "version": "1.2.3"
+        },
+        {
+          "name": "mypy",
+          "version": "2.4.0"
+        },
+        {
+          "name": "mypy-extensions",
+          "version": "1.1.0"
+        },
+        {
+          "name": "numpy",
+          "version": "2.5.4"
+        },
+        {
+          "name": "onnx",
+          "version": "1.23.2"
+        },
+        {
+          "name": "onnxruntime",
+          "version": "1.31.0"
+        },
+        {
+          "name": "opentelemetry-api",
+          "version": "1.45.1"
+        },
+        {
+          "name": "packageurl-python",
+          "version": "0.17.6"
+        },
+        {
+          "name": "packaging",
+          "version": "26.3"
+        },
+        {
+          "name": "pathspec",
+          "version": "1.1.1"
+        },
+        {
+          "name": "pip",
+          "version": "26.2.1"
+        },
+        {
+          "name": "pip-api",
+          "version": "0.0.35"
+        },
+        {
+          "name": "pip-audit",
+          "version": "2.10.1"
+        },
+        {
+          "name": "pip-requirements-parser",
+          "version": "32.0.1"
+        },
+        {
+          "name": "platformdirs",
+          "version": "4.13.4"
+        },
+        {
+          "name": "pluggy",
+          "version": "1.7.0"
+        },
+        {
+          "name": "protobuf",
+          "version": "7.36.2"
+        },
+        {
+          "name": "psycopg",
+          "version": "3.3.6"
+        },
+        {
+          "name": "psycopg-binary",
+          "version": "3.3.6"
+        },
+        {
+          "name": "py-serializable",
+          "version": "2.1.0"
+        },
+        {
+          "name": "pycparser",
+          "version": "3.11"
+        },
+        {
+          "name": "pydantic",
+          "version": "2.14.1"
+        },
+        {
+          "name": "pydantic-core",
+          "version": "2.50.1"
+        },
+        {
+          "name": "pyelftools",
+          "version": "0.33"
+        },
+        {
+          "name": "pygments",
+          "version": "2.21.0"
+        },
+        {
+          "name": "pyjwt",
+          "version": "2.15.1"
+        },
+        {
+          "name": "pyparsing",
+          "version": "3.3.3"
+        },
+        {
+          "name": "pyproject-hooks",
+          "version": "1.3.3"
+        },
+        {
+          "name": "pytest",
+          "version": "9.1.1"
+        },
+        {
+          "name": "python-dateutil",
+          "version": "2.9.0.post0"
+        },
+        {
+          "name": "python-multipart",
+          "version": "0.0.32"
+        },
+        {
+          "name": "pyyaml",
+          "version": "6.0.3"
+        },
+        {
+          "name": "referencing",
+          "version": "0.37.0"
+        },
+        {
+          "name": "requests",
+          "version": "2.34.2"
+        },
+        {
+          "name": "rfc3339-validator",
+          "version": "0.1.4"
+        },
+        {
+          "name": "rfc3986-validator",
+          "version": "0.1.1"
+        },
+        {
+          "name": "rfc3987-syntax",
+          "version": "1.1.0"
+        },
+        {
+          "name": "rich",
+          "version": "15.0.0"
+        },
+        {
+          "name": "rpds-py",
+          "version": "2026.9.1"
+        },
+        {
+          "name": "ruff",
+          "version": "0.17.1"
+        },
+        {
+          "name": "six",
+          "version": "1.17.0"
+        },
+        {
+          "name": "sortedcontainers",
+          "version": "2.4.0"
+        },
+        {
+          "name": "sse-starlette",
+          "version": "3.5.0"
+        },
+        {
+          "name": "starlette",
+          "version": "1.8.0"
+        },
+        {
+          "name": "tokenizers",
+          "version": "0.23.3"
+        },
+        {
+          "name": "tomli",
+          "version": "2.5.0"
+        },
+        {
+          "name": "tomli-w",
+          "version": "1.2.0"
+        },
+        {
+          "name": "tqdm",
+          "version": "4.70.1"
+        },
+        {
+          "name": "truststore",
+          "version": "0.10.5"
+        },
+        {
+          "name": "typing-extensions",
+          "version": "4.16.0"
+        },
+        {
+          "name": "typing-inspection",
+          "version": "0.4.4"
+        },
+        {
+          "name": "tzdata",
+          "version": "2026.5"
+        },
+        {
+          "name": "uri-template",
+          "version": "1.3.0"
+        },
+        {
+          "name": "urllib3",
+          "version": "2.8.0"
+        },
+        {
+          "name": "uvicorn",
+          "version": "0.54.0"
+        },
+        {
+          "name": "webcolors",
+          "version": "25.10.0"
+        }
+      ],
+      "inventory_count": 102,
+      "inventory_sha256": "232cc3e6317542639027f4806a7904ad4c8ccb92b06d8bf54c0f97996a115d56",
+      "raw_report_sha256": "c64e096de139b3165eb8be7d98db0671d4ced0acb1d175b3ac141806c48cfed9",
+      "requirements_sha256": "eef07183c3b858ca0fc50067c52001fdbe9dcf6e9a1fd27854aed0dd6069a640",
+      "skipped": [],
+      "skipped_count": 0
+    },
+    "isolated_build_closure": {
+      "advisories": [],
+      "advisory_count": 0,
+      "audit_report_written_at_utc": "2026-10-18T07:50:41.480217+00:00",
+      "exit_status": 0,
+      "inventory": [
+        {
+          "name": "hatchling",
+          "version": "1.32.4"
+        },
+        {
+          "name": "packaging",
+          "version": "26.3"
+        },
+        {
+          "name": "pathspec",
+          "version": "1.1.1"
+        },
+        {
+          "name": "pluggy",
+          "version": "1.7.0"
+        },
+        {
+          "name": "tomlkit",
+          "version": "0.15.2"
+        },
+        {
+          "name": "trove-classifiers",
+          "version": "2026.9.21.13"
+        }
+      ],
+      "inventory_count": 6,
+      "inventory_sha256": "2146656a7beadf0e584b2d8a297bb03b102146538eacb12c0daee1ae02e081e1",
+      "raw_report_sha256": "6af6a86730ae32a6ef3edba1a4191e1f4db819901977380559098c6ea8a7ddf3",
+      "requirements_sha256": "d1f63638f0de2120e6b10ed5c54f7f9d143af03b52bec6c20b1aaf9ba78f8df8",
+      "skipped": [],
+      "skipped_count": 0
+    },
+    "runtime_retrieval": {
+      "advisories": [],
+      "advisory_count": 0,
+      "audit_report_written_at_utc": "2026-10-18T07:47:36.819224+00:00",
+      "exit_status": 0,
+      "inventory": [
+        {
+          "name": "annotated-types",
+          "version": "0.8.0"
+        },
+        {
+          "name": "anyio",
+          "version": "4.15.1"
+        },
+        {
+          "name": "attrs",
+          "version": "26.1.0"
+        },
+        {
+          "name": "certifi",
+          "version": "2026.7.22"
+        },
+        {
+          "name": "cffi",
+          "version": "2.1.1"
+        },
+        {
+          "name": "click",
+          "version": "8.5.0"
+        },
+        {
+          "name": "cryptography",
+          "version": "50.0.2"
+        },
+        {
+          "name": "feedparser",
+          "version": "6.0.14"
+        },
+        {
+          "name": "feedparser-sgmllib",
+          "version": "2.1.0"
+        },
+        {
+          "name": "filelock",
+          "version": "4.2.2"
+        },
+        {
+          "name": "flatbuffers",
+          "version": "25.12.19"
+        },
+        {
+          "name": "fsspec",
+          "version": "2026.9.0"
+        },
+        {
+          "name": "h11",
+          "version": "0.16.0"
+        },
+        {
+          "name": "hf-xet",
+          "version": "1.7.0"
+        },
+        {
+          "name": "httpcore",
+          "version": "1.0.9"
+        },
+        {
+          "name": "httpcore2",
+          "version": "2.13.1"
+        },
+        {
+          "name": "httpx2",
+          "version": "2.13.1"
+        },
+        {
+          "name": "huggingface-hub",
+          "version": "2.2.0"
+        },
+        {
+          "name": "idna",
+          "version": "3.20"
+        },
+        {
+          "name": "jsonschema",
+          "version": "4.26.0"
+        },
+        {
+          "name": "jsonschema-specifications",
+          "version": "2025.9.1"
+        },
+        {
+          "name": "mcp",
+          "version": "2.3.0"
+        },
+        {
+          "name": "mcp-types",
+          "version": "2.3.0"
+        },
+        {
+          "name": "numpy",
+          "version": "2.5.4"
+        },
+        {
+          "name": "onnxruntime",
+          "version": "1.31.0"
+        },
+        {
+          "name": "opentelemetry-api",
+          "version": "1.45.1"
+        },
+        {
+          "name": "packaging",
+          "version": "26.3"
+        },
+        {
+          "name": "protobuf",
+          "version": "7.36.2"
+        },
+        {
+          "name": "psycopg",
+          "version": "3.3.6"
+        },
+        {
+          "name": "psycopg-binary",
+          "version": "3.3.6"
+        },
+        {
+          "name": "pycparser",
+          "version": "3.11"
+        },
+        {
+          "name": "pydantic",
+          "version": "2.14.1"
+        },
+        {
+          "name": "pydantic-core",
+          "version": "2.50.1"
+        },
+        {
+          "name": "pyjwt",
+          "version": "2.15.1"
+        },
+        {
+          "name": "python-multipart",
+          "version": "0.0.32"
+        },
+        {
+          "name": "pyyaml",
+          "version": "6.0.3"
+        },
+        {
+          "name": "referencing",
+          "version": "0.37.0"
+        },
+        {
+          "name": "rpds-py",
+          "version": "2026.9.1"
+        },
+        {
+          "name": "sse-starlette",
+          "version": "3.5.0"
+        },
+        {
+          "name": "starlette",
+          "version": "1.8.0"
+        },
+        {
+          "name": "tokenizers",
+          "version": "0.23.3"
+        },
+        {
+          "name": "tqdm",
+          "version": "4.70.1"
+        },
+        {
+          "name": "truststore",
+          "version": "0.10.5"
+        },
+        {
+          "name": "typing-extensions",
+          "version": "4.16.0"
+        },
+        {
+          "name": "typing-inspection",
+          "version": "0.4.4"
+        },
+        {
+          "name": "uvicorn",
+          "version": "0.54.0"
+        }
+      ],
+      "inventory_count": 46,
+      "inventory_sha256": "dda212dac30962e4a83a770e396eca9f2597590e77034737ee650157c351cef9",
+      "raw_report_sha256": "0d6ea4789366a5fb627a998d90e919422fdb96bceba250dde431d532e9d4d84f",
+      "requirements_sha256": "ed493a2492223527ca4f024806c5373041596e12e7ff1327ed43b0f58dafdf5e",
+      "skipped": [],
+      "skipped_count": 0
+    }
+  },
+  "generated_at_utc": "2026-10-18T07:51:10.265199+00:00",
+  "interpreter": {
+    "os": "ubuntu-24.04",
+    "python": "3.12.14"
+  },
+  "limitations": [
+    "First-party application is excluded from third-party registry advisory queries",
+    "Advisory results are source- and time-bound; zero reports does not establish vulnerability freedom",
+    "pip-audit uses its HTTP cache and honors service freshness; completion time is not an upstream advisory publication timestamp",
+    "This receipt summarizes a CPython 3.12 Ubuntu 24.04 audit; other interpreters and platforms have separate CI evidence",
+    "Native bundled libraries, OS packages, native test-server sources, model assets and container/action dependencies are outside these Python advisory queries",
+    "Raw reports are not retained in this repository; their hashes and bounded inventories are recorded"
+  ],
+  "lock_packages_not_in_current_platform_audit": [
+    "colorama",
+    "httpx2-jsfetch",
+    "pywin32"
+  ],
+  "lock_sha256": "3487aad2b6d8e5a83f5a43dda945abed1dd146d7bba78254a72a380091ae5918",
+  "options": [
+    "--require-hashes",
+    "--disable-pip",
+    "--strict",
+    "--timeout=30",
+    "--format=json"
+  ],
+  "schema_version": 1,
+  "tool": {
+    "name": "pip-audit",
+    "version": "2.10.1"
+  },
+  "universal_lock_package_count": 105
+}

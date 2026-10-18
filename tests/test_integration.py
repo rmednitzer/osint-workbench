@@ -6,13 +6,13 @@ import uuid
 
 import psycopg
 import pytest
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
+from mcp import Client, StdioServerParameters
 
 from osint_workbench.contracts import DocumentInput
 from osint_workbench.database import migrate
 from osint_workbench.errors import WorkbenchError
 from osint_workbench.evidence import EvidenceStore
+from osint_workbench.intelligence import create_briefing
 from osint_workbench.service import ReadService
 
 pytestmark = pytest.mark.integration
@@ -100,18 +100,20 @@ def test_failure_does_not_commit_missing_metadata(databases, tmp_path, monkeypat
     assert reader.status()["documents"] == 0
 
 
-def test_mcp_real_client_roundtrip(databases, tmp_path):
+@pytest.mark.parametrize("mode", ["2026-07-28", "legacy"], ids=["modern", "legacy"])
+def test_mcp_real_client_roundtrip(databases, tmp_path, mode):
     writer, _, roles = databases
     store = EvidenceStore(tmp_path / "objects")
     doc_id = writer.ingest(document(), b"raw first", store)
+    briefing_id = create_briefing(writer, [doc_id])["briefing_id"]
 
     async def run():
         env = {**os.environ, "OW_READER_DSN": roles["reader"], "OW_EVIDENCE_ROOT": str(store.root)}
         params = StdioServerParameters(
             command=sys.executable, args=["-m", "osint_workbench.cli", "mcp"], env=env
         )
-        async with stdio_client(params) as (read, write), ClientSession(read, write) as session:
-            await session.initialize()
+        async with Client(params, mode=mode, read_timeout_seconds=10) as session:
+            assert session.protocol_version == ("2026-07-28" if mode != "legacy" else "2025-11-25")
             tools = await session.list_tools()
             assert {t.name for t in tools.tools} == {
                 "search_documents",
@@ -124,7 +126,7 @@ def test_mcp_real_client_roundtrip(databases, tmp_path):
             }
             found = await session.call_tool("search_documents", {"query": "storage"})
             assert (
-                not found.isError
+                not found.is_error
                 and json.loads(found.content[0].text)["results"][0]["document_id"] == doc_id
             )
             doc = await session.call_tool("get_document", {"document_id": doc_id})
@@ -134,8 +136,20 @@ def test_mcp_real_client_roundtrip(databases, tmp_path):
             invalid = await session.call_tool(
                 "search_documents", {"query": "storage", "shell": "forbidden"}
             )
-            assert invalid.isError and "INVALID_ARGUMENTS" in invalid.content[0].text
+            assert invalid.is_error and "INVALID_ARGUMENTS" in invalid.content[0].text
             invalid = await session.call_tool("get_document", {"document_id": "../private"})
-            assert invalid.isError
+            assert invalid.is_error
+            for name, arguments in [
+                ("list_sources", {}),
+                ("pipeline_status", {}),
+                ("list_assertions", {"document_id": doc_id}),
+                ("get_briefing", {"briefing_id": briefing_id}),
+            ]:
+                result = await session.call_tool(name, arguments)
+                assert not result.is_error
+            unknown = await session.call_tool("shell", {"command": "forbidden"})
+            assert unknown.is_error and json.loads(unknown.content[0].text) == {
+                "error": "UNKNOWN_TOOL"
+            }
 
     asyncio.run(run())

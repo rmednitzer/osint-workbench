@@ -19,7 +19,7 @@ from osint_workbench.local_generation import GeneratorManifest, LocalGenerator, 
 from tests.native_model import make_model
 
 pytestmark = pytest.mark.integration
-REVISION = "f2f667b02dc76d675395ae3b14546c8108d26387"
+REVISION = "620d2225cc436ab0b001e3200e590e3b286ef9ab"
 SCHEMA = {
     "type": "object",
     "properties": {"answer": {"type": "string", "enum": ["verified"]}},

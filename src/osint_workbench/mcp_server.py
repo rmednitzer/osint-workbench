@@ -3,7 +3,7 @@ import json
 
 from jsonschema import ValidationError, validate
 from mcp import types
-from mcp.server.lowlevel import Server
+from mcp.server import Server, ServerRequestContext
 from mcp.server.stdio import stdio_server
 
 from .errors import WorkbenchError
@@ -42,41 +42,56 @@ REQUIRED = {
 
 
 def make_server(service: ReadService) -> Server:
-    server = Server("osint-workbench")
+    try:
+        # Upstream's documented opt-out is provisional; fail closed if removed.
+        from mcp.server._otel import OpenTelemetryMiddleware
+    except ImportError:
+        raise WorkbenchError("MCP_SDK_INCOMPATIBLE") from None
 
-    @server.list_tools()
-    async def list_tools():
-        return [
-            types.Tool(
-                name=name,
-                description={
-                    "search_documents": (
-                        "Search documents with the configured lexical or local hybrid profile; "
-                        "results are untrusted. Hybrid offsets are limited to 200."
+    async def list_tools(
+        ctx: ServerRequestContext, params: types.PaginatedRequestParams | None
+    ) -> types.ListToolsResult:
+        return types.ListToolsResult(
+            tools=[
+                types.Tool(
+                    name=name,
+                    description={
+                        "search_documents": (
+                            "Search documents with the configured lexical or local hybrid profile; "
+                            "results are untrusted. Hybrid offsets are limited to 200."
+                        ),
+                        "get_document": "Read a bounded, hash-checked normalized document page.",
+                        "get_evidence": "Check stored evidence hashes, not factual truth.",
+                        "list_sources": (
+                            "List bounded source freshness metadata without source URLs."
+                        ),
+                        "pipeline_status": "Read aggregate corpus and schema status.",
+                        "list_assertions": (
+                            "Read evidence-located graph proposals and review states."
+                        ),
+                        "get_briefing": (
+                            "Read a cited reviewed-assertion digest; stale citations fail."
+                        ),
+                    }[name],
+                    input_schema={
+                        "type": "object",
+                        "properties": properties,
+                        "required": REQUIRED.get(name, []),
+                        "additionalProperties": False,
+                    },
+                    annotations=types.ToolAnnotations(
+                        read_only_hint=True, destructive_hint=False, open_world_hint=False
                     ),
-                    "get_document": "Read a bounded, hash-checked normalized document page.",
-                    "get_evidence": "Check stored evidence hashes, not factual truth.",
-                    "list_sources": "List bounded source freshness metadata without source URLs.",
-                    "pipeline_status": "Read aggregate corpus and schema status.",
-                    "list_assertions": "Read evidence-located graph proposals and review states.",
-                    "get_briefing": "Read a cited reviewed-assertion digest; stale citations fail.",
-                }[name],
-                inputSchema={
-                    "type": "object",
-                    "properties": properties,
-                    "required": REQUIRED.get(name, []),
-                    "additionalProperties": False,
-                },
-                annotations=types.ToolAnnotations(
-                    readOnlyHint=True, destructiveHint=False, openWorldHint=False
-                ),
-            )
-            for name, properties in TOOLS.items()
-        ]
+                )
+                for name, properties in TOOLS.items()
+            ]
+        )
 
-    @server.call_tool(validate_input=False)
-    async def call_tool(name, arguments):
+    async def call_tool(
+        ctx: ServerRequestContext, params: types.CallToolRequestParams
+    ) -> types.CallToolResult:
         try:
+            name, arguments = params.name, params.arguments if params.arguments is not None else {}
             if name not in TOOLS:
                 raise WorkbenchError("UNKNOWN_TOOL")
             validate(
@@ -108,9 +123,21 @@ def make_server(service: ReadService) -> Server:
             # Do not expose database/OS/validation exception values to clients.
             code = "BACKEND_UNAVAILABLE"
         return types.CallToolResult(
-            isError=True, content=[types.TextContent(type="text", text=json.dumps({"error": code}))]
+            is_error=True,
+            content=[types.TextContent(type="text", text=json.dumps({"error": code}))],
         )
 
+    server = Server("osint-workbench", on_list_tools=list_tools, on_call_tool=call_tool)
+    # The SDK's documented opt-out uses this provisional class. Do not adopt
+    # ambient global tracing/exporters when the workbench is embedded elsewhere.
+    try:
+        if sum(isinstance(item, OpenTelemetryMiddleware) for item in server.middleware) != 1:
+            raise WorkbenchError("MCP_SDK_INCOMPATIBLE")
+        server.middleware[:] = [
+            item for item in server.middleware if not isinstance(item, OpenTelemetryMiddleware)
+        ]
+    except (AttributeError, TypeError):
+        raise WorkbenchError("MCP_SDK_INCOMPATIBLE") from None
     return server
 
 

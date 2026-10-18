@@ -153,7 +153,8 @@ def test_checkpoint_fresh_restore_citations_history_and_real_mcp(databases, dest
             await client.initialize()
             result = await client.call_tool("get_document", {"document_id": doc})
             assert (
-                not result.isError and json.loads(result.content[0].text)["integrity"] == "verified"
+                not result.is_error
+                and json.loads(result.content[0].text)["integrity"] == "verified"
             )
             found = await client.call_tool("search_documents", {"query": "storage"})
             assert json.loads(found.content[0].text)["results"][0]["document_id"] == doc

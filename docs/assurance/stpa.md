@@ -535,3 +535,45 @@ Python optimization, byte substitution, special files and incorrect run/source
 identities. These checks supplement producer semantics; they do not replace
 independent component identification, complete release review or operational
 runtime observation.
+
+## MCP major-version and dependency adoption
+
+[ADR-0039](../adr/0039-mcp-v2-dependency-refresh.md) refines the existing public
+workbench boundary. The maintainer controls dependency adoption through CA1 and
+CA9 feedback; the adapter controls CA6/CA7 with its fixed read dispatch, selected
+protocol version, validated arguments and explicit error state. Package
+registries and the selected client remain external. An ambient tracing provider
+is an additional potential disclosure recipient when the adapter is embedded.
+This analysis allocates to R06, SC1/SC3/SC5 and existing C8/C12/C83–C85; it adds
+no remote authorization or operational-deployment claim.
+
+| UCA | Hazardous context / category | Derived constraint and allocation | Discriminating evidence |
+| --- | --- | --- | --- |
+| U87 | CA6/P or CA7/N: after an SDK upgrade, execute a request without application validation or expose a backend failure as successful or detailed output | H1/H3/H5; C87: retain explicit schema checks before fixed dispatch, bounded sanitized results and real modern/legacy stdio negotiation | Invalid extra fields/types/IDs and unknown tools cannot call the backend; both protocol modes retain seven reads and native reader restrictions |
+| U88 | CA1/P or CA9/T: approve an SDK using the old process model while its new automatic tracing or changed dependency bytes escape the reviewed disclosure/evidence boundary | H1/H5; C88: explicitly remove SDK tracing, refuse incompatible opt-out contracts and verify the newly resolved installed inventory, licence/native identities and exact revision | Ambient-tracing request probe, preserved nontracing middleware, opt-out drift refusal, actual selected-wheel review and fresh installed/native matrix |
+
+The U87 causal scenario starts with removed low-level handlers or permissive
+SDK defaults being mistaken for the application's admission checks. Listing a
+schema does not enforce it; the adapter must validate before invoking the read
+service. An error path must remain an explicit sanitized failure, never an empty
+successful corpus. Failure to negotiate prevents service use and must be visible
+to the caller; restoring broader authority is not a recovery mechanism.
+
+The U88 scenario starts when a maintainer assumes an API-only telemetry package
+cannot disclose anything. A global provider installed by another embedding
+component can activate previously inert instrumentation. Explicit middleware
+removal prevents this adapter's SDK spans; it does not control independent
+client or embedding-process instrumentation. A changed provisional opt-out must
+fail construction until reviewed, with a coherent protected rollback available.
+New package hashes require actual selected-wheel inspection rather than an
+automatic policy rewrite. Fresh green CI for another commit is stale feedback.
+
+For these discrete adoption and response actions, duration is N/A. Omitting an
+optional update delays maintenance without itself creating a scoped loss;
+omitting a required security correction while claiming acceptance remains
+U1/U12. Returning a valid result after an SDK cancellation does not prove its
+underlying worker thread stopped: inference admission and database authority
+must remain owned by the actual operation until completion. Existing process,
+fencing and resource-lifetime tests remain applicable. External assistant
+compatibility, comprehensive cancellation/resource scheduling and native/legal
+composition remain bounded by their separate acceptance evidence.

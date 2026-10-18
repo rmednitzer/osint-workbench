@@ -171,7 +171,7 @@ def test_cited_product_over_real_mcp_stdio(databases, tmp_path):
             result = await client.call_tool(
                 "get_briefing", {"briefing_id": briefing["briefing_id"]}
             )
-            assert not result.isError
+            assert not result.is_error
             assert json.loads(result.content[0].text)["items"][0]["quote"] == claim()["quote"]
             tools = await client.list_tools()
             assert not any(t.name in {"review", "generate", "enrich", "shell"} for t in tools.tools)

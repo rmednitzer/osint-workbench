@@ -93,7 +93,7 @@ jobs:
       - name: Prepare pinned native CPU test dependency
         run: |
           .venv/bin/python scripts/prepare_native.py --output /tmp/ow-native-source
-          .venv/bin/cmake -S /tmp/ow-native-source/llama.cpp-f2f667b02dc76d675395ae3b14546c8108d26387 -B /tmp/ow-native-build -DGGML_NATIVE=OFF -DGGML_OPENMP=OFF -DLLAMA_CURL=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_OPENSSL=OFF -DLLAMA_BUILD_UI=OFF -DLLAMA_USE_PREBUILT_UI=OFF -DGGML_CCACHE=OFF -DCMAKE_BUILD_TYPE=Release
+          .venv/bin/cmake -S /tmp/ow-native-source/llama.cpp-620d2225cc436ab0b001e3200e590e3b286ef9ab -B /tmp/ow-native-build -DGGML_NATIVE=OFF -DGGML_OPENMP=OFF -DLLAMA_CURL=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_OPENSSL=OFF -DLLAMA_BUILD_UI=OFF -DLLAMA_USE_PREBUILT_UI=OFF -DGGML_CCACHE=OFF -DCMAKE_BUILD_TYPE=Release
           .venv/bin/cmake --build /tmp/ow-native-build --target llama-server -j 2
       - name: Verify the core without optional inference dependencies
         run: |
