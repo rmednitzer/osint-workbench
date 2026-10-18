@@ -135,7 +135,9 @@ Do not add `--restart` to the normal service command.
 
 The guarded `--operational-fixture` now additionally exercises this unit with a
 disconnected synthetic HTTPS provider, a generated trust certificate and random
-synthetic loaded credential. It checks partial/terminal cursor commits, actual
+synthetic loaded credential. The TLS peer requires TLS 1.2 or newer and stores
+only a SHA-256 verifier for its random synthetic token. It checks partial/terminal
+cursor commits, actual
 accelerated timer activation, exact evidence and downstream worker/reader use,
 authentication failure, source-file credential replacement on reactivation,
 503 backoff, missing-name no-dispatch and duplicate-free recovery. Production

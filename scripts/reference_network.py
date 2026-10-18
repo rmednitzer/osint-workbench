@@ -9,6 +9,8 @@ The caller must stop its owned service before namespace removal.
 """
 
 import argparse
+import hashlib
+import hmac
 import json
 import os
 import signal
@@ -27,7 +29,7 @@ NAMESPACE = Path("/run/netns") / NAME
 CONTROL = ROOT / "phase"
 OBSERVATIONS = ROOT / "requests.jsonl"
 READY = ROOT / "ready"
-API_TOKEN = ROOT / "api-token"
+API_TOKEN_DIGEST = ROOT / "api-token.sha256"
 API_CERT = ROOT / "api.pem"
 API_KEY = ROOT / "api.key"
 API_PAGES = {
@@ -212,7 +214,7 @@ def handle_connection(connection, phase, record, *, deadline=None):
             pass
 
 
-def handle_api_connection(connection, phase, expected_token, record, *, deadline=None):
+def handle_api_connection(connection, phase, expected_digest, record, *, deadline=None):
     """Synthetic provider contract; record only fixed status/boolean observations."""
     if phase not in ("v1", "v2", "fail"):
         raise ValueError("INVALID_FIXTURE_PHASE")
@@ -254,7 +256,9 @@ def handle_api_connection(connection, phase, expected_token, record, *, deadline
             or "transfer-encoding" in headers
         ):
             raise ValueError
-        authorized = headers.get("authorization") == b"Bearer " + expected_token
+        authorized = hmac.compare_digest(
+            hashlib.sha256(headers.get("authorization", b"")).hexdigest(), expected_digest
+        )
         path_ok = lines[0] == b"GET " + expected_path + b" HTTP/1.1"
         status = (
             401 if not authorized else (400 if not path_ok else (503 if phase == "fail" else 200))
@@ -286,6 +290,7 @@ def serve(expected_inode, host_inode, *, api=False):
     context = None
     if api:
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        context.minimum_version = ssl.TLSVersion.TLSv1_2
         context.load_cert_chain(API_CERT, API_KEY)
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
         listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -316,7 +321,11 @@ def serve(expected_inode, host_inode, *, api=False):
                     try:
                         with context.wrap_socket(connection, server_side=True) as secure:
                             handle_api_connection(
-                                secure, phase, API_TOKEN.read_bytes(), record, deadline=deadline
+                                secure,
+                                phase,
+                                API_TOKEN_DIGEST.read_text(),
+                                record,
+                                deadline=deadline,
                             )
                     except (ssl.SSLError, OSError):
                         # TLS rejection records no application request or authentication data.
@@ -350,7 +359,10 @@ class ReferenceNetwork:
             if self._api_token is not None:
                 if not isinstance(self._api_token, str) or not 16 <= len(self._api_token) <= 128:
                     raise RuntimeError("FIXTURE_TOKEN_INVALID")
-                _write_new(API_TOKEN, self._api_token)
+                _write_new(
+                    API_TOKEN_DIGEST,
+                    hashlib.sha256(("Bearer " + self._api_token).encode()).hexdigest(),
+                )
                 run(
                     [
                         "openssl",
@@ -477,7 +489,7 @@ class ReferenceNetwork:
                 "requests.jsonl",
                 "ready",
                 "hosts",
-                "api-token",
+                "api-token.sha256",
                 "api.pem",
                 "api.key",
             ):

@@ -55,7 +55,11 @@ Extend the existing explicitly guarded two-LTS disposable service fixture. Its
 API peer uses generated TLS material, a random synthetic bearer token, production
 DNS/public-address/TLS checks and a disconnected namespace with loopback only.
 A fixture-only trust file is selected by the service; TLS validation is not
-bypassed. No provider response, credential or certificate key is published.
+bypassed and the peer explicitly requires TLS 1.2 or newer. The peer retains
+only a SHA-256 verifier for the random synthetic token, compared in constant
+time. The separately protected systemd delivery source remains a credential
+file, not an encrypted-at-rest backend. No provider response, credential or
+certificate key is published.
 
 Observe a partial page, no-dispatch non-due tick, actual accelerated timer-triggered
 terminal page, raw evidence, exact heads/outbox, rejected authentication, loaded

@@ -1,5 +1,6 @@
 """Native loopback protocol checks; never create or enter a network namespace."""
 
+import hashlib
 import importlib.util
 import socket
 import threading
@@ -38,7 +39,7 @@ def exchange(helper, phase, request, *, deadline=None, api=False):
                         helper.handle_api_connection(
                             connection,
                             phase,
-                            b"synthetic-fixture-token",
+                            hashlib.sha256(b"Bearer synthetic-fixture-token").hexdigest(),
                             records.append,
                             deadline=deadline,
                         )
