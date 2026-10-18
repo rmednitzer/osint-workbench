@@ -2,7 +2,7 @@
   "schema_version": 1,
   "scope": "runtime-plus-retrieval; CPython3.12 Linux x86_64 installed wheel evidence and reviewed supported archive variants; no legal approval",
   "review_date": "2026-10-18",
-  "lock_sha256": "3487aad2b6d8e5a83f5a43dda945abed1dd146d7bba78254a72a380091ae5918",
+  "lock_sha256": "a650c080ad3ca32ed1498ca0b2f253b6f239411d417d6cc68fd589765581c428",
   "distributions": [
     {
       "name": "annotated-types",
@@ -1668,7 +1668,7 @@
     },
     {
       "name": "starlette",
-      "version": "1.8.0",
+      "version": "1.9.0",
       "declared_expression": "BSD-3-Clause",
       "reviewed_text_summary": "BSD-3-Clause",
       "outcome": "declared-and-shipped-text",
@@ -1678,20 +1678,20 @@
       ],
       "evidence": [
         {
-          "path": "starlette-1.8.0.dist-info/METADATA",
-          "sha256": "551e8d74d290002521c655b816b27654e49922b88cb474c8d710a893099036f8",
+          "path": "starlette-1.9.0.dist-info/METADATA",
+          "sha256": "f05a43e2910b63d149f0810e218987d38c7336c1dac930ebeff427ef2798692c",
           "bytes": 6559,
           "kind": "metadata"
         },
         {
-          "path": "starlette-1.8.0.dist-info/licenses/LICENSE.md",
+          "path": "starlette-1.9.0.dist-info/licenses/LICENSE.md",
           "sha256": "dcb95677a02240243187e964f941847d19b17821cf99e5afae684fab328c19bf",
           "bytes": 1518,
           "kind": "licence-text"
         }
       ],
       "locked_wheel_sha256": [
-        "dfdd6b29c26483288088d990eee59631dedadd66ce20d203402a7ca8e3c4656f"
+        "fd3f159936e882d06c1108f84688f7cda2cf85fc6a592a50edbd175e882c2ddc"
       ]
     },
     {
@@ -2351,8 +2351,8 @@
     },
     {
       "name": "starlette",
-      "filename": "starlette-1.8.0-py3-none-any.whl",
-      "sha256": "dfdd6b29c26483288088d990eee59631dedadd66ce20d203402a7ca8e3c4656f"
+      "filename": "starlette-1.9.0-py3-none-any.whl",
+      "sha256": "fd3f159936e882d06c1108f84688f7cda2cf85fc6a592a50edbd175e882c2ddc"
     },
     {
       "name": "tokenizers",

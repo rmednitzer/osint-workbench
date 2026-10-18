@@ -37,6 +37,12 @@ Only pure-package membership, MCP/filelock versions and the application wheel
 identity change; the former review remains in Git history. Package additions and
 removals are listed in [the licence review](dependency-licences.md).
 
+The subsequent Starlette 1.9.0 lock refresh replaces its universal-wheel variant
+after verifying the locked archive hash and inspecting all 41 ZIP members for
+ELF magic. No ELF objects were found. The recorded empty set remains explicit;
+all other wheel variants and all 147 ELF proof entries are unchanged. This does
+not establish the absence of external or transitive native dependencies.
+
 Wheel archive bytes are obtained from the public locked registry URLs and checked
 against their `uv.lock` SHA-256 before ZIP inspection. Supported archive evidence
 covers standard CPython 3.12, 3.13 and 3.14 manylinux x86_64 wheels and compatible

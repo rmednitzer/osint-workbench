@@ -38,6 +38,17 @@ closure; the distinct HTTPX2 distribution remains. Their old review is retained
 in Git history, not represented as a current installed dependency. The exact two
 upstream-only notice supplements and unresolved native obligations remain.
 
+The subsequent scheduled lock refresh replaces Starlette 1.8.0 with 1.9.0.
+The selected universal wheel's locked SHA-256 was verified before inspecting its
+METADATA and complete shipped BSD-3-Clause licence. Its declared expression,
+Python minimum (3.11), dependency requirements and licence-text bytes are unchanged;
+the version-bearing METADATA bytes change. The exact archive and evidence records
+are updated; the distribution and archive counts above remain unchanged. The
+[upstream release](https://github.com/Kludex/starlette/releases/tag/1.9.0)
+changes TestClient streaming/cancellation and URL, header and host handling.
+Compatibility remains subject to the required installed/native CI profiles.
+This review does not close any existing notice or native-closure disposition.
+
 Historically, the initial review inspected 31 manylinux archives: 30 supported
 standard/ABI3 archives and one additional unsupported free-threaded CPython 3.13
 ONNX Runtime archive. The current review admits only the 30 supported native
