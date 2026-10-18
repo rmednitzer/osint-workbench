@@ -99,3 +99,9 @@ Python bounds or regenerate the hashed build closure implicitly.
 - Select an intentional public Git identity. Never use connector-default author
   metadata without checking it or rewrite public history without authorization.
   Agent files describe work; they do not grant user approval.
+- Exclude agent session/conversation links and private diagnostics from commit
+  messages, trailers, PR descriptions and merge messages. Before publication,
+  preflight the exact planned message with `scripts/check_publication.py
+  --message-file`; use an explicit reviewed merge subject/body instead of copying
+  a PR description implicitly. Preserve the metadata gate and report historical
+  findings separately; a green incremental scan does not clear them.

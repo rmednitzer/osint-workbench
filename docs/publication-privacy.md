@@ -77,8 +77,8 @@ base-identity opt-in and exactness, denylist precedence, malformed commits,
 invalid/nonancestor revisions, limits and redacted CLI failures. Those tests do
 not establish a review of this repository's actual private identifiers.
 
-This increment does not scan annotated tag text, Git notes, PR bodies, remote
-settings or all prior reachable history. It neither removes already published
+This increment does not automatically scan annotated tag text, Git notes, PR
+bodies, remote settings or all prior reachable history. It neither removes already published
 metadata nor authorizes history rewriting. Wider history/identity remediation
 requires its own reviewed scope and trusted inputs.
 
@@ -86,6 +86,33 @@ Foundation PR CI explicitly selects the PR base SHA and fetches complete history
 Push CI uses the event's previous SHA; manual runs select `HEAD^`. A manual check
 therefore covers only that selected range, not all unpublished branch history,
 and cannot trigger the main-push signing job.
+
+## Preflight planned public messages
+
+Agent session/conversation links belong outside public Git metadata and PR
+descriptions. A PR head can pass while a later merge message introduces new
+metadata, as recorded in [the integration incident](testing/audit-remediation-2026-10-18.md).
+Before creating a commit, PR or merge, scan its exact planned public text:
+
+```sh
+python scripts/check_publication.py --message-file "$PLANNED_MESSAGE_FILE"
+```
+
+The selected file must be a regular UTF-8 file of at most 256 KiB without NUL.
+It is opened without following the final symlink and without blocking on special
+files. Findings contain a fixed label and categories, never its path or content.
+The external private denylist applies. Optional email trailers must use the
+reserved public identities admitted by the metadata policy; base-identity
+inheritance does not apply to this preflight. Public documentation URLs still
+follow the existing host policy; this is not a ban on all reference links.
+
+Pass an explicit reviewed subject and body when merging. Scan the title and body
+together, then use those exact bytes for publication; scanner success does not
+bind a later file edit or a server-generated message. Preserve custody of the
+file through use. Recheck the resulting merge metadata and main-push CI.
+Preflight does not replace the full commit-range scan or automatically intercept
+GitHub UI edits. Existing public history remains unchanged, and a passing new
+range does not clear an earlier finding.
 
 ## Generated assurance files
 

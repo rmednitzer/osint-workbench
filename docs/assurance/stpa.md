@@ -595,6 +595,16 @@ composition remain bounded by their separate acceptance evidence.
 | U99 | CA12/P: lower remote exposure without provider evidence, or let the spending identity settle its own attempts | H9; C99: settlement only by a separate accounting role that is not a writer; provider bases require an evidence digest; only a still-reserved attempt settles at zero; settled rows are final; ADR-0043 | Writer, reader, collector, lifecycle and dual-role refusals; column-grant refusals; basis, currency and conflict cases; mutation of the writer check |
 | U100 | CA10/P: settle an attempt a live worker can still send or complete, so spending escapes the ledger | H7,H9; C100: database refuses settlement of reserved or dispatched rows younger than ten minutes of database time the writer cannot set; the request deadline starts before dispatch commits and expires before sending; the attempt row lock orders settlement against late outcomes | Code and database in-flight refusals; writer `updated_at` refusal; stalled-worker release with zero connection; settlement-versus-late-outcome race under read committed and repeatable read; busy lock refusal |
 
+The ledger integration review in [ADR-0044](../adr/0044-ledger-integration-boundaries.md)
+refines C97/C98: reservation admission selects Read Committed before waiting
+for the route/currency transaction lock. Two waiting sessions with Repeatable
+Read defaults must admit only one attempt for the cap or unresolved operation.
+
+| UCA | Hazardous context / category | Derived constraint and allocation | Discriminating evidence |
+| --- | --- | --- | --- |
+| U101 | CA9/N: retained cloud accounting makes every content purge unavailable | H2,H6; C101: every inventoried table has a fixed primary key; ledger attempts and settlements remain outside the deletion closure; ADR-0044 | Scoped purge plan/apply/replay with five real ledger states preserves exact accounting rows and exposure |
+| U102 | CA1/P: publish a merge message containing an agent session link after a clean branch scan | H1; C102: preflight exact planned public text and use explicit reviewed merge messages; preserve historical findings and full metadata checks | Clean native Git branch followed by a synthetic session-linked merge is refused by both preflight and metadata scan; unsafe input and redaction controls |
+
 The U89 scenario starts with a feed that changes one entry or a channel
 timestamp at every poll. Hash identity correctly distinguishes containers, but
 treating the container digest as item identity multiplies storage, index and

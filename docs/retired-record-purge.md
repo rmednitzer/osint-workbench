@@ -30,6 +30,11 @@ rows, so even an unrelated accepted mutation makes a plan stale. Counts and byte
 limits bound this reference profile; they are not whole-command time or memory
 proofs. Existing database statement and lifecycle-lock timeouts remain active.
 
+The inventory includes remote accounting attempts, keyed by `attempt_id`, in
+every state including denied and settled. Purge never deletes or updates those
+rows; changes to them invalidate a prior plan like other inventory changes.
+Their inclusion does not imply erasure of accounting or provider records.
+
 ## Plan and apply
 
 First place and verify the permanent logical-retirement decision using the

@@ -35,6 +35,7 @@ KEYS = {
     "assertions": ("assertion_id",),
     "assertion_reviews": ("review_id",),
     "briefings": ("briefing_id",),
+    "remote_operations": ("attempt_id",),
     "embedding_spaces": ("space_id",),
     "retrieval_generations": ("generation_id",),
     "retrieval_members": ("generation_id", "document_id"),

@@ -14,3 +14,6 @@ constraint changes and relevant failure, permission or recovery checks.
 Describe migration compatibility, deployment impact and rollback where applicable.
 Confirm public files/artifacts contain synthetic examples and no private source
 catalogs, configuration, identifiers or operational logs.
+Keep agent session/conversation links out of this description and Git metadata.
+Preflight the exact planned merge message with the publication scanner's
+`--message-file` option before merging; use an explicit reviewed subject/body.
