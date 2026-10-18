@@ -72,7 +72,8 @@ automatic age/expiry rule.
 ## Credential delivery and compatibility
 
 Prefer `credential` references to a provisioned systemd credential name or a
-checked absolute file path. Both use the shared [credential custody contract](api-acquisition.md#credential-custody),
+checked absolute file path. Systemd ACL delivery must grant only the current UID;
+a shared evidence group does not authorize credential access. Both use the shared [credential custody contract](api-acquisition.md#credential-custody),
 including bounded printable tokens, protected ancestors, no symlinks and private
 file modes. `CREDENTIALS_DIRECTORY` selects the systemd directory; it does not
 contain a token value. Actual service delivery requires separately provisioned

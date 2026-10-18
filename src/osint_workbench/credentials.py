@@ -3,11 +3,16 @@
 The service environment may select a systemd credential directory; it never
 supplies credential values. These Linux file checks protect against other users,
 not a compromised process with the same UID or a privileged host administrator.
+The systemd channel additionally accepts root-owned 0440 delivery only with the
+exact UID-only POSIX ACL used by systemd. Its group-read mode bits are an ACL
+mask, not permission for the owning group. Operator file references retain
+private 0400/0600 custody.
 """
 
 import os
 import re
 import stat
+import struct
 from pathlib import Path
 from typing import Literal
 
@@ -102,16 +107,53 @@ def _file_identity(info: os.stat_result) -> tuple[int, ...]:
     )
 
 
-def _read(path: Path) -> SecretStr:
+def _uid_only_acl(descriptor: int) -> bool:
+    """Require the exact Linux v2 owner/current-UID read-only ACL on this inode."""
+    undefined = 0xFFFFFFFF
+    expected = struct.pack(
+        "<I" + "HHI" * 5,
+        2,
+        1,
+        4,
+        undefined,  # ACL_USER_OBJ: owner read.
+        2,
+        4,
+        os.geteuid(),  # ACL_USER: only the service UID, read.
+        4,
+        0,
+        undefined,  # ACL_GROUP_OBJ: owning group has no permission.
+        16,
+        4,
+        undefined,  # ACL_MASK: read only.
+        32,
+        0,
+        undefined,  # ACL_OTHER: no permission.
+    )
+    try:
+        return os.getxattr(descriptor, "system.posix_acl_access") == expected
+    except OSError:
+        return False
+
+
+def _read(path: Path, *, systemd: bool = False) -> SecretStr:
     parent = _parent(path)
     try:
         descriptor = os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=parent)
         try:
             before = os.fstat(descriptor)
+            private = before.st_uid in {0, os.geteuid()} and stat.S_IMODE(before.st_mode) in {
+                0o400,
+                0o600,
+            }
+            delivered = (
+                systemd
+                and before.st_uid == 0
+                and stat.S_IMODE(before.st_mode) == 0o440
+                and _uid_only_acl(descriptor)
+            )
             if (
                 not stat.S_ISREG(before.st_mode)
-                or before.st_uid not in {0, os.geteuid()}
-                or stat.S_IMODE(before.st_mode) not in {0o400, 0o600}
+                or not (private or delivered)
                 or before.st_nlink != 1
             ):
                 raise CredentialError("CREDENTIAL_UNSAFE")
@@ -162,6 +204,6 @@ def resolve_credential(
             raise CredentialError("CREDENTIAL_INVALID")
         if not _valid_path(path):
             raise CredentialError("CREDENTIAL_UNSAFE")
-        return _read(path)
+        return _read(path, systemd=reference.kind == "systemd")
     except (OSError, ValueError):
         raise CredentialError() from None

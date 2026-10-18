@@ -82,6 +82,12 @@ sends no alerts and gives no default SLO or recovery target. Worker/health units
 remain disabled by default. Restored evidence is private; do not enable shared
 consumers against it until explicit custody provisioning is complete.
 
+Managed systemd credential files must retain the resolver's UID-private access
+contract even when the service's evidence group is shared. Root-owned 0440
+delivery is accepted only with an exact current-UID read ACL and zero group/other
+access; group membership alone is insufficient. No API deployment unit is
+provided; see the [credential custody contract](api-acquisition.md#credential-custody).
+
 ## Scope and authority
 
 Install a reviewed wheel and locked dependencies under

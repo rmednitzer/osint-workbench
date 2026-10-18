@@ -31,7 +31,11 @@ address validation, pinned resolution, TLS identity and bounded request/parser
 resources. Authentication is none, bearer or one of two fixed API-key headers;
 values resolve from checked systemd/file references, never response-selected paths
 or token environment variables. Parser children receive no credentialed service
-environment. Neither parser limits nor file checks create a same-UID sandbox.
+environment. Ordinary files require private 0400/0600 custody. Root-owned 0440
+systemd delivery additionally requires an exact current-UID read ACL with no
+group/other access; the mode's group bits represent the ACL mask. This preserves
+UID isolation when the evidence group is shared. Neither parser limits nor file
+checks create a same-UID sandbox.
 
 Require explicit `all-existing-uses-permitted` and `unmetered` declarations. Reject
 other rights/billing profiles; declarations are not independent legal verification.

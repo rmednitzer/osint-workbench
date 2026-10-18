@@ -161,22 +161,33 @@ before adoption.
 The resolver refuses symlink components, writable/untrusted ancestors, nonregular
 files, multiple hard links, unsafe owner/mode and files changing during the read.
 The exact root-owned sticky `/tmp` ancestor is a fixture-compatible exception.
-Credential files must be owned by root or the service UID, mode 0400 or 0600, and
-contain 1–4096 printable non-space ASCII bytes without a trailing newline. Never
-put token values in CLI arguments, public manifests or test fixtures.
+The file channel requires root or service-UID ownership and mode 0400 or 0600.
+The systemd channel additionally accepts root-owned mode 0440 only when the
+opened file's Linux POSIX access ACL grants read permission to exactly the current
+service UID, with no group or other access. This mode represents the ACL mask,
+not permission granted to the owning group; see the [systemd delivery implementation](https://github.com/systemd/systemd/blob/v255/src/core/exec-credential.c). Missing, malformed or broader ACLs
+fail closed. The checked ACL does not authenticate a genuine systemd mount.
+The same UID-private ACL requirement applies in shared-evidence deployments;
+sharing an evidence group never grants access to a credential through this check.
+
+All token values contain 1–4096 printable non-space ASCII bytes without a trailing
+newline. Never put token values in CLI arguments or public manifests; fixtures
+use authored/generated synthetic values only.
 
 A credential is resolved for the tick without fallback; failure is reported using
-fixed codes. The parser does not receive the token or inherited service
+fixed codes. The parser receives no authentication credential channel or inherited service
 environment. Exact active-token occurrences in raw bytes and all decoded JSON
 strings and keys are rejected before storage as `API_CREDENTIAL_REFLECTED`. This is a
 backstop: arbitrary encodings, unknown secrets, sensitive provider content and
 compromise of the credentialed worker are not covered. Python secret objects do
-not promise zeroization. Same-UID processes and privileged administrators remain
-outside this custody boundary.
+not promise zeroization. Same-UID processes and privileged administrators remain outside this custody
+boundary.
 
 For rotation, provision the replacement through the selected credential backend,
 revoke the old value at the provider, and verify both success and denial paths.
-Replacing a file alone does not revoke an already disclosed token. Do not assume
+Systemd snapshots loaded credentials at activation: replacing its source file
+does not refresh an already running service. Coordinate reactivation and provider
+revocation explicitly. Replacing a file alone does not revoke an already disclosed token. Do not assume
 host-encrypted credentials remain decryptable after machine replacement; preserve
 an independently controlled reprovisioning procedure.
 

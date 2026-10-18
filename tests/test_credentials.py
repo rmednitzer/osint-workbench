@@ -1,6 +1,7 @@
 """Exercise real filesystem boundaries without provisioning operational secrets."""
 
 import os
+import struct
 import traceback
 from pathlib import Path
 
@@ -220,3 +221,131 @@ def test_unsafe_systemd_directory_does_not_fall_back_to_file(tmp_path, monkeypat
     monkeypatch.setenv(path.name, CANARY)
     with pytest.raises(CredentialError, match="^CREDENTIAL_UNAVAILABLE$"):
         resolve_credential(CredentialRef(kind="systemd", name=path.name))
+
+
+def _delivered_owner(path, monkeypatch, *, owner=0, group=None):
+    """Use real file/ACL IO with controlled root ownership on unprivileged CI.
+
+    The separate real-systemd fixture verifies genuine root ownership.
+    """
+    real_fstat = os.fstat
+    inode = path.stat().st_ino
+    selected_group = os.getegid() if group is None else group
+
+    def metadata(descriptor):
+        info = real_fstat(descriptor)
+        if info.st_ino == inode:
+            fields = list(info)
+            fields[4] = owner
+            fields[5] = selected_group
+            return os.stat_result(fields)
+        return info
+
+    monkeypatch.setattr(os, "fstat", metadata)
+
+
+def _acl(*, uid=None, group_permission=0, mask=4, other=0, extra=()):
+    undefined = 0xFFFFFFFF
+    entries = [
+        (1, 4, undefined),
+        (2, 4, os.geteuid() if uid is None else uid),
+        (4, group_permission, undefined),
+        *extra,
+        (16, mask, undefined),
+        (32, other, undefined),
+    ]
+    return struct.pack("<I", 2) + b"".join(struct.pack("<HHI", *entry) for entry in entries)
+
+
+def _set_acl(path, payload):
+    # Linux POSIX ACL support is required by this acceptance profile. Missing
+    # xattr support is a failure, not a claim that systemd delivery was tested.
+    os.setxattr(path, "system.posix_acl_access", payload)
+
+
+def test_systemd_readonly_root_uid_acl_delivery_ignores_primary_gid(tmp_path, monkeypatch):
+    path = _credential(tmp_path)
+    _set_acl(path, _acl())
+    assert path.stat().st_mode & 0o777 == 0o440
+    _delivered_owner(path, monkeypatch, group=os.getegid() + 1)
+    reference = CredentialRef(kind="systemd", name=path.name)
+    assert (
+        resolve_credential(reference, credentials_directory=tmp_path).get_secret_value() == CANARY
+    )
+
+
+@pytest.mark.parametrize("mode", [0o640, 0o444])
+def test_systemd_acl_delivery_requires_exact_readonly_mode(tmp_path, monkeypatch, mode):
+    path = _credential(tmp_path)
+    _set_acl(path, _acl())
+    path.chmod(mode)
+    _delivered_owner(path, monkeypatch)
+    with pytest.raises(CredentialError, match="^CREDENTIAL_UNSAFE$"):
+        resolve_credential(
+            CredentialRef(kind="systemd", name=path.name), credentials_directory=tmp_path
+        )
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        b"",
+        b"malformed",
+        _acl(uid=os.geteuid() + 1),
+        _acl(group_permission=4),
+        _acl(mask=6),
+        _acl(other=4),
+        _acl(extra=((8, 4, 12345),)),
+        _acl(extra=((2, 4, os.geteuid() + 1),)),
+        _acl() + b"trailing",
+        b"\x03\x00\x00\x00" + _acl()[4:],
+    ],
+)
+def test_systemd_refuses_missing_malformed_or_broader_acl(tmp_path, monkeypatch, payload):
+    path = _credential(tmp_path)
+    path.chmod(0o440)
+    _delivered_owner(path, monkeypatch)
+
+    # Malformed ACL bytes cannot be installed by the kernel; supply them at the
+    # opened-FD xattr boundary while retaining actual credential file IO/checks.
+    def xattr(descriptor, attribute):
+        assert isinstance(descriptor, int)
+        assert attribute == "system.posix_acl_access"
+        return payload
+
+    monkeypatch.setattr(os, "getxattr", xattr)
+    with pytest.raises(CredentialError, match="^CREDENTIAL_UNSAFE$"):
+        resolve_credential(
+            CredentialRef(kind="systemd", name=path.name), credentials_directory=tmp_path
+        )
+
+
+def test_systemd_refuses_readonly_group_file_without_acl(tmp_path, monkeypatch):
+    path = _credential(tmp_path)
+    path.chmod(0o440)
+    _delivered_owner(path, monkeypatch)
+    with pytest.raises(CredentialError, match="^CREDENTIAL_UNSAFE$"):
+        resolve_credential(
+            CredentialRef(kind="systemd", name=path.name), credentials_directory=tmp_path
+        )
+
+
+def test_systemd_uid_acl_delivery_requires_root_owner(tmp_path, monkeypatch):
+    path = _credential(tmp_path)
+    _set_acl(path, _acl())
+    service_uid = os.geteuid() or 1000
+    _delivered_owner(path, monkeypatch, owner=service_uid)
+    if os.geteuid() == 0:
+        monkeypatch.setattr(os, "geteuid", lambda: service_uid)
+    with pytest.raises(CredentialError, match="^CREDENTIAL_UNSAFE$"):
+        resolve_credential(
+            CredentialRef(kind="systemd", name=path.name), credentials_directory=tmp_path
+        )
+
+
+def test_operator_file_channel_never_accepts_uid_acl_delivery(tmp_path, monkeypatch):
+    path = _credential(tmp_path)
+    _set_acl(path, _acl())
+    _delivered_owner(path, monkeypatch)
+    with pytest.raises(CredentialError, match="^CREDENTIAL_UNSAFE$"):
+        resolve_credential(_file_reference(path))

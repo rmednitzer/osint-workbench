@@ -86,7 +86,7 @@ if case == "positive":
     stage = "READY"
     state = Path(sys.argv[3])
     (state / "ready").write_text(json.dumps({
-        "uid": os.geteuid(), "pid": os.getpid(),
+        "uid": os.geteuid(), "gid": os.getegid(), "pid": os.getpid(),
         "directory": os.environ["CREDENTIALS_DIRECTORY"]}))
     deadline = time.monotonic() + 30
     stage = "WAIT"
@@ -103,8 +103,9 @@ elif case in {"no-delivery", "missing-name"}:
         require(False)
 elif case == "cross-unit":
     stage = "ISOLATION"
-    producer_uid, *paths = sys.argv[3:]
+    producer_uid, producer_gid, *paths = sys.argv[3:]
     require(os.geteuid() != int(producer_uid))
+    require(os.getegid() != int(producer_gid))
     for value in paths:
         try:
             with open(value, "rb") as stream:
@@ -317,6 +318,7 @@ def acceptance(venv):
             time.sleep(0.1)
         identity = json.loads((state / "ready").read_text())
         producer_uid = int(identity["uid"])
+        producer_gid = int(identity["gid"])
         # Credential mounts can be visible only in the producer's mount namespace.
         # Root verifies the live file there; a different UID must be unable to
         # traverse that namespace root, independently of host mount visibility.
@@ -330,7 +332,10 @@ def acceptance(venv):
             / "source-token"
         )
         require(source.is_file() and delivered.is_file(), "DELIVERED_FILE_MISSING")
-        launch("cross-unit", arguments=(str(producer_uid), str(source), str(delivered)))
+        launch(
+            "cross-unit",
+            arguments=(str(producer_uid), str(producer_gid), str(source), str(delivered)),
+        )
         launch("no-delivery")
         launch("missing-name", delivery=True)
         (state / "release").touch(mode=0o600)

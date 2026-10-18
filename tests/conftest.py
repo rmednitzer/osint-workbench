@@ -126,7 +126,9 @@ def roles(tmp_path_factory):
                 (hashlib.sha256(b"synthetic-upgrade-resource").hexdigest(), raw_sha),
             )
             prior_collection_state = conn.execute(
-                "SELECT * FROM ow.collection_state WHERE source_id='upgrade-fixture'"
+                "SELECT source_id,resource_sha256,next_attempt,failures,etag,"
+                "last_modified,raw_sha256 "
+                "FROM ow.collection_state WHERE source_id='upgrade-fixture'"
             ).fetchone()
     migrate(dsn)
     with psycopg.connect(dsn) as conn:
@@ -140,10 +142,16 @@ def roles(tmp_path_factory):
                 )
                 assert (
                     conn.execute(
-                        "SELECT * FROM ow.collection_state WHERE source_id='upgrade-fixture'"
+                        "SELECT source_id,resource_sha256,next_attempt,failures,etag,"
+                        "last_modified,raw_sha256 "
+                        "FROM ow.collection_state WHERE source_id='upgrade-fixture'"
                     ).fetchone()
                     == prior_collection_state
                 )
+                assert conn.execute(
+                    "SELECT api_cursor,api_profile_sha256,api_page,api_seen_cursors "
+                    "FROM ow.collection_state WHERE source_id='upgrade-fixture'"
+                ).fetchone() == (None, None, 0, [])
     with psycopg.connect(dsn) as conn:
         if conn.execute("SELECT 1 FROM ow.sources WHERE source_id='upgrade-fixture'").fetchone():
             assert conn.execute(
