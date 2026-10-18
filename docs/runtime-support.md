@@ -83,3 +83,10 @@ not a systemd-service receipt. The separate
 records both protected distro interpreters at source `ebdbf666e0f4001dca59ce8760386aae80408d61`.
 Its fixture and wheel scope remains separate from foundation CI and operational
 acceptance; earlier service receipts retain their older source and wheel.
+
+The [operational service successor](testing/operational-service-2026-10-18.json)
+adds actual worker/health account, custody, failure/recovery and accelerated timer
+acceptance on both LTS defaults at `d4a1e64be1e399eb052db13f35ddcf0fc5234b81`.
+It uses the protected system interpreters and core dependencies, with no pretrained
+model or provider dispatch. Its exact installed wheel is recorded; it does not
+replace the three-profile installed/native application suite.

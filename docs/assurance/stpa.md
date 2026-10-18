@@ -626,8 +626,23 @@ the full operational, model-quality or recovery scenarios.
 
 | UCA | Hazardous context / category | Derived constraint and allocation | Discriminating evidence |
 | --- | --- | --- | --- |
-| U103 | CA7/N: valid pages routinely exceed the MCP serialized result limit, preventing evidence retrieval | H2,H6; C103: page intact records against actual UTF-8 byte budget, preserve explicit continuation scope, and refuse a single unrepresentable record without skipping it | Multibyte/control-character records, bounded-window continuation and complete record reconstruction |
+| U103 | CA6/N: valid pages routinely exceed the MCP serialized result limit, preventing evidence retrieval | H2,H6; C103: page intact records against actual UTF-8 byte budget, preserve explicit continuation scope, and refuse a single unrepresentable record without skipping it | Multibyte/control-character records, bounded-window continuation and complete record reconstruction |
 | U104 | CA10/P: source text becomes trusted tokenizer control IDs | H3,H8; C104: separately tokenize literal source and trusted template, verify automatic-prefix capability, submit exact IDs and version generator identity | Native special-token positive/negative controls, exact submitted IDs and old-kind non-claim |
-| U105 | CA7/P: an unforeseen readable relation/column or reachable role bypasses filtered reader projections | H1,H3; C105: exact effective reader relation/column allowlist and no alternate application identity | Direct, inherited, PUBLIC, column-only and SET ROLE grant refusals with normal core/retrieval controls |
-| U106 | CA7/N: a successful empty/partial tick implies healthy collection or complete processing | H2,H6; C106: explicit health thresholds, denial of unconfigured/stale/error/unavailable states, supported-job-only bounded ticks and honest all-kind backlog counts | Failure states and cap/idle distinction, real non-root service execution and restart |
+| U105 | CA6/P: an unforeseen readable relation/column or reachable role bypasses filtered reader projections | H1,H3; C105: exact effective reader relation/column allowlist and no alternate application identity | Direct, inherited, PUBLIC, column-only and SET ROLE grant refusals with normal core/retrieval controls |
+| U106 | CA7/P: a successful empty/partial tick implies healthy collection or complete processing | H2,H6; C106: explicit health thresholds, denial of unconfigured/stale/error/unavailable states, supported-job-only bounded ticks and honest all-kind backlog counts | Failure states and cap/idle distinction, real non-root service execution and restart |
 | U107 | CA4/P: adding workers silently exposes private evidence or grants shared writes | H1,H3; C107: opt-in pre-provisioned group-readable creation, anchored custody checks, no implicit permission repair, separate credentials and read-only consumer mounts | Private-default/unsafe-group/symlink/mode refusal, actual account read and write denial across new objects |
+
+The relevant process-model errors are character counts treated as wire-byte
+counts (U103), a concatenated prompt treated as uniformly trusted syntax (U104),
+future grants assumed equivalent to reviewed projections (U105), process exit or
+a bounded idle poll treated as complete service feedback (U106), and shared-group
+membership assumed to imply safe object custody (U107). The concrete environments
+include multibyte/control-character source text, tokenizer control spellings,
+direct/inherited/PUBLIC grant drift, exhausted-claim reaping, restrictive umasks,
+named ACLs and the collector's setgid syscall restriction. Constraints allocate
+to the adapter, generator identity, reader admission, health/worker feedback and
+anchored storage creation respectively. Operator-controlled ancestors, group-wide
+CAS disclosure and separately provisioned egress/alerting remain assumptions.
+These are discrete return/report/accept/dispatch actions; duration categories do
+not apply to the actions themselves. Halt/refusal preserves prior accepted data
+and reports failure; it does not establish useful model quality or recoverability.

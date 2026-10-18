@@ -222,6 +222,14 @@ including current-head reuse after one changed feed item. Its installed wheel
 is identified separately for each runner. This synthetic HTTP/timer result remains
 separate from operational deployment acceptance.
 
+The [operational-profile service successor](testing/operational-service-2026-10-18.json)
+records source `d4a1e64be1e399eb052db13f35ddcf0fc5234b81` on both LTS defaults,
+including separate worker/health accounts, authentication failure recovery,
+read-only shared evidence access, lexical reads, explicit health failure/recovery
+and accelerated worker/health timer activation. It identifies the exact installed
+wheel and owned-unit cleanup. Production timer durations, sustained load, model
+quality and operational deployment remain outside this fixture.
+
 The job must create a core installed-wheel virtual environment using the runner's
 `/usr/bin/python3`, not a home-directory-managed Python hidden by `ProtectHome`.
 The explicit privileged invocation is:

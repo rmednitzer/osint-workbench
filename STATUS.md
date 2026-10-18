@@ -39,13 +39,16 @@ chunks used by the optional retrieval profile.
 
 ## Verified baseline and evidence scope
 
-The completed baseline is `d01f80ac88da50c9f826b1a15cb18c75bd1db75f`
-(PR #13, 2026-10-18). Its main-push foundation run `39133727926` and CodeQL run
-`39133727466` succeeded. The corresponding tested PR head
-`9fd0920d8b172d8db8ed4f25237fdb3db7201662` passed **1,031 tests with no skips on
-each** of Ubuntu 24.04/Python 3.12, Ubuntu 24.04/Python 3.13 and Ubuntu
-26.04/Python 3.14 in run `39132871377`; the merge retained that exact source tree.
-A later change needs its own checks; these results are not a floating current pass.
+The operational-profile candidate `d4a1e64be1e399eb052db13f35ddcf0fc5234b81`
+passed **1,203 tests with no skips on each** of Ubuntu 24.04/Python 3.12,
+Ubuntu 24.04/Python 3.13 and Ubuntu 26.04/Python 3.14 in foundation run
+`39140321685`. CodeQL run `39140320998` completed; two configured-path findings
+were individually reviewed and dismissed, without query exclusions. The separate
+two-LTS service run `39140321865` passed collection/chunk/health account, custody,
+failure/recovery and accelerated timer acceptance using the same wheel. See
+[the detailed evidence](docs/testing/operational-acceptance-2026-10-18.md) and
+[service receipt](docs/testing/operational-service-2026-10-18.json).
+Later changes need their own checks; these results are not a floating current pass.
 
 These are installed-wheel tests against disposable PostgreSQL 18/pgvector,
 native HTTP/TLS/Unix transports and authored synthetic ONNX/GGUF fixtures. They
@@ -60,6 +63,7 @@ Older evidence remains deliberately revision-bound:
 | Evidence | What it establishes |
 | --- | --- |
 | [Foundation verification receipt](docs/testing/verification-evidence.json) and [query-coalescing receipt](docs/testing/query-coalescing.json) | Their earlier source, wheel, schema and native regression results; their test counts are historical |
+| PR #13 baseline `d01f80ac`, foundation `39133727926`, CodeQL `39133727466` | Earlier 1,031-test baseline; its tested PR head `9fd0920d` passed each profile in `39132871377`; superseded by the bounded operational-profile evidence above |
 | [Core-10 service successor](docs/testing/documentation-service-2026-10-18.json) | Both LTS systemd/HTTP/SCRAM/timer/head-reuse fixtures at `ebdbf666`; exact wheel digests retained, no pretrained or operational acceptance |
 | [Profile diagnostics](docs/testing/profile-diagnostics.json) and [collector deployment](docs/testing/collector-deployment.json) | Named disposable service/model probes; not acceptance of every later schema or dependency |
 | [Local quality observations](docs/local-quality.md) | Six document/eight query pretrained diagnostic calls on public authored cases; lexical and encoder aggregates tied, both failed unsupported-query abstention; no model adoption |
