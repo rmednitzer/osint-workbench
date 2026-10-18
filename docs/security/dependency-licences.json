@@ -2,7 +2,7 @@
   "schema_version": 1,
   "scope": "runtime-plus-retrieval; CPython3.12 Linux x86_64 installed wheel evidence and reviewed supported archive variants; no legal approval",
   "review_date": "2026-10-18",
-  "lock_sha256": "a650c080ad3ca32ed1498ca0b2f253b6f239411d417d6cc68fd589765581c428",
+  "lock_sha256": "05adee02ff9c0b038171f2c1977acbf4e5f152bb296650914a96d6a09f112c42",
   "distributions": [
     {
       "name": "annotated-types",
@@ -90,7 +90,7 @@
     },
     {
       "name": "certifi",
-      "version": "2026.7.22",
+      "version": "2026.10.18",
       "declared_expression": null,
       "reviewed_text_summary": "MPL-2.0",
       "outcome": "reviewed-shipped-text",
@@ -100,20 +100,20 @@
       ],
       "evidence": [
         {
-          "path": "certifi-2026.7.22.dist-info/METADATA",
-          "sha256": "ef5af1638fbb23676ac3c5777dfcfc2cd9c348fe4172ed5ba3d277655b248090",
-          "bytes": 2474,
+          "path": "certifi-2026.10.18.dist-info/METADATA",
+          "sha256": "5f23b0cfb71be0a44970eb5d3ad49ba3db52616d7a583d594697bd9ee1bf2065",
+          "bytes": 2526,
           "kind": "metadata"
         },
         {
-          "path": "certifi-2026.7.22.dist-info/licenses/LICENSE",
+          "path": "certifi-2026.10.18.dist-info/licenses/LICENSE",
           "sha256": "e93716da6b9c0d5a4a1df60fe695b370f0695603d21f6f83f053e42cfc10caf7",
           "bytes": 989,
           "kind": "licence-text"
         }
       ],
       "locked_wheel_sha256": [
-        "62f22742b58a1a33014a2b6b706588a8d7e2a88ae7bd1a6ebe8c992928483775"
+        "73191c47aaa79da394e8fee2dbc2ec827432cab56311122c9e47abf79e390f62"
       ]
     },
     {
@@ -2066,8 +2066,8 @@
     },
     {
       "name": "certifi",
-      "filename": "certifi-2026.7.22-py3-none-any.whl",
-      "sha256": "62f22742b58a1a33014a2b6b706588a8d7e2a88ae7bd1a6ebe8c992928483775"
+      "filename": "certifi-2026.10.18-py3-none-any.whl",
+      "sha256": "73191c47aaa79da394e8fee2dbc2ec827432cab56311122c9e47abf79e390f62"
     },
     {
       "name": "cffi",
