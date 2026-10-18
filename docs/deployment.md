@@ -85,8 +85,63 @@ consumers against it until explicit custody provisioning is complete.
 Managed systemd credential files must retain the resolver's UID-private access
 contract even when the service's evidence group is shared. Root-owned 0440
 delivery is accepted only with an exact current-UID read ACL and zero group/other
-access; group membership alone is insufficient. No API deployment unit is
-provided; see the [credential custody contract](api-acquisition.md#credential-custody).
+access; group membership alone is insufficient. See the
+[credential custody contract](api-acquisition.md#credential-custody).
+
+## Scheduled API profile
+
+The optional `osint-workbench-collect-api.service` and matching timer supervise
+one explicitly configured `bounded-json-pages/1` source. They use the existing
+collector account and evidence root; this is not credential or rights-domain
+isolation from that account. Provider-specific adapters, licensed-content
+restrictions and chargeable requests remain unsupported. See
+[ADR-0047](adr/0047-scheduled-api-service.md).
+
+Provision root-owned `/etc/osint-workbench/api-source.json` mode 0640 with the
+collector's private group, and root-only `api.env` mode 0600 containing its scoped
+`OW_COLLECTOR_DSN` and explicitly needed libpq settings. Keep endpoints, source
+configuration and actual authentication context outside Git. A disabled source
+can be selected initially; starting the command still validates its database
+identity. The feed timer does not discover this file.
+
+For systemd bearer/API-key delivery, provision root-private
+`/etc/osint-workbench-secrets` mode 0700 and `provider-token` mode 0400/0600 without
+a trailing newline. The service account must not read this source file directly.
+Install `osint-workbench-api-credential.conf` as a root-owned drop-in in
+`osint-workbench-collect-api.service.d/`. Select the systemd reference named
+`provider-token` in the private source configuration. `LoadCredential` copies it
+at activation; this is not at-rest encryption or independent revocation. The
+service-provided credential directory is resolved at runtime without fallback.
+Replacing the source takes effect on the next activation. Never put the token
+in `api.env`, argv or a public support bundle.
+
+For the explicit shared store, also install `osint-workbench-collect-shared.conf`
+under this API service's drop-in directory and put the numeric
+`OW_EVIDENCE_READ_GID` into `api.env`. It must match the already provisioned
+collector-owned evidence root. Do not enable a private-mode API writer against a
+shared store, implicitly change custody or assume installing the feed service's
+drop-in also configures the API service.
+
+Install the service/timer as root-owned unit files and run native verification,
+then a manual service tick before enabling its timer. Each tick admits at most
+one due page, with a 60 s network/parser/admission deadline and a 150 s supervisor
+start timeout. Partial is a successful bounded tick with incomplete source
+freshness, not a completed cycle; SQL retains `API_PARTIAL`. A fixed command error
+fails the service. The timer starts about two minutes after boot and then one
+minute after completion with up to 15 s jitter; durable due time and backoff still
+prevent premature HTTP requests. No missed wall-clock ticks are replayed.
+Configure monitoring for service failure and incomplete/stale source state.
+Do not add `--restart` to the normal service command.
+
+The guarded `--operational-fixture` now additionally exercises this unit with a
+disconnected synthetic HTTPS provider, a generated trust certificate and random
+synthetic loaded credential. It checks partial/terminal cursor commits, actual
+accelerated timer activation, exact evidence and downstream worker/reader use,
+authentication failure, source-file credential replacement on reactivation,
+503 backoff, missing-name no-dispatch and duplicate-free recovery. Production
+resource durations, external DNS/public PKI and actual providers remain outside
+this fixture. Require a candidate-bound two-LTS receipt before claiming this
+service path verified; local unit-parser success alone is insufficient.
 
 ## Scope and authority
 

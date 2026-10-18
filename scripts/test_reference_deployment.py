@@ -36,7 +36,9 @@ WORK_SERVICE = "osint-workbench-work.service"
 WORK_TIMER = "osint-workbench-work.timer"
 HEALTH_SERVICE = "osint-workbench-health.service"
 HEALTH_TIMER = "osint-workbench-health.timer"
-OPERATIONAL_UNITS = (WORK_SERVICE, WORK_TIMER, HEALTH_SERVICE, HEALTH_TIMER)
+API_SERVICE = "osint-workbench-collect-api.service"
+API_TIMER = "osint-workbench-collect-api.timer"
+OPERATIONAL_UNITS = (WORK_SERVICE, WORK_TIMER, HEALTH_SERVICE, HEALTH_TIMER, API_SERVICE, API_TIMER)
 COMMAND_ENV = {"PATH": "/usr/sbin:/usr/bin:/sbin:/bin", "LC_ALL": "C"}
 
 
@@ -103,7 +105,7 @@ def parse_bus_uint64(value):
 
 
 def timer_last_trigger(timer=TIMER):
-    require(timer in (TIMER, WORK_TIMER, HEALTH_TIMER), "UNKNOWN_FIXTURE_TIMER")
+    require(timer in (TIMER, WORK_TIMER, HEALTH_TIMER, API_TIMER), "UNKNOWN_FIXTURE_TIMER")
     encoded = timer.replace("-", "_2d").replace(".", "_2e")
     # Fixed unit object only. Call while the timer is active so GC cannot replace
     # its runtime object; systemctl show formats nonzero durations for humans.
@@ -934,6 +936,324 @@ def enabled_http_service_acceptance(account, *, shared_gid=None, operational_acc
             )
 
 
+def api_service_acceptance(account, units, shared_gid, owned):
+    """Real API unit, TLS and credential delivery in the disconnected namespace."""
+    import secrets
+
+    import psycopg
+    from psycopg.rows import dict_row
+    from reference_network import API_CERT, API_PAGES, ReferenceNetwork
+
+    from osint_workbench.evidence import EvidenceStore
+    from osint_workbench.text import digest
+
+    source_id = "reference-api"
+    token = secrets.token_urlsafe(32)
+    credential = CONFIG / "api-token"
+    write_private(credential, token, mode=0o400)
+    configuration = CONFIG / "api-source.json"
+    write_private(
+        configuration,
+        json.dumps(
+            {
+                "source_id": source_id,
+                "endpoint": "https://feed.fixture.invalid/records",
+                "enabled": True,
+                "rights": "all-existing-uses-permitted",
+                "request_billing": "unmetered",
+                "poll_seconds": 60,
+                "auth": {
+                    "kind": "bearer",
+                    "context": "synthetic-account-v1",
+                    "credential": {"kind": "systemd", "name": "provider-token"},
+                },
+            }
+        ),
+        mode=0o640,
+    )
+    os.chown(configuration, 0, account.pw_gid)
+    write_private(CONFIG / "api.env", collector_environment(FIXTURE_UNIX_DSN, shared_gid))
+    service_dir = UNIT_ROOT / f"{API_SERVICE}.d"
+    timer_dir = UNIT_ROOT / f"{API_TIMER}.d"
+    for directory in (service_dir, timer_dir):
+        directory.mkdir(mode=0o755)
+        owned.append(directory)
+    shared = service_dir / "shared-evidence.conf"
+    write_private(shared, (units / "osint-workbench-collect-shared.conf").read_text(), mode=0o644)
+    owned.append(shared)
+    override = service_dir / "api-fixture.conf"
+    timer_override = timer_dir / "accelerated-fixture.conf"
+    write_private(
+        timer_override,
+        "[Timer]\nOnBootSec=\nOnUnitInactiveSec=\nOnActiveSec=1s\n"
+        "OnUnitInactiveSec=1s\nRandomizedDelaySec=0\nAccuracySec=100ms\n",
+        mode=0o644,
+    )
+    owned.append(timer_override)
+
+    def state():
+        with psycopg.connect(FIXTURE_ADMIN_DSN, row_factory=dict_row) as conn:
+            schedule = conn.execute(
+                "SELECT s.last_success,s.last_error,c.api_cursor,c.api_page,c.failures,"
+                "c.next_attempt>clock_timestamp() AS future,"
+                "extract(epoch FROM c.next_attempt-clock_timestamp()) AS wait "
+                "FROM ow.sources s JOIN ow.collection_state c USING(source_id) WHERE source_id=%s",
+                (source_id,),
+            ).fetchone()
+            runs = conn.execute(
+                "SELECT status,error_code,raw_sha256 FROM ow.collection_runs WHERE source_id=%s "
+                "ORDER BY started_at,run_id",
+                (source_id,),
+            ).fetchall()
+            docs = conn.execute(
+                "SELECT document_id,title,body FROM ow.documents WHERE source_id=%s ORDER BY title",
+                (source_id,),
+            ).fetchall()
+            jobs = conn.execute(
+                "SELECT j.status FROM ow.jobs j JOIN ow.documents d "
+                "ON j.payload->>'document_id'=d.document_id WHERE d.source_id=%s "
+                "AND j.kind='document.accepted'",
+                (source_id,),
+            ).fetchall()
+            chunks = conn.execute(
+                "SELECT c.body FROM ow.chunks c JOIN ow.documents d USING(document_id) "
+                "WHERE d.source_id=%s ORDER BY d.title",
+                (source_id,),
+            ).fetchall()
+        return schedule, runs, docs, jobs, chunks
+
+    def force_due():
+        with psycopg.connect(FIXTURE_ADMIN_DSN) as conn:
+            conn.execute(
+                "UPDATE ow.collection_state SET next_attempt=clock_timestamp()-interval '1 second' "
+                "WHERE source_id=%s",
+                (source_id,),
+            )
+
+    def tick(expected, *, failed=False):
+        command(["systemctl", "reset-failed", API_SERVICE], allowed=(0, 1, 5))
+        since = str(time.time())
+        command(["systemctl", "start", API_SERVICE], allowed=(1,) if failed else (0,), timeout=30)
+        command(["journalctl", "--sync"])
+        raw = command(
+            [
+                "journalctl",
+                "--unit",
+                API_SERVICE,
+                f"--since=@{since}",
+                "--output=json",
+                "--no-pager",
+            ]
+        )
+        observed = False
+        for line in raw.splitlines():
+            row = json.loads(line)
+            message = row.get("MESSAGE", "")
+            require(token not in message, "API_JOURNAL_TOKEN_DISCLOSURE")
+            try:
+                value = json.loads(message)
+            except (ValueError, TypeError):
+                continue
+            if isinstance(value, dict) and (value.get("error") or value.get("status")) == expected:
+                require(row.get("_UID") == str(account.pw_uid), "API_JOURNAL_UID_MISMATCH")
+                observed = True
+        require(observed, "API_JOURNAL_RESULT_NOT_OBSERVED")
+        return state()
+
+    def stop():
+        command(["systemctl", "stop", API_TIMER, API_SERVICE], allowed=(0, 5), timeout=20)
+        for unit in (API_TIMER, API_SERVICE):
+            require(
+                command(["systemctl", "is-active", unit], allowed=(0, 3, 4)).strip()
+                in {"inactive", "failed", "unknown"},
+                "API_UNIT_STILL_ACTIVE",
+            )
+
+    with ReferenceNetwork(api_token=token, before_close=stop) as network:
+        write_private(
+            override,
+            "[Service]\nNetworkNamespacePath="
+            + str(network.namespace_path)
+            + "\nBindReadOnlyPaths="
+            + str(network.hosts_file)
+            + ":/etc/hosts\n"
+            + "LoadCredential=provider-token:"
+            + str(credential)
+            + "\n"
+            + "Environment=SSL_CERT_FILE="
+            + str(APP / "api-trust.pem")
+            + "\n",
+            mode=0o644,
+        )
+        owned.append(override)
+        # Only this disposable service trusts the generated peer; production TLS
+        # verification remains enabled. The root-only peer key is never copied.
+        trust = APP / "api-trust.pem"
+        write_private(trust, API_CERT.read_text(), mode=0o644)
+        command(["systemctl", "daemon-reload"])
+        first = tick("partial")
+        require(
+            first[0]["last_success"] is None
+            and first[0]["last_error"] == "API_PARTIAL"
+            and first[0]["api_cursor"] == "page-2"
+            and first[0]["api_page"] == 1
+            and first[1]
+            == [
+                {
+                    "status": "failed",
+                    "error_code": "API_PARTIAL",
+                    "raw_sha256": digest(API_PAGES["v1"]),
+                }
+            ]
+            and len(first[2]) == len(first[3]) == 1,
+            "API_PARTIAL_STATE_MISMATCH",
+        )
+        count = len(network.observations())
+        tick("not_due")
+        require(
+            len(network.observations()) == count and state()[1:] == first[1:],
+            "API_NOT_DUE_DISPATCH",
+        )
+        network.set_phase("v2")
+        force_due()
+        command(["systemctl", "start", API_TIMER])
+        deadline = time.monotonic() + 15
+        while len(network.observations()) == count:
+            require(time.monotonic() < deadline, "API_TIMER_NO_REQUEST")
+            time.sleep(0.1)
+        while command(["systemctl", "is-active", API_SERVICE], allowed=(0, 3, 4)).strip() in {
+            "active",
+            "activating",
+            "deactivating",
+        }:
+            require(time.monotonic() < deadline, "API_TIMER_DID_NOT_SETTLE")
+            time.sleep(0.1)
+        require(timer_last_trigger(API_TIMER) > 0, "API_TIMER_NOT_TRIGGERED")
+        stop()
+        terminal = state()
+        require(
+            terminal[0]["last_success"] is not None
+            and terminal[0]["last_error"] is None
+            and terminal[0]["api_cursor"] is None
+            and terminal[0]["api_page"] == 0
+            and terminal[1][-1]
+            == {"status": "succeeded", "error_code": None, "raw_sha256": digest(API_PAGES["v2"])}
+            and [(d["title"], d["body"]) for d in terminal[2]]
+            == [("API One", "First API evidence"), ("API Two", "Second API evidence")]
+            and len(terminal[3]) == 2,
+            "API_TERMINAL_STATE_MISMATCH",
+        )
+        store = EvidenceStore(STATE / "evidence", read_only=True)
+        require(
+            all(store.get(digest(raw)) == raw for raw in API_PAGES.values()), "API_RAW_MISMATCH"
+        )
+        require(
+            all(o["authorized"] and o["path_ok"] for o in network.observations()),
+            "API_REQUEST_CONTRACT_MISMATCH",
+        )
+        # An incorrect loaded token is refused at the actual peer, then replacing
+        # the source file takes effect on the next service activation only.
+        network.set_phase("v1")
+        credential.write_text("synthetic-invalid-token")
+        force_due()
+        denied = tick("API_AUTHENTICATION_FAILED", failed=True)
+        require(
+            denied[2:] == terminal[2:] and network.observations()[-1]["status"] == 401,
+            "API_AUTH_FAILURE_MUTATED_EVIDENCE",
+        )
+        credential.write_text(token)
+        network.set_phase("fail")
+        force_due()
+        failure = tick("SOURCE_HTTP_ERROR", failed=True)
+        require(
+            failure[0]["wait"] > 110
+            and failure[2:] == terminal[2:]
+            and failure[0]["last_success"] == terminal[0]["last_success"],
+            "API_BACKOFF_OR_FRESHNESS_MISMATCH",
+        )
+        count = len(network.observations())
+        tick("not_due")
+        require(len(network.observations()) == count, "API_BACKOFF_DISPATCH")
+        network.set_phase("v1")
+        force_due()
+        recovered = tick("partial")
+        require(recovered[2:] == terminal[2:], "API_RECOVERY_DUPLICATED_DOCUMENTS")
+        # Drop the selected credential name, retaining delivery of a different
+        # name. Application refusal must precede any provider HTTP request.
+        config = json.loads(configuration.read_text())
+        config["auth"]["credential"]["name"] = "missing-token"
+        configuration.write_text(json.dumps(config))
+        force_due()
+        count = len(network.observations())
+        tick("CREDENTIAL_UNAVAILABLE", failed=True)
+        require(len(network.observations()) == count, "API_MISSING_SECRET_DISPATCH")
+        config["auth"]["credential"]["name"] = "provider-token"
+        configuration.write_text(json.dumps(config))
+        force_due()
+        tick("partial")
+        network.set_phase("v2")
+        force_due()
+        tick("success")
+        command(["systemctl", "reset-failed", WORK_SERVICE], allowed=(0, 1, 5))
+        command(["systemctl", "start", WORK_SERVICE], timeout=30)
+        processed = state()
+        require(
+            len(processed[3]) == 2
+            and all(j["status"] == "succeeded" for j in processed[3])
+            and processed[4] == [{"body": "First API evidence"}, {"body": "Second API evidence"}],
+            "API_DOWNSTREAM_CHUNKS_MISMATCH",
+        )
+        probe = APP / "api-read.py"
+        write_private(probe, API_READ_PROBE, mode=0o644)
+        reader_override = UNIT_ROOT / f"{HEALTH_SERVICE}.d" / "api-read.conf"
+        reader_override.parent.mkdir(mode=0o755, exist_ok=True)
+        if reader_override.parent not in owned:
+            owned.append(reader_override.parent)
+        write_private(
+            reader_override,
+            "[Service]\nExecStart=\nExecStart="
+            + str(APP / "venv/bin/python")
+            + " "
+            + str(probe)
+            + "\n",
+            mode=0o644,
+        )
+        owned.append(reader_override)
+        command(["systemctl", "daemon-reload"])
+        command(["systemctl", "start", HEALTH_SERVICE], timeout=30)
+        # The actual isolated reader probe exits nonzero unless search and exact
+        # text evidence agree; no provider or writer credentials enter its unit.
+    return {
+        "api_https_service_tested": True,
+        "api_loaded_credential_tested": True,
+        "api_partial_terminal_evidence_tested": True,
+        "api_timer_activation_tested": True,
+        "api_auth_failure_rotation_tested": True,
+        "api_missing_credential_no_dispatch": True,
+        "api_backoff_recovery_no_duplicates": True,
+        "api_worker_reader_tested": True,
+        "api_external_provider_tested": False,
+    }
+
+
+API_READ_PROBE = r"""
+import os
+from pathlib import Path
+from osint_workbench.database import Database
+from osint_workbench.evidence import EvidenceStore
+from osint_workbench.service import ReadService
+service = ReadService(Database(os.environ['OW_READER_DSN']),
+                      EvidenceStore(Path(os.environ['OW_EVIDENCE_ROOT']), read_only=True))
+result = service.search('API')
+expected = {'API One': 'First API evidence', 'API Two': 'Second API evidence'}
+rows = [row for row in result['results'] if row['source_id'] == 'reference-api']
+assert len(rows) == 2 and {row['title'] for row in rows} == set(expected)
+for row in rows:
+    assert row['excerpt'] == expected[row['title']]
+print('API_READER_PROBE_OK')
+"""
+
+
 def operational_service_acceptance(worker, observer, owned):
     """Exercise separate non-root units only inside the guarded synthetic fixture."""
     import psycopg
@@ -1429,6 +1749,9 @@ def acceptance(
         if enabled_http_fixture
         else {}
     )
+    api_result = (
+        api_service_acceptance(account, units, shared_gid, dropins) if operational_fixture else {}
+    )
     probe_dir = APP / "writable-probe"
     probe_dir.mkdir(mode=0o700)
     os.chown(probe_dir, account.pw_uid, account.pw_gid)
@@ -1480,6 +1803,7 @@ def acceptance(
         "timeout_child_stopped": True,
         **database_result,
         **http_result,
+        **api_result,
         "external_sources_tested": False,
         "synthetic_database_tested": database_fixture,
         "timer_activation_tested": enabled_http_fixture,

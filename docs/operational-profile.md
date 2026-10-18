@@ -1,6 +1,7 @@
 # First supervised profile and adoption gates
 
-The bounded profile is RSS/Atom collection, durable character-chunk processing,
+The bounded profile is RSS/Atom or explicitly configured single-source API collection,
+durable character-chunk processing,
 lexical reads and seven stdio MCP tools. Optional local retrieval can be selected
 explicitly. It requires separate model-quality and resource acceptance; installing
 it does not make it adopted. Enrichment, cloud and domain profiles retain their

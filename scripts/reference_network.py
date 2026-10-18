@@ -13,6 +13,7 @@ import json
 import os
 import signal
 import socket
+import ssl
 import subprocess
 import sys
 import time
@@ -26,6 +27,19 @@ NAMESPACE = Path("/run/netns") / NAME
 CONTROL = ROOT / "phase"
 OBSERVATIONS = ROOT / "requests.jsonl"
 READY = ROOT / "ready"
+API_TOKEN = ROOT / "api-token"
+API_CERT = ROOT / "api.pem"
+API_KEY = ROOT / "api.key"
+API_PAGES = {
+    "v1": (
+        b'{"items":[{"id":"api-one","title":"API One","text":"First API evidence"}],'
+        b'"next_cursor":"page-2"}'
+    ),
+    "v2": (
+        b'{"items":[{"id":"api-two","title":"API Two","text":"Second API evidence"}],'
+        b'"next_cursor":null}'
+    ),
+}
 MAX_HEADER = 8192
 MAX_REQUESTS = 64
 MODIFIED = "Wed, 14 Oct 2026 12:00:00 GMT"
@@ -107,11 +121,17 @@ def assert_isolated(expected_inode, host_inode, *, namespace=False):
                 raise RuntimeError("UNEXPECTED_NAMESPACE_ROUTE")
 
 
-def _response(connection, status, body=b"", *, etag=None):
-    reason = {200: "OK", 304: "Not Modified", 400: "Bad Request", 503: "Service Unavailable"}[
-        status
-    ]
+def _response(connection, status, body=b"", *, etag=None, media_type=None):
+    reason = {
+        200: "OK",
+        304: "Not Modified",
+        400: "Bad Request",
+        401: "Unauthorized",
+        503: "Service Unavailable",
+    }[status]
     headers = [f"HTTP/1.1 {status} {reason}", f"Content-Length: {len(body)}", "Connection: close"]
+    if media_type is not None:
+        headers.append("Content-Type: " + media_type)
     if status == 503:
         headers.append("Retry-After: 120")
     if etag is not None:
@@ -192,6 +212,64 @@ def handle_connection(connection, phase, record, *, deadline=None):
             pass
 
 
+def handle_api_connection(connection, phase, expected_token, record, *, deadline=None):
+    """Synthetic provider contract; record only fixed status/boolean observations."""
+    if phase not in ("v1", "v2", "fail"):
+        raise ValueError("INVALID_FIXTURE_PHASE")
+    deadline = min(time.monotonic() + 3, deadline or float("inf"))
+    data = b""
+    try:
+        while b"\r\n\r\n" not in data:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise ValueError
+            connection.settimeout(remaining)
+            part = connection.recv(min(1024, MAX_HEADER + 1 - len(data)))
+            if not part:
+                raise ValueError
+            data += part
+            if len(data) > MAX_HEADER:
+                raise ValueError
+        head, remainder = data.split(b"\r\n\r\n", 1)
+        lines = head.split(b"\r\n")
+        expected_path = b"/records?cursor=page-2" if phase == "v2" else b"/records"
+        if len(lines) > 17 or remainder or len(lines[0]) > 512:
+            raise ValueError
+        headers = {}
+        for line in lines[1:]:
+            key, value = line.split(b":", 1)
+            key = key.decode("ascii").lower()
+            value = value.strip()
+            if (
+                not key
+                or any(c not in "abcdefghijklmnopqrstuvwxyz0123456789-" for c in key)
+                or key in headers
+                or any(c < 32 or c > 126 for c in value)
+            ):
+                raise ValueError
+            headers[key] = value
+        if (
+            headers.get("host") != b"feed.fixture.invalid"
+            or headers.get("content-length", b"0") != b"0"
+            or "transfer-encoding" in headers
+        ):
+            raise ValueError
+        authorized = headers.get("authorization") == b"Bearer " + expected_token
+        path_ok = lines[0] == b"GET " + expected_path + b" HTTP/1.1"
+        status = (
+            401 if not authorized else (400 if not path_ok else (503 if phase == "fail" else 200))
+        )
+        record({"phase": phase, "status": status, "authorized": authorized, "path_ok": path_ok})
+        body = API_PAGES[phase] if status == 200 else b""
+        _response(connection, status, body, media_type="application/json")
+    except (ValueError, UnicodeError, OSError):
+        try:
+            connection.settimeout(0.1)
+            _response(connection, 400)
+        except OSError:
+            pass
+
+
 def _write_new(path, value, mode=0o600):
     with path.open("x", encoding="utf-8") as stream:
         stream.write(value)
@@ -200,14 +278,18 @@ def _write_new(path, value, mode=0o600):
     path.chmod(mode)
 
 
-def serve(expected_inode, host_inode):
+def serve(expected_inode, host_inode, *, api=False):
     guard()
     assert_isolated(expected_inode, host_inode)
     # Admission and complete inventory checks precede creation of any listener.
     deadline = time.monotonic() + 180
+    context = None
+    if api:
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        context.load_cert_chain(API_CERT, API_KEY)
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
         listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        listener.bind((ADDRESS, PORT))
+        listener.bind((ADDRESS, 443 if api else PORT))
         listener.listen(4)
         listener.settimeout(0.5)
         _write_new(READY, "ready\n")
@@ -229,7 +311,18 @@ def serve(expected_inode, host_inode):
                     os.fsync(stream.fileno())
 
             with connection:
-                handle_connection(connection, phase, record, deadline=deadline)
+                if api:
+                    connection.settimeout(3)
+                    try:
+                        with context.wrap_socket(connection, server_side=True) as secure:
+                            handle_api_connection(
+                                secure, phase, API_TOKEN.read_bytes(), record, deadline=deadline
+                            )
+                    except (ssl.SSLError, OSError):
+                        # TLS rejection records no application request or authentication data.
+                        pass
+                else:
+                    handle_connection(connection, phase, record, deadline=deadline)
 
 
 class ReferenceNetwork:
@@ -237,7 +330,8 @@ class ReferenceNetwork:
     namespace_path = NAMESPACE
     hosts_file = ROOT / "hosts"
 
-    def __init__(self, *, before_close=None):
+    def __init__(self, *, before_close=None, api_token=None):
+        self._api_token = api_token
         self._before_close = before_close
         self._process = None
         self._namespace_owned = False
@@ -253,6 +347,34 @@ class ReferenceNetwork:
         try:
             ROOT.mkdir(mode=0o700)
             self._directory_owned = True
+            if self._api_token is not None:
+                if not isinstance(self._api_token, str) or not 16 <= len(self._api_token) <= 128:
+                    raise RuntimeError("FIXTURE_TOKEN_INVALID")
+                _write_new(API_TOKEN, self._api_token)
+                run(
+                    [
+                        "openssl",
+                        "req",
+                        "-x509",
+                        "-newkey",
+                        "rsa:2048",
+                        "-nodes",
+                        "-days",
+                        "2",
+                        "-keyout",
+                        str(API_KEY),
+                        "-out",
+                        str(API_CERT),
+                        "-subj",
+                        "/CN=feed.fixture.invalid",
+                        "-addext",
+                        "subjectAltName=DNS:feed.fixture.invalid",
+                        "-addext",
+                        "basicConstraints=critical,CA:true",
+                    ]
+                )
+                API_KEY.chmod(0o600)
+                API_CERT.chmod(0o644)
             _write_new(CONTROL, "v1\n")
             _write_new(OBSERVATIONS, "")
             _write_new(
@@ -279,6 +401,7 @@ class ReferenceNetwork:
                     "/usr/bin/python3",
                     str(Path(__file__).resolve()),
                     "--serve",
+                    *(["--api"] if self._api_token is not None else []),
                     "--expected-inode",
                     str(expected_inode),
                     "--host-inode",
@@ -348,7 +471,16 @@ class ReferenceNetwork:
             except RuntimeError:
                 failure = True
         if self._directory_owned:
-            for name in ("phase", "phase.pending", "requests.jsonl", "ready", "hosts"):
+            for name in (
+                "phase",
+                "phase.pending",
+                "requests.jsonl",
+                "ready",
+                "hosts",
+                "api-token",
+                "api.pem",
+                "api.key",
+            ):
                 (ROOT / name).unlink(missing_ok=True)
             ROOT.rmdir()
             self._directory_owned = False
@@ -362,11 +494,12 @@ class ReferenceNetwork:
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--serve", action="store_true", required=True)
+    parser.add_argument("--api", action="store_true")
     parser.add_argument("--expected-inode", type=int, required=True)
     parser.add_argument("--host-inode", type=int, required=True)
     args = parser.parse_args()
     try:
-        serve(args.expected_inode, args.host_inode)
+        serve(args.expected_inode, args.host_inode, api=args.api)
     except (RuntimeError, OSError, ValueError):
         return 1
     return 0

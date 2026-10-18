@@ -671,3 +671,16 @@ continuation rather than skipping missing records. Restore clears continuation
 and disables acquisition pending reconciliation. Requests still disclose the
 operator's queries to the upstream provider; query-disclosure policy and separately
 isolated rights domains remain unfinished controls.
+
+
+## Scheduled API service refinement
+
+[ADR-0047](../adr/0047-scheduled-api-service.md) allocates U1/U4/U8/U10/U12 to
+an opt-in one-source service: no implicit source discovery, checked loaded
+credentials, unchanged public-destination/TLS admission, due/backoff-based
+no-dispatch and explicit partial freshness. The collector UID remains a shared
+trust boundary. A partial tick's zero exit code must not be interpreted as complete
+source freshness. The guarded fixture cross-checks journal UID, HTTP observations,
+private cursor/run state, immutable evidence and worker/reader postconditions;
+ordinary parser tests do not replace candidate-bound two-LTS service evidence.
+Actual providers, operational deployment and sustained capacity remain open.
