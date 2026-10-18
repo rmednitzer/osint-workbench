@@ -8,6 +8,9 @@ from .local_reranker import RerankerManifest
 
 def main():
     try:
+        from .inference_state import bind_parent_lifetime
+
+        bind_parent_lifetime()
         import resource
 
         resource.setrlimit(resource.RLIMIT_CPU, (40, 40))

@@ -5,7 +5,7 @@ from datetime import UTC
 from typing import Literal
 
 from psycopg.types.json import Jsonb
-from pydantic import Field, ValidationError
+from pydantic import Field, ValidationError, model_validator
 
 from .contracts import Digest, Identifier, StrictModel
 from .database import Database
@@ -26,6 +26,14 @@ class ClaimProposal(StrictModel):
     statement: str = Field(min_length=1, max_length=1000)
     polarity: Literal["asserted", "negated", "uncertain"]
     quote: str = Field(min_length=1, max_length=4000)
+
+    @model_validator(mode="after")
+    def storable_text(self):
+        # PostgreSQL text cannot hold NUL. Reject it as invalid model output
+        # rather than a retryable backend fault that would rerun inference.
+        if any("\x00" in value for value in (self.subject, self.object, self.statement)):
+            raise ValueError("NUL in claim text")
+        return self
 
 
 class Proposals(StrictModel):

@@ -53,7 +53,14 @@ and `OW_INFERENCE_LOCK` file on the same host. Separate users/hosts/lock paths d
 share admission. Contention reports `INFERENCE_BUSY` without a queue or fallback.
 This is one-slot encoder admission, not a GPU or cross-workload scheduler.
 Each child has 40 CPU seconds, 4 GiB address space, a 16 MiB result bound and 45 s
-wall deadline. Expired children are killed/reaped. Files are bounded to 512 MiB model
+wall deadline. Expired children are killed/reaped. Each encoder/reranker child
+sets a Linux parent-death SIGKILL itself and refuses work with
+`INFERENCE_PARENT_UNBOUND` unless its parent is the process that holds admission,
+so a killed parent cannot release admission while its child keeps computing. A
+signal or resource-limit exit is reported as `ENCODER_UNAVAILABLE` or
+`RERANK_UNAVAILABLE`, never as an invalid model result. The SIGKILL can arrive
+just after the dead parent's lock is released; this is a bounded race, not a
+cross-process scheduler. Files are bounded to 512 MiB model
 and 16 MiB tokenizer. Unsupported shapes, zero/nonfinite vectors and oversize query
 inputs fail. Tokenizer truncation is disabled; chunk fitting rechecks the templated
 input budget and stores exact original Unicode offsets and slice hashes.

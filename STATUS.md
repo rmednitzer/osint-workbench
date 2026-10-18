@@ -233,7 +233,10 @@ column grants ([ADR-0040](docs/adr/0040-feed-item-version-reuse.md)). Repeated
 dropped. Search over a corpus grown past the reference build bounds reports
 degraded drift instead of failing. Briefing reads compare every cited item with
 its live accepted assertion. Discriminating native and protocol regressions
-were added; revision-bound results belong to the candidate's CI run. Remaining
+were added; revision-bound results belong to the candidate's CI run.
+Encoder/reranker children now die with the parent that holds admission and
+refuse unbound work; signal exits are reported as unavailable, and NUL in model
+claims is terminal invalid output instead of a retried backend fault. Remaining
 findings and their dispositions are listed in
 [the audit record](docs/testing/audit-remediation-2026-10-18.md); they are not
 closed by this increment.

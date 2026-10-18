@@ -586,6 +586,8 @@ composition remain bounded by their separate acceptance evidence.
 | U90 | CA5/P: resolve repeated `Content-Encoding` or `Location` fields by the last occurrence | H2,H3; C90: repeated framing fields fail closed with typed errors; redirect fragments are removed before validation, never sent | Raw-wire duplicate, non-ASCII, fragment and downgrade controls through the actual client |
 | U91 | CA7/N: deny all search because ordinary collection grew the corpus past reference build bounds | H2,H6; C91: an over-limit corpus is reported as degraded drift while builds and activation keep enforcing bounds | Native growth-past-limit search, build and activation regression |
 | U92 | CA15/P: serve a briefing whose digest is self-consistent but whose items misstate the accepted assertions they cite | H8; C92: every read compares each cited item with the live accepted assertion projection | Writer-authority forged statement, polarity and source cases |
+| U93 | CA10/P: release single-slot inference admission when the admitting parent dies while its model child continues computing | H9; C93: children bind their own lifetime to the expected admitting parent and refuse unbound work; exits are classified before result decoding | Actual SIGKILL of an intermediate parent with a blocked child, unbound-child refusal and exit/shape classification cases |
+| U94 | CA10/P: retry deterministic invalid model output as a backend fault | H9; C94: unstorable model text is invalid model output and terminal | NUL claim cases leave no assertions and do not rerun inference |
 
 The U89 scenario starts with a feed that changes one entry or a channel
 timestamp at every poll. Hash identity correctly distinguishes containers, but

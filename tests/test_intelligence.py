@@ -97,16 +97,28 @@ def test_proposals_review_cited_product_rejection_and_source_updates(databases, 
 
 @pytest.mark.parametrize(
     "claims",
-    [[claim("Fabricated quotation")], [{**claim(), "shell": "forbidden"}], [claim(), claim()]],
+    [
+        [claim("Fabricated quotation")],
+        [{**claim(), "shell": "forbidden"}],
+        [claim(), claim()],
+        [claim(), {**claim(), "subject": "stor\x00age"}],
+        [{**claim(), "statement": "The source says\x00 storage is unavailable."}],
+    ],
 )
 def test_invalid_models_accept_no_partial_assertions(databases, tmp_path, claims):
     writer, reader, roles, store, doc = setup(databases, tmp_path)
     generator = FixtureGenerator(claims)
     intel.enqueue(writer, generator, doc)
-    assert intel.enrich_once(writer, store, generator)["status"] == "failed"
+    result = intel.enrich_once(writer, store, generator)
+    assert result["status"] == "failed"
     assert intel.assertions(reader)["results"] == []
     with psycopg.connect(roles["admin"]) as conn:
         assert conn.execute("SELECT count(*) FROM ow.enrichments").fetchone()[0] == 0
+    if any("\x00" in str(value) for c in claims for value in c.values()):
+        # Deterministic invalid output is terminal: inference is not rerun.
+        assert result["error"] == "INVALID_MODEL_RESULT"
+        assert intel.enrich_once(writer, store, generator)["status"] == "idle"
+        assert len(generator.calls) == 1
 
 
 def test_abstention_and_cancelled_completion_are_distinct(databases, tmp_path):

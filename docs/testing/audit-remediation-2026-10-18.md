@@ -16,6 +16,9 @@ run of the candidate commit, not to this file.
 | Non-ASCII redirect | A non-ASCII `Location` was reported as generic `SOURCE_UNAVAILABLE` | Specific `INVALID_REDIRECT` | Same file |
 | Site-local IPv6 | Deprecated `fec0::/10` passed the destination filter | Blocked as non-public | Same file |
 | Search past build limits | Unattended growth past the reference build bounds made hybrid/reranked search fail with `REFERENCE_CORPUS_LIMIT` | Over-limit corpus is necessarily drifted: search is `degraded`/`CORPUS_CHANGED`; builds and activation still enforce bounds | `test_unattended_growth_past_build_limit_degrades_search_instead_of_failing` |
+| Inference child lifetime | A killed parent released one-slot admission while its encoder/reranker child kept computing | Child-set parent-death SIGKILL plus expected-parent check; unbound children refuse work | `tests/test_inference_child_lifetime.py` (actual SIGKILL of an intermediate parent) |
+| Child exit labelling | Signal/limit exits were labelled invalid results; a non-zero reranker exit with a non-object result escaped as a raw exception; `ENCODER_RESULT_LIMIT` was masked | Exit status classified before decoding; result shape type-checked | Same file |
+| Model-output NUL | A schema-valid claim containing NUL failed at INSERT as a retryable backend fault, rerunning deterministic inference | Rejected as non-retryable `INVALID_MODEL_RESULT` | `test_invalid_models_accept_no_partial_assertions` NUL cases |
 | Briefing field binding | A briefing with a recomputed digest could misstate statement, polarity, source or document of a real accepted assertion, or carry malformed items and an inconsistent empty disposition, and still be served | Each item must have the exact item fields, belong to the recorded selection and equal the live accepted assertion projection; degraded/omission state must match; else `BRIEFING_EVIDENCE_MISMATCH` | `test_self_consistent_briefing_cannot_misstate_its_cited_assertion` |
 
 ## Open, with rationale
@@ -25,12 +28,9 @@ run of the candidate commit, not to this file.
 | Enrichment subject/object are not required to occur in the quoted span, yet are labelled source mentions | Medium | Needs a decision between span-bound mention validation and renaming the field contract; affects model-output acceptance and existing assertions |
 | Writer role can self-review its own enrichment proposals | Low-Medium | Documented as attribution, not authentication; needs a separate reviewer role and migration |
 | MCP 64 KiB result cap is reachable inside advertised schema maxima (search/briefing/assertion pages) | Low-Medium | Needs size-aware pagination or lower schema maxima |
-| Model-output NUL classified as retryable backend failure | Low | Reject NUL in claim validators as invalid model output |
 | `parse_special` applies to embedded source text in local generation prompts | Low-Medium | Tokenize manifest template separately from untrusted text |
 | Retrieval writer has whole-row UPDATE on generations/active pointer | Low | Additive retrieval-profile migration narrowing to status/error columns |
 | Blank or tokenizer-erased document fails the whole index build; one long rerank candidate fails the request | Low-Medium | Needs explicit per-document skip/exclusion contract |
-| Encoder/reranker child outlives a killed parent and its admission lock | Low | Needs parent-death signal or process-group ownership |
-| Crash exits mislabelled as invalid results; reranker non-object result escapes as raw exception | Low | Check exit status before decoding; type-check decoded results |
 | `enqueue` on terminal job returns old ID; lock wait surfaces raw `LockNotAvailable` | Low | Return status explicitly; map lock timeout |
 | `document_heads` not bound to its key by a composite FK | Low | Hardening migration; no tenancy claim exists |
 | Reader validation is a denylist | Low | Exact allowlist like collector validation |
