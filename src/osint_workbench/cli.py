@@ -165,6 +165,19 @@ def main():
     enrich.add_argument("--operation-id", default="initial")
     exposure = sub.add_parser("cloud-exposure")
     exposure.add_argument("--cloud-policy", type=Path, required=True)
+    ledger = sub.add_parser("cloud-ledger")
+    ledger.add_argument("action", choices=["unsettled", "settle"])
+    ledger.add_argument("--route")
+    ledger.add_argument("--include-estimated", action="store_true")
+    ledger.add_argument("--attempt-id")
+    ledger.add_argument(
+        "--basis", choices=["invoice", "usage_export", "provider_statement", "not_dispatched"]
+    )
+    ledger.add_argument("--cost")
+    ledger.add_argument("--currency")
+    ledger.add_argument("--evidence", type=Path)
+    ledger.add_argument("--actor")
+    ledger.add_argument("--rationale")
     rev = sub.add_parser("review")
     rev.add_argument("assertion_id")
     rev.add_argument("--decision", choices=["accept", "reject"], required=True)
@@ -345,6 +358,33 @@ def main():
                     for route in policy.routes
                 ],
             }
+        elif args.command == "cloud-ledger":
+            # Settlement authority is separate from the writer that spends.
+            db = Database(_dsn("OW_ACCOUNTING_DSN"))
+            if args.action == "unsettled":
+                value = cloud.unsettled(
+                    db, route_id=args.route, include_estimated=args.include_estimated
+                )
+            else:
+                try:
+                    settlement = cloud.Settlement.model_validate_json(
+                        json.dumps(
+                            {
+                                "attempt_id": args.attempt_id,
+                                "basis": args.basis,
+                                "cost": args.cost,
+                                "currency": args.currency,
+                                "evidence_sha256": cloud.evidence_digest(args.evidence)
+                                if args.evidence is not None
+                                else None,
+                                "actor": args.actor,
+                                "rationale": args.rationale,
+                            }
+                        )
+                    )
+                except ValidationError:
+                    raise WorkbenchError("INVALID_SETTLEMENT") from None
+                value = cloud.settle(db, settlement)
         elif args.command == "review":
             value = intelligence.review(
                 Database(_dsn("OW_WRITER_DSN")),

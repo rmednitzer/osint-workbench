@@ -10,7 +10,7 @@ from .contracts import DocumentInput
 from .errors import WorkbenchError
 from .evidence import EvidenceStore
 
-SCHEMA_VERSION = 9
+SCHEMA_VERSION = 10
 LIFECYCLE_LOCK = 418287408
 MIGRATIONS = (
     "schema.sql",
@@ -22,6 +22,7 @@ MIGRATIONS = (
     "migrations/007_retired_record_purge.sql",
     "migrations/008_collector_item_reuse.sql",
     "migrations/009_cloud_ledger.sql",
+    "migrations/010_cloud_settlement.sql",
 )
 
 
@@ -122,7 +123,8 @@ class Database:
               pg_has_role(current_user,'ow_writer','MEMBER') AS writer,
               pg_has_role(current_user,'ow_lifecycle','MEMBER') AS lifecycle,
               pg_has_role(current_user,'ow_collector','MEMBER') AS collector,
-              pg_has_role(current_user,'ow_purger','MEMBER') AS purger""").fetchone()
+              pg_has_role(current_user,'ow_purger','MEMBER') AS purger,
+              pg_has_role(current_user,'ow_accounting','MEMBER') AS accounting""").fetchone()
             if any(row.values()):
                 raise WorkbenchError("UNSAFE_READER_IDENTITY")
             if conn.execute("""SELECT 1 FROM pg_class c JOIN pg_namespace n

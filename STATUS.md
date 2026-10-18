@@ -14,12 +14,12 @@ complete merely because its design documents or interfaces exist.
 | Local inference | CPU embedding/rerank runtimes, native Unix-socket generation and durable shared admission | Actual synthetic ONNX/GGUF execution and Unix transport/crash tests in CI; no GPU, pretrained quality or complete cross-host scheduler |
 | Enrichment/graph/briefings | Durable typed proposals, evidence spans, operator reviews and cited assertion digests | PostgreSQL/MCP proposal, review, withdrawal and cited-digest tests passed; pretrained semantic acceptance, aliases/merge and diversity pending |
 | Vulnerability/regulatory profiles | Offline advisory observation envelope; broader domain specifications | Authored strict-contract tests; no upstream adapters or applicability verification yet |
-| Cloud APIs/accounting/batches | One declared-compatible chat route behind a deny-by-default policy and a transactional per-currency reservation ledger, used only by explicitly routed and classified enrichment jobs | Native contract tests against a synthetic HTTPS provider through the real transport and PostgreSQL; no native vendor adapters, streaming, batches, reconciliation command, live provider call or spending |
+| Cloud APIs/accounting/batches | One declared-compatible chat route behind a deny-by-default policy and a transactional per-currency reservation ledger, used only by explicitly routed and classified enrichment jobs; evidence-bound operator settlement under a separate accounting role | Native contract tests against a synthetic HTTPS provider through the real transport and PostgreSQL, plus settlement authority, race and recovery tests; no native vendor adapters, streaming, batches, invoice import, live provider call or spending |
 | Remote MCP | Target authentication design | No HTTP listener or remote client compatibility claim |
 | Export/recovery/retention | Bounded private checkpoint, empty-target restore, operator retention/holds/logical tombstones and mandatory current-policy reconciliation | Native SQL-reader, job/fence, inference, collector and restored-policy regressions passed in installed-wheel CI. Reviewed orphan-object GC and transactional retired-record SQL purge passed native failure/restart, recovery and scoped-role tests. Full record erasure, legacy format-1 adoption, public export, publisher and full-host/PITR remain pending |
 | Publication controls | Positive file selection and source/artifact scanning | File/archive checks plus bounded new-commit metadata scanning; private exact-value checks run outside public CI and do not establish anonymity |
 
-Core schema v9 and retrieval-profile v4 are additive; earlier published migrations
+Core schema v10 and retrieval-profile v4 are additive; earlier published migrations
 remain byte-identical. Checkpoint format 2 requires separate policy receipts;
 legacy format-1 restore/adoption is not silently accepted. Job cancellation
 revokes acceptance authority; it does not prove a running computation has stopped.
@@ -258,6 +258,19 @@ exhausted caps are recorded denials with no connection. Every attempt reserves
 its worst-case Decimal cost under a per-route-and-currency lock before
 sending; unreported usage keeps the reservation as exposure, and no attempt
 that may have reached the provider is replayed. Contract tests use a
-synthetic provider with fixture trust. Native vendor adapters, streaming,
-batches, reconciliation, a separate dispatcher identity and any live-provider,
-sovereignty or invoice evidence remain open.
+synthetic provider with fixture trust.
+
+Core migration 10 adds operator settlement
+([ADR-0043](docs/adr/0043-remote-attempt-settlement.md)). A separate
+`ow_accounting` login lists attempts that still hold an estimate and settles
+each one once, with an exact amount bound to the SHA-256 of a private provider
+evidence file. Only a never-dispatched reservation settles at zero without
+evidence. Rows that may belong to a live worker are refused, settled rows are
+final, and a late worker outcome is refused. A settled attempt no longer
+blocks a new attempt for its operation. The writer can no longer insert
+settlement or timestamp columns or set the transition time, and the request
+deadline now starts before dispatch is committed.
+
+Native vendor adapters, streaming, batches, invoice import, a separate
+dispatcher identity and any live-provider, sovereignty or invoice evidence
+remain open.

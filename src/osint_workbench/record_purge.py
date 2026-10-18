@@ -86,7 +86,8 @@ COLUMNS = {
     "briefings": "briefing_id content created_at",
     "remote_operations": "attempt_id operation_id route_id policy_sha256 task data_class "
     "decision reason packet_sha256 currency reserved status input_tokens output_tokens usage "
-    "estimated_cost response_sha256 error_code created_at updated_at",
+    "estimated_cost response_sha256 error_code created_at updated_at settlement_basis "
+    "settled_cost settlement_evidence_sha256 settled_by settlement_rationale settled_at",
     "lifecycle_control": "singleton dataset_id revision",
     "lifecycle_items": "source_id external_key retention_class retain_until",
     "lifecycle_holds": "hold_id source_id external_key placed_at released_at",

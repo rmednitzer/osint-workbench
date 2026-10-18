@@ -206,7 +206,8 @@ def published_pair(payload, core, profile=None):
     """Reduce a current checkpoint to an exact published core/profile pair.
 
     Later migrations add grants, defaults or tables that are empty at adoption
-    (exclusions, remote attempts); the retained record layout is otherwise identical.
+    (exclusions, remote attempts) or nullable columns that are unset at adoption
+    (settlements); the retained record layout is otherwise identical.
     """
     profile = max(recovery.PUBLISHED_PAIRS[core]) if profile is None else profile
     assert profile in recovery.PUBLISHED_PAIRS[core]
@@ -218,6 +219,11 @@ def published_pair(payload, core, profile=None):
         payload["tables"].pop("retrieval_exclusions", None)
     if core < 9:
         payload["tables"].pop("remote_operations", None)
+    elif core < 10:
+        # Core 9 attempts carry no settlement columns.
+        for row in payload["tables"]["remote_operations"]:
+            for column in recovery.SETTLEMENT_COLUMNS:
+                del row[column]
 
 
 def _rewrite(path, change):
@@ -423,7 +429,7 @@ def test_non_regular_objects_and_oversize_bundles_fail_without_blocking(tmp_path
     ],
 )
 def test_legacy_checkpoint_history_requires_complete_exact_known_pair(version, profile):
-    current = {str(i): digest(f"published migration {i}".encode()) for i in range(1, 10)}
+    current = {str(i): digest(f"published migration {i}".encode()) for i in range(1, 11)}
     current.update({f"retrieval/{i}": str(i) * 64 for i in range(1, 5)})
     known = {
         key: value
@@ -447,7 +453,7 @@ def test_legacy_checkpoint_history_requires_complete_exact_known_pair(version, p
     )
     assert not recovery._known_legacy_history(known, current, 3)
     # The current pair itself is not legacy; it takes the ordinary exact path.
-    assert not recovery._known_legacy_history(current, current, 9)
+    assert not recovery._known_legacy_history(current, current, 10)
 
 
 @pytest.mark.integration
@@ -511,7 +517,7 @@ def test_known_v5_checkpoint_restores_retained_data_with_current_policy(
             conn.execute("SELECT hold_id FROM ow.lifecycle_holds").fetchone()["hold_id"]
             == "hold-v5"
         )
-        assert conn.execute("SELECT max(version) AS v FROM ow.migrations").fetchone()["v"] == 9
+        assert conn.execute("SELECT max(version) AS v FROM ow.migrations").fetchone()["v"] == 10
         jobs = conn.execute(
             "SELECT status FROM ow.jobs WHERE job_id=ANY(%s::uuid[])", ([pending, leased],)
         ).fetchall()

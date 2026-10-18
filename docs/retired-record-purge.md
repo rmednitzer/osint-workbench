@@ -85,7 +85,7 @@ the operation; they are never silently rewritten. Shared snapshots survive when
 any other document still references them. Sources, collection runs/state, lifecycle
 items, holds, tombstones and decision events remain.
 
-Remote-attempt ledger rows (core v9) are retained: they hold route, policy and
+Remote-attempt ledger rows (core v9, settlements from v10) are retained: they hold route, policy and
 packet digests with accounting, not document identifiers or content, and their
 exposure must survive purge. The purger may only read them for its exact
 authority checks. Purge still refuses any non-internal trigger or rule in the
