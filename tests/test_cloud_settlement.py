@@ -329,6 +329,15 @@ def test_settlement_authority_is_separate_from_the_writer(databases, tmp_path):
     try:
         with pytest.raises(WorkbenchError, match="^ACCOUNTING_OPERATOR_REQUIRED$"):
             cloud.settle(Database(roles["accounting"]), settlement(identifier))
+        # The database refuses it too, without the application check.
+        with psycopg.connect(roles["accounting"]) as conn:
+            with pytest.raises(psycopg.errors.InsufficientPrivilege):
+                conn.execute(
+                    "UPDATE ow.remote_operations SET settlement_basis='invoice',settled_cost=0,"
+                    "settlement_evidence_sha256=%s,settled_by='x',settlement_rationale='y' "
+                    "WHERE attempt_id=%s",
+                    ("e" * 64, identifier),
+                )
     finally:
         with psycopg.connect(roles["admin"], autocommit=True) as conn:
             conn.execute("REVOKE ow_writer FROM ow_test_accounting")
@@ -530,3 +539,43 @@ def test_a_worker_stalled_after_dispatch_commit_never_sends(databases, tmp_path,
         generator.generate("Synthetic prompt", SCHEMA, operation=operation)
     (row,) = ledger(roles)
     assert row["status"] == "released" and row["error_code"] == "REMOTE_DEADLINE_BEFORE_SEND"
+
+
+@pytest.mark.integration
+def test_in_flight_window_uses_database_time_the_writer_cannot_set(databases, tmp_path):
+    writer, reader, roles, store, doc = setup(databases, tmp_path)
+    accounting = Database(roles["accounting"])
+    identifier = attempt(writer, "reserved")
+    with psycopg.connect(roles["writer"]) as conn:
+        with pytest.raises(psycopg.errors.InsufficientPrivilege):
+            conn.execute(
+                "UPDATE ow.remote_operations SET status='dispatched',"
+                "updated_at='2000-01-01T00:00:00Z' WHERE attempt_id=%s",
+                (identifier,),
+            )
+    age(roles, identifier)
+    assert cloud.unsettled(accounting)["attempts"][0]["in_flight"] is False
+    # Dispatch restarts the window from the database clock.
+    cloud.Ledger(writer).transition(identifier, "reserved", "dispatched")
+    assert cloud.unsettled(accounting)["attempts"][0]["in_flight"] is True
+    with pytest.raises(WorkbenchError, match="^SETTLEMENT_IN_FLIGHT$"):
+        cloud.settle(accounting, settlement(identifier))
+
+
+@pytest.mark.integration
+def test_settlement_waiting_on_a_live_worker_is_busy(databases, tmp_path):
+    writer, reader, roles, store, doc = setup(databases, tmp_path)
+    identifier = attempt(writer, "dispatched")
+    age(roles, identifier)
+    worker = psycopg.connect(roles["writer"])
+    try:
+        worker.execute(
+            "UPDATE ow.remote_operations SET status='outcome_unknown' WHERE attempt_id=%s",
+            (identifier,),
+        )
+        with pytest.raises(WorkbenchError, match="^SETTLEMENT_BUSY$"):
+            cloud.settle(Database(roles["accounting"]), settlement(identifier))
+    finally:
+        worker.rollback()
+        worker.close()
+    assert ledger(roles)[0]["settlement_basis"] is None

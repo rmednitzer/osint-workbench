@@ -52,9 +52,14 @@ also adds a `NOLOGIN` group, `ow_accounting`.
 - `ow_accounting` may read the ledger and update only the five operator
   settlement columns.
 - The writer's insert grant narrows to the attempt columns. It can no longer
-  insert a pre-settled or back-dated row.
-- The command refuses any login that is also a writer member. Reader
-  validation refuses accounting membership.
+  insert a pre-settled or back-dated row. It also loses its update grant on
+  `updated_at`, which the trigger now sets from the database clock on every
+  transition.
+- A login that is also a writer member is refused twice: by the command, and
+  by the trigger, which checks both session and current user so that SET ROLE
+  does not help. Reader validation refuses accounting membership.
+- The trigger compares the whole row, minus the settlement columns, so a
+  settlement cannot change anything else even if grants are later widened.
 
 `osint-workbench cloud-ledger unsettled` lists attempts that still hold an
 estimate. `osint-workbench cloud-ledger settle` records one settlement per
@@ -69,14 +74,25 @@ attempt, with these rules:
 - **Currency.** It must equal the attempt's currency. Amounts may exceed the
   reservation: an invoice is not bounded by the declared-price estimate.
 - **Scope.** Denied and released attempts need no settlement and are refused.
-- **Live attempts.** Reserved or dispatched rows younger than ten minutes are
-  refused, both in code and by the trigger. The worker's request deadline (at
-  most 120 seconds) now starts before the dispatched row commits, and an
-  expired deadline releases the attempt before any connection. A stalled
-  worker therefore never sends after the window opens, except across host
-  suspend, which is outside the monotonic clock.
-- **Finality.** A settled row is immutable to every role. An identical retry
-  returns the receipt; a changed request fails with `SETTLEMENT_CONFLICT`.
+- **Live attempts.** Reserved or dispatched rows younger than ten minutes, by
+  database time, are refused both in code and by the trigger. The worker's
+  request deadline (at most 120 seconds) now starts before the dispatched row
+  commits, and an expired deadline releases the attempt before any
+  connection. A stalled worker therefore never starts a request after the
+  window opens, except across host suspend, which is outside the monotonic
+  clock.
+
+  Each transport read and write is bounded by that deadline. The transport
+  can, however, retry partial socket sends, and a provider that deliberately
+  throttles how fast it accepts request bytes could stretch sending. That
+  residual is shared with acquisition. Operators settle dispatched attempts
+  only on provider evidence.
+- **Busy rows.** A settlement that waits on a worker's row lock beyond the
+  lock timeout fails with `SETTLEMENT_BUSY` and changes nothing.
+- **Finality.** A settled row is immutable to every application role.
+  Database owners and superusers can bypass triggers and are outside this
+  contract. An identical retry returns the receipt; a changed request fails
+  with `SETTLEMENT_CONFLICT`.
 
 Exposure uses the settled amount when present. A settled attempt no longer
 blocks another attempt for the same operation, because its outcome is no
@@ -114,7 +130,11 @@ Real PostgreSQL tests cover:
 - a settlement holding the row lock while a late worker outcome waits, under
   read committed and under repeatable read;
 - writer, reader, collector and lifecycle refusal, and a writer-and-accounting
-  login refused;
+  login refused by both the command and the database;
+- the writer unable to set `updated_at`, with dispatch restarting the window
+  from database time;
+- a settlement blocked by a live worker's row lock returning
+  `SETTLEMENT_BUSY`;
 - the writer unable to insert settlement or timestamp columns, and accounting
   unable to change outcomes, reservations or settlement time, or delete rows;
 - immutability of settled rows;
@@ -125,6 +145,7 @@ Real PostgreSQL tests cover:
 - a stalled worker releasing the attempt instead of sending.
 
 Removing the settled-cost exposure term, the settled exception in the replay
-guard, the writer-membership refusal, the in-flight check, the deadline
-anchoring, or either trigger guard each makes a test fail. This is contract
+guard, the writer-membership refusal in code or in the trigger, the
+in-flight check, the deadline anchoring, the trigger's clock assignment, the
+busy mapping, or the trigger's window check each makes a test fail. This is contract
 evidence, not invoice, provider or legal evidence.

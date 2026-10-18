@@ -374,7 +374,9 @@ def restore(
                 (
                     int(k.removeprefix(prefix))
                     for k in payload["migrations"]
-                    if k.startswith(prefix) and k.removeprefix(prefix).isdigit()
+                    if k.startswith(prefix)
+                    and k.removeprefix(prefix).isascii()
+                    and k.removeprefix(prefix).isdigit()
                 ),
                 default=0,
             )

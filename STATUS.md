@@ -268,8 +268,8 @@ evidence file. Only a never-dispatched reservation settles at zero without
 evidence. Rows that may belong to a live worker are refused, settled rows are
 final, and a late worker outcome is refused. A settled attempt no longer
 blocks a new attempt for its operation. The writer can no longer insert
-settlement or timestamp columns, and the request deadline now starts before
-dispatch is committed.
+settlement or timestamp columns or set the transition time, and the request
+deadline now starts before dispatch is committed.
 
 Native vendor adapters, streaming, batches, invoice import, a separate
 dispatcher identity and any live-provider, sovereignty or invoice evidence

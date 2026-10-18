@@ -2,6 +2,7 @@
 -- A settlement replaces conservative exposure with an evidence-bound amount. It
 -- lives on the attempt row so the row lock and the transition trigger serialize
 -- it against a late worker outcome, whatever the session isolation level.
+-- Owners and superusers can bypass triggers; they are outside this contract.
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='ow_accounting') THEN
@@ -40,10 +41,16 @@ BEGIN
     RAISE EXCEPTION 'settled remote operation is immutable' USING ERRCODE = 'check_violation';
   END IF;
   IF NEW.settlement_basis IS NOT NULL THEN
-    IF (NEW.status, NEW.input_tokens, NEW.output_tokens, NEW.usage, NEW.estimated_cost,
-        NEW.response_sha256, NEW.error_code, NEW.updated_at)
-       IS DISTINCT FROM (OLD.status, OLD.input_tokens, OLD.output_tokens, OLD.usage,
-        OLD.estimated_cost, OLD.response_sha256, OLD.error_code, OLD.updated_at)
+    -- The identity that spends never settles, including through SET ROLE.
+    IF pg_has_role(session_user, 'ow_writer', 'MEMBER')
+       OR pg_has_role(current_user, 'ow_writer', 'MEMBER') THEN
+      RAISE EXCEPTION 'writer cannot settle remote operations'
+        USING ERRCODE = 'insufficient_privilege';
+    END IF;
+    -- Settlement changes only its own columns, whatever grants exist.
+    IF (to_jsonb(NEW) - '{settlement_basis,settled_cost,settlement_evidence_sha256,settled_by,settlement_rationale,settled_at}'::text[])
+       IS DISTINCT FROM
+       (to_jsonb(OLD) - '{settlement_basis,settled_cost,settlement_evidence_sha256,settled_by,settlement_rationale,settled_at}'::text[])
        -- Reserved and dispatched rows may still belong to a live worker whose
        -- request deadline is at most 120 seconds.
        OR (OLD.status IN ('reserved','dispatched')
@@ -63,12 +70,15 @@ BEGIN
   THEN
     RAISE EXCEPTION 'invalid remote operation transition' USING ERRCODE = 'check_violation';
   END IF;
+  -- The in-flight window is measured from a database time the writer cannot set.
+  NEW.updated_at := clock_timestamp();
   RETURN NEW;
 END $$;
 REVOKE ALL ON FUNCTION ow.remote_operation_transition() FROM PUBLIC;
 -- The writer records attempts and outcomes; it can no longer insert settlement,
 -- timestamp or other unlisted columns, and it never settles its own exposure.
 REVOKE INSERT ON ow.remote_operations FROM ow_writer;
+REVOKE UPDATE(updated_at) ON ow.remote_operations FROM ow_writer;
 GRANT INSERT(attempt_id,operation_id,route_id,policy_sha256,task,data_class,decision,reason,
   packet_sha256,currency,reserved,status) ON ow.remote_operations TO ow_writer;
 GRANT USAGE ON SCHEMA ow TO ow_accounting;

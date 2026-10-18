@@ -324,7 +324,8 @@ class Ledger:
                 row = conn.execute(
                     "UPDATE ow.remote_operations SET "  # noqa: S608
                     + assignments
-                    + ",updated_at=clock_timestamp() WHERE attempt_id=%s AND status=%s "
+                    # The trigger assigns updated_at from the database clock.
+                    + " WHERE attempt_id=%s AND status=%s "
                     "RETURNING attempt_id",
                     (*columns.values(), attempt, expected),
                 ).fetchone()
@@ -441,6 +442,14 @@ def unsettled(db: Database, *, route_id=None, include_estimated=False, limit=MAX
 
 def settle(db: Database, settlement: Settlement):
     """Record one immutable settlement; an identical retry returns its receipt."""
+    try:
+        return _settle(db, settlement)
+    except (psycopg.errors.LockNotAvailable, psycopg.errors.SerializationFailure):
+        # A live worker holds the row; retry after it finishes.
+        raise WorkbenchError("SETTLEMENT_BUSY") from None
+
+
+def _settle(db: Database, settlement: Settlement):
     with db.connect() as conn:
         _accounting(conn)
         # The row lock orders this against a late worker outcome; the trigger

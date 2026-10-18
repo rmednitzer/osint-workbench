@@ -113,14 +113,17 @@ cap with failed or unknown attempts until an operator settles them.
 
 The request deadline starts before the dispatched row commits. A worker that
 stalls past it after that commit records `released` with
-`REMOTE_DEADLINE_BEFORE_SEND` and sends nothing.
+`REMOTE_DEADLINE_BEFORE_SEND` and sends nothing. Each transport read and write
+is bounded by the deadline. A provider that deliberately throttles how fast it
+accepts request bytes can still stretch sending, so settle dispatched attempts
+only on provider evidence.
 
 ## Settlement
 
 Settlement replaces an estimate with an amount the operator asserts from
 provider evidence. It runs under a separate login inheriting `ow_accounting`,
 configured privately as `OW_ACCOUNTING_DSN`. That login must not also be a
-writer member; the command refuses it. The group may read the ledger and write
+writer member; the command and the database both refuse it. The group may read the ledger and write
 only the settlement columns. It cannot change outcomes or reservations, delete
 rows, or read documents. Do not add settlement to MCP.
 
@@ -146,7 +149,9 @@ worker and cannot be settled yet.
 
 - **Evidence file.** It is read without following symlinks, must be a
   non-empty regular file of at most 64 MiB, and is never copied or uploaded.
-- **Timestamp.** The database assigns the settlement time.
+- **Timestamps.** The database assigns the settlement time and every
+  transition time; the writer cannot set either. Owners and superusers can
+  bypass the trigger and are outside this contract.
 - **Finality.** A settled attempt can never be dispatched or updated again. A
   worker that resumes late gets `INVALID_LEDGER_TRANSITION`.
 - **Retries.** Repeating the identical command returns the receipt with
@@ -167,6 +172,7 @@ Errors:
 | `SETTLEMENT_CURRENCY_MISMATCH` | The currency differs from the attempt's |
 | `SETTLEMENT_BASIS_INVALID` | `not_dispatched` used on a row that was dispatched |
 | `SETTLEMENT_IN_FLIGHT` | The row may belong to a live worker |
+| `SETTLEMENT_BUSY` | A worker holds the row lock; retry later |
 | `SETTLEMENT_EVIDENCE_INVALID`, `SETTLEMENT_EVIDENCE_UNAVAILABLE` | The evidence file is not a bounded regular file, or cannot be opened |
 | `INVALID_SETTLEMENT` | Missing or malformed arguments |
 | `SETTLEMENT_REFUSED` | The database rejected the settlement |
