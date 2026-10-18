@@ -1,3 +1,5 @@
+# Reference core collector only; see docs/deployment.md for provisioning and scope.
+# Model workers and stdio MCP require separate identities and supervision.
 [Unit]
 Description=OSINT Workbench bounded acquisition tick
 Wants=network-online.target

@@ -3,8 +3,9 @@
 Format 2 is a bounded logical checkpoint of the workbench's `ow` application tables
 and their referenced immutable evidence. It is **private data**, not a public
 export. It contains source identifiers, document contents, job payloads, reviewer
-identities/rationales and stored products. Do not commit, publish or send it to an
-AI provider. `.owcp` files are ignored by Git as an additional backstop.
+identities/rationales, accounting/settlement metadata and stored products. Do not
+commit, publish or send it to an AI provider. `.owcp` files are ignored by Git as
+an additional backstop.
 
 The file is not encrypted or signed. Store it on operator-managed encrypted storage
 with restricted access, and keep its returned SHA-256 receipt separately in a
@@ -52,13 +53,17 @@ new 0600 file, fsync and no-overwrite promotion. Partial private staging files m
 remain after process/host failure and require operator inspection.
 
 Core storage, all document versions/heads, collection receipts, jobs/events,
-chunks, enrichments, assertions/reviews and briefings are included. When installed,
-the exact retrieval profile's spaces, generations, members, vectors and active
-alias are included. Generated full-text vectors are rebuilt by PostgreSQL.
+chunks, enrichments, assertions/reviews, briefings and remote-attempt ledger rows
+(including settlements) are included. When installed, the exact retrieval
+profile's spaces, generations, members, exclusions, vectors and active alias are
+included. Generated full-text vectors are rebuilt by PostgreSQL. Prompt/response
+and settlement-evidence digests are retained metadata; they do not cause the
+referenced external files or provider records to be fetched or bundled.
 
 Credentials, database roles/grants, source URL catalogs, external routing policy,
 inference ownership receipts, model/tokenizer binaries and host/deployment
-configuration are outside the bundle. Protect and recover them separately. A
+configuration, provider invoices and private settlement-evidence files are outside
+the bundle. Protect and recover them separately. A
 checkpoint is insufficient to reconstruct the whole installation.
 
 The checkpoint includes its dataset UUID, retention, holds, tombstones and audit
@@ -120,15 +125,20 @@ All source rows become disabled. Ready/running jobs become failed with
 `RECOVERY_RECONCILIATION_REQUIRED` and an appended event; historical fences cannot
 accept completions. Running collection receipts become interrupted and incomplete
 vector builds become failed. Completed records and compatible active retrieval
-generations are preserved. These changes are intentional recovery dispositions,
-not byte-for-byte resurrection of a running process.
+generations are preserved. Remote attempts retain their recorded statuses,
+reservations, costs and settlements; restore neither releases uncertain exposure
+nor automatically retries an operation. These changes are intentional recovery
+dispositions, not byte-for-byte resurrection of a running process.
 
 Before connecting consumers, check representative old/current document IDs,
 evidence hashes, review states, cited products and search through the actual reader
 and MCP client. Inspect stale products and degraded retrieval explicitly. Restore
 the correct private model configuration and verify its identities before hybrid
-reads. Reconcile ownership of any computation still running on an old host; a
-restored job cannot prove that computation has stopped. Reconcile external
+reads. Keep cloud routing disabled until provider/accounting state has been
+reconciled separately. The restored ledger reflects the checkpoint, not attempts,
+charges or settlements recorded after it; a matching hash cannot recover those
+external facts. Reconcile ownership of any computation still running on an old
+host; a restored job cannot prove that computation has stopped. Reconcile external
 effects and additional deployment-specific policy before enabling sources or
 submitting explicit new operations. Keep external supervisors stopped: an explicit
 `collect` with an enabled private configuration updates the source row and can
@@ -154,8 +164,8 @@ Full consumer export and outbound publishing remain pending.
 Core v5 includes private collection schedules and validator state. Restore clears
 validators, cache pointers and failure/due state before acceptance and leaves
 sources disabled. Exact core-v4/profile-v2 format-2 layouts may adopt an empty
-schedule and unknown historical HTTP status; unknown migrations/layouts still
-fail closed. This does not enable core-v3/format-1 adoption.
+schedule and unknown historical HTTP status into the current layout; unknown
+migrations/layouts still fail closed. This does not enable core-v3/format-1 adoption.
 
 Core v6 adds a collector role and a fixed `document.accepted` outbox default,
 without changing checkpoint table layouts. Exact published core-v5 format-2
@@ -168,14 +178,25 @@ The current supported layout is core v10 and, when enabled, retrieval-profile v4
 using checkpoint format 2. Core v7 adds purge history and the separately scoped
 purger; core v8 adds collector item-reuse grants only; core v9 adds the remote
 attempt ledger; core v10 adds settlement columns and the accounting role;
-profile v4 adds explicit retrieval exclusions. Exact published
-core/profile pairs (core4-6 with profile2, core7 with profile3, core8 with
-profile3 or profile4, core9 with profile4) are adopted under the same policy
-checks; tables introduced later are empty at adoption and core-9 attempts
-adopt unsettled. Restored remote attempts keep their
-status, reservations and settlements: an unknown outcome is never reset by
-recovery, and restore does not provision the accounting login. Restore checks current independently retained policy before accepting
-historical content. A pre-purge checkpoint containing records forbidden by that
+profile v4 adds explicit retrieval exclusions. Exact published legacy pairs
+are admitted only when every recorded migration digest and expected column/table
+set matches:
+
+| Checkpoint core | Optional retrieval profile | Normalization into core 10/profile 4 |
+| --- | --- | --- |
+| 4 | 2 | Empty collection schedule, unknown historical HTTP status, empty ledger/exclusions |
+| 5–6 | 2 | Empty ledger/exclusions |
+| 7 | 3 | Empty ledger/exclusions |
+| 8 | 3 or 4 | Empty ledger; empty exclusions only for profile 3 |
+| 9 | 4 | Preserve attempts; add unset settlement columns |
+
+Core-only historical checkpoints may also adopt into a core-only target with
+their exact published core history. These rules do not convert a core-only
+checkpoint into a retrieval-profile checkpoint or admit arbitrary mixed histories.
+Current checkpoints take the exact-history path without legacy normalization.
+Restore does not provision the accounting login. It checks current independently
+retained lifecycle policy before accepting historical content. A pre-purge
+checkpoint containing records forbidden by that
 policy fails with `RECOVERY_PURGED_CONTENT_PRESENT`; restoring hidden rows and
 merely filtering them is not a substitute. Compatible post-purge state and exact
 older supported histories follow the explicit adoption rules in the SQL purge

@@ -71,3 +71,13 @@ Roll back through a protected PR while preserving required check names. Restore
 settings from the dated sanitized before-state only under the applicable change
 scope. Do not disable protections to merge. Previously public metadata and public
 attestations cannot be made private by reverting a workflow.
+
+## Successor context (2026-10-18)
+
+[ADR-0037](0037-inference-custody-python-sbom.md) and
+[ADR-0038](0038-native-file-evidence-notices.md) add maintained Python SBOM,
+licence/native review and notices to the retained and signed evidence set.
+[ADR-0044](0044-ledger-integration-boundaries.md) adds planned-message preflight.
+The original plain-inventory and publication scope here is a baseline, not a
+claim that it is the whole current evidence set or that historical disclosure
+findings have been cleared.

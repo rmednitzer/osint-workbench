@@ -1,4 +1,4 @@
-"""Explicit pinned public artifact preparation; never imported by runtime or tests.
+"""Explicit pinned public artifact preparation; importing performs no downloads.
 
 The licence acknowledgement concerns the published Apache-2.0 model card. It is
 not a legal opinion or a claim about the complete training-data licence lineage.

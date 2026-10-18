@@ -1,4 +1,4 @@
-"""Offline, bounded build integrity receipt binding a separately verified SBOM."""
+"""Offline integrity receipt binding separately verified supplementary report bytes."""
 
 import argparse
 import hashlib
@@ -101,7 +101,10 @@ def inventory(distributions=None):
 
 
 def read_regular(path, limit, *, collect=False):
-    """Read at most limit + 1 bytes; reject special files before any read."""
+    """Read at most limit + 1 bytes with a final-component guard.
+
+    Parent-directory custody remains the caller's responsibility.
+    """
     try:
         descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
     except OSError:

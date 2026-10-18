@@ -45,3 +45,12 @@ bounds and the real CLI. Revision-bound receipts identify which tests have passe
 this decision itself is not test evidence. Full record erasure, backup expiry and
 operational recovery/custody remain separate unfinished workstreams.
 > Implementation follow-up (2026-10-17): [ADR-0032](0032-transactional-retired-record-purge.md) adds separate retired-record SQL purge. GC still preserves retained references; neither operation proves all-copy erasure.
+
+## Successor context (2026-10-18)
+
+[ADR-0033](0033-durable-store-admission.md) supplements database admission with
+store-root shared/exclusive filesystem admission retained through reference
+commits and GC deletion. This addresses actual database-backend loss while a
+GC process remains alive. Current cooperating producers must participate; old
+binaries, arbitrary filesystem writers and unsupported remote locking are not
+made safe by the earlier SQL barrier or this dated receipt.

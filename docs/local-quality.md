@@ -105,7 +105,9 @@ and use a new directory for every run. Its parent must already exist.
 The encoder embeds each complete passage using its document template and each
 query using its query template. No text is truncated. Exhaustive normalized dot
 products determine order, with document ID breaking ties. This isolated diagnostic
-does not execute PostgreSQL full-text search, hybrid RRF, reranking or MCP.
+does not execute PostgreSQL full-text search, hybrid RRF, reranking or MCP. It
+also does not exercise profile-v4 exclusion/activation behavior: a failed complete
+passage embedding stops this diagnostic instead of becoming an index exclusion.
 
 The encoder has no validated abstention policy. It always returns the top-k corpus
 documents, even for unsupported questions. Consequently, its unsupported-question

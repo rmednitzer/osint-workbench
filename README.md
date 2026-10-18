@@ -4,9 +4,10 @@ A reference setup combining existing tools and custom integration code to collec
 store and search open-source information, with MCP access for AI assistants.
 
 **Development foundation. This is not the completed reference implementation.**
-The full design includes local inference, embeddings, hybrid retrieval, enrichment,
+The design includes local inference, embeddings, hybrid retrieval, enrichment,
 graph assertions, vulnerability/regulatory intelligence and optional governed cloud
-APIs. Their implementation and verification status is tracked in
+APIs. Several bounded paths are implemented; the full profiles remain incomplete.
+Their implementation and verification status is tracked in
 [STATUS.md](STATUS.md). Installing a small core does not satisfy the full roadmap.
 
 ## Implemented foundation
@@ -21,14 +22,21 @@ APIs. Their implementation and verification status is tracked in
   byte and absolute network deadlines. Compressed responses are rejected.
 - Coordinate-preserving evidence quotation matching, embedding-space validation
   and deterministic reciprocal-rank fusion primitives.
+- Local generation proposals, operator-attributed review and evidence-bound cited
+  digests; a quote match does not establish entailment or independent review.
+- An explicitly selected compatible cloud enrichment route with deny-by-default
+  policy, conservative reservations and separately authorized operator settlement.
+- Private checkpoint/restore, logical retirement, reviewed orphan GC and scoped
+  SQL purge; retained accounting and external copies remain outside content erasure.
 
 The optional retrieval profile now executes local ONNX embeddings and exact pgvector
 hybrid search with versioned generations. An optional local ONNX pair reranker is also available. Pretrained semantic-quality
 acceptance remains pending. See [local retrieval](docs/local-retrieval.md) and
 [frozen local quality diagnostics](docs/local-quality.md).
-No model/provider is selected or downloaded automatically. Model calls require an
-explicit local profile. No cloud keys
-or operational data are required by the current code or tests.
+No model/provider is selected or downloaded automatically. Local model calls need
+an explicit configured profile; remote enrichment needs an explicit route, data
+class, private policy and credential. There is no silent cloud fallback. No real
+cloud keys or operational data are required for the test suite.
 
 ## Development
 
@@ -38,10 +46,10 @@ See [runtime support](docs/runtime-support.md) for deployment and evidence limit
 
 ```sh
 uv sync --locked --extra retrieval
-uv run ruff check .
-uv run ruff format --check .
-uv run python scripts/check_repository.py
-uv run pytest -m 'not integration'
+.venv/bin/ruff check .
+.venv/bin/ruff format --check .
+.venv/bin/python scripts/check_repository.py
+.venv/bin/python -m pytest -m 'not integration' --import-mode=importlib
 uv build --build-constraints build-constraints.txt --require-hashes
 ```
 
@@ -49,7 +57,7 @@ The mandatory database/MCP suite uses an isolated database named `ow_test`:
 
 ```sh
 # Set OW_TEST_ADMIN_DSN in the private local environment, never in Git.
-uv run pytest --require-integration
+.venv/bin/python -m pytest --require-integration --import-mode=importlib
 ```
 
 The base fixture refuses any other database name. Recovery tests additionally
@@ -68,7 +76,7 @@ login identities inheriting only `ow_collector`, `ow_writer` or `ow_reader`, the
 provide their private DSNs as `OW_COLLECTOR_DSN`, `OW_WRITER_DSN` and
 `OW_READER_DSN` for those distinct processes. Collection validates its effective
 SQL authority before dispatch and never falls back to writer credentials. The MCP server rejects a privileged
-reader or one that also belongs to the writer role. Mount evidence read-only for
+reader or unsafe overlapping application authority. Mount evidence read-only for
 reader processes; the Python flag alone is not an OS permission boundary.
 
 Set `OW_EVIDENCE_ROOT` to private persistent storage outside the source tree.
@@ -102,7 +110,10 @@ job kinds it implements. Cancellation is an operator write, never an MCP tool.
 See [workflow contracts](docs/workflows.md) for retry and recovery semantics.
 
 See [local intelligence](docs/local-intelligence.md) for generation, proposal review
-and cited-digest contracts.
+and cited-digest contracts. [Cloud routing and settlement](docs/cloud-routes.md)
+uses explicit worker selection and a separate `OW_ACCOUNTING_DSN`; provider facts
+are operator declarations, not independently verified sovereignty evidence.
+Lifecycle and purge commands also require their separately scoped credentials.
 
 See [private recovery](docs/recovery.md) for bounded consistent checkpoints and
 isolated restore. Checkpoints contain private records and are not public exports.
@@ -122,6 +133,9 @@ passing a subset of tests does not establish complete conformance.
 
 See [architecture](docs/architecture.md), [design decisions](docs/adr/),
 [security policy](SECURITY.md) and [contribution guide](CONTRIBUTING.md).
+The [documentation map](docs/documentation-map.md) identifies current guidance,
+target specifications and historical evidence; the [backlog](docs/implementation-backlog.md)
+is the canonical ledger of unfinished work.
 
 Operator-only [orphan cleanup](docs/garbage-collection.md) uses reviewed private
 plans and durable intent receipts. It does not purge retained records or backups.

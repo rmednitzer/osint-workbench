@@ -7,11 +7,13 @@ copies. It is separate from logical retirement and orphan-object GC.
 
 ## Authority and upgrade
 
-Install core migration 7 and, if configured, retrieval-profile migration 3 using
-the existing explicit migration commands. Retrieval-profile migration 4 later adds
-purger SELECT/DELETE on `ow.retrieval_exclusions`. Published earlier migrations are
-unchanged. Checkpoint format 2 and lifecycle-policy format 1 keep their data layout;
-the new `purge` event extends the accepted event vocabulary. Earlier binaries
+Use the current core v10 and, if configured, retrieval-profile v4 via the existing
+explicit migration commands. Core v7 introduced purge authority and the `purge`
+event; profile v3 scoped retrieval deletion, profile v4 adds exclusion deletion,
+and core v9/v10 make the retained accounting ledger readable to the purger.
+Published earlier migrations are unchanged. Checkpoint format 2 and
+lifecycle-policy format 1 retain their format versions; their admitted tables and
+event vocabulary still depend on the exact migration pair. Earlier binaries
 cannot validate that event and must not operate a dataset after adoption.
 
 Provision a dedicated non-owner login with membership only in the `ow_purger`
@@ -131,9 +133,9 @@ root creation or metadata acceptance. It does not silently strip a historical
 checkpoint or attest destruction of that checkpoint. A post-purge checkpoint can
 restore the reduced SQL state; retained raw feeds can still contain the material.
 
-Exact known core-v4/v5/v6 checkpoints with the supported old optional profile may
-be adopted into the new schema only if their full migration/data contracts match
-and current policy permits their contents. Unknown or mixed histories fail closed.
+Exact known core-v4 through core-v9 checkpoints may be adopted only under the
+[published core/profile pairs and normalization rules](recovery.md#verification-boundary)
+and when current policy permits their contents. Unknown or mixed histories fail closed.
 A joint rollback of checkpoint, policy, digest and trusted minimum revision remains
 undetectable offline; independent policy custody remains an operator obligation.
 

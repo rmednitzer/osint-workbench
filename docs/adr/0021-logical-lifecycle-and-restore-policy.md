@@ -67,3 +67,13 @@ jobs/fences, collection suppression, PostgreSQL/pgvector/rerank, real MCP, stale
 snapshots and older-checkpoint/newer-policy recovery. Revision-bound CI determines
 verified status. No physical-erasure, complete lifecycle, semantic-quality, arbitrary
 writer/superuser containment, remote client recall or full E48 claim is made.
+
+## Successor context (2026-10-18)
+
+[ADR-0032](0032-transactional-retired-record-purge.md) adds irreversible bounded
+SQL purge and rejects a historical checkpoint containing content covered by a
+current purge decision before accepting its objects. Logical filtering alone
+is insufficient for that successor contract. Current schema/adoption rules are
+in the [recovery runbook](../recovery.md); the original core-v4 grant and table
+contract remains historical. Legacy format-1 adoption and all-copy erasure
+remain outside the supported recovery boundary.

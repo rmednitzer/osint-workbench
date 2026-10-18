@@ -19,3 +19,12 @@ Drain and activate versioned generations; restore previous runtime/model manifes
 
 ## Verification
 R30,R40-R42; E23,E34-E36. The CPU encoder uses verified local artifacts, a disposable bounded process and OS admission locking. Synthetic ONNX execution tests exist. Shared GPU/generator scheduling, pretrained quality and remote runtime contracts remain pending.
+
+## Successor context (2026-10-18)
+
+Bounded local generator/reranker execution and shared host-local admission now
+ship under [ADR-0019](0019-proposals-and-local-generation.md), with anchored
+marker custody in [ADR-0037](0037-inference-custody-python-sbom.md). Thus the
+original generator deferral is not a statement that local generation is absent.
+GPU/cross-host scheduling, broader serving profiles, remote runtime ownership
+and pretrained semantic acceptance remain open.

@@ -70,3 +70,11 @@ lock identity. Older code restores weaker checks. Evidence tooling can be
 reverted through a protected PR with required checks intact. Keep prior public
 artifacts and signatures source-bound; reverting cannot retract public records
 or remove obligations for software already distributed.
+
+## Successor context (2026-10-18)
+
+[ADR-0038](0038-native-file-evidence-notices.md) replaces the v2 six-file signing
+set with a v3 eight-file set that also binds recorded ELF review and missing-wheel
+licence-text supplements. The v2 counts above remain historical. This successor
+does not identify full static/native/OS/model composition, change the Python
+SBOM's incomplete scope or establish legal redistribution approval.

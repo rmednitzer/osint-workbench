@@ -176,6 +176,7 @@ def _metadata_categories(text, private_values, base_emails=()):
 def scan_message_file(path, private_values=()):
     """Preflight an exact planned public message without creating a Git object.
 
+    Final-component guard only; callers protect parents and custody through use.
     No identity inheritance: use reserved public identities in optional trailers.
     Diagnostics never reproduce the selected path or message.
     """

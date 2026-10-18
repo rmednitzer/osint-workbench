@@ -1,4 +1,6 @@
-> Target specification. See STATUS.md for implemented and verified scope.
+> Full-profile targets with a bounded implemented slice below. Unless explicitly
+> identified as current behavior, these requirements are not completion claims.
+> See STATUS.md for revision-bound verification.
 
 # Local inference, cloud APIs and governance
 
@@ -7,7 +9,12 @@ One declared-compatible chat-completions route with a policy gate and
 reservation ledger is implemented ([ADR-0042](../adr/0042-governed-compatible-cloud-route.md)),
 with evidence-bound operator settlement ([ADR-0043](../adr/0043-remote-attempt-settlement.md));
 native adapters, streaming, batches and automatic usage or invoice import are not. External
-activation is optional and denied by default. No paid call was performed.
+activation is optional and denied by default. Repository cloud verification uses
+synthetic provider fixtures, not a live-provider or paid-call acceptance receipt.
+The current remote task is structured extraction; it sends the selected document
+title and full text plus the schema, not a field/excerpt selection interface.
+Operator classification and declared provider facts are enforced inputs, not
+automatically verified privacy or sovereignty facts.
 
 ## Provider-independent task contract
 
@@ -17,19 +24,19 @@ Use a normalized result envelope while retaining raw provider metadata privately
 
 ## Local stack
 
-Provide a tested llama.cpp server reference and common API client. Its documentation describes its API and serving features [S8](../references.md#s8), but actual pinned-version support must be tested. An external OpenAI-compatible local endpoint is supported only for declared capabilities; compatibility does not imply support for forced tools, parallel tools, streaming usage, JSON-schema enforcement or embeddings. Keep provider adaptation out of enrichment business logic.
+Provide a tested llama.cpp server reference and common API client. Its documentation describes its API and serving features [S8](../references.md#s8), but actual pinned-version support must be tested. Target support for an external OpenAI-compatible local endpoint requires declared capabilities; compatibility does not imply support for forced tools, parallel tools, streaming usage, JSON-schema enforcement or embeddings. Keep provider adaptation out of enrichment business logic.
 
-Support explicit model manifests, model context/tokenizer templates, quantization, expected file hashes, code provenance and licenses. At least one genuinely useful small licensed local generation model and one encoder/reranker must pass actual CPU acceptance; GPU acceleration has a separate matrix of tested hardware/runtime/configuration. Do not bundle private model choices, weights or remote-code defaults. Test native structured/tool output; do not rely on stripping reasoning tags or cross-provider response conversion as correctness.
+Support explicit model manifests, model context/tokenizer templates, quantization, expected file hashes, code provenance and licenses. At least one genuinely useful small licensed local generation model and one encoder/reranker must pass actual CPU acceptance; GPU acceleration requires a separate matrix of tested hardware/runtime/configuration. Do not bundle private model choices, weights or remote-code defaults. Test native structured/tool output; do not rely on stripping reasoning tags or cross-provider response conversion as correctness.
 
-Resource admission is shared across generation, encoding and reranking: reserve configured memory/headroom and slots, use measured capacity, prefer interactive work without starving batch jobs, bound queues and expose admission refusal. A process lease identifies only owned workers. Cancellation releases a reservation only after confirming worker termination/resource ownership; a timeout does not prove cancellation. Handle OOM, model unload/reload, worker crash and drain/shutdown. Never kill ambient processes, unload a model owned by another workload or start replacement GPU work before the old worker is reaped. External unmanaged runtimes require a conservative contract or explicit incompatibility, not guessed memory ownership.
+The full-profile resource-admission target is shared across generation, encoding and reranking: reserve configured memory/headroom and slots, use measured capacity, prefer interactive work without starving batch jobs, bound queues and expose admission refusal. A process lease identifies only owned workers. Cancellation releases a reservation only after confirming worker termination/resource ownership; a timeout does not prove cancellation. Handle OOM, model unload/reload, worker crash and drain/shutdown. Never kill ambient processes, unload a model owned by another workload or start replacement GPU work before the old worker is reaped. External unmanaged runtimes require a conservative contract or explicit incompatibility, not guessed memory ownership.
 
 ## Cloud support and sovereignty
 
 Implement native OpenAI and Anthropic adapters plus a declared-capability OpenAI-compatible adapter for operator-selected services. Verify current native API contracts against official documentation during implementation; this plan does not freeze endpoints, API versions or prices. Endpoints/credentials/model catalogues are external config and no production account IDs/keys ship. Named US-provider compatibility does not constitute sovereignty approval.
 
-Provider policy records controlling entity/jurisdiction, residency and remote access, foreign legal exposure including US CLOUD Act where material, retention/training use, subcontractors/control plane, key custody, portability and evidence date. Default sovereignty constraint permits local/EU-controlled approved routes; unknown or conflicting facts deny remote dispatch. An explicitly configured, task-scoped exception can enable a nonconforming provider without relabelling it sovereign. No EU-hosting-only compliance claim and no automatic waiver from installing an adapter.
+The full-profile provider policy must record controlling entity/jurisdiction, residency and remote access, foreign legal exposure including US CLOUD Act where material, retention/training use, subcontractors/control plane, key custody, portability and evidence date. Default sovereignty constraint permits local/EU-controlled approved routes; unknown or conflicting facts deny remote dispatch. An explicitly configured, task-scoped exception can enable a nonconforming provider without relabelling it sovereign. No EU-hosting-only compliance claim and no automatic waiver from installing an adapter.
 
-Assign data classes at ingestion/workspace/task construction. Public origin does not prove absence of personal/sensitive material. Cloud release packets contain only explicitly selected fields/excerpts, with policy identifier, input hashes, classification rationale and authorized destination. Pattern/DLP checks are backstops, not proof of de-identification. Private context, source credentials and hidden conversation history are never appended automatically. Logs contain only redacted operational metadata; raw prompts/responses are off by default with documented opt-in restricted retention.
+Assign data classes at ingestion/workspace/task construction. Public origin does not prove absence of personal/sensitive material. Target cloud release packets contain only explicitly selected fields/excerpts, with policy identifier, input hashes, classification rationale and authorized destination. Pattern/DLP checks are backstops, not proof of de-identification. Private context, source credentials and hidden conversation history are never appended automatically. Logs contain only redacted operational metadata; raw prompts/responses are off by default with documented opt-in restricted retention.
 
 Persist route selection and budget reservation before dispatch. Fail closed on unknown classification, unapproved model/capability, policy/jurisdiction conflict or missing budget. Explicit fallback edges specify allowed task/data/model/provider and cost bounds. Local failure never implicitly enables cloud; cross-provider fallback cannot widen disclosure. Source/provider text cannot modify policy. A read-only local query remains available if remote policy denies a model job.
 
@@ -47,6 +54,6 @@ Catalog refresh discovers candidates only. Promotion requires known capabilities
 
 ## Verification and limits
 
-Offline E2E exercises actual installed adapter code against fake provider HTTP endpoints for success, 401/403, 429/5xx, retry headers, malformed JSON/schema, refusal, truncation, tool fragments, missing usage, ambiguous timeout, duplicate submission, batch partial results and policy denial. Outbound sockets must be denied in local-only mode. Real local generation/embedding/reranking tests require actual models.
+Full-profile offline E2E must exercise actual installed adapter code against synthetic provider HTTP endpoints for success, 401/403, 429/5xx, retry headers, malformed JSON/schema, refusal, truncation, tool fragments, missing usage, ambiguous timeout, duplicate submission, batch partial results and policy denial. Outbound sockets must be denied in local-only mode. Real local generation/embedding/reranking tests require actual models.
 
 Offline provider fixtures prove contract handling only. A live smoke test requires an intentionally selected provider/model, non-sensitive synthetic input, declared maximum spend and existing task authorization; none is assumed here. Record contract-tested and live-provider-tested separately. If a release requires real-provider validation but it is unavailable, list it as blocked/outstanding rather than claim full cloud E2E success. Do not make purchases or request credentials during planning.

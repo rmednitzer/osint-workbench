@@ -78,3 +78,12 @@ recorded as unverified rather than a pass. These fixtures establish execution
 contracts, not public-source or model quality.
 
 > Successor note (2026-10-18): [ADR-0040](0040-feed-item-version-reuse.md) keeps the current head for items unchanged inside a changed feed container. The A/B/exact-A and partial-B cases above are unchanged.
+
+## Successor context (2026-10-18)
+
+[ADR-0040](0040-feed-item-version-reuse.md) narrows observed-current head reuse:
+an item equal to its current head keeps that head, even if an older version
+from the fetched container exists. Rewinding to an exactly retained version
+applies when the item's current content differs. The A/B fixtures noted above
+remain valid for their changed items; they do not authorize blanket head
+rewinding for every unchanged item in a repeated container.

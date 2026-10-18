@@ -58,9 +58,11 @@ Application database sessions take a shared lifecycle advisory lock in autocommi
 lock. A waiting repeatable-read/serializable transaction therefore cannot inherit
 a pre-retirement snapshot. Ingestion, index acceptance/activation, job completion
 and cited-product creation either precede retirement or observe its effects.
-Model dispatch also holds shared admission while checking the document and calling
-the local runtime. Long collection/model work may delay retirement; lock acquisition
-is bounded and reports `LIFECYCLE_BUSY`, never successful retirement.
+Enrichment dispatch also holds shared admission while checking the document and
+calling its configured local runtime or explicitly governed cloud route. An
+in-flight remote request remains outside SQL rollback. Long collection/model work
+may delay retirement; lock acquisition is bounded and reports `LIFECYCLE_BUSY`,
+never successful retirement.
 
 This is a cooperative, database-scoped barrier for the current application, not
 protection against a superuser, older binaries or arbitrary direct SQL writers.
@@ -118,11 +120,11 @@ envelope, just like checkpoint receipts. A raw-file checksum is a separate value
 ## Recovery policy and compatibility
 
 The current compatibility pair is core schema v10 and retrieval-profile v4, with
-checkpoint format 2. Core v5 introduced collection scheduling; subsequent v6/v7/v8
-and profile-v3/v4 migrations add scoped collector/purge authority and explicit
-retrieval exclusions. These are additive;
-published earlier
-migration bytes remain unchanged. Provision the lifecycle login separately and
+checkpoint format 2 and lifecycle-policy format 1. Core v5 introduced collection
+scheduling; core v6/v7/v8 add collector/purge authority and item-reuse grants;
+core v9/v10 add remote accounting and settlement. Retrieval v3/v4 add scoped
+purge authority and explicit exclusions. Published earlier migration bytes remain
+unchanged. Provision the lifecycle login separately and
 run `migrate-retrieval` when that optional profile is installed. Core-only migration
 does not claim an old optional profile is upgraded. An unsafe reader configuration
 fails closed until the profile's grant migration completes.
@@ -150,10 +152,11 @@ lifecycle policy of an existing dataset. Automated legacy adoption/reconciliatio
 is not implemented. If current format-2 recovery is unavailable, preserve the
 legacy pair and resolve dataset/policy lineage explicitly before serving it.
 
-Supported core-v4/v5/v6 format-2 history adoption is explicitly validated by the
-current recovery command. Historical missing scheduling state adopts empty values
-and unknown HTTP status where permitted. The dataset UUID and mandatory current
-policy reconciliation remain required. See the exact schema/profile and purge
+Exact supported core-v4 through core-v9 format-2 history adoption is validated by
+the current recovery command against its listed core/profile pairs. Missing
+scheduling or later profile/ledger state adopts empty values, and core-v4
+collection receipts adopt unknown HTTP status, where permitted. The dataset UUID
+and mandatory current policy reconciliation remain required. See the exact schema/profile and purge
 history conditions in [recovery](recovery.md) and [SQL purge](retired-record-purge.md).
 
 See [the recovery procedure](recovery.md) and ADR-0021. Beyond the bounded SQL purge,

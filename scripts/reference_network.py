@@ -2,6 +2,10 @@
 
 Importing this module creates no files, namespace, process or listener. Runtime
 markers are cooperative admission guards, not cryptographic host attestation.
+The fixed public-classified address exists only on this namespace's loopback;
+production URL/address admission is unchanged. Protocol fixtures are bounded to
+64 connections with a 180-second accept budget and per-request absolute deadlines.
+The caller must stop its owned service before namespace removal.
 """
 
 import argparse

@@ -1,4 +1,4 @@
-"""Bounded offline review of RECORD-listed ELF files; no loader or native execution."""
+"""Inspect RECORD-listed ELF bytes without invoking a loader; Python startup is trusted."""
 
 import argparse
 import hashlib
@@ -95,7 +95,7 @@ def normalize(name):
 
 
 def open_record(prefix, location):
-    """Walk every component relative to a trusted prefix, refusing directory links."""
+    """Refuse links beneath a trusted prefix; callers protect its ancestor paths."""
     parts = PurePosixPath(relative(location)).parts
     directory = os.open(prefix, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
     try:
@@ -118,7 +118,8 @@ def open_record(prefix, location):
 
 
 def probe():
-    # This mode is run by the target interpreter and uses only the standard library.
+    # The explicit target probe uses standard-library helpers; ordinary Python
+    # site startup still trusts the prepared interpreter and environment.
     from build_evidence import inventory
 
     prefix = Path(sys.prefix).absolute()

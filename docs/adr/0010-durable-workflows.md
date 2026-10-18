@@ -19,3 +19,13 @@ Version job records and drain/restore safely; preserve pending/unknown outcomes 
 
 ## Verification
 R33,R34,R47; E06,E25,E26,E43. `tests/test_workflows.py` covers local leases, concurrent claims, killed claimant recovery, retry exhaustion, cancellation, partial acquisition replay and atomic chunk rollback. These tests do not establish remote execution guarantees or complete all acceptance scenarios.
+
+## Successor context (2026-10-18)
+
+The original remote-effects deferral is refined by the bounded compatible
+route and operator-settlement slices in
+[ADR-0042](0042-governed-compatible-cloud-route.md) and
+[ADR-0043](0043-remote-attempt-settlement.md). Reservation snapshot/purge
+integration is corrected by [ADR-0044](0044-ledger-integration-boundaries.md).
+This does not provide exactly-once remote execution, automatic invoice/batch
+reconciliation or complete remote workflow acceptance.

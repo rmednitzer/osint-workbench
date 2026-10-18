@@ -21,3 +21,11 @@ Stop new dispatch on ledger uncertainty; reconcile before releasing reservations
 R46,R47; E38,E42,E43. No implementation evidence yet.
 
 > Successor note (2026-10-18): [ADR-0042](0042-governed-compatible-cloud-route.md) implements the reservation and unknown-outcome ledger for one compatible route. Batch lifecycle, native usage categories and reconciliation remain proposed. [ADR-0043](0043-remote-attempt-settlement.md) adds evidence-bound operator settlement of individual attempts; automatic usage/invoice reconciliation remains proposed.
+
+## Successor context (2026-10-18)
+
+[ADR-0044](0044-ledger-integration-boundaries.md) makes reservation admission
+explicitly Read Committed before its advisory-lock wait, and preserves the
+complete attempt/settlement ledger in content-purge inventory without deleting
+its rows. These are corrections to the accepted compatible-route slice, not
+closure of the original automatic provider/invoice/batch reconciliation scope.

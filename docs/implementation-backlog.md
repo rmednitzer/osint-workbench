@@ -7,14 +7,15 @@ cloud support must be optional, policy-controlled and accountable. A new install
 must reproduce the documented supported profile without private prototype files.
 This is integration engineering, not a claim of original model research.
 
-This ledger records unfinished work after bounded recovery and logical lifecycle controls.
+This ledger records unfinished work after bounded local inference/retrieval,
+recovery/lifecycle and governed cloud reservation/settlement increments.
 STATUS.md describes current code; the named CI receipt establishes tested scope.
 The 51 full acceptance scenarios remain the release programme. More regression
 tests do not automatically close a complete scenario or make the project ready
 for operational use. The prototype is a source of feature intent, never a
 correctness oracle or a source of public fixtures/configuration.
 
-The [current prototype comparison](prototype-lessons.md) records useful mechanisms,
+The [dated prototype comparison](prototype-lessons.md) records useful mechanisms,
 bounded source/catalog findings and discriminating acceptance cases. Its delivery
 order refines this ledger without claiming profile completion or importing the
 private implementation. In particular, domain observations must distinguish state
@@ -42,10 +43,30 @@ accepted product generation.
 
 Within these groups, establish deletion/recovery and permission boundaries before
 adding effects that depend on them. Acquisition hardening, deterministic domain
-contracts and held-out quality design can proceed independently. Remote dispatch
-must wait for enforced release policy and durable accounting. Public publishing
+contracts and held-out quality design can proceed independently. Any additional remote dispatch path must retain the already implemented
+release-policy and durable-accounting prerequisites. Public publishing
 must wait for selected-field disclosure controls. Do not drop local, cloud, domain
 or optional profiles merely to simplify completion claims.
+
+## Open audit findings and their next evidence
+
+The [dated audit dispositions](testing/audit-remediation-2026-10-18.md) retain the
+individual implementation findings and severities. Priority follow-up includes:
+
+- Bind subject/object labels to the quoted span or rename the mention contract;
+  prevent schema/quote success from implying semantic support.
+- Separate reviewer authority from the producing writer; actor strings do not
+  establish an independent reviewer.
+- Make MCP pagination respect the actual serialized result budget, and isolate
+  untrusted source text from local generation special-token parsing.
+- Narrow retrieval writer UPDATE authority, add exact reader-grant validation,
+  and make terminal-job deduplication/retry status explicit.
+- Complete current revision service acceptance after feed identity changes;
+  historical unit/collector receipts do not validate a newer harness oracle.
+
+These are unfinished engineering and verification tasks, not claims that an
+exploit or operational incident occurred. New evidence must discriminate the
+claimed failure and preserve existing lifecycle/permission boundaries.
 
 ## Privacy and acceptance limits still open
 

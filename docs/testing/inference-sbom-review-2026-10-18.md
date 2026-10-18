@@ -72,3 +72,17 @@ native/OS/model composition, missing wheel notices, full redistribution review
 and programme-wide acceptance remain open. See [SBOM scope](../sbom.md),
 [licence dispositions](../security/dependency-licences.md) and
 [marker recovery](../inference-marker-safety.md).
+
+## Successor evidence scope
+
+Pending-job language and all counts above describe the PR #6 review point.
+Later protected CI completed, including the successful
+[foundation baseline run](https://github.com/rmednitzer/osint-workbench/actions/runs/39133727926)
+at `d01f80ac88da50c9f826b1a15cb18c75bd1db75f`. That later run does not relabel
+this local diagnostic as hosted evidence. Its 49-distribution inventory, v2
+receipt, two supplements and six-file signer fixture retain their historical
+scope. Current v3 receipts bind four supplementary files in an eight-file set;
+the updated runtime inventory has 47 distributions. See [build evidence](../build-evidence.md),
+[native inventory](../native-inventory.md) and [licence review](../security/dependency-licences.md).
+Missing texts are supplied separately by the bounded notice supplement; it does
+not repair third-party wheels or clear the unresolved native/redistribution obligations.

@@ -1,10 +1,10 @@
 # Local generation, proposals and reviewed products
 
-This increment adds an optional native llama.cpp completion adapter, local ONNX pair
+The implementation includes an optional native llama.cpp completion adapter, local ONNX pair
 reranking, durable model proposals, evidence spans, append-only operator reviews and
-deterministic cited assertion digests. It does not establish pretrained semantic
-quality, autonomous fact acceptance, general entity resolution or a deep-analysis
-briefing service. No model, feed list, cloud account or private runtime is bundled.
+deterministic cited assertion digests. It does not establish pretrained semantic quality,
+autonomous fact acceptance, general entity resolution or a deep-analysis briefing service. No
+model, feed list, cloud account or private runtime is bundled.
 
 ## Local generation authority
 
@@ -34,44 +34,64 @@ JSON and schema errors. HTTP calls share an absolute deadline, identity encoding
 a 1 MiB response bound. Generated text is bounded separately. No response exception
 text, prompt, source body or server metadata is written to diagnostic errors.
 
-Before dispatch, it fsyncs a private ownership receipt under the same admission lock
-used by encoders/rerankers. A complete native response releases that receipt. A client
-crash, disconnect or uncertain response leaves it in place, blocking subsequent
-shared admission. A timeout does not prove daemon termination. Explicit operator
-`enrich reconcile` checks the configured owner, previous process identity and an idle
-native slot before clearing the receipt. It cannot clear another manifest's ownership
-or a still-live prior process merely because a replacement socket looks idle. Lock
-paths/users/hosts must be configured consistently; this is not a multi-host scheduler.
+Before dispatch, it fsyncs a private ownership receipt under the same admission lock used by
+encoders/rerankers. A response with the expected alias and recognized terminal stop type
+releases that receipt before generated content/schema validation; a completed but invalid model
+result therefore differs from an uncertain native outcome. A client crash, disconnect or
+uncertain response leaves it in place, blocking subsequent shared admission. A timeout does not
+prove daemon termination. Explicit operator `enrich reconcile` checks the configured owner,
+previous process identity and an idle native slot before clearing the receipt. It cannot clear
+another manifest's ownership or a still-live prior process merely because a replacement socket
+looks idle. Lock paths/users/hosts must be configured consistently; this is not a multi-host
+scheduler. Use the [marker custody and recovery protocol](inference-marker-safety.md); do not
+delete a marker or switch lock paths merely to bypass a reservation.
+
+Native tokenization currently enables `parse_special` for the combined prompt,
+including embedded source text. Separating trusted template tokens from untrusted
+content remains an open [audit item](testing/audit-remediation-2026-10-18.md).
+Schema checks and bounded effects do not establish prompt-injection resistance.
 
 ## Enrichment and graph contract
 
-The operator enqueues a document using a private generator manifest. The job kind and
-dedup key bind document/snapshot, generator identity and prompt version. The enrichment
-worker claims only that identity, verifies original evidence and refuses obsolete or
-oversized source input. It has no tools, provider keys or arbitrary file/URL arguments.
-A prompt delimiter is not treated as an injection defence. The write boundary accepts
-only the versioned typed schema and original-text evidence spans.
+The operator enqueues a document using a private generator manifest. The job kind and dedup key
+bind document/snapshot, generator identity and prompt version. The enrichment worker claims only
+that identity, verifies original evidence and rejects oversized source input (more than 16000
+code points). Result acceptance checks that the source is still an active head; this is not a
+guarantee that obsolete-but-retained versions can never consume inference before that final
+check. The local route supplies no model tools, provider keys or arbitrary file/URL arguments.
+The same enrichment worker also supports an explicitly selected governed cloud route with
+operator policy, classification and credentials; that distinct disclosure boundary is documented
+in [cloud routes](cloud-routes.md). There is no implicit escalation from this local adapter to
+that route. A prompt delimiter is not treated as an injection defence. The write boundary
+accepts only the versioned typed schema and original-text evidence spans.
 
-Proposals contain bounded subject/predicate/object labels, statement, polarity and
-quotation. The ontology currently supports `mentions`, `affects`, `mitigates`, `deadline`
-and `related_to`. Claims preserve asserted, negated or uncertain polarity. Quotations
-are located in original Unicode coordinates; the actual source slice is stored. Schema
-or evidence failure rejects the whole operation rather than accepting a valid prefix.
-An empty claims list is visible abstention. A failed/cancelled job is not silently
-restarted: an operator can enqueue a new intentional `--operation-id`, preserving
-the prior operation and its outcome. Reusing an operation ID is idempotent. Proposals and fenced job completion commit
-atomically. Cancellation or expired ownership prevents late acceptance. Errors retain
-bounded codes; malformed model text is not silently repaired or stored as accepted fact.
+Proposals contain bounded subject/predicate/object labels, statement, polarity and quotation.
+The ontology currently supports `mentions`, `affects`, `mitigates`, `deadline` and `related_to`.
+Claims preserve asserted, negated or uncertain polarity. Quotations are located in original
+Unicode coordinates; the actual source slice is stored. Schema or evidence failure rejects the
+whole operation rather than accepting a valid prefix. Quotation location allows case-folding and
+inter-token whitespace differences, then stores the actual original slice; it selects the first
+matching occurrence, not an independently disambiguated mention. An empty claims list is visible
+abstention. A failed/cancelled job is not silently restarted: an operator can enqueue a new
+intentional `--operation-id`, preserving the prior operation and its outcome. Reusing an
+operation ID is idempotent. Proposals and fenced job completion commit atomically. Cancellation
+or expired ownership prevents late acceptance. Errors retain bounded codes; malformed model text
+is not silently repaired or stored as accepted fact.
 
-A matching quotation proves its location, not truth or semantic entailment. Model
-proposals stay pending until an operator appends an accept/reject review with rationale
-and an intentional actor label. This actor field is attribution, not a new authentication
-mechanism; the database writer credential supplies authority. MCP cannot review or
-create assertions. Different document/source mentions are not automatically merged,
-and fuzzy names do not establish common identity. Read results include distinct
-subject/object mention IDs bound to the document and evidence span. Alias/merge/contradiction workflows
-remain required future work. Negated and uncertain assertions are not collapsed into
-positive facts.
+A matching quotation proves its location, not truth or semantic entailment. Model proposals stay
+pending until an operator appends an accept/reject review with rationale and an intentional
+actor label. This actor field is attribution, not a new authentication mechanism; the database
+writer credential supplies authority. The same writer can create a proposal and review it;
+independent reviewer identity and role separation remain unresolved, as recorded in the audit
+backlog. MCP cannot review or create assertions. Different document/source mentions are not
+automatically merged, and fuzzy names do not establish common identity. Read results include
+distinct subject/object IDs hashed from the label, role, document and supporting quotation span.
+The implementation does not require those labels to occur inside that span; these IDs are not
+validated entity-mention coordinates or resolved entities. The `source-mentions-only` response
+label remains an unresolved contract issue in [the audit
+record](testing/audit-remediation-2026-10-18.md). Alias, merge and contradiction workflows
+remain required future work. Negated and uncertain assertions are not collapsed into positive
+facts.
 
 ```sh
 osint-workbench enrich enqueue --manifest /private/generator.json --document-id DOCUMENT_SHA256
@@ -122,13 +142,15 @@ responses, unknown outcomes, permissions and idle reconciliation. Actual ONNX pa
 scoring uses a separate synthetic numerical oracle. PostgreSQL/MCP tests cover proposal
 validation, abstention, review withdrawal, source changes and cited product reads.
 
-Core migration v3 adds these tables and grants without editing published v1/v2 SQL.
-Reader credentials cannot write proposals/reviews/products or read private review
-rationale. Preserve tables and history on rollback; disable optional manifests and
-workers to return to core reads. Do not downgrade schemas destructively. Complete
-operational backup/restore and all-copy erasure remain open beyond the implemented
-[bounded recovery](recovery.md), [lifecycle/holds](lifecycle.md) and separate
-[SQL purge](retired-record-purge.md). Autonomous quality gates, full GPU resource
-ownership and remote/cloud support remain unimplemented roadmap work.
+Core migration v3 originally added these tables and grants; the current core schema is v10.
+Published earlier SQL remains unchanged. Reader credentials cannot write
+proposals/reviews/products or read private review rationale. Preserve tables and history on
+rollback; disable optional manifests and workers to return to core reads. Do not downgrade
+schemas destructively. Complete operational backup/restore and all-copy erasure remain open
+beyond the implemented [bounded recovery](recovery.md), [lifecycle/holds](lifecycle.md) and
+separate [SQL purge](retired-record-purge.md). Autonomous quality gates, full GPU resource
+ownership and remote MCP remain open. The bounded governed cloud adapter and settlement ledger
+are implemented separately; native vendor adapters, streaming, batches and live-provider
+acceptance remain open in [cloud routes](cloud-routes.md).
 
 Native API reference: [llama.cpp server](https://github.com/ggml-org/llama.cpp/blob/620d2225cc436ab0b001e3200e590e3b286ef9ab/tools/server/README.md).

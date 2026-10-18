@@ -46,3 +46,15 @@ remain unchanged. The revision-bound CI receipt determines verified scope.
 Follow-up: ADR-0021/0022 now coordinate current application checkpoints and orphan
 cleanup through shared/exclusive lifecycle admission and retained reachability.
 This does not expand the evidence of the original recovery revision.
+
+## Successor context (2026-10-18)
+
+Logical lifecycle and purge-aware anti-resurrection are implemented by
+[ADR-0021](0021-logical-lifecycle-and-restore-policy.md) and
+[ADR-0032](0032-transactional-retired-record-purge.md). Later migrations add
+item reuse, explicit retrieval exclusions and remote accounting/settlement
+([ADR-0040](0040-feed-item-version-reuse.md) through
+[ADR-0043](0043-remote-attempt-settlement.md)). The current schema pair is core
+10/retrieval 4, with checkpoint format 2; only exact supported historical pairs
+have adoption paths. Follow the current [recovery runbook](../recovery.md),
+not an earlier record's schema numbers, and retain independent current policy.

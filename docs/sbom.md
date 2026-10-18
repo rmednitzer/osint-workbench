@@ -28,8 +28,8 @@ cycle when the final receipt also hashes its supplementary reports.
 The generating interpreter needs the locked development dependencies. The target
 interpreter needs only the installed application and its locked runtime plus
 retrieval closure. The script's target probe imports standard-library package
-metadata and the repository's standard-library inventory helper; it never
-imports application, inference or database client modules. Both interpreters must
+metadata and the repository's standard-library inventory helper; that explicit
+probe does not import application, inference or database client modules. Both interpreters must
 belong to the explicitly prepared public build environments. Python startup and
 the maintained generator may evaluate installed site configuration; this is not
 a safe scanner for arbitrary untrusted virtual environments.
@@ -54,7 +54,9 @@ the regeneration comparison provides that additional check.
 The output path must not already exist during generation. Temporary raw metadata
 is not retained as a public artifact. Child processes have a 60-second timeout
 and 4 MiB output-file limit. Published inputs are read through the bounded
-nonblocking regular-file reader used by build integrity evidence. No registry,
+nonblocking regular-file reader used by build integrity evidence. That reader
+guards the final component; trusted parent directories and workspace custody
+through generation and verification remain required. No registry,
 model or acquisition request is part of this generation or validation procedure;
 initial installation of the locked tool and target environments is a separate
 public registry operation.

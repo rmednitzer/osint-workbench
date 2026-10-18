@@ -21,9 +21,10 @@ available; repository-file checks alone do not prove a particular client loaded 
 
 ## Renovate update policy
 
-`renovate.json` is the repository configuration. The existing onboarding PR is
-reviewed and refreshed against current main before integration; its generic
-configuration is not a dependency compatibility assessment.
+`renovate.json` is the repository configuration. Review each bot onboarding or
+update PR against the current base and head before integration; a generic bot
+configuration is not a dependency compatibility assessment. The recurring
+dependency dashboard is distinct from a mergeable update PR.
 
 - Enable PEP621/uv.lock, GitHub Actions and Dockerfile management. These cover
   action/service images and the separately pinned validation-tool Dockerfile.
@@ -57,8 +58,9 @@ schema validator does not resolve presets and previously missed that error.
 `scripts/check_renovate.sh` now runs both strict repository-mode validation and
 actual local-platform preset resolution/extraction with the pinned container.
 Its isolated input contains only public package, lock and workflow files. All
-validation containers are unprivileged, read-only and network-disabled, with no
-credentials passed. Local extract stops before dependency lookup or changes.
+validator executions are unprivileged, read-only and network-disabled, with no
+credentials passed. Preparing their pinned Docker image can contact the public
+registry; the later validation and extraction containers run with `--network none`. Local extract stops before dependency lookup or changes.
 `--exit-code-for-errors` is essential because the default CLI may return zero
 after a repository configuration error. A negative control must reject the original
 unknown preset with configuration-error exit 5 and the expected diagnostic; tool
@@ -109,8 +111,10 @@ components require separate review; this audit does not cover all supply chains
 or establish absence of vulnerabilities. It is not a required per-PR network gate.
 
 Do not attach untrusted public PR jobs to private/self-hosted fleet runners.
-Workflows use read-only tokens and no persisted checkout credentials; actions and
-images are immutable. Repository settings should enforce the action allowlist and
+Build, test, diagnostic and advisory jobs use read-only workflow tokens and no
+persisted checkout credentials. The isolated main-push attestation job alone has
+OIDC and attestation write permissions; it checks same-run evidence bytes without
+checking out or executing repository code. Actions and images are pinned to immutable identities. Repository settings should enforce the action allowlist and
 full action SHA pins, rather than relying solely on prose.
 
 ## Repository settings and recovery
@@ -126,8 +130,8 @@ deleted automatically while main remains protected. Branch updates are enabled.
 Allowed actions are checkout, upload-artifact, download-artifact, attest and setup-uv
 at full SHAs; no other
 third-party action is approved implicitly. Fork PR workflows require maintainer
-approval for all external contributors. Workflow tokens remain read-only and
-cannot approve PR reviews. Secret scanning/push protection and dependency alerts
+approval for all external contributors. Workflow tokens cannot approve PR reviews; the isolated attestation permission
+exception above does not grant pull-request or repository-content write access. Secret scanning/push protection and dependency alerts
 remain enabled; private vulnerability reporting provides a confidential route.
 
 The [2026-10-17 API receipt](testing/repository-settings.json) preserves the before
@@ -228,3 +232,12 @@ its pending items are reconciled by the bot after reviewed changes merge.
 An updated lock also requires matching installed licence/native evidence,
 modern and legacy protocol acceptance and fresh protected CI. Keep dated
 currency observations separate from the revision-bound execution receipts.
+
+The documentation audit baseline is `d01f80ac88da50c9f826b1a15cb18c75bd1db75f`.
+Its [foundation run](https://github.com/rmednitzer/osint-workbench/actions/runs/39133727926)
+and [CodeQL run](https://github.com/rmednitzer/osint-workbench/actions/runs/39133727466)
+completed successfully. Those execution results supersede earlier pending-job
+statements for the merged code; dated receipts and earlier tool inventories
+retain their original revision and scope. Neither successful job status alone
+nor this prose proves zero open alerts, current mutable settings, an operational
+deployment or complete programme acceptance.

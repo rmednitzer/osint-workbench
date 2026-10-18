@@ -1,11 +1,12 @@
-"""Explicit acceptance on disposable GitHub-hosted Linux runners; never imported by tests.
+"""Explicit disposable GitHub-hosted acceptance; import never starts deployment.
 
-Requires sudo while preserving only the two GitHub runner marker variables. No
-external sources or inference requests are supplied. An explicit database fixture
-uses only a fixed synthetic PostgreSQL endpoint; the optional HTTP fixture is
-disconnected from external networks. Guard rejection occurs
-before mutation. Ephemeral runner disposal removes application state/user;
-finally stops our units and removes only unit files created by this invocation.
+Requires sudo while preserving the two GitHub runner marker variables. No
+external sources or inference requests are supplied. The optional database uses
+a fixed synthetic endpoint; its optional HTTP peer occupies a disconnected
+namespace. Preflight guards precede deployment mutation. Finally stops and
+removes owned units/drop-ins; the network context cleans up its owned peer and
+namespace. Runner disposal removes the remaining synthetic state/account/database.
+This script is separate from ordinary installed-wheel pytest execution.
 """
 
 import argparse
@@ -805,12 +806,19 @@ def enabled_http_service_acceptance(account):
             force_due()
             started = str(time.time())
             command(["systemctl", "start", SERVICE], timeout=30)
+            # "documents" counts processed items, including the reused head.
+            # FEED_V2 changes only item Two: one new version/job, three retained.
             changed_result = observed(started, "complete", 2)
             require(
                 changed_result["results"][0]["status"] == "success", "HTTP_CHANGED_RESULT_FAILED"
             )
             changed = state()
-            validate_evidence(changed, {FEED_V1, FEED_V2}, 4)
+            validate_evidence(changed, {FEED_V1, FEED_V2}, 3)
+            require(
+                changed[3][0]["document_id"] == first[3][0]["document_id"]
+                and changed[3][1]["document_id"] != first[3][1]["document_id"],
+                "HTTP_CHANGED_ITEM_REUSE_MISMATCH",
+            )
             require(
                 len(changed[1]) == 4
                 and changed[1][-1]["http_status"] == 200

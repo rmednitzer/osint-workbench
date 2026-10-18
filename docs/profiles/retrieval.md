@@ -4,6 +4,19 @@
 
 Scope: C04-C06, with C12/C13 resource integration. All specified behaviours are implementation requirements, not verified prototype properties.
 
+## Current implementation boundary
+
+The [local reference profile](../local-retrieval.md) implements one configured
+CPU ONNX encoder, exact pgvector/RRF, bounded optional reranking and explicit
+operator-built generations. Retrieval schema v4 records content exclusions; an
+active generation may therefore have partial semantic coverage while remaining
+lexically searchable. Builds reject more than half excluded members. Automatic
+backfill, ANN, section-aware chunk manifests, persistent caches, multi-encoder
+fusion and policy-configurable lexical fallback below remain targets. Per-instance
+in-flight query sharing is implemented and retains no completed result cache.
+The seven MCP v2 stdio reads expose configured search, not index or model-policy
+mutation. Pretrained semantic acceptance remains open.
+
 ## Chunk and embedding identity
 
 Snapshot-normalized text is immutable. Chunk manifests include extractor and normalization versions, tokenizer revision, section boundaries, chunk token budget/overlap, document/snapshot/chunk IDs, start/end coordinate mapping and actual token count. Preserve structured article/chapter/annex context. Reject silent input truncation; oversized content is chunked deterministically or explicitly partial. A new chunking strategy creates a new generation, not an in-place mutation.
@@ -16,7 +29,7 @@ Use a registry-driven local encoder contract with embedding_documents and embedd
 
 Use PostgreSQL FTS/exact identifier matching and pgvector exact search as the initial correctness oracle. Add HNSW/other ANN indexes only after filtering, recall and update behaviour is benchmarked against exact search. pgvector documents post-index filtering effects [S7](../references.md#s7); authorisation/source/workspace filtering and query plan choice must not silently drop all relevant candidates. Isolate incompatible spaces and prevent cross-workspace leakage before fusion/rerank/graph expansion.
 
-One application query API supports lexical, vector and hybrid strategies. Apply deterministic reciprocal-rank fusion with documented rank convention and tie-breakers; do not compare raw scores from unrelated models. Optional multi-encoder fusion is supported by configuration and evaluated against one-encoder/no-change alternatives. Return strategy, contributing ranks, generation, snapshot IDs and degradation reasons. Graph expansion returns separately attributed context; it cannot change an unsupported graph edge into evidence.
+One application query API supports lexical, vector and hybrid strategies. Apply deterministic reciprocal-rank fusion with documented rank convention and tie-breakers; do not compare raw scores from unrelated models. The target optional multi-encoder fusion must be selected by configuration and evaluated against one-encoder/no-change alternatives. Return strategy, contributing ranks, generation, snapshot IDs and degradation reasons. Graph expansion returns separately attributed context; it cannot change an unsupported graph edge into evidence.
 
 Rerank a bounded authorized candidate set only. Validate output cardinality, unique candidate identity, finite score and order. Reject extra/missing IDs as invalid. Cache keys include normalized query, candidate IDs/content hashes, filters/workspace, model/prompt revision and corpus generation. Bound TTL, memory and in-flight coalescing; waiter timeout cannot cancel the shared owner incorrectly or leak a result from another profile.
 

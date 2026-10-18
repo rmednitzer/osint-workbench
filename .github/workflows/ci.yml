@@ -90,6 +90,8 @@ jobs:
         run: |
           uv build --python "${{ matrix.python }}" --build-constraints build-constraints.txt --require-hashes
           sha256sum uv.lock dist/*.whl dist/*.tar.gz
+      # This is a source-archive download, including upstream vocabulary fixtures.
+      # Acceptance generates synthetic weights; no pretrained inference weights.
       - name: Prepare pinned native CPU test dependency
         run: |
           .venv/bin/python scripts/prepare_native.py --output /tmp/ow-native-source
@@ -104,6 +106,7 @@ jobs:
           /tmp/ow-core/bin/python -c 'import importlib.util; assert importlib.util.find_spec("onnxruntime") is None; assert importlib.util.find_spec("tokenizers") is None'
           /tmp/ow-core/bin/osint-workbench collect --config config/sources.example.json > /tmp/ow-empty.json
           /tmp/ow-core/bin/python -c 'import json; assert json.load(open("/tmp/ow-empty.json")) == {"status": "unconfigured", "sources": 0}'
+      # Native SQL/model/HTTP tests run here; privileged systemd acceptance is manual.
       - name: Install and test the built wheel
         env:
           OW_TEST_LLAMA_BIN: /tmp/ow-native-build/bin/llama-server

@@ -95,3 +95,12 @@ a recorded change on return to older content in a new container and no new
 version when an earlier container repeats current content. Collector allowlist,
 future-history refusal and exact core7 checkpoint adoption are tested
 separately. These are execution contracts, not public-source acceptance.
+
+## Successor context (2026-10-18)
+
+The sentence about reverting only code restoring amplification describes the
+old item-version semantics, not a runnable database downgrade. After migration
+8, a binary that accepts only older migration history refuses startup; current
+core10/profile4 state is also not an older binary's compatible target. Preserve
+published migrations and current policy, and use the supported isolated
+[recovery procedure](../recovery.md) for an incompatible rollback.

@@ -85,6 +85,7 @@ def run_bounded(command, output):
 
 
 def generate_raw(python, receipt, temporary):
+    # Both prepared interpreters trust site startup; -I is not a hostile-env sandbox.
     probe_path = temporary / "probe.json"
     run_bounded([str(python), "-I", "-c", TARGET_PROBE, str(ROOT / "scripts")], probe_path)
     probe = load_json(probe_path)

@@ -20,7 +20,7 @@ Need/source: user request for the complete generalized setup, critical redesign 
 | R10 | Search shall preserve deterministic lexical/exact matching and label vector/hybrid strategy, corpus generation and degradation explicitly. | SC2/C9,C10 | ADR-0005 | E04,11 |
 | R11 | All interfaces shall distinguish acquisition, extraction, integrity and freshness; no ranking score or hash shall imply factual verification. | SC2/C9 | ADR-0006 | E03,05,11 |
 | R12 | Unknown publication timestamps shall remain null/unknown and source-specific freshness shall derive from last successful acquisition under configured policy. | SC2/C5,C10 | ADR-0006 | E05,11 |
-| R13 | A release shall have all mandatory E2E scenarios executed against installed artifacts and real disposable PostgreSQL; unexpected skips shall fail acceptance. | SC5/C12 | ADR-0007 | E01..18 |
+| R13 | A release shall have all mandatory E2E scenarios executed against installed artifacts and real disposable PostgreSQL; unexpected skips shall fail acceptance. | SC5/C12 | ADR-0007 | E01–E51 |
 | R14 | A fresh installation shall restore the accepted synthetic database/evidence backup pair and verify every referenced digest before resuming reads. | SC4/C11 | ADR-0002/0009 | E13 |
 | R15 | Failed ingestion, indexing or cancellation shall preserve the previous accepted corpus and expose a bounded error with last attempt/success and non-execution status. | SC2,SC6/C7,C10 | ADR-0002/0006 | E05,06,10 |
 | R16 | Every outgoing file shall be selected by a reviewed publication manifest; the exact commit and artifacts shall pass generic and private identifier/source scans. | SC1/C1,C2,C3 | ADR-0001/0008 | E16,18 |
@@ -70,6 +70,15 @@ Need/source: user request for the complete generalized setup, critical redesign 
 ## Conflicts, assumptions and change impact
 
 Optional cloud support and sovereignty are resolved by separate adapter availability and route authorization; compatibility never implies approval. Offline CI cannot establish real-provider operation, so contract-tested/live-verified are distinct evidence levels. Generic source adapters cannot ship the private source catalogue. Core simplicity cannot be used to silently exclude ML/enrichment/domain/cloud profiles. Complete capability scope does not justify copying irrelevant host-control privileges.
+
+Implemented subsets of R40/R43/R46 now include local inference, an explicit
+compatible cloud enrichment route, reservations and operator settlement
+(ADR-0018/0019/0041–0044). These do not close native vendor adapters, full token
+categories, batch reconciliation, sovereign-provider acceptance or R53 semantic
+quality. R41's confirmed-termination target is stronger than the current
+cooperative admission and bounded parent-death scheduling behavior. R32/R35's
+semantic support and R05/R06's authority targets are not proved by schema-valid
+proposals, writer-attributed reviews or synthetic MCP tests alone.
 
 Inferred: a single-operator Linux reference with optional isolated workspaces is the initial deployment context; multi-tenant service operation is not claimed. Exact runtime/model/provider selections and quality/resource thresholds must be frozen at M0/M2 with evidence. No assumption of model truth, calibrated confidence, source completeness, compatible model weights or stable API aliases is accepted.
 

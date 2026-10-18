@@ -2,11 +2,33 @@
 
 # Complete target architecture
 
+This is the target responsibility and trust-boundary model, not a deployment
+inventory. [STATUS](../STATUS.md) is authoritative for bounded implemented scope;
+[the backlog](implementation-backlog.md) records the remaining work. Proposed
+schemas, states, module directories and tool groups below must not be read as
+existing interfaces.
+
+## Implemented boundary
+
+The current package uses a modular, mostly flat Python layout, PostgreSQL and a
+content-addressed evidence root. Its SQL groups separate collector, writer,
+reader, lifecycle, purger and accounting authority from the schema owner. The
+writer still combines normal ingest, enrichment, retrieval and selected cloud
+work; a separate credential-holding dispatcher and per-workspace authorization
+are not implemented. Local search can execute its configured encoder/reranker;
+the seven MCP tools do not expose arbitrary model selectors or generation jobs.
+The remote enrichment route is implemented; remote MCP transport is not.
+
+The collector's systemd reference and disposable service harness already exist.
+A complete Compose deployment and the other process separations below remain
+targets. The [deployment guide](deployment.md) distinguishes current fixtures from
+operational acceptance.
+
 ## Structure and authority
 
 Use one modular Python application with shared contracts, a CLI and a read-only MCP adapter. Use PostgreSQL as the record/job/graph/accounting authority and a content-addressed evidence volume. pgvector is an optional retrieval-profile extension. Local model processes and remote provider workers are separate resource/egress boundaries because they load untrusted artifacts or hold credentials, not because every feature needs a separate service.
 
-Split process identities: schema migrator; source collector; normalized-document writer; enrichment/graph writer; embedding/index writer; model runtime; cloud dispatcher; report renderer; optional external publisher; application/MCP reader. Combine low-risk roles only when authority is equivalent and tests establish the intended grants. No application identity is a superuser/schema owner. MCP cannot trigger arbitrary source acquisition, execute models, write context or launch host operations. Operator workflows use typed CLI/job APIs.
+Split process identities: schema migrator; source collector; normalized-document writer; enrichment/graph writer; embedding/index writer; model runtime; cloud dispatcher; report renderer; optional external publisher; application/MCP reader. Combine low-risk roles only when authority is equivalent and tests establish the intended grants. No application identity is a superuser/schema owner. MCP cannot trigger arbitrary source acquisition, select arbitrary models, enqueue generation, write context or launch host operations. Configured local query embedding/reranking remains part of read execution. Operator workflows use typed CLI/job APIs.
 
 ```mermaid
 flowchart TD
@@ -70,13 +92,13 @@ Separate domain facts, model-derived assertions and private operator context in 
 
 ## Deployment and profiles
 
-Provide a Linux Compose reference with core, retrieval, local-inference, enrichment, domain, cloud and publishing profiles. Core can run without ML/cloud, but full release acceptance includes all profile contracts. Provide a CPU local smoke profile and a separately tested acceleration profile; do not publish private hardware inventory or claim all GPUs supported. A native/systemd reference can follow only if supported/tested, not as copied operational units. Run database, evidence, model caches and secrets outside the source tree.
+Provide a Linux Compose reference with core, retrieval, local-inference, enrichment, domain, cloud and publishing profiles. Core can run without ML/cloud, but full release acceptance includes all profile contracts. Provide a CPU local smoke profile and a separately tested acceleration profile; do not publish private hardware inventory or claim all GPUs supported. The existing bounded native/systemd collector reference is documented separately; extending it requires profile-specific tests, not copied operational units. Run database, evidence, model caches and secrets outside the source tree.
 
 Maintain core, ML and provider dependency groups/locks; heavy libraries and custom model code never load in MCP. Model acquisition is an explicit operator step with hashes/licenses and no runtime internet; model weights are not bundled. Generic OCI-compatible packaging permits local builds and mirroring. GitHub is a chosen distribution channel, not a runtime dependency or a sovereignty guarantee.
 
 ## MCP and operator contracts
 
-MCP read tool groups: document/search/evidence/source/status; graph/assertion/briefing/report/context reads; vulnerability/advisory queries; regulatory instrument/procedure/evidence reads; aggregate model/profile/job/usage health with private fields redacted. Register only tools for enabled capabilities; publish a versioned tool manifest and stable JSON schemas. The old five-tool baseline is an initial subset, not the final interface cap.
+MCP read tool groups: document/search/evidence/source/status; graph/assertion/briefing/report/context reads; vulnerability/advisory queries; regulatory instrument/procedure/evidence reads; aggregate model/profile/job/usage health with private fields redacted. Register only tools for enabled capabilities; publish a versioned tool manifest and stable JSON schemas. The current seven-tool stdio interface is a bounded implemented subset, not the final target interface cap.
 
 No arbitrary SQL, paths, URLs, shell, raw logs, provider keys or host-control tools. Default transport stdio. An optional remote MCP profile implements authenticated Streamable HTTP with TLS, maintained OAuth/resource-server components, issuer/audience/expiry/scope validation, principal/workspace authorization, bounded sessions and no token passthrough. It is disabled by default and must pass E49-E51 before activation. Scope mutations to operator CLI/job commands with operation IDs, validation, idempotency and reconciliation. MCP job-control tools are not required by the current use case and cannot appear implicitly.
 

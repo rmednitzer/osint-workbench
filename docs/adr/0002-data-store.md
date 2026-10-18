@@ -19,3 +19,15 @@ Keep schema/export contracts and test future substitutions against evidence. Reb
 
 ## Verification
 R03-R05,R14,R29,R32,R46,R49; E02,E06,E13,E21,E28,E42,E45. Implementation and acceptance tests pending.
+
+## Successor context (2026-10-18)
+
+The pending verification statement above belongs to the original full-profile
+proposal. Bounded PostgreSQL jobs, retrieval and reviewed intelligence shipped
+under [ADR-0010](0010-durable-workflows.md),
+[ADR-0018](0018-local-retrieval-reference.md) and
+[ADR-0019](0019-proposals-and-local-generation.md). The compatible-route ledger
+and separate settlement authority are covered by
+[ADR-0042](0042-governed-compatible-cloud-route.md) through
+[ADR-0044](0044-ledger-integration-boundaries.md). These accepted slices do not
+close the proposed graph, accounting or recovery programme.

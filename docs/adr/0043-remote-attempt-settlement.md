@@ -149,3 +149,15 @@ guard, the writer-membership refusal in code or in the trigger, the
 in-flight check, the deadline anchoring, the trigger's clock assignment, the
 busy mapping, or the trigger's window check each makes a test fail. This is contract
 evidence, not invoice, provider or legal evidence.
+
+## Successor context (2026-10-18)
+
+The no-follow evidence-file guarantee applies to the final file component;
+parent-directory custody remains an operator trust requirement. The private file
+bytes are not retained, but the ledger/checkpoint retains actor and rationale
+text along with its digest and monetary assertion. A digest does not verify
+what that evidence says. Terminal worker outcomes still permit the separate,
+immutable operator settlement defined here; settlement is not another worker
+outcome transition. [ADR-0044](0044-ledger-integration-boundaries.md) further
+corrects reservation snapshot freshness and preserves settled accounting rows
+during content purge.

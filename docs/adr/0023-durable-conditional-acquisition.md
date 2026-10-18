@@ -73,3 +73,12 @@ receipt; local collection without that database is not execution evidence.
 Server Retry-After, shared-host quotas, jitter, cursors and broader acquisition
 formats remain explicit follow-up work; this increment does not close E05/E09–E12.
 > Compatibility follow-up (2026-10-17): [ADR-0027](0027-collector-database-authority.md) adds scoped collector authority, [ADR-0029](0029-bounded-retry-after-scheduling.md) implements bounded per-source Retry-After, and [ADR-0032](0032-transactional-retired-record-purge.md) adds core7/profile3 recovery conditions. The v5/profile2 and deferred-scope statements in the original record describe the original acquisition increment.
+
+## Successor context (2026-10-18)
+
+[ADR-0040](0040-feed-item-version-reuse.md) adds core migration 8 and minimal
+collector reads so a changed feed container does not re-version unchanged
+items. Every fetched container remains retained through collection-run evidence;
+accepted counts are observed items, not new versions. The original v5/profile2
+checkpoint statement is historical; use the current
+[recovery contract](../recovery.md) for the supported core10/profile4 state.

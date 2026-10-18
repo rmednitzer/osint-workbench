@@ -20,7 +20,7 @@ uv sync --locked --extra retrieval --python 3.12
 .venv/bin/python scripts/check_repository.py
 .venv/bin/python scripts/check_static.py
 .venv/bin/python -m pytest -m 'not integration' --import-mode=importlib
-uv build --build-constraints build-constraints.txt --require-hashes
+uv build --python 3.12 --build-constraints build-constraints.txt --require-hashes
 .venv/bin/python scripts/check_publication.py --artifacts dist
 ```
 
@@ -77,7 +77,11 @@ guarded manual workflow requires an explicitly selected disposable GitHub runner
 ## Repository and dependency checks
 
 `scripts/check_repository.py` checks tracked and new nonignored local Markdown links/headings, agent
-bridges and immutable action references. It does not validate external link
+bridges and immutable action/image references. It also compares STATUS's explicit
+current schema/profile/checkpoint versions with source declarations, and its
+ADR/requirement/scenario counts with the actual numbered registers. This uses
+standard-library AST parsing without importing application dependencies; historical
+receipt counts remain independent. It does not validate external link
 availability, prose truth, every Markdown construct or full workflow semantics.
 The [maintenance policy](docs/repository-maintenance.md) defines Renovate,
 advisory auditing, coupled build updates and observed-setting verification.
@@ -109,10 +113,12 @@ not part of the reported four-module gate. The minimum language target remains
 Python 3.12, independently of the native runtime matrix.
 
 The same command runs every Ruff `S` security rule against application Python
-source under `src/osint_workbench`. Three exact line-level exemptions document
-reviewed heuristics: the fixed-interpreter parser subprocess, the no-follow and
-owner/type-checked shared inference lock, and SQL columns selected only from
-internal constants. There are no file-wide security exemptions. The predictable
+source under `src/osint_workbench`. Exact line-level exemptions document reviewed
+heuristics: the fixed-interpreter parser subprocess, the descriptor-anchored
+inference lock protocol's intentional `/tmp` default, and SQL fragments selected
+only from internal constants in retrieval and cloud accounting. Review the
+adjacent rationale when changing any exempted operation; do not broaden its
+inputs. There are no file-wide security exemptions. The predictable
 lock still assumes a trusted service account; static analysis does not establish
 filesystem isolation, safe subprocess inputs or SQL authority by itself.
 
@@ -134,9 +140,9 @@ or evidence hashes must fail until their actual wheel texts are reviewed.
 The [native policy](docs/security/native-components.md) also requires review of
 the complete recorded ELF file set and bytes for supported standard ABIs.
 Verify [supplementary notices](docs/security/supplementary-notices.md) independently;
-the two upstream texts do not establish complete native notices or source compliance. Do not
-copy new hashes merely to obtain green CI. CI retains the tested distributions,
-receipts and four supplementary files for 30 days. Main-push signing
+the two upstream texts do not establish complete native notices or source
+compliance. Do not copy new hashes merely to obtain green CI. CI retains the tested
+distributions, receipts and four supplementary files for 30 days. Main-push signing
 runs separately with no repository code execution; PR artifacts remain unsigned.
 
 ## Review and merge

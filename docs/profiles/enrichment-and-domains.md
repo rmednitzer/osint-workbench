@@ -2,6 +2,20 @@
 
 # Enrichment, graph, briefings and domain profiles
 
+## Current implementation boundary
+
+[Local intelligence](../local-intelligence.md) implements bounded proposals,
+quotation coordinates, writer-authorized reviews and cited assertion digests.
+Subject/object labels are not yet required to occur within their supporting
+quotation; returned mention-like hashes do not establish entity identity or
+label-specific spans. Actor labels are operator attribution, not independently
+authenticated reviewer identities. The MCP v2 stdio tools can read assertions and
+briefings but cannot enqueue, review, publish or select a provider. A separately
+governed [cloud route](../cloud-routes.md) supports explicit structured extraction;
+its existence does not implement the broader analyst workflows below. General
+entity resolution, source-diverse analytical briefings, domain acquisition and
+external publication remain targets; see [STATUS](../../STATUS.md).
+
 ## Durable enrichment and analyst workflows
 
 Deterministic parsing precedes model extraction. Jobs declare inputs, output schema, policy, prompt/model version, resource limits, dedup key, prerequisites, lease/fencing token and postconditions. Proposals are validated before accepted-state writes. Model calls can abstain, fail or yield partial output; repairing malformed JSON requires a bounded explicitly tracked attempt and cannot quietly change the factual result. Record operation identity through every attempt.

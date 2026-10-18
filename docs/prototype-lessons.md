@@ -3,6 +3,12 @@
 Review date: 2026-10-17. Public baseline:
 `122cdaaa4b95a7a03590a2bb75c6437c1e2495f0`.
 
+This is a dated comparison, not a current prototype inspection or current public
+implementation inventory. Later bounded public increments include in-flight
+query sharing, governed compatible cloud routing and operator settlement;
+[STATUS](../STATUS.md) and [the backlog](implementation-backlog.md) identify what
+remains. The original observations and evidence boundaries below are retained.
+
 The existing private prototype remains useful evidence of feature intent and
 failure modes. It is not the correctness oracle for this repository. This review
 inspected selected current source functions, live PostgreSQL catalog metadata,

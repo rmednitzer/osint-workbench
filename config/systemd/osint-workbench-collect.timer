@@ -1,3 +1,5 @@
+# Production reference cadence. Disposable acceptance overrides this timing;
+# an accelerated fixture pass does not verify the durations below.
 [Unit]
 Description=Schedule bounded OSINT Workbench acquisition ticks
 

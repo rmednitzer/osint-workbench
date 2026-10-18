@@ -5,7 +5,7 @@
 > Native vendor adapters, streaming, batches, invoice import and live-provider
 > acceptance are not implemented.
 
-Remote generation is off unless all of the following hold: an operator policy
+The routed enrichment CLI is off unless all of the following hold: an operator policy
 file outside Git, a route in it, the route's credential in the environment, an
 enrichment job explicitly enqueued for that route, and an explicit data class
 on that job. The tracked `config/cloud-policy.example.json` has no routes and
@@ -20,7 +20,9 @@ separators are refused, and a pricebook needs at least one positive rate.
 Endpoints must be HTTPS on port 443 with a qualified host name, no IP literal,
 no query and no credentials, and pass the same public-destination,
 pinned-resolution and certificate checks as acquisition at connection time.
-A credential that is not a single printable header token is denied.
+A credential that is not a single printable header token is denied. The policy
+file's parent directories and custody through use remain operator responsibilities;
+the final-component guard does not establish a trusted directory tree.
 
 ```json
 {
@@ -62,7 +64,10 @@ controlling jurisdiction and every processing region are EU/EEA, foreign legal
 exposure is `none` and retention/training is `none`. Any `unknown` denies. A
 known nonconforming route needs an `exception` with a rationale and the
 permitted tasks; its attempts are recorded as `exception`, not as conforming.
-EU hosting alone is not conformity.
+EU hosting alone is not conformity. `conforming` is this declared-policy
+classification, not verified legal or sovereignty approval. Evidence and pricebook
+dates are retained; the implementation does not fetch facts/prices or enforce an
+automatic age/expiry rule.
 
 ## Running a routed enrichment
 
@@ -80,18 +85,19 @@ generator and a remote route never fall back to each other.
 
 ## Ledger states and exposure
 
-Each attempt is one `ow.remote_operations` row, written before any connection:
+Each admitted dispatch attempt has an `ow.remote_operations` row committed before
+any provider connection; policy denials also get a row:
 
 | Status | Meaning | Counted exposure |
 | --- | --- | --- |
 | `denied` | Policy, credential, budget or unresolved-prior-attempt refusal; no connection | 0 |
 | `reserved` | Worst-case cost reserved, not yet sent | reservation |
 | `dispatched` | Committed immediately before sending; a crash leaves it here | reservation |
-| `released` | Connection or TLS setup failed; no request bytes were sent | 0 |
+| `released` | Confirmed not sent: deadline before sending or destination/DNS/TCP/TLS refusal | 0 |
 | `completed`, `refused`, `incomplete` | Complete provider response | estimated cost if usage was reported, else reservation |
 | `failed` | Non-200 or malformed response | reservation unless usage was reported |
 | `outcome_unknown` | Connection lost or deadline after sending | reservation |
-| any of the above, settled | Operator settlement with provider evidence | settled amount |
+| eligible attempt, settled | Operator assertion bound to provider evidence, or zero for a stale unsent reservation | settled amount |
 
 The reservation assumes one input token per UTF-8 byte of the whole request body
 (prompt, schema and framing; byte-level and byte-fallback tokenizers emit at
@@ -99,12 +105,15 @@ most one token per byte) plus the route's maximum output tokens at the
 declared prices, rounded up. Reported usage counts only when it is possible for
 the request: at least one and at most one input token per request byte, and no
 more output tokens than the route allows. Otherwise it is recorded as missing
-and the reservation stands, so a reported estimate never exceeds or undercuts
-its reservation through implausible numbers. A database trigger enforces the
+and the reservation stands. Plausible reported usage can reduce the estimate
+below its reservation; these bounds do not verify the provider's usage report or
+actual billing. A database trigger enforces the
 state machine: reserved to dispatched, dispatched to exactly one outcome, and
 nothing after that, and a settled attempt is final. Exposure is per route and
-currency and is never summed across currencies or converted. Estimates are not
-invoices.
+currency across the retained ledger, including earlier policy versions for that
+route ID; it is not an account-wide or monthly provider quota. Currencies are
+never summed or converted. Estimates are not invoices, and an evidenced
+settlement may reveal a cost above the reservation or cap.
 
 Reservation admission explicitly uses Read Committed before acquiring the
 per-route-and-currency transaction lock. After waiting, the replay and exposure
@@ -129,8 +138,8 @@ only on provider evidence.
 Settlement replaces an estimate with an amount the operator asserts from
 provider evidence. It runs under a separate login inheriting `ow_accounting`,
 configured privately as `OW_ACCOUNTING_DSN`. That login must not also be a
-writer member; the command and the database both refuse it. The group may read the ledger and write
-only the settlement columns. It cannot change outcomes or reservations, delete
+writer member; the command and the database both refuse it. The group may read
+the ledger and write only the settlement columns. It cannot change outcomes or reservations, delete
 rows, or read documents. Do not add settlement to MCP.
 
 ```sh
@@ -153,8 +162,11 @@ worker and cannot be settled yet.
 | `invoice`, `usage_export`, `provider_statement` | any attempt except `denied` and `released` | exact decimal string in the attempt currency; may exceed the reservation | required file; only its SHA-256 is stored |
 | `not_dispatched` | `reserved` rows only, which provably never sent | `0` | none |
 
-- **Evidence file.** It is read without following symlinks, must be a
-  non-empty regular file of at most 64 MiB, and is never copied or uploaded.
+- **Evidence file.** The final component is opened without following a symlink
+  and must be a non-empty regular file, with reads bounded at 64 MiB. Its parent
+  directories and stability during hashing remain operator responsibilities.
+  The tool hashes observed bytes; it does not verify the file's provenance or
+  copy/upload its contents.
 - **Timestamps.** The database assigns the settlement time and every
   transition time; the writer cannot set either. Owners and superusers can
   bypass the trigger and are outside this contract.
@@ -164,9 +176,11 @@ worker and cannot be settled yet.
   `replayed: true`. Any changed value fails with `SETTLEMENT_CONFLICT`.
 - **Corrections.** There is no edit command. A wrong settlement needs a
   reviewed database change outside this tool.
-- **Re-running the job.** Settling an attempt lifts the replay block for its
-  operation. To run the work again, enqueue it again; nothing is retried
-  automatically.
+- **Re-running work.** Settlement lifts the ledger block for that operation but
+  does not requeue a failed job. Repeating an identical enqueue returns the
+  existing job. A deliberately new `--operation-id` creates a distinct job and
+  can incur another charge; it is not an idempotent retry of the old job. No
+  command currently resets the old job for replay.
 
 Errors:
 
@@ -189,8 +203,13 @@ currency, timing and the evidence digest, not what the evidence says.
 ## Disclosure boundary
 
 The request contains the enrichment prompt: the document title and full text
-as untrusted data, and the proposal schema. Rows store only digests and
-accounting. Credentials are read from the named environment variable, sent
+as untrusted data, and the proposal schema. Dispatch rows store payload digests
+and accounting rather than prompt/response bodies. Settlement additionally
+retains the operator-supplied actor and rationale as plaintext, including in
+checkpoints; keep private provider content out of those fields. Credentials are
+read from the named environment variable, sent
 only as a bearer header to the configured origin and never stored or logged.
+Lifecycle retirement and job cancellation do not recall already-admitted or
+physically in-flight provider requests, or prove provider-side deletion.
 Model output passes the same schema, quotation and review controls as local
 generation; remote output is never accepted as fact without review.

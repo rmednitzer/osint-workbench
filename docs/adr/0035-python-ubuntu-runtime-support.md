@@ -52,3 +52,12 @@ Stage the previous wheel and lock under a compatible interpreter while affected
 processes are stopped. Existing database/policy compatibility obligations remain;
 there is no implicit data or schema rollback. Native source identity remains
 unchanged. Tool/action major updates require their own reviewed pinned provenance.
+
+## Successor context (2026-10-18)
+
+[ADR-0039](0039-mcp-v2-dependency-refresh.md) subsequently changes the MCP
+adapter/dependencies and selects the stable native-server source release while
+preserving this three-profile runtime matrix. The unchanged-native-source
+statement above describes this runtime-support increment only; it is not a
+policy freezing all later candidates to that source. New candidates require
+their own installed/native and service receipts.

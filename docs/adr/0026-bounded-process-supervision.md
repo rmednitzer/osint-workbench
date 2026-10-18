@@ -93,3 +93,13 @@ and installed wheels. A binary rollback is not permission to reverse database
 migrations or lifecycle policy. An incompatible rollback requires a tested
 isolated restore with independent current policy and deliberate source
 re-enablement. See [deployment](../deployment.md) and [recovery](../recovery.md).
+
+## Successor context (2026-10-18)
+
+[ADR-0027](0027-collector-database-authority.md) replaces the earlier general
+writer credential with validated collector-only authority and a required
+`OW_COLLECTOR_DSN` for configured acquisition. The broad-writer discussion above
+describes the original unit increment, not a supported current credential
+fallback. [ADR-0035](0035-python-ubuntu-runtime-support.md) adds separate real
+reference-service acceptance for both supported Ubuntu LTS defaults; prior
+receipts retain their original runtime and fixture scope.

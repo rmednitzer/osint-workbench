@@ -43,3 +43,13 @@ native pgvector/MCP integration tests. The native fixture is an actual small mod
 with authored constant weights, not pretrained language-quality evidence. Supply-chain
 attestation, semantic evaluation, general graph resolution/diversity, full lifecycle
 recovery and other roadmap profiles remain open in STATUS.md.
+
+## Successor context (2026-10-18)
+
+Protected-main build provenance and scoped Python/native supply-chain evidence
+now exist under [ADR-0036](0036-publication-security-evidence.md) through
+[ADR-0038](0038-native-file-evidence-notices.md). They do not establish model
+lineage, full native composition or legal clearance. The original blanket
+supply-chain deferral must be read with that distinction. Local marker custody
+is refined by [ADR-0037](0037-inference-custody-python-sbom.md); it remains
+cooperative host-local admission rather than remote resource ownership.

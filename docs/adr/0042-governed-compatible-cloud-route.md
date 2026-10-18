@@ -102,3 +102,12 @@ request; unknown-fact, data-class, task, credential and budget denials with
 zero provider connections; concurrent reservations against one cap; separate
 currencies; and no second dispatch for a failed job. This is contract
 evidence, not live-provider, sovereignty or invoice evidence.
+
+## Successor context (2026-10-18)
+
+[ADR-0044](0044-ledger-integration-boundaries.md) corrects reservation admission
+under higher session isolation defaults by selecting Read Committed before
+waiting for the advisory transaction lock. It also makes content-purge plan
+inventory work with retained attempt/settlement rows. The route's declared
+policy facts, conservative estimates and synthetic provider fixtures remain
+separate from independently verified sovereignty, provider usage or invoices.

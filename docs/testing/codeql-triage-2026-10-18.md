@@ -38,11 +38,13 @@ service's filesystem authority. The default sticky `/tmp` protects another UID
 from replacing a service-owned lock marker, but a custom writable parent can
 invalidate that assumption.
 
-Inference reconciliation currently checks the marker with `lstat`, then opens
-and removes it by path. Descriptor-based marker reads, identity-aware removal
-and explicit trusted-parent validation need a separately bounded change with
-symlink/rename tests. This potential race is distinct from CodeQL's reported
-environment-to-path flows and is not closed by their disposition.
+At the observed source above, inference reconciliation checked the marker with
+`lstat`, then opened and removed it by path. Descriptor-based reads,
+identity-aware removal and explicit parent validation required separate hardening;
+this race was not closed by the path-authority dispositions. The successor
+[marker/SBOM review](inference-sbom-review-2026-10-18.md) and
+[host-local protocol](../inference-marker-safety.md) record that implementation
+and its tests without claiming malicious same-UID isolation.
 
 The review does not establish absence of vulnerabilities, private-data safety of
 all Git history, a complete dependency/native audit, or operational deployment
@@ -77,3 +79,13 @@ high-severity path alert on `cloud.evidence_digest` (ADR-0043).
 
 This is an individual path-authority false-positive disposition, not a query
 exclusion. Dismissing the hosted alert remains a maintainer action.
+
+## Reading this historical triage
+
+The alert IDs, line numbers and 21/3-finding counts above belong to their named
+analyses. Later helper and settlement findings have separate source-to-sink
+reviews; this file is not an exhaustive current alert inventory. The successful
+[baseline CodeQL run](https://github.com/rmednitzer/osint-workbench/actions/runs/39133727466)
+at `d01f80ac88da50c9f826b1a15cb18c75bd1db75f` does not itself demonstrate zero
+open alerts or authorize blanket dismissal. Preserve each alert's actual
+revision, authority setter and independently reviewed disposition.

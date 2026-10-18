@@ -113,8 +113,11 @@ truth. See [ADR-0024](adr/0024-observed-source-reconciliation.md).
 
 A feed body is a container. When it changes, an item whose identity recomputed
 inside its current head's container equals that head is unchanged: the head is
-kept and no snapshot, document or outbox job is created. Every fetched body
-remains referenced by its run record. Returning to older item content inside a
+kept and no snapshot, document or outbox job is created. A successfully accepted
+representation remains referenced by its run even if every item is reused or
+suppressed. A failure before an item or final run commit can leave no run-level
+body reference; parse failures happen before raw-object publication. This is not
+an archive of every HTTP response. Returning to older item content inside a
 new container is a change from the current head and is recorded as a new
 version. Core v8 grants the collector only the digests needed for this
 comparison; see [ADR-0040](adr/0040-feed-item-version-reuse.md).
@@ -129,8 +132,9 @@ The state contains potentially sensitive validators, URI/profile fingerprints
 and raw-body references. Readers/MCP cannot select it; reader identity validation
 also rejects accidental column grants. Checkpoints remain private and include
 those references. Restore clears the cache/schedule and disables sources. Exact
-core-v4 format-2 checkpoints can adopt the v5 layout with an empty schedule and
-unknown historical HTTP status, subject to all existing policy/hash/target checks.
+core-v4 format-2 checkpoints can adopt the current layout with an empty schedule
+and unknown historical HTTP status, subject to the supported core/profile pair
+and all policy/hash/target checks in [recovery](recovery.md).
 Core-v3/format-1 adoption remains unavailable.
 
 Remaining acquisition work includes redirect-response retry advice, shared-host rate limits,

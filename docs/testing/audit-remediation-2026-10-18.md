@@ -33,8 +33,10 @@ The PR #9 merge commit `e594e949` took its message from a PR description that
 ended with attribution and session URLs. The required new-commit metadata scan
 correctly reported `unclassified-url` on `main`, and the dependent build
 attestation was skipped for that commit; every branch commit had passed the
-scan. The history was not rewritten. PR descriptions for this repository now
-omit URLs; the next merge scans only commits after `e594e949`.
+scan. The history was not rewritten. Later publication policy excludes private
+session/attribution links and preflights the explicit intended commit/merge
+message; approved public technical references remain allowed. Incremental scans
+cover only their selected base-to-head range and do not clear the historical message.
 
 ## Open, with rationale
 
@@ -42,8 +44,12 @@ The subsequent review of merged PRs #9–#12 found two integration defects:
 populated `remote_operations` rows were missing a purge inventory key, and
 reservation locks did not refresh Repeatable Read snapshots. The successor
 corrections and native acceptance cases are specified in
-[ADR-0044](../adr/0044-ledger-integration-boundaries.md). Candidate CI establishes
-their runtime results. Earlier migration bytes, grants and public history remain
+[ADR-0044](../adr/0044-ledger-integration-boundaries.md). Their merged source
+`d01f80ac88da50c9f826b1a15cb18c75bd1db75f` completed
+[foundation run 39133727926](https://github.com/rmednitzer/osint-workbench/actions/runs/39133727926)
+successfully; the preceding PR #13 run reported 1031 passes with no skips in each
+of three installed/native profiles. That acceptance is bounded to the named
+source and cases, not complete cloud/batch/recovery programme closure. Earlier migration bytes, grants and public history remain
 unchanged. A full-range scan from `a5251478` still identifies the historical
 `e594e949` message; the planned-message preflight does not clear that finding.
 
@@ -60,7 +66,8 @@ unchanged. A full-range scan from `a5251478` still identifies the historical
 | Migration digests use text in some paths and bytes in recovery | Low | Unify on bytes with a CRLF regression |
 | Non-canonical ETag/Last-Modified fails an otherwise valid fetch | Design | Matches documented fail-closed contract; availability trade-off retained |
 
-Checked and not defects: SSRF/rebinding address enforcement and per-hop
+The review at the source above did not identify additional defects in the tested
+boundaries for SSRF/rebinding address enforcement and per-hop
 re-resolution, decompression refusal, XXE/entity/depth parser isolation,
 Retry-After parsing, stale-validator reset on URL change, lease fencing and
 cancellation, migration locking, SQL parameterization, MCP tool surface and
