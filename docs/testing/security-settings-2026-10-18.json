@@ -1,0 +1,212 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-10-18T05:25:09.628498+00:00",
+  "baseline_commit": "0ebf58147b91585b40932ee051f4a39e276fcbd9",
+  "before": {
+    "/code-scanning/default-setup": {
+      "exit": 0,
+      "data": {
+        "state": "not-configured",
+        "languages": [
+          "actions",
+          "python"
+        ],
+        "query_suite": "default",
+        "threat_model": "remote",
+        "updated_at": null,
+        "schedule": null,
+        "runner_type": "standard",
+        "runner_label": null
+      }
+    },
+    "": {
+      "exit": 0,
+      "data": {
+        "full_name": "rmednitzer/osint-workbench",
+        "security_and_analysis": {
+          "secret_scanning": {
+            "status": "enabled"
+          },
+          "secret_scanning_push_protection": {
+            "status": "enabled"
+          },
+          "dependabot_security_updates": {
+            "status": "enabled"
+          },
+          "secret_scanning_non_provider_patterns": {
+            "status": "disabled"
+          },
+          "secret_scanning_validity_checks": {
+            "status": "disabled"
+          }
+        }
+      }
+    },
+    "/actions/permissions/selected-actions": {
+      "exit": 0,
+      "data": {
+        "github_owned_allowed": false,
+        "patterns_allowed": [
+          "actions/checkout@*",
+          "actions/upload-artifact@*",
+          "astral-sh/setup-uv@*"
+        ],
+        "verified_allowed": false
+      }
+    },
+    "/vulnerability-alerts": {
+      "exit": 0,
+      "data": null
+    },
+    "/private-vulnerability-reporting": {
+      "exit": 0,
+      "data": {
+        "enabled": true
+      }
+    },
+    "/rulesets": {
+      "exit": 0,
+      "data": []
+    }
+  },
+  "after": {
+    "/code-scanning/default-setup": {
+      "exit": 0,
+      "data": {
+        "state": "configured",
+        "languages": [
+          "actions",
+          "python"
+        ],
+        "query_suite": "extended",
+        "threat_model": "remote_and_local",
+        "updated_at": "2026-10-18T05:22:31Z",
+        "schedule": "weekly",
+        "runner_type": "standard",
+        "runner_label": ""
+      }
+    },
+    "": {
+      "exit": 0,
+      "data": {
+        "full_name": "rmednitzer/osint-workbench",
+        "security_and_analysis": {
+          "secret_scanning": {
+            "status": "enabled"
+          },
+          "secret_scanning_push_protection": {
+            "status": "enabled"
+          },
+          "dependabot_security_updates": {
+            "status": "enabled"
+          },
+          "secret_scanning_non_provider_patterns": {
+            "status": "disabled"
+          },
+          "secret_scanning_validity_checks": {
+            "status": "disabled"
+          }
+        }
+      }
+    },
+    "/actions/permissions/selected-actions": {
+      "exit": 0,
+      "data": {
+        "github_owned_allowed": false,
+        "patterns_allowed": [
+          "actions/checkout@*",
+          "actions/upload-artifact@*",
+          "astral-sh/setup-uv@*",
+          "actions/download-artifact@*",
+          "actions/attest@*"
+        ],
+        "verified_allowed": false
+      }
+    },
+    "/vulnerability-alerts": {
+      "exit": 0,
+      "data": null
+    },
+    "/private-vulnerability-reporting": {
+      "exit": 0,
+      "data": {
+        "enabled": true
+      }
+    },
+    "/rulesets": {
+      "exit": 0,
+      "data": [
+        {
+          "id": 25332631,
+          "name": "CodeQL merge protection",
+          "target": "branch",
+          "source_type": "Repository",
+          "source": "rmednitzer/osint-workbench",
+          "enforcement": "active",
+          "created_at": "2026-10-18T05:25:05.681Z",
+          "updated_at": "2026-10-18T05:25:05.697Z"
+        }
+      ]
+    },
+    "/ruleset-detail": {
+      "exit": 0,
+      "data": {
+        "id": 25332631,
+        "name": "CodeQL merge protection",
+        "target": "branch",
+        "source_type": "Repository",
+        "source": "rmednitzer/osint-workbench",
+        "enforcement": "active",
+        "conditions": {
+          "ref_name": {
+            "exclude": [],
+            "include": [
+              "refs/heads/main"
+            ]
+          }
+        },
+        "rules": [
+          {
+            "type": "code_scanning",
+            "parameters": {
+              "code_scanning_tools": [
+                {
+                  "tool": "CodeQL",
+                  "security_alerts_threshold": "medium_or_higher",
+                  "alerts_threshold": "errors"
+                }
+              ]
+            }
+          }
+        ],
+        "created_at": "2026-10-18T05:25:05.681Z",
+        "updated_at": "2026-10-18T05:25:05.697Z",
+        "bypass_actors": [],
+        "current_user_can_bypass": "never"
+      }
+    }
+  },
+  "limits": [
+    "API readback verifies configuration, not destructive enforcement probes",
+    "Generic secret patterns PATCH accepted but readback remains disabled; unavailable on this personal repository",
+    "Validity checks remain disabled; public partner secret scanning may notify providers independently",
+    "CodeQL setup run 39100269005 completed; initial findings require individual authority review",
+    "No purchase, ownership transfer, history rewrite or operational input was authorized"
+  ],
+  "observations": {
+    "dependency_graph": {
+      "endpoint": "dependency-graph/sbom",
+      "spdx_version": "SPDX-2.3",
+      "package_count": 91,
+      "source_commit_at_observation": "0ebf58147b91585b40932ee051f4a39e276fcbd9",
+      "limit": "Repository graph export, not a complete native/model or tested runtime-profile SBOM"
+    },
+    "automated_security_fixes": {
+      "enabled": true,
+      "paused": false
+    },
+    "dependabot_open_alerts": 0,
+    "secret_scanning_open_alerts": 0,
+    "alert_limit": "Counts at observation only; absence of alerts is not assurance of no vulnerabilities or secrets"
+  }
+}

@@ -27,7 +27,8 @@ MAX_RESULT = 16 * 1024 * 1024
 def admission(*, allow_uncertain=False):
     import fcntl
 
-    path = os.environ.get("OW_INFERENCE_LOCK", f"/tmp/ow-inference-{os.getuid()}.lock")
+    # Reviewed: no-follow open and regular-file/owner checks below; peers need one stable inode.
+    path = os.environ.get("OW_INFERENCE_LOCK", f"/tmp/ow-inference-{os.getuid()}.lock")  # noqa: S108
     fd = os.open(path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW | os.O_NONBLOCK, 0o600)
     try:
         info = os.fstat(fd)

@@ -18,6 +18,7 @@ uv sync --locked --extra retrieval --python 3.12
 .venv/bin/ruff check .
 .venv/bin/ruff format --check .
 .venv/bin/python scripts/check_repository.py
+.venv/bin/python scripts/check_static.py
 .venv/bin/python -m pytest -m 'not integration' --import-mode=importlib
 uv build --build-constraints build-constraints.txt --require-hashes
 .venv/bin/python scripts/check_publication.py --artifacts dist
@@ -93,8 +94,42 @@ not runtime dependencies.
 
 Run publication checks on source and artifacts. Maintainers may set
 `OW_PRIVATE_DENYLIST` to an external private JSON array for additional exact-value
-checks; never commit or upload that file. Check Git metadata independently.
+checks; never commit or upload that file. Scan new Git metadata with an explicit
+reviewed ancestor; see [publication privacy](docs/publication-privacy.md).
 Scans are backstops, not permission to disclose arbitrary material.
+
+## Bounded static analysis
+
+Run `.venv/bin/python scripts/check_static.py` after the locked development
+installation. It runs mypy on the advisory wire models, configuration/document
+contracts, sanitized errors and evidence text/coordinate helpers. It checks
+untyped function bodies as well as annotated signatures, without claiming strict
+typing or eliminating `Any`. Imported modules are analyzed silently; they are
+not part of the reported four-module gate. The minimum language target remains
+Python 3.12, independently of the native runtime matrix.
+
+The same command runs every Ruff `S` security rule against application Python
+source under `src/osint_workbench`. Three exact line-level exemptions document
+reviewed heuristics: the fixed-interpreter parser subprocess, the no-follow and
+owner/type-checked shared inference lock, and SQL columns selected only from
+internal constants. There are no file-wide security exemptions. The predictable
+lock still assumes a trusted service account; static analysis does not establish
+filesystem isolation, safe subprocess inputs or SQL authority by itself.
+
+Every invocation also runs two disposable negative controls through the actual
+tools: an incorrect assignment inside an untyped function must fail mypy, and
+an unsafe dynamic-evaluation call must fail Ruff. A missing tool, failed gate or
+unexpected control result fails the command. No gate downloads packages, invokes
+providers or executes the negative fixture code. Scripts, tests, SQL migrations,
+external/native code and dependency vulnerabilities are outside this source
+security-rule gate; installed native tests, publication scans and dependency
+auditing remain separate checks. Broader type coverage and independent security
+review remain unfinished.
+
+After successful installed tests and package scans, reproduce the dedicated
+runtime-inventory environment and receipt verification in [build evidence](docs/build-evidence.md).
+CI retains the tested distributions and receipts for 30 days. Main-push signing
+runs separately with no repository code execution; PR artifacts remain unsigned.
 
 ## Review and merge
 

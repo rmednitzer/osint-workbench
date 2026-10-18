@@ -118,7 +118,8 @@ commits and a second reviewer are not claimed. Merge commits preserve tested
 source ancestry; squash/rebase merge paths are disabled. Merged branches can be
 deleted automatically while main remains protected. Branch updates are enabled.
 
-Allowed actions are checkout, upload-artifact and setup-uv at full SHAs; no other
+Allowed actions are checkout, upload-artifact, download-artifact, attest and setup-uv
+at full SHAs; no other
 third-party action is approved implicitly. Fork PR workflows require maintainer
 approval for all external contributors. Workflow tokens remain read-only and
 cannot approve PR reviews. Secret scanning/push protection and dependency alerts
@@ -142,9 +143,12 @@ add successor notes instead of rewriting them as current results. Stable S
 references resolve in [references](references.md). Full E01-E51 scenario markers
 remain distinct from implemented regression subsets.
 
-Current dependency and repository controls do not close type/static analysis,
-licence/SBOM/provenance dispositions, complete release assurance or the wider
-implementation backlog.
+An initial bounded type/security gate and source-bound build receipts now add to
+these controls; see [CONTRIBUTING](../CONTRIBUTING.md) and
+[build evidence](build-evidence.md). Full type coverage, standards-conformant SBOMs,
+licence dispositions, complete release assurance and the wider implementation
+backlog remain open. Main-push attestations are separate from PR receipts and do
+not establish operational runtime or independent quality.
 
 The reviewed runtime-compatibility change updates SHA-pinned checkout, artifact
 upload and setup-uv actions, and pins uv 0.13.1. It also reviews the two targeted
@@ -161,3 +165,35 @@ from routine bot scheduling/release-age eligibility; MCP remains on its reviewed
 - [Codex AGENTS.md guidance](https://developers.openai.com/codex/guides/agents-md)
 - [Copilot repository instructions](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/add-custom-instructions/add-repository-instructions)
 - [GitHub protected-branch controls](https://docs.github.com/en/rest/branches/branch-protection)
+
+## Hosted security analysis
+
+CodeQL default setup uses the extended query suite for Python and GitHub Actions,
+with remote and local input sources. GitHub manages this generated workflow;
+it is distinct from the SHA-pinned checked-in foundation workflow. Weekly analysis
+and PR scans supplement local gates, and findings require source/authority review.
+Do not describe a successful analysis run as proof of zero vulnerabilities.
+A separate active main ruleset requires CodeQL with no bypass actors, blocking
+qualifying errors and medium-or-higher security findings. This supplements the
+existing required CI checks; GitHub documents limitations for diff coverage,
+merge queues and Dependabot PRs under default setup. Inspect actual PR results;
+this is not an all-history or universal dependency-PR guarantee.
+
+Secret scanning, push protection, dependency alerts/security fixes and private
+reporting remain enabled. Generic secret patterns are not available to this
+personal public repository: a successful PATCH response still read back disabled.
+Validity checks remain disabled because they contact issuing providers. Public
+partner secret scanning can notify providers independently of that switch; no
+private credential validation is part of this maintenance change. Local exact
+private-value checks remain private and hosted scanning cannot replace them.
+
+The [security-settings receipt](testing/security-settings-2026-10-18.json) records
+observed controls, unsupported features and the initial CodeQL analysis. The
+[publication/evidence ADR](adr/0036-publication-security-evidence.md) records the
+trust boundary and rollback. Do not purchase a plan or move ownership merely to
+turn an unavailable switch green.
+
+The [initial CodeQL triage](testing/codeql-triage-2026-10-18.md) records actual
+operator/test input authority for all 21 initial alerts, the manifest hardening
+found during review, and a separate marker-race follow-up. Individual dispositions
+do not suppress the query family or certify future callers.

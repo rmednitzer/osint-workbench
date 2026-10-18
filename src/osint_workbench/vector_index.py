@@ -60,7 +60,7 @@ def corpus(conn, *, bodies=False):
     columns = "document_id,snapshot_id,body" if bodies else "document_id"
     # The selected columns are fixed internal constants.
     rows = conn.execute(
-        "SELECT " + columns + " FROM ow.active_documents ORDER BY document_id"
+        "SELECT " + columns + " FROM ow.active_documents ORDER BY document_id"  # noqa: S608
     ).fetchall()
     return rows, digest(json.dumps([r["document_id"] for r in rows]).encode())
 
