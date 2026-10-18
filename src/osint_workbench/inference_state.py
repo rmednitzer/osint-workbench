@@ -273,3 +273,25 @@ def admission(*, allow_uncertain=False):
     finally:
         os.close(lock)
         os.close(directory)
+
+
+PARENT_ENV = "OW_INFERENCE_PARENT"
+
+
+def bind_parent_lifetime():
+    """Make an inference child die with the process that holds its admission.
+
+    Admission is a lock held only by the parent. Without this binding a killed
+    parent releases admission while its child keeps computing. The child sets
+    the Linux parent-death signal itself (no preexec in a threaded parent),
+    then confirms the expected parent still exists to close the fork race.
+    """
+    import ctypes
+    import signal
+
+    expected = os.environ.get(PARENT_ENV, "")
+    libc = ctypes.CDLL(None, use_errno=True)
+    if libc.prctl(1, int(signal.SIGKILL), 0, 0, 0) != 0:  # PR_SET_PDEATHSIG
+        raise WorkbenchError("INFERENCE_PARENT_UNBOUND")
+    if not expected.isdigit() or os.getppid() != int(expected):
+        raise WorkbenchError("INFERENCE_PARENT_UNBOUND")

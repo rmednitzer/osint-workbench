@@ -429,7 +429,7 @@ concerns. This refinement defines acceptance obligations, not executed evidence.
 | U67 | CA17/P or T: apply a stale plan or accept producer output after deletion, including a builder changing an invalidated generation back to ready | C67: exclusive lifecycle admission before snapshot, exact state revalidation, job-fence rejection and conditional generation acceptance; preserve neighbouring vectors while invalidating affected corpus claims | Stale plan and real worker/build/activation interleavings; no target reconstruction or incomplete ready generation |
 | U68 | CA17/CA7/P or T: publish success before commit, repeat deletion after a lost response without checking durable identity, or treat a receipt-write failure as database rollback | C68: purge event/revision/deletions commit atomically; replay checks exact operation/request/plan binding; uncertain COMMIT remains an error until durable reconciliation | Mid-transaction rollback, exact/conflicting retry, lost-response reconciliation and an explicitly injected post-commit acknowledgement failure |
 | U69 | CA8/P or T: restore a pre-purge checkpoint under newer policy while merely hiding the resurrected records | C69: validate purge history and current independently retained policy; reject historical target records before object acceptance; accept compatible post-purge state only | Pre-purge refusal with absent object root, post-purge round trip, stale/missing/incorrect policy and explicit known-history adoption cases |
-| U70 | CA17/P: execute deletion using broad owner/writer authority or omit optional stored retrieval dependencies because a runtime feature is disabled | C70: separate explicit purger authority, supported core7/profile3 history and full dependency visibility; reject unsupported schema/RLS or broadened identities; MCP remains read-only | Scoped positive principal, owner/superuser/writer/collector negatives, core-only and retrieval cases |
+| U70 | CA17/P: execute deletion using broad owner/writer authority or omit optional stored retrieval dependencies because a runtime feature is disabled | C70: separate explicit purger authority, supported current core/profile history and full dependency visibility; reject unsupported schema/RLS or broadened identities; MCP remains read-only | Scoped positive principal, owner/superuser/writer/collector negatives, core-only and retrieval cases |
 | U71 | CA9/P: report transactional record deletion as erasure of shared feeds, WAL, backups, media or already disclosed data, or infer reversibility from an older checkpoint | C71: disclose retained copies/policy identifiers and destructive SQL-state boundary; separate orphan GC, backup expiry and media controls; old backups are not authorized unpurge | Receipt/documentation scope review, preserved shared references and historical restore rejection; no global-erasure or legal-compliance claim |
 
 Causal cases include a valid-looking plan that predates a new shared derivative
@@ -577,3 +577,23 @@ must remain owned by the actual operation until completion. Existing process,
 fencing and resource-lifetime tests remain applicable. External assistant
 compatibility, comprehensive cancellation/resource scheduling and native/legal
 composition remain bounded by their separate acceptance evidence.
+
+## Feed item identity, framing and cited-product binding
+
+| UCA | Unsafe control action | Constraint | Discriminating evidence |
+| --- | --- | --- | --- |
+| U89 | CA4/P: accept every unchanged item in a changed feed container as a new immutable version and outbox event | H8,H9; C89: collector compares each item with its current head by recomputed identity under scoped column grants; unchanged content keeps the head and enqueues nothing; ADR-0040 | Writer and validated collector feed-window regressions with exact document, snapshot, job and retained-container counts |
+| U90 | CA5/P: resolve repeated `Content-Encoding` or `Location` fields by the last occurrence | H2,H3; C90: repeated framing fields fail closed with typed errors; redirect fragments are removed before validation, never sent | Raw-wire duplicate, non-ASCII, fragment and downgrade controls through the actual client |
+| U91 | CA7/N: deny all search because ordinary collection grew the corpus past reference build bounds | H2,H6; C91: an over-limit corpus is reported as degraded drift while builds and activation keep enforcing bounds | Native growth-past-limit search, build and activation regression |
+| U92 | CA15/P: serve a briefing whose digest is self-consistent but whose items misstate the accepted assertions they cite | H8; C92: every read compares each cited item with the live accepted assertion projection | Writer-authority forged statement, polarity and source cases |
+| U93 | CA10/P: release single-slot inference admission when the admitting parent dies while its model child continues computing | H9; C93: children bind their own lifetime to the expected admitting parent and refuse unbound work; exits are classified before result decoding | Actual SIGKILL of an intermediate parent with a blocked child, unbound-child refusal and exit/shape classification cases |
+| U94 | CA10/P: retry deterministic invalid model output as a backend fault | H9; C94: unstorable model text is invalid model output and terminal | NUL claim cases leave no assertions and do not rerun inference |
+
+The U89 scenario starts with a feed that changes one entry or a channel
+timestamp at every poll. Hash identity correctly distinguishes containers, but
+treating the container digest as item identity multiplies storage, index and
+model-queue work while search hides the duplicates. Granting the collector
+read access to titles and text would solve it with broader hostile-input
+authority; recomputing identity in the head's container needs only digests.
+U92 starts from trusting a product digest as evidence: a digest proves bytes,
+not that those bytes still agree with reviewed records.

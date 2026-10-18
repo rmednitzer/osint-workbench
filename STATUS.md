@@ -5,7 +5,7 @@ complete merely because its design documents or interfaces exist.
 
 | Area | Current implementation | Verification boundary |
 | --- | --- | --- |
-| Configuration/package | Typed JSON, empty sources, src layout, packaged migrations | Installed-wheel CI covers retained core migrations and active profile upgrade state; core7/profile3 upgrade, purge and recovery cases passed in the named receipt |
+| Configuration/package | Typed JSON, empty sources, src layout, packaged migrations | Installed-wheel CI covers retained core migrations and active profile upgrade state; core7/profile3 upgrade, purge and recovery cases passed in the named receipt; core8 adds collector item-reuse grants and exact core7 checkpoint adoption |
 | Evidence/core storage | Hashed immutable objects, PostgreSQL records/version heads | Local object tests; native PostgreSQL tests in CI |
 | Jobs | Bounded retries, attempt events, cancellation, renewal and atomic chunk worker | PostgreSQL failure/concurrency tests; distributed/remote effects remain pending |
 | Collection | RSS/Atom extraction, bounded public HTTP transport and durable due/validator state | Native HTTP sockets, parser, due/304/backoff, crash/replay and recovery tests passed. Full adversarial HTTP coverage remains pending |
@@ -19,7 +19,7 @@ complete merely because its design documents or interfaces exist.
 | Export/recovery/retention | Bounded private checkpoint, empty-target restore, operator retention/holds/logical tombstones and mandatory current-policy reconciliation | Native SQL-reader, job/fence, inference, collector and restored-policy regressions passed in installed-wheel CI. Reviewed orphan-object GC and transactional retired-record SQL purge passed native failure/restart, recovery and scoped-role tests. Full record erasure, legacy format-1 adoption, public export, publisher and full-host/PITR remain pending |
 | Publication controls | Positive file selection and source/artifact scanning | File/archive checks plus bounded new-commit metadata scanning; private exact-value checks run outside public CI and do not establish anonymity |
 
-Core schema v7 and retrieval-profile v3 are additive; earlier published migrations
+Core schema v8 and retrieval-profile v3 are additive; earlier published migrations
 remain byte-identical. Checkpoint format 2 requires separate policy receipts;
 legacy format-1 restore/adoption is not silently accepted. Job cancellation
 revokes acceptance authority; it does not prove a running computation has stopped.
@@ -225,3 +225,18 @@ than inferred from protocol fixtures. See
 CPython 3.15 and real assistant/remote HTTP compatibility are outside the current
 3.12–3.14 support claim. The updated licence/native policies describe the actual
 47-distribution runtime; earlier receipts retain their original inventories.
+
+The 2026-10-18 audit corrections stop feed container changes from re-versioning
+and re-enqueueing unchanged items, using core migration 8 and two collector
+column grants ([ADR-0040](docs/adr/0040-feed-item-version-reuse.md)). Repeated
+`Content-Encoding`/`Location` fields now fail closed, and redirect fragments are
+dropped. Search over a corpus grown past the reference build bounds reports
+degraded drift instead of failing. Briefing reads compare every cited item with
+its live accepted assertion. Discriminating native and protocol regressions
+were added; revision-bound results belong to the candidate's CI run.
+Encoder/reranker children now die with the parent that holds admission and
+refuse unbound work; signal exits are reported as unavailable, and NUL in model
+claims is terminal invalid output instead of a retried backend fault. Remaining
+findings and their dispositions are listed in
+[the audit record](docs/testing/audit-remediation-2026-10-18.md); they are not
+closed by this increment.

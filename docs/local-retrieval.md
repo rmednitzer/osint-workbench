@@ -53,7 +53,14 @@ and `OW_INFERENCE_LOCK` file on the same host. Separate users/hosts/lock paths d
 share admission. Contention reports `INFERENCE_BUSY` without a queue or fallback.
 This is one-slot encoder admission, not a GPU or cross-workload scheduler.
 Each child has 40 CPU seconds, 4 GiB address space, a 16 MiB result bound and 45 s
-wall deadline. Expired children are killed/reaped. Files are bounded to 512 MiB model
+wall deadline. Expired children are killed/reaped. Each encoder/reranker child
+sets a Linux parent-death SIGKILL itself and refuses work with
+`INFERENCE_PARENT_UNBOUND` unless its parent is the process that holds admission,
+so a killed parent cannot release admission while its child keeps computing. A
+signal or resource-limit exit is reported as `ENCODER_UNAVAILABLE` or
+`RERANK_UNAVAILABLE`, never as an invalid model result. The SIGKILL can arrive
+just after the dead parent's lock is released; this is a bounded race, not a
+cross-process scheduler. Files are bounded to 512 MiB model
 and 16 MiB tokenizer. Unsupported shapes, zero/nonfinite vectors and oversize query
 inputs fail. Tokenizer truncation is disabled; chunk fitting rechecks the templated
 input budget and stores exact original Unicode offsets and slice hashes.
@@ -76,7 +83,9 @@ member. Active generation changes in one transaction. Rollback uses the same act
 checks; a generation for an outdated corpus cannot be activated. Search checks its
 own repeatable-read corpus snapshot, excludes obsolete document heads and explicitly
 marks corpus drift degraded. Later concurrent collection can create normal drift;
-operators must rebuild and activate. Old generations remain retained for review.
+operators must rebuild and activate. Growth past the reference build bounds also
+reports degraded drift rather than failing search, because no generation can
+exceed those bounds; builds and activation still refuse the oversized corpus. Old generations remain retained for review.
 
 ## Supply-chain and sovereignty boundary
 

@@ -12,6 +12,7 @@ from pydantic import Field, model_validator
 
 from .contracts import StrictModel
 from .errors import WorkbenchError
+from .inference_state import PARENT_ENV
 from .inference_state import admission as admission
 from .query_flights import QueryFlights
 from .retrieval import EmbeddingSpace
@@ -77,6 +78,7 @@ class LocalEncoder:
             "OPENBLAS_NUM_THREADS": "1",
             "MKL_NUM_THREADS": "1",
             "RAYON_NUM_THREADS": str(manifest.threads),
+            PARENT_ENV: str(os.getpid()),
         }
         with admission(), tempfile.TemporaryFile() as output:
             try:
@@ -95,25 +97,33 @@ class LocalEncoder:
             data = output.read(MAX_RESULT + 1)
         if len(data) > MAX_RESULT:
             raise WorkbenchError("ENCODER_RESULT_LIMIT")
+        if result.returncode != 0:
+            # A signal or resource-limit exit leaves no structured output; it is
+            # an unavailable runtime, not an invalid model result.
+            try:
+                decoded = json.loads(data) if result.returncode > 0 else None
+            except ValueError:
+                decoded = None
+            code = decoded.get("error") if isinstance(decoded, dict) else None
+            if code not in {
+                "MODEL_INTEGRITY_MISMATCH",
+                "TOKENIZER_INTEGRITY_MISMATCH",
+                "ENCODER_INPUT_TOO_LONG",
+                "ENCODER_INCOMPATIBLE",
+                "INVALID_EMBEDDING_VECTOR",
+                "INVALID_EMBEDDING_NORM",
+                "TOKEN_OFFSETS_UNSUPPORTED",
+                "ENCODER_CHUNK_LIMIT",
+                "INVALID_ENCODER_INPUT",
+                "INVALID_ENCODER_PACKET",
+                "ENCODER_PACKET_TOO_LARGE",
+                "ENCODER_RESULT_LIMIT",
+                "INFERENCE_PARENT_UNBOUND",
+            }:
+                code = "ENCODER_UNAVAILABLE"
+            raise WorkbenchError(code)
         try:
             decoded = json.loads(data)
-            if result.returncode != 0:
-                code = decoded.get("error") if isinstance(decoded, dict) else None
-                if code not in {
-                    "MODEL_INTEGRITY_MISMATCH",
-                    "TOKENIZER_INTEGRITY_MISMATCH",
-                    "ENCODER_INPUT_TOO_LONG",
-                    "ENCODER_INCOMPATIBLE",
-                    "INVALID_EMBEDDING_VECTOR",
-                    "INVALID_EMBEDDING_NORM",
-                    "TOKEN_OFFSETS_UNSUPPORTED",
-                    "ENCODER_CHUNK_LIMIT",
-                    "INVALID_ENCODER_INPUT",
-                    "INVALID_ENCODER_PACKET",
-                    "ENCODER_PACKET_TOO_LARGE",
-                }:
-                    code = "ENCODER_UNAVAILABLE"
-                raise WorkbenchError(code)
             if decoded["encoder_id"] != manifest.identity():
                 raise ValueError
             for row in decoded["results"]:

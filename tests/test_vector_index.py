@@ -65,6 +65,33 @@ def test_real_pgvector_ranking_generation_switch_and_rollback(retrieval):
         index.activate(second["generation_id"])
 
 
+def test_unattended_growth_past_build_limit_degrades_search_instead_of_failing(retrieval):
+    writer, reader, roles, store, encoder = retrieval
+    index = VectorIndex(writer, encoder)
+    generation = index.build(store)
+    index.activate(generation["generation_id"])
+    service = ReadService(reader, EvidenceStore(store.root, read_only=True), encoder=encoder)
+    assert not service.search("disk")["degraded"]
+    # Two large later observations push the head corpus past the 2M character
+    # build bound; this is ordinary collector growth, not a reader fault.
+    for external in ("large-a", "large-b"):
+        text = "storage " * 125_000
+        writer.ingest(
+            DocumentInput(source_id="fixture", external_id=external, title=external, text=text),
+            text.encode(),
+            store,
+        )
+    found = service.search("disk")
+    assert found["degraded"] and found["degradation_reason"] == "CORPUS_CHANGED"
+    assert found["generation_id"] == generation["generation_id"]
+    assert found["results"]
+    # The bound still governs builds and activation explicitly.
+    with pytest.raises(WorkbenchError, match="REFERENCE_CORPUS_LIMIT"):
+        index.build(store)
+    with pytest.raises(WorkbenchError, match="REFERENCE_CORPUS_LIMIT"):
+        index.activate(generation["generation_id"])
+
+
 def test_failed_generation_does_not_replace_active_and_reader_cannot_write(retrieval):
     writer, reader, roles, store, encoder = retrieval
     index = VectorIndex(writer, encoder)

@@ -10,7 +10,7 @@ from .contracts import DocumentInput
 from .errors import WorkbenchError
 from .evidence import EvidenceStore
 
-SCHEMA_VERSION = 7
+SCHEMA_VERSION = 8
 LIFECYCLE_LOCK = 418287408
 MIGRATIONS = (
     "schema.sql",
@@ -20,6 +20,7 @@ MIGRATIONS = (
     "migrations/005_collection_schedule.sql",
     "migrations/006_collector_role.sql",
     "migrations/007_retired_record_purge.sql",
+    "migrations/008_collector_item_reuse.sql",
 )
 
 
@@ -143,9 +144,12 @@ class Database:
                 "INSERT": "source_id enabled freshness_seconds",
                 "UPDATE": "enabled freshness_seconds last_attempt last_success last_error",
             },
-            "snapshots": {"INSERT": "snapshot_id source_id raw_sha256 text_sha256 extractor"},
+            "snapshots": {
+                "SELECT": "snapshot_id raw_sha256",
+                "INSERT": "snapshot_id source_id raw_sha256 text_sha256 extractor",
+            },
             "documents": {
-                "SELECT": "document_id",
+                "SELECT": "document_id snapshot_id",
                 "INSERT": "document_id source_id external_key snapshot_id title body published_at",
             },
             "document_heads": {
@@ -288,13 +292,10 @@ class Database:
             return self.ingest_stored(conn, doc, raw_sha, text_sha, extractor, store=store)
 
     @staticmethod
-    def ingest_stored(conn, doc, raw_sha, text_sha, extractor, *, store, observed_current=False):
-        """Internal transaction boundary; caller has durably verified both objects."""
-        store.require_transaction(conn)
+    def _version_ids(doc, external, raw_sha, text_sha, extractor):
         snapshot = hashlib.sha256(
             json.dumps([doc.source_id, raw_sha, text_sha, extractor]).encode()
         ).hexdigest()
-        external = hashlib.sha256(doc.external_id.encode()).hexdigest()
         document = hashlib.sha256(
             json.dumps(
                 [
@@ -306,6 +307,14 @@ class Database:
                 ]
             ).encode()
         ).hexdigest()
+        return snapshot, document
+
+    @staticmethod
+    def ingest_stored(conn, doc, raw_sha, text_sha, extractor, *, store, observed_current=False):
+        """Internal transaction boundary; caller has durably verified both objects."""
+        store.require_transaction(conn)
+        external = hashlib.sha256(doc.external_id.encode()).hexdigest()
+        snapshot, document = Database._version_ids(doc, external, raw_sha, text_sha, extractor)
         conn.execute(
             "INSERT INTO ow.sources(source_id) VALUES (%s) ON CONFLICT DO NOTHING",
             (doc.source_id,),
@@ -318,6 +327,24 @@ class Database:
             "ON CONFLICT DO NOTHING",
             (doc.source_id, external),
         )
+        if observed_current:
+            # A feed body is a container: one changed entry must not re-version
+            # every unchanged item. Recompute this item's identity inside the
+            # current head's container; equality proves identical text, title,
+            # date and extractor without granting the collector read access to
+            # them. The new body stays referenced by its run record.
+            head = conn.execute(
+                """SELECT h.document_id,s.raw_sha256 FROM ow.document_heads h
+                JOIN ow.documents d USING(document_id) JOIN ow.snapshots s USING(snapshot_id)
+                WHERE h.source_id=%s AND h.external_key=%s""",
+                (doc.source_id, external),
+            ).fetchone()
+            if head and head["raw_sha256"] != raw_sha:
+                prior = Database._version_ids(
+                    doc, external, head["raw_sha256"], text_sha, extractor
+                )
+                if prior[1] == head["document_id"]:
+                    return head["document_id"]
         conn.execute(
             """INSERT INTO ow.snapshots
             (snapshot_id,source_id,raw_sha256,text_sha256,extractor)

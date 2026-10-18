@@ -5,7 +5,7 @@ from datetime import UTC
 from typing import Literal
 
 from psycopg.types.json import Jsonb
-from pydantic import Field, ValidationError
+from pydantic import Field, ValidationError, model_validator
 
 from .contracts import Digest, Identifier, StrictModel
 from .database import Database
@@ -26,6 +26,14 @@ class ClaimProposal(StrictModel):
     statement: str = Field(min_length=1, max_length=1000)
     polarity: Literal["asserted", "negated", "uncertain"]
     quote: str = Field(min_length=1, max_length=4000)
+
+    @model_validator(mode="after")
+    def storable_text(self):
+        # PostgreSQL text cannot hold NUL. Reject it as invalid model output
+        # rather than a retryable backend fault that would rerun inference.
+        if any("\x00" in value for value in (self.subject, self.object, self.statement)):
+            raise ValueError("NUL in claim text")
+        return self
 
 
 class Proposals(StrictModel):
@@ -252,6 +260,31 @@ def review(db, assertion_id, decision, actor, rationale):
     return {"assertion_id": assertion_id, "review_state": decision}
 
 
+_ACCEPTED_ITEMS = """SELECT a.*,d.snapshot_id,d.source_id FROM ow.current_assertions a
+    JOIN ow.active_documents d USING(document_id) WHERE a.review_state='accept'"""
+
+
+def _briefing_item(r):
+    return {
+        "assertion_id": r["assertion_id"],
+        "document_id": r["document_id"],
+        "snapshot_id": r["snapshot_id"],
+        "source_id": r["source_id"],
+        "statement": r["statement"],
+        "polarity": r["polarity"],
+        "quote": r["quote"],
+        "start_offset": r["start_offset"],
+        "end_offset": r["end_offset"],
+        "review": "accepted",
+    }
+
+
+_ITEM_FIELDS = frozenset(
+    "assertion_id document_id snapshot_id source_id statement polarity quote "
+    "start_offset end_offset review".split()
+)
+
+
 def create_briefing(db, document_ids):
     if (
         not isinstance(document_ids, list)
@@ -268,28 +301,12 @@ def create_briefing(db, document_ids):
             # before this shared transaction. Never persist a dangling selection.
             assert_document_visible(conn, identifier)
         rows = conn.execute(
-            """SELECT a.*,d.snapshot_id,d.source_id FROM ow.current_assertions a
-            JOIN ow.active_documents d USING(document_id) WHERE a.document_id=ANY(%s)
-            AND review_state='accept' ORDER BY assertion_id LIMIT 101""",
+            _ACCEPTED_ITEMS + " AND a.document_id=ANY(%s) ORDER BY assertion_id LIMIT 101",
             (document_ids,),
         ).fetchall()
         if len(rows) > 100:
             raise WorkbenchError("BRIEFING_CLAIM_LIMIT")
-        items = [
-            {
-                "assertion_id": r["assertion_id"],
-                "document_id": r["document_id"],
-                "snapshot_id": r["snapshot_id"],
-                "source_id": r["source_id"],
-                "statement": r["statement"],
-                "polarity": r["polarity"],
-                "quote": r["quote"],
-                "start_offset": r["start_offset"],
-                "end_offset": r["end_offset"],
-                "review": "accepted",
-            }
-            for r in rows
-        ]
+        items = [_briefing_item(r) for r in rows]
         cutoff = conn.execute("SELECT clock_timestamp() AS now").fetchone()["now"]
         content = {
             "schema_version": 1,
@@ -325,14 +342,32 @@ def get_briefing(db, store, briefing_id):
         content = row["content"]
         if digest(json.dumps(content, sort_keys=True).encode()) != briefing_id:
             raise WorkbenchError("BRIEFING_INTEGRITY_MISMATCH")
-        for item in content["items"]:
+        items, selected = content.get("items"), content.get("selected_documents")
+        # Membership and the empty-digest disposition must match the recorded
+        # selection; later accepted assertions after the cutoff are not omissions.
+        if (
+            not isinstance(items, list)
+            or not isinstance(selected, list)
+            or any(
+                not isinstance(i, dict)
+                or set(i) != _ITEM_FIELDS
+                or i["document_id"] not in selected
+                for i in items
+            )
+            or content.get("degraded") is not (not items)
+            or content.get("omission_reason") != (None if items else "no_reviewed_assertions")
+        ):
+            raise WorkbenchError("BRIEFING_EVIDENCE_MISMATCH")
+        for item in items:
             active = conn.execute(
-                "SELECT 1 FROM ow.current_assertions WHERE assertion_id=%s "
-                "AND review_state='accept'",
-                (item["assertion_id"],),
+                _ACCEPTED_ITEMS + " AND a.assertion_id=%s", (item.get("assertion_id"),)
             ).fetchone()
             if not active:
                 raise WorkbenchError("BRIEFING_STALE")
+            # A self-consistent digest proves only the stored bytes. Every cited
+            # field must still equal the live accepted assertion it names.
+            if _briefing_item(active) != item:
+                raise WorkbenchError("BRIEFING_EVIDENCE_MISMATCH")
             snapshot = conn.execute(
                 "SELECT text_sha256 FROM ow.visible_snapshots WHERE snapshot_id=%s",
                 (item["snapshot_id"],),

@@ -126,3 +126,5 @@ role membership versus immediately usable authority in
 The [connection parameter reference](https://www.postgresql.org/docs/18/libpq-connect.html)
 defines `connect_timeout` per host/address attempt. These references define driver
 and SQL semantics; the revision-bound tests establish the implemented checks.
+
+> Successor note (2026-10-18): [ADR-0040](0040-feed-item-version-reuse.md) adds core migration 8 with SELECT on `documents.snapshot_id` and `snapshots(snapshot_id,raw_sha256)` to the exact collector allowlist. No title, body or text-digest read authority is added.

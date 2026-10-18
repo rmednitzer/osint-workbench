@@ -8,7 +8,7 @@ from psycopg import sql
 
 from osint_workbench.collection import collect, collect_due
 from osint_workbench.contracts import DocumentInput
-from osint_workbench.database import Database
+from osint_workbench.database import SCHEMA_VERSION, Database
 from osint_workbench.errors import WorkbenchError
 from osint_workbench.evidence import EvidenceStore
 from tests.test_lifecycle import change
@@ -279,7 +279,10 @@ def test_collector_refuses_mixed_schema_or_changed_default(databases, corruption
         elif corruption == "digest":
             admin.execute("UPDATE ow.migrations SET sha256=%s WHERE version=6", ("0" * 64,))
         else:
-            admin.execute("INSERT INTO ow.migrations(version,sha256) VALUES (8,%s)", ("0" * 64,))
+            admin.execute(
+                "INSERT INTO ow.migrations(version,sha256) VALUES (%s,%s)",
+                (SCHEMA_VERSION + 1, "0" * 64),
+            )
         try:
             with pytest.raises(WorkbenchError, match="UNSAFE_COLLECTOR_IDENTITY"):
                 collector.validate_collector()
@@ -291,7 +294,7 @@ def test_collector_refuses_mixed_schema_or_changed_default(databases, corruption
             elif corruption == "digest":
                 admin.execute("UPDATE ow.migrations SET sha256=%s WHERE version=6", (prior,))
             else:
-                admin.execute("DELETE FROM ow.migrations WHERE version=8")
+                admin.execute("DELETE FROM ow.migrations WHERE version=%s", (SCHEMA_VERSION + 1,))
     collector.validate_collector()
 
 

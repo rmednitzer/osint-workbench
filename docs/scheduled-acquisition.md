@@ -1,7 +1,7 @@
 # Scheduled RSS/Atom acquisition
 
 Core schema v5 introduced the private durable schedule. The current supported
-layout is core v7 and, when enabled, retrieval-profile v3. Run the explicit
+layout is core v8 and, when enabled, retrieval-profile v3. Run the explicit
 migrations before using the current code. No sources, URLs, network
 calls, host timers or model downloads are supplied or enabled by package import.
 
@@ -110,6 +110,14 @@ feed are not deleted or retired: RSS/Atom feeds can be sliding windows. Partial
 acceptance remains visible and is recorded as partial/failure until a later full
 attempt completes; this is not an atomic feed replacement or proof of source
 truth. See [ADR-0024](adr/0024-observed-source-reconciliation.md).
+
+A feed body is a container. When it changes, an item whose identity recomputed
+inside its current head's container equals that head is unchanged: the head is
+kept and no snapshot, document or outbox job is created. Every fetched body
+remains referenced by its run record. Returning to older item content inside a
+new container is a change from the current head and is recorded as a new
+version. Core v8 grants the collector only the digests needed for this
+comparison; see [ADR-0040](adr/0040-feed-item-version-reuse.md).
 
 Missing local cached evidence causes an unconditional fetch. Corrupt immutable files require explicit investigation;
 network re-fetch does not silently overwrite them. A missing prior object must

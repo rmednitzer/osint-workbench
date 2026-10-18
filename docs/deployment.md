@@ -22,7 +22,7 @@ still requires a separately controlled dependency supply chain.
 Provision a dedicated non-login `osint-workbench` OS account and group. Its
 collector database login inherits only `ow_collector`, without ADMIN OPTION and
 with no administrative, reader, writer, lifecycle, GC, recovery or migration
-identity attached. Core migration 6 supplies column-scoped collection grants.
+identity attached. Core migrations 6 and 8 supply column-scoped collection grants.
 Startup validation rejects missing/extra application privileges, delegation,
 unsafe memberships, ownership, filtered schemas and mismatched schema/defaults.
 The principal can insert accepted evidence and fixed-kind outbox jobs, but cannot

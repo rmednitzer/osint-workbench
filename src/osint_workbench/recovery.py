@@ -63,6 +63,7 @@ def _history(conn):
         "migrations/005_collection_schedule.sql",
         "migrations/006_collector_role.sql",
         "migrations/007_retired_record_purge.sql",
+        "migrations/008_collector_item_reuse.sql",
     ]
     expected = {
         str(i): digest(files("osint_workbench").joinpath(p).read_bytes())
@@ -305,20 +306,17 @@ def _read(path, expected_sha):
 
 
 def _known_legacy_history(observed, current, version):
-    """Only exact published core4/core5/core6 and optional profile2 digests.
+    """Only exact published core4-core7 with their optional profile2/profile3 digests.
 
     The current target history has already been checked against every packaged
     migration. Do not treat an arbitrary prefix, missing profile or unknown hash
-    as proof of a compatible earlier data contract.
+    as proof of a compatible earlier data contract. Core7 shipped with profile3.
     """
-    if version not in (4, 5, 6):
+    if version not in (4, 5, 6, 7):
         return False
     keys = {str(i) for i in range(1, version + 1)}
-    expected = {
-        key: value
-        for key, value in current.items()
-        if key in keys or key in {"retrieval/1", "retrieval/2"}
-    }
+    profile = {"retrieval/1", "retrieval/2"} | ({"retrieval/3"} if version == 7 else set())
+    expected = {key: value for key, value in current.items() if key in keys or key in profile}
     return observed == expected
 
 
@@ -344,7 +342,7 @@ def restore(
         history = _history(conn)
         _full_visibility(conn)
         names = CORE + (RETRIEVAL if "retrieval/1" in history else ())
-        # V6/V7 change defaults, grants and allowed lifecycle actions only.
+        # V6/V7/V8 change defaults, grants and allowed lifecycle actions only.
         # Exact known v5/v6 retain the same table layout; v4 needs an empty schedule.
         # No schema3/format1 inference or mixed migration history is accepted.
         adopted_v4 = _known_legacy_history(payload["migrations"], history, 4) and set(
@@ -354,6 +352,9 @@ def restore(
             tables
         ) == set(names)
         adopted_v6 = _known_legacy_history(payload["migrations"], history, 6) and set(
+            tables
+        ) == set(names)
+        adopted_v7 = _known_legacy_history(payload["migrations"], history, 7) and set(
             tables
         ) == set(names)
         if adopted_v4:
@@ -368,6 +369,7 @@ def restore(
                 and not adopted_v4
                 and not adopted_v5
                 and not adopted_v6
+                and not adopted_v7
             )
             or set(tables) != set(names)
             or _database_identity(conn, history) != payload["database"]
@@ -472,4 +474,5 @@ def restore(
         "adopted_core_v4": adopted_v4,
         "adopted_core_v5": adopted_v5,
         "adopted_core_v6": adopted_v6,
+        "adopted_core_v7": adopted_v7,
     }

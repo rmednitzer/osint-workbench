@@ -1,6 +1,7 @@
 """Actual isolated encoder-child packet handling, without pretrained artifacts."""
 
 import json
+import os
 import subprocess
 import sys
 
@@ -23,6 +24,7 @@ def invoke_child(packet):
             "OPENBLAS_NUM_THREADS": "1",
             "MKL_NUM_THREADS": "1",
             "TOKENIZERS_PARALLELISM": "false",
+            "OW_INFERENCE_PARENT": str(os.getpid()),
         },
     )
     assert len(result.stdout) < 16384 and result.stderr == b""

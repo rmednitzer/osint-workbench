@@ -1,6 +1,7 @@
 """Local ONNX pair scoring. Scores order candidates; they are not confidence."""
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -10,6 +11,7 @@ from pydantic import Field
 
 from .contracts import Digest, StrictModel
 from .errors import WorkbenchError
+from .inference_state import PARENT_ENV
 from .local_encoder import admission
 from .text import digest
 
@@ -69,6 +71,7 @@ class LocalReranker:
                         "OMP_NUM_THREADS": str(self.manifest.threads),
                         "OPENBLAS_NUM_THREADS": "1",
                         "TOKENIZERS_PARALLELISM": "false",
+                        PARENT_ENV: str(os.getpid()),
                     },
                     check=False,
                 )
@@ -76,18 +79,25 @@ class LocalReranker:
                 raise WorkbenchError("RERANK_TIMEOUT") from None
             output.seek(0)
             data = output.read(65537)
+        if result.returncode != 0:
+            try:
+                decoded = json.loads(data) if result.returncode > 0 else None
+            except ValueError:
+                decoded = None
+            code = decoded.get("error") if isinstance(decoded, dict) else None
+            if code not in {
+                "RERANK_INPUT_TOO_LONG",
+                "MODEL_INTEGRITY_MISMATCH",
+                "TOKENIZER_INTEGRITY_MISMATCH",
+                "RERANK_INCOMPATIBLE",
+                "INFERENCE_PARENT_UNBOUND",
+            }:
+                code = "RERANK_UNAVAILABLE"
+            raise WorkbenchError(code)
         try:
             decoded = json.loads(data)
-            if result.returncode != 0:
-                code = decoded.get("error")
-                if code not in {
-                    "RERANK_INPUT_TOO_LONG",
-                    "MODEL_INTEGRITY_MISMATCH",
-                    "TOKENIZER_INTEGRITY_MISMATCH",
-                    "RERANK_INCOMPATIBLE",
-                }:
-                    code = "RERANK_UNAVAILABLE"
-                raise WorkbenchError(code)
+            if not isinstance(decoded, dict) or not isinstance(decoded.get("scores"), list):
+                raise ValueError
             scores = decoded["scores"]
             import math
 

@@ -97,16 +97,28 @@ def test_proposals_review_cited_product_rejection_and_source_updates(databases, 
 
 @pytest.mark.parametrize(
     "claims",
-    [[claim("Fabricated quotation")], [{**claim(), "shell": "forbidden"}], [claim(), claim()]],
+    [
+        [claim("Fabricated quotation")],
+        [{**claim(), "shell": "forbidden"}],
+        [claim(), claim()],
+        [claim(), {**claim(), "subject": "stor\x00age"}],
+        [{**claim(), "statement": "The source says\x00 storage is unavailable."}],
+    ],
 )
 def test_invalid_models_accept_no_partial_assertions(databases, tmp_path, claims):
     writer, reader, roles, store, doc = setup(databases, tmp_path)
     generator = FixtureGenerator(claims)
     intel.enqueue(writer, generator, doc)
-    assert intel.enrich_once(writer, store, generator)["status"] == "failed"
+    result = intel.enrich_once(writer, store, generator)
+    assert result["status"] == "failed"
     assert intel.assertions(reader)["results"] == []
     with psycopg.connect(roles["admin"]) as conn:
         assert conn.execute("SELECT count(*) FROM ow.enrichments").fetchone()[0] == 0
+    if any("\x00" in str(value) for c in claims for value in c.values()):
+        # Deterministic invalid output is terminal: inference is not rerun.
+        assert result["error"] == "INVALID_MODEL_RESULT"
+        assert intel.enrich_once(writer, store, generator)["status"] == "idle"
+        assert len(generator.calls) == 1
 
 
 def test_abstention_and_cancelled_completion_are_distinct(databases, tmp_path):
@@ -196,3 +208,45 @@ def test_explicit_resubmission_keeps_failed_operation_history(databases, tmp_pat
             == "failed"
         )
     assert len(intel.assertions(reader)["results"]) == 1
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("statement", "The source says storage is fully available."),
+        ("polarity", "asserted"),
+        ("source_id", "other-source"),
+        ("document_id", "0" * 64),
+        ("assertion_id", None),
+        ("degraded", True),
+    ],
+)
+def test_self_consistent_briefing_cannot_misstate_its_cited_assertion(
+    databases, tmp_path, field, value
+):
+    writer, reader, roles, store, doc = setup(databases, tmp_path)
+    generator = FixtureGenerator([claim()])
+    intel.enqueue(writer, generator, doc)
+    intel.enrich_once(writer, store, generator)
+    row = intel.assertions(reader)["results"][0]
+    intel.review(writer, row["assertion_id"], "accept", "fixture-reviewer", "Reviewed")
+    genuine = intel.create_briefing(writer, [doc])
+    service = ReadService(reader, EvidenceStore(store.root, read_only=True))
+    assert service.briefing(genuine["briefing_id"])["items"][0]["statement"] == row["statement"]
+    # A writer-authority row can carry a recomputed digest over altered content.
+    content = {k: v for k, v in genuine.items() if k != "briefing_id"}
+    if field == "degraded":
+        content["degraded"] = value
+    elif value is None:
+        content["items"] = [{k: v for k, v in content["items"][0].items() if k != field}]
+    else:
+        content["items"] = [{**content["items"][0], field: value}]
+    forged = digest(json.dumps(content, sort_keys=True).encode())
+    with psycopg.connect(roles["admin"]) as conn:
+        conn.execute(
+            "INSERT INTO ow.briefings VALUES (%s,%s,DEFAULT)",
+            (forged, psycopg.types.json.Jsonb(content)),
+        )
+    with pytest.raises(WorkbenchError, match="BRIEFING_EVIDENCE_MISMATCH"):
+        service.briefing(forged)
+    assert service.briefing(genuine["briefing_id"])["briefing_id"] == genuine["briefing_id"]

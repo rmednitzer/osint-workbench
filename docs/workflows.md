@@ -38,7 +38,7 @@ untrusted. A parser failure does not overwrite last success or erase partial evi
 
 Published migrations are immutable. The runner verifies applied digests, refuses
 unknown/gapped histories and applies additive versions under its transaction and
-advisory lock. The current supported pair is core v7/retrieval v3. Roll forward;
+advisory lock. The current supported pair is core v8/retrieval v3. Roll forward;
 do not run an older worker against newer state or silently delete workflow history.
 Before deployment, preserve the database/object pair and verify isolated restore.
 Bounded [recovery](recovery.md), [lifecycle](lifecycle.md), [GC](garbage-collection.md)

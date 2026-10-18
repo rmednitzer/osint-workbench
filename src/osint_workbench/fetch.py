@@ -16,7 +16,7 @@ import time
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from email.utils import format_datetime, parsedate_to_datetime
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import urldefrag, urljoin, urlsplit
 
 import httpcore
 
@@ -134,6 +134,14 @@ def validate_url(url: str) -> tuple[str, int]:
     return host, port
 
 
+def _single_header(headers, name: bytes, code: str):
+    # Repeated framing fields are ambiguous; never let the last occurrence win.
+    values = [value for key, value in headers if key.lower() == name]
+    if len(values) > 1:
+        raise WorkbenchError(code)
+    return values[0] if values else None
+
+
 def public_addresses(addresses: list[str]) -> list[str]:
     addresses = _bounded_dns_addresses(addresses)
     if not addresses:
@@ -153,6 +161,7 @@ def public_addresses(addresses: list[str]) -> list[str]:
             or value.is_reserved
             or value.is_loopback
             or value.is_link_local
+            or (isinstance(value, ipaddress.IPv6Address) and value.is_site_local)
         ):
             raise WorkbenchError("DESTINATION_BLOCKED")
         canonical = str(value)
@@ -404,12 +413,16 @@ def fetch_response(
                         }
                     },
                 ) as response:
-                    headers = {k.lower(): v for k, v in response.headers}
                     if response.status in {301, 302, 303, 307, 308}:
-                        location = headers.get(b"location")
+                        location = _single_header(response.headers, b"location", "INVALID_REDIRECT")
                         if location is None:
                             raise WorkbenchError("INVALID_REDIRECT")
-                        target = urljoin(current, location.decode("ascii"))
+                        try:
+                            relative = location.decode("ascii")
+                        except UnicodeDecodeError:
+                            raise WorkbenchError("INVALID_REDIRECT") from None
+                        # A fragment is client-side only and never sent on the wire.
+                        target = urldefrag(urljoin(current, relative)).url
                         if (
                             urlsplit(current).scheme == "https"
                             and urlsplit(target).scheme != "https"
@@ -450,7 +463,10 @@ def fetch_response(
                         ):
                             raise WorkbenchError("VALIDATOR_MISMATCH")
                         return FetchResult(304, b"", new_etag, new_modified)
-                    if headers.get(b"content-encoding", b"identity").lower() != b"identity":
+                    encoding = _single_header(
+                        response.headers, b"content-encoding", "UNSUPPORTED_CONTENT_ENCODING"
+                    )
+                    if encoding is not None and encoding.lower() != b"identity":
                         raise WorkbenchError("UNSUPPORTED_CONTENT_ENCODING")
                     body = bytearray()
                     for chunk in response.iter_stream():
