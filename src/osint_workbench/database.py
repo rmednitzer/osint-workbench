@@ -102,6 +102,7 @@ class Database:
                         "assertion_reviews",
                         "retrieval_vectors",
                         "retrieval_members",
+                        "retrieval_exclusions",
                         "lifecycle_control",
                         "lifecycle_items",
                         "lifecycle_holds",

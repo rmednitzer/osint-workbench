@@ -86,7 +86,10 @@ class Runtime:
             raise WorkbenchError("ENCODER_INCOMPATIBLE")
         vector = np.asarray(vector, dtype=np.float32)
         norm = float(np.linalg.norm(vector))
-        if not np.isfinite(norm) or norm == 0:
+        if not np.isfinite(norm):
+            # Overflow or non-finite output is a model/runtime fault, never content.
+            raise WorkbenchError("INVALID_EMBEDDING_VECTOR")
+        if norm == 0:
             raise WorkbenchError("INVALID_EMBEDDING_NORM")
         result = (vector / norm).tolist()
         self.manifest.space.validate_vector(result)
@@ -103,7 +106,8 @@ class Runtime:
         overhead = len(self.tokenizer.encode(template.replace("{text}", "")).ids)
         budget = self.manifest.max_tokens - overhead - 4
         if budget <= self.manifest.overlap_tokens:
-            raise WorkbenchError("ENCODER_INPUT_TOO_LONG")
+            # The manifest leaves no room to chunk any document.
+            raise WorkbenchError("ENCODER_INCOMPATIBLE")
         result, start_token = [], 0
         while start_token < len(offsets):
             end_token = min(len(offsets), start_token + budget)

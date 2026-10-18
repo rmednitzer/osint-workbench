@@ -24,6 +24,7 @@ def migrate_retrieval(dsn):
             "retrieval.sql",
             "migrations/retrieval_002_lifecycle.sql",
             "migrations/retrieval_003_purge_role.sql",
+            "migrations/retrieval_004_member_exclusions.sql",
         )
     ]
     with psycopg.connect(dsn) as conn:
@@ -63,6 +64,44 @@ def corpus(conn, *, bodies=False):
         "SELECT " + columns + " FROM ow.active_documents ORDER BY document_id"  # noqa: S608
     ).fetchall()
     return rows, digest(json.dumps([r["document_id"] for r in rows]).encode())
+
+
+# Encoder refusals determined by document content under a fixed manifest. Any
+# other failure (integrity, compatibility, timeout, availability) fails the build.
+EXCLUSION_REASONS = frozenset(
+    {
+        "INVALID_ENCODER_INPUT",
+        "ENCODER_PACKET_TOO_LARGE",
+        "ENCODER_INPUT_TOO_LONG",
+        "TOKEN_OFFSETS_UNSUPPORTED",
+        "ENCODER_CHUNK_LIMIT",
+        "ENCODER_RESULT_LIMIT",
+        # A chunk of only unknown tokens can pool to a zero vector.
+        "INVALID_EMBEDDING_NORM",
+    }
+)
+
+# Each member has exactly one disposition: vectors or an explicit exclusion.
+_UNACCOUNTED = """SELECT 1 FROM ow.retrieval_members m WHERE generation_id=%s
+    AND EXISTS (SELECT 1 FROM ow.retrieval_vectors v
+    WHERE v.generation_id=m.generation_id AND v.document_id=m.document_id)
+    = EXISTS (SELECT 1 FROM ow.retrieval_exclusions e
+    WHERE e.generation_id=m.generation_id AND e.document_id=m.document_id) LIMIT 1"""
+
+
+def _profile_current(conn):
+    # A newer binary on an unmigrated profile must fail typed, never with raw SQL.
+    return (
+        conn.execute("SELECT to_regclass('ow.visible_retrieval_exclusions') AS v").fetchone()["v"]
+        is not None
+    )
+
+
+def _excluded(conn, generation_id):
+    return conn.execute(
+        "SELECT count(*) AS n FROM ow.visible_retrieval_exclusions WHERE generation_id=%s",
+        (generation_id,),
+    ).fetchone()["n"]
 
 
 class VectorIndex:
@@ -107,16 +146,27 @@ class VectorIndex:
             )
         try:
             count = 0
+            excluded = {}
             for row in rows:
                 snapshot = self.db.snapshot(row["snapshot_id"])
                 raw_text = store.get(snapshot["text_sha256"])
                 store.get(snapshot["raw_sha256"])
                 if digest(row["body"].encode()) != digest(raw_text):
                     raise WorkbenchError("DOCUMENT_INTEGRITY_MISMATCH")
+                reason = None
                 with self.db.connect() as authority:
                     self._building(authority, generation)
                     assert_document_visible(authority, row["document_id"])
-                    vectors = self.encoder.chunks(raw_text.decode("utf-8"))
+                    try:
+                        vectors = self.encoder.chunks(raw_text.decode("utf-8"))
+                    except WorkbenchError as exc:
+                        if exc.code not in EXCLUSION_REASONS:
+                            raise
+                        vectors, reason = [], exc.code
+                if reason is not None:
+                    excluded[reason] = excluded.get(reason, 0) + 1
+                    if 2 * sum(excluded.values()) > len(rows):
+                        raise WorkbenchError("RETRIEVAL_EXCLUSION_LIMIT")
                 count += len(vectors)
                 if count > 4096:
                     raise WorkbenchError("REFERENCE_CHUNK_LIMIT")
@@ -127,6 +177,11 @@ class VectorIndex:
                         "INSERT INTO ow.retrieval_members VALUES (%s,%s)",
                         (generation, row["document_id"]),
                     )
+                    if reason is not None:
+                        conn.execute(
+                            "INSERT INTO ow.retrieval_exclusions VALUES (%s,%s,%s)",
+                            (generation, row["document_id"], reason),
+                        )
                     for ordinal, vector in enumerate(vectors):
                         start, end = vector["start"], vector["end"]
                         if (
@@ -160,13 +215,11 @@ class VectorIndex:
                     "WHERE generation_id=%s ORDER BY document_id",
                     (generation,),
                 ).fetchall()
-                missing = conn.execute(
-                    """SELECT 1 FROM ow.retrieval_members m WHERE generation_id=%s
-                    AND NOT EXISTS (SELECT 1 FROM ow.retrieval_vectors v
-                    WHERE v.generation_id=m.generation_id AND v.document_id=m.document_id)
-                    LIMIT 1""",
+                missing = conn.execute(_UNACCOUNTED, (generation,)).fetchone()
+                recorded = conn.execute(
+                    "SELECT count(*) AS n FROM ow.retrieval_exclusions WHERE generation_id=%s",
                     (generation,),
-                ).fetchone()
+                ).fetchone()["n"]
                 actual_chunks = conn.execute(
                     "SELECT count(*) AS n FROM ow.retrieval_vectors WHERE generation_id=%s",
                     (generation,),
@@ -177,6 +230,8 @@ class VectorIndex:
                     stored != [{"document_id": row["document_id"]} for row in rows]
                     or missing
                     or actual_chunks != count
+                    or recorded != sum(excluded.values())
+                    or count == 0
                 ):
                     raise WorkbenchError("INCOMPLETE_RETRIEVAL_GENERATION")
                 ready = conn.execute(
@@ -191,6 +246,8 @@ class VectorIndex:
                 "space_id": self.space_id,
                 "documents": len(rows),
                 "chunks": count,
+                "excluded_documents": sum(excluded.values()),
+                "exclusion_reasons": dict(sorted(excluded.items())),
                 "status": "ready",
             }
         except Exception as exc:
@@ -224,12 +281,7 @@ class VectorIndex:
             ).fetchall()
             if sha != row["corpus_sha256"] or stored != members or not members:
                 raise WorkbenchError("STALE_RETRIEVAL_GENERATION")
-            missing = conn.execute(
-                """SELECT 1 FROM ow.retrieval_members m
-                WHERE generation_id=%s AND NOT EXISTS (SELECT 1 FROM ow.retrieval_vectors v
-                WHERE v.generation_id=m.generation_id AND v.document_id=m.document_id) LIMIT 1""",
-                (identifier,),
-            ).fetchone()
+            missing = conn.execute(_UNACCOUNTED, (identifier,)).fetchone()
             if missing:
                 raise WorkbenchError("INCOMPLETE_RETRIEVAL_GENERATION")
             conn.execute(
@@ -247,10 +299,13 @@ class VectorIndex:
             ).fetchone()["relation"]
             if exists is None:
                 return {"retrieval": "hybrid-exact", "retrieval_state": "unconfigured"}
+            if not _profile_current(conn):
+                return {"retrieval": "hybrid-exact", "retrieval_state": "migration_required"}
             row = conn.execute("""SELECT g.space_id,g.generation_id,g.status
                 FROM ow.retrieval_active a JOIN ow.retrieval_generations g
                 USING(generation_id)""").fetchone()
             return {
+                "excluded_documents": _excluded(conn, row["generation_id"]) if row else None,
                 "retrieval": "hybrid-exact",
                 "retrieval_state": "unconfigured"
                 if not row
@@ -274,6 +329,8 @@ class VectorIndex:
                                    USING(generation_id)""").fetchone()
             if not active:
                 raise WorkbenchError("RETRIEVAL_UNCONFIGURED")
+            if not _profile_current(conn):
+                raise WorkbenchError("RETRIEVAL_MIGRATION_REQUIRED")
             if active["space_id"] != self.space_id or active["status"] != "ready":
                 raise WorkbenchError("INCOMPATIBLE_GENERATION")
             vector = self.encoder.query(query)
@@ -316,6 +373,8 @@ class VectorIndex:
                 "strategy": "hybrid-exact",
                 "generation_id": str(active["generation_id"]),
                 "space_id": self.space_id,
+                # Excluded documents are reachable lexically, never semantically.
+                "excluded_documents": _excluded(conn, active["generation_id"]),
                 "degraded": drifted,
                 "degradation_reason": "CORPUS_CHANGED" if drifted else None,
                 "results": results,

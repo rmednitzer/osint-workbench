@@ -61,3 +61,61 @@ def test_shared_admission_refuses_overlap_and_recovers(encoder_bundle, tmp_path,
     finally:
         os.close(fd)
     assert encoder_bundle.query("storage") == [1.0, 0.0, 0.0]
+
+
+def _variant(encoder_bundle, tmp_path, weights):
+    """Rebuild the synthetic oracle with altered weights; same tokenizer and graph."""
+    import numpy as np
+    from onnx import TensorProto, helper, numpy_helper
+
+    from osint_workbench.local_encoder import LocalEncoder
+
+    graph = helper.make_graph(
+        [helper.make_node("Gather", ["weights", "input_ids"], ["tokens"], axis=0)],
+        "synthetic-variant",
+        [helper.make_tensor_value_info("input_ids", TensorProto.INT64, [1, "sequence"])],
+        [helper.make_tensor_value_info("tokens", TensorProto.FLOAT, [1, "sequence", 3])],
+        [numpy_helper.from_array(np.asarray(weights, dtype=np.float32), "weights")],
+    )
+    model = helper.make_model(graph, opset_imports=[helper.make_opsetid("", 17)], ir_version=10)
+    data = model.SerializeToString()
+    path = tmp_path / "variant.onnx"
+    path.write_bytes(data)
+    manifest = encoder_bundle.manifest
+    space = manifest.space.model_copy(update={"model_revision": digest(data)})
+    return LocalEncoder(
+        manifest.model_copy(
+            update={"model_path": str(path), "model_sha256": digest(data), "space": space}
+        )
+    )
+
+
+def test_non_finite_model_output_is_a_runtime_fault_not_a_content_refusal(encoder_bundle, tmp_path):
+    inf = float("inf")
+    weights = [
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0],
+        [1, 0, 0],
+        [1, 0, 0],
+        [0, 1, 0],
+        [inf, 0, 0],
+        [0, 0, 1],
+    ]
+    encoder = _variant(encoder_bundle, tmp_path, weights)
+    with pytest.raises(WorkbenchError, match="^INVALID_EMBEDDING_VECTOR$"):
+        encoder.query("patch")
+    # A finite zero vector from unknown-only content stays a content refusal.
+    with pytest.raises(WorkbenchError, match="^INVALID_EMBEDDING_NORM$"):
+        encoder.query("unrecognized")
+
+
+def test_manifest_without_chunk_budget_is_incompatible(encoder_bundle):
+    from osint_workbench.local_encoder import LocalEncoder
+
+    # Template overhead, not document content, leaves no room for a chunk.
+    base = encoder_bundle.manifest
+    space = base.space.model_copy(update={"document_template": "{text} storage disk patch storage"})
+    manifest = base.model_copy(update={"overlap_tokens": 7, "space": space})
+    with pytest.raises(WorkbenchError, match="^ENCODER_INCOMPATIBLE$"):
+        LocalEncoder(manifest).chunks("storage disk")

@@ -56,3 +56,5 @@ isolation, identity mismatch, switching, rollback and corpus drift. Semantic qua
 ANN, reranking, caches, background backfill/resumption, GPU/generation serving and
 complete recovery remain required. See STATUS.md and docs/local-retrieval.md.
 > Implementation follow-up (2026-10-17): [ADR-0019](0019-proposals-and-local-generation.md) implements bounded native local pair scoring. Persistent caches, ANN, automatic backfill and pretrained semantic acceptance remain open; pending statements in the original record retain this ADR's original increment scope.
+
+> Successor note (2026-10-18): [ADR-0041](0041-explicit-retrieval-exclusions.md) records content-refused documents as explicit generation exclusions; activation accepts a member with either vectors or a recorded exclusion.

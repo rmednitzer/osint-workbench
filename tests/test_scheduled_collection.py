@@ -15,7 +15,7 @@ from osint_workbench.errors import WorkbenchError
 from osint_workbench.evidence import EvidenceStore
 from osint_workbench.text import digest
 from tests.test_recovery import destination as destination
-from tests.test_recovery import policy_arguments
+from tests.test_recovery import policy_arguments, published_pair
 from tests.test_workflows import FEED
 
 MODIFIED = "Wed, 14 Oct 2026 12:00:00 GMT"
@@ -271,11 +271,7 @@ def test_restore_resets_http_state_and_adopts_known_v4_layout(
         assert not conn.execute("SELECT enabled FROM ow.sources").fetchone()["enabled"]
     # Reconstruct the exact published v4 table/column contract with its original hashes.
     bundle = json.loads(path.read_text())
-    bundle["payload"]["migrations"].pop("5")
-    bundle["payload"]["migrations"].pop("6")
-    bundle["payload"]["migrations"].pop("7")
-    bundle["payload"]["migrations"].pop("8")
-    bundle["payload"]["migrations"].pop("retrieval/3", None)
+    published_pair(bundle["payload"], 4)
     bundle["payload"]["tables"].pop("collection_state")
     for row in bundle["payload"]["tables"]["collection_runs"]:
         row.pop("http_status")

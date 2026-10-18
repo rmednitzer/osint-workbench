@@ -588,6 +588,7 @@ composition remain bounded by their separate acceptance evidence.
 | U92 | CA15/P: serve a briefing whose digest is self-consistent but whose items misstate the accepted assertions they cite | H8; C92: every read compares each cited item with the live accepted assertion projection | Writer-authority forged statement, polarity and source cases |
 | U93 | CA10/P: release single-slot inference admission when the admitting parent dies while its model child continues computing | H9; C93: children bind their own lifetime to the expected admitting parent and refuse unbound work; exits are classified before result decoding | Actual SIGKILL of an intermediate parent with a blocked child, unbound-child refusal and exit/shape classification cases |
 | U94 | CA10/P: retry deterministic invalid model output as a backend fault | H9; C94: unstorable model text is invalid model output and terminal | NUL claim cases leave no assertions and do not rerun inference |
+| U95 | CA9/P or CA7/N: let one content-refused document block every index generation, or hide its absence from semantic coverage | H2,H8; C95: content-determined encoder refusals become recorded member exclusions with fixed reasons; runtime failures and a majority-excluded corpus still fail; coverage is reported | Real-encoder zero-width and over-length exclusions, majority and runtime-failure refusals, purge and profile3 adoption cases |
 
 The U89 scenario starts with a feed that changes one entry or a channel
 timestamp at every poll. Hash identity correctly distinguishes containers, but
