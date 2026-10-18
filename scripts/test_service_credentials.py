@@ -28,11 +28,36 @@ PROBE = r"""
 import hashlib
 import json
 import os
+import stat
 import sys
 import time
 from pathlib import Path
 
 stage = "IMPORT"
+def structure():
+    selected = os.environ.get("CREDENTIALS_DIRECTORY", "")
+    directory = Path(selected)
+    if not directory.is_absolute() or len(directory.parts) > 128:
+        return []
+    target = directory / "source-token"
+    entries = []
+    for index, path in enumerate([*reversed(target.parents), target]):
+        try:
+            info = path.lstat()
+        except OSError:
+            break
+        owner = "root" if info.st_uid == 0 else (
+            "self" if info.st_uid == os.geteuid() else "other")
+        kind = "directory" if stat.S_ISDIR(info.st_mode) else (
+            "file" if stat.S_ISREG(info.st_mode) else (
+            "symlink" if stat.S_ISLNK(info.st_mode) else "other"))
+        entries.append({"index": index, "kind": kind, "owner": owner,
+                        "mode": stat.S_IMODE(info.st_mode), "single_link": info.st_nlink == 1,
+                        "bounded_size": 1 <= info.st_size <= 4096})
+        if kind not in {"directory", "file"}:
+            break
+    return entries
+
 def safe_exception(kind, value, traceback):
     code = getattr(value, "code", None)
     if code not in {"CREDENTIAL_UNAVAILABLE", "CREDENTIAL_UNSAFE", "CREDENTIAL_INVALID"}:
@@ -54,6 +79,7 @@ require(not any(key.startswith("OW_") for key in os.environ))
 if case == "positive":
     print("CREDENTIAL_PROBE_STARTED", flush=True)
     stage = "RESOLVE"
+    print("CREDENTIAL_PROBE_STRUCTURE=" + json.dumps(structure()), file=sys.stderr, flush=True)
     secret = resolve_credential(CredentialRef(kind="systemd", name="source-token"))
     stage = "TOKEN"
     require(hashlib.sha256(secret.get_secret_value().encode()).hexdigest() == expected)
@@ -133,6 +159,7 @@ def run(argv, *, timeout=15, allowed=(0,)):
 def producer_failure(process):
     """Classify only an authored fixed marker; captured output is never relayed."""
     _, error = process.communicate(timeout=5)
+    report_structure(error)
     pattern = re.compile(
         r"CREDENTIAL_PROBE_FAILURE=(IMPORT|CONTEXT|RESOLVE|TOKEN|READY|WAIT|DENIAL|ISOLATION):"
         r"(CREDENTIAL_UNAVAILABLE|CREDENTIAL_UNSAFE|CREDENTIAL_INVALID|ASSERTION|UNEXPECTED)"
@@ -149,6 +176,37 @@ def producer_failure(process):
         218: "DELIVERY_SYSTEMD_CAPABILITIES_FAILED",
         226: "DELIVERY_SYSTEMD_NAMESPACE_FAILED",
     }.get(process.returncode, "DELIVERY_SERVICE_FAILED")
+
+
+def report_structure(error):
+    """Permit only bounded structural categories, never paths, UIDs or values."""
+    marker = "CREDENTIAL_PROBE_STRUCTURE="
+    fields = {"index", "kind", "owner", "mode", "single_link", "bounded_size"}
+    for line in error.splitlines():
+        if not line.startswith(marker) or len(line) > 32768:
+            continue
+        try:
+            entries = json.loads(line.removeprefix(marker))
+            if not isinstance(entries, list) or not 1 <= len(entries) <= 130:
+                continue
+            for entry in entries:
+                if not isinstance(entry, dict) or set(entry) != fields:
+                    raise ValueError
+                if not (
+                    type(entry["index"]) is int
+                    and 0 <= entry["index"] < 130
+                    and entry["kind"] in {"directory", "file", "symlink", "other"}
+                    and entry["owner"] in {"root", "self", "other"}
+                    and type(entry["mode"]) is int
+                    and 0 <= entry["mode"] <= 0o7777
+                    and type(entry["single_link"]) is bool
+                    and type(entry["bounded_size"]) is bool
+                ):
+                    raise ValueError
+        except (ValueError, TypeError, KeyError):
+            continue
+        print("PUBLIC_CREDENTIAL_STRUCTURE=" + json.dumps(entries), flush=True)
+        return
 
 
 def acceptance(venv):

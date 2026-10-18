@@ -87,3 +87,47 @@ def test_actual_failed_producer_exposes_only_authored_fixed_diagnostic(marker, e
     assert helper.producer_failure(process) == expected
     captured = capsys.readouterr()
     assert captured.out == captured.err == ""
+
+
+def test_structural_diagnostic_accepts_only_bounded_metadata(capsys):
+    helper = _helper()
+    entry = {
+        "index": 4,
+        "kind": "file",
+        "owner": "self",
+        "mode": 0o400,
+        "single_link": True,
+        "bounded_size": True,
+    }
+    helper.report_structure("CREDENTIAL_PROBE_STRUCTURE=" + json.dumps([entry]))
+    captured = capsys.readouterr()
+    assert captured.err == ""
+    assert captured.out.startswith("PUBLIC_CREDENTIAL_STRUCTURE=")
+    assert json.loads(captured.out.removeprefix("PUBLIC_CREDENTIAL_STRUCTURE=")) == [entry]
+
+
+@pytest.mark.parametrize(
+    "changed",
+    [
+        {"path": "/private-canary"},
+        {"owner": "private-canary"},
+        {"index": 1000},
+        {"kind": {"private-canary": True}},
+        {"mode": "0400"},
+        {"single_link": 1},
+    ],
+)
+def test_structural_diagnostic_rejects_extra_sensitive_or_malformed_data(changed, capsys):
+    helper = _helper()
+    entry = {
+        "index": 4,
+        "kind": "file",
+        "owner": "self",
+        "mode": 0o400,
+        "single_link": True,
+        "bounded_size": True,
+        **changed,
+    }
+    helper.report_structure("CREDENTIAL_PROBE_STRUCTURE=" + json.dumps([entry]))
+    captured = capsys.readouterr()
+    assert captured.out == captured.err == ""
