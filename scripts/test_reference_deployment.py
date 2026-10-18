@@ -1255,7 +1255,9 @@ def api_service_acceptance(account, units, shared_gid, owned):
             raise Rejected("KEV_INVALID_RAW_ADMITTED")
         command(["systemctl", "start", WORK_SERVICE], timeout=30)
         require(all(j["status"] == "succeeded" for j in state()[3]), "KEV_WORKER_FAILURE")
-        write_private(probe, API_READ_PROBE + KEV_READ_PROBE, mode=0o644)
+        # The fixture already owns this root-written probe and the preceding
+        # synchronous oneshot reader has exited. Preserve its existing mode.
+        probe.write_text(API_READ_PROBE + KEV_READ_PROBE)
         command(["systemctl", "start", HEALTH_SERVICE], timeout=30)
     return {
         "api_https_service_tested": True,
