@@ -1,4 +1,4 @@
-"""Offline, bounded build integrity and installed dependency inventory; not an SBOM."""
+"""Offline, bounded build integrity receipt binding a separately verified SBOM."""
 
 import argparse
 import hashlib
@@ -12,7 +12,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-FORMAT = "osint-workbench-build-evidence-v1"
+FORMAT = "osint-workbench-build-evidence-v2"
+SUPPLEMENTS = frozenset({"sbom.cdx.json", "licence-review.json"})
 MAX_MANIFEST = 4 * 1024 * 1024
 MAX_PACKAGES = 512
 MAX_INPUT_BYTES = 256 * 1024 * 1024
@@ -152,7 +153,19 @@ def artifact_inventory(directory):
     return [file_identity(path) for path in paths]
 
 
-def manifest(root, artifacts, lock, environ):
+def supplementary_inventory(directory):
+    if directory is None:
+        return []
+    if {path.name for path in directory.iterdir()} != SUPPLEMENTS:
+        raise EvidenceError("EVIDENCE_SUPPLEMENT_SET_REFUSED")
+    result = []
+    for name in sorted(SUPPLEMENTS):
+        size, digest, _ = read_regular(directory / name, MAX_MANIFEST)
+        result.append({"filename": name, "bytes": size, "sha256": digest})
+    return result
+
+
+def manifest(root, artifacts, lock, environ, supplements=None):
     if lock.name != "uv.lock":
         raise EvidenceError("EVIDENCE_LOCK_REFUSED")
     return {
@@ -169,8 +182,10 @@ def manifest(root, artifacts, lock, environ):
         "inventory_scope": (
             "All installed distributions in a caller-prepared runtime+retrieval environment"
         ),
+        "assurance_profile": "python-sbom-and-licence-review" if supplements else "integrity-only",
+        "related_evidence": supplementary_inventory(supplements),
         "limitations": [
-            "Integrity receipt, not a signature, attestation, or standards-conformant SBOM",
+            "Integrity receipt; separately verified SBOM and licence report are bound by digest",
             "License metadata is publisher-declared and is not a reviewed legal disposition",
             "License expressions are recorded without SPDX syntax or identifier validation",
             "Inventory scope depends on the caller preparing the documented isolated environment",
@@ -206,9 +221,10 @@ def main():
     parser.add_argument("--artifacts", type=Path, required=True)
     parser.add_argument("--lock", type=Path, default=Path("uv.lock"))
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--supplements", type=Path)
     args = parser.parse_args()
     try:
-        document = manifest(Path.cwd(), args.artifacts, args.lock, os.environ)
+        document = manifest(Path.cwd(), args.artifacts, args.lock, os.environ, args.supplements)
         if args.action == "generate":
             write_evidence(document, args.output)
         else:

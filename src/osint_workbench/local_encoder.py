@@ -2,11 +2,9 @@
 
 import json
 import os
-import stat
 import subprocess
 import sys
 import tempfile
-from contextlib import contextmanager
 from pathlib import Path
 from typing import Literal
 
@@ -14,6 +12,7 @@ from pydantic import Field, model_validator
 
 from .contracts import StrictModel
 from .errors import WorkbenchError
+from .inference_state import admission as admission
 from .query_flights import QueryFlights
 from .retrieval import EmbeddingSpace
 from .text import digest
@@ -21,28 +20,6 @@ from .text import digest
 MAX_INPUT = 200000
 MAX_PACKET_BYTES = 2 * 1024 * 1024
 MAX_RESULT = 16 * 1024 * 1024
-
-
-@contextmanager
-def admission(*, allow_uncertain=False):
-    import fcntl
-
-    # Reviewed: no-follow open and regular-file/owner checks below; peers need one stable inode.
-    path = os.environ.get("OW_INFERENCE_LOCK", f"/tmp/ow-inference-{os.getuid()}.lock")  # noqa: S108
-    fd = os.open(path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW | os.O_NONBLOCK, 0o600)
-    try:
-        info = os.fstat(fd)
-        if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid():
-            raise WorkbenchError("INFERENCE_LOCK_UNSAFE")
-        try:
-            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError:
-            raise WorkbenchError("INFERENCE_BUSY") from None
-        if not allow_uncertain and os.path.lexists(path + ".unknown"):
-            raise WorkbenchError("INFERENCE_OUTCOME_UNKNOWN")
-        yield path
-    finally:
-        os.close(fd)
 
 
 class EncoderManifest(StrictModel):

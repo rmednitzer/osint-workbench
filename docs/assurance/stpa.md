@@ -497,3 +497,24 @@ completed cache. This contributes to E10/E23/E34/E39 without closing them.
 | U78 | Release inference authority when a follower times out, or leave followers blocked after owner failure | C78: follower wait has its own bound; only owner controls computation; every owner exit wakes followers and removes flight | Timeout during blocked owner, typed/unexpected failure, retry and native admission tests |
 | U79 | Admit unbounded duplicate waiters or reuse an inherited locked instance after fork | C79: bounded distinct owners and aggregate waiters, fail-fast refusal and PID guard before mutex | Capacity refusal and actual fork while parent mutex is held |
 | U80 | Treat a completed query result as indefinitely valid after artifact or policy changes | C80: remove completed flights, reverify later native calls, and preserve per-search database/lifecycle checks | Native model tamper after completed identical query; existing lifecycle/retrieval suite |
+
+## Inference custody and build evidence refinement
+
+[ADR-0037](../adr/0037-inference-custody-python-sbom.md) refines local inference
+authority and publication evidence. These constraints retain the trusted-account
+and public-build-input assumptions; they do not establish an adversarial same-UID
+sandbox, legal clearance or complete native composition.
+
+| UCA | Hazardous context / category | Derived constraint and allocation | Discriminating evidence |
+| --- | --- | --- | --- |
+| U81 | Release admission or remove a substituted reservation after locking another inode or parent | C81: anchored no-follow directory operations, safe custody, stable lock/parent identity and observed receipt bytes/identity before removal | Real symlink/FIFO/hardlink, replacement, parent/lock rename, crash and native terminal-response cases |
+| U82 | Reconcile an unreadable prior process as terminated and dispatch overlapping inference | C82: unavailable start identity remains unknown unless the kernel proves no such process; preserve verified PID-reuse and current idle-peer rules | Live/denied/error probes retain marker; actual exited process and verified reuse permit bounded recovery |
+| U83 | Publish signed evidence as proof of complete dependencies or legal redistribution despite omitted native bundles or missing notices | C83: exact installed inventory, strict schema/regeneration checks, explicit incomplete composition and version/text-specific unresolved dispositions | Schema/graph tamper controls, changed evidence/version refusal and documented native/upstream-only gaps |
+| U84 | Sign supplementary reports unrelated to the tested public source/runtime or allow PR code signing authority | C84: final v2 digest binding, exact six-file set, all native/policy gates and isolated main-only signer | Source/hash mutation refusal, PR/main permission and provenance identity verification |
+
+An unavailable process-start token can follow either exit or access failure;
+equating those observations creates U82. A valid JSON SBOM can omit valid graph
+edges, and a valid signature can bind incomplete or misleading content; schema
+validation alone therefore cannot close U83/U84. Regeneration, reviewed policy,
+explicit limits and independently verified signing identity provide distinct
+feedback. Exact successful results remain revision-bound.

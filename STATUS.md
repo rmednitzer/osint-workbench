@@ -34,7 +34,7 @@ concurrency and policy-gated isolated recovery. See
 [the earlier revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
 models establish execution contracts, not pretrained semantic quality.
 
-The full programme covers 28 capability areas, 36 ADRs, 58 requirements and 51
+The full programme covers 28 capability areas, 37 ADRs, 58 requirements and 51
 acceptance scenarios. The tests in this repository currently establish only a
 foundation subset. Detailed future specifications are under `docs/`; they are not
 execution receipts. CI results are authoritative for a particular tested revision.
@@ -185,3 +185,17 @@ nonblocking no-follow opens reject nonregular files before reading, enforce the
 FIFO/symlink/oversize and post-stat growth regressions cover this failure boundary.
 This does not turn operator-selected filesystem paths into an untrusted-user
 sandbox; trusted parent directories remain required.
+
+Inference-marker hardening anchors host-local admission and receipt operations to
+validated directory descriptors, refuses unsafe custody and substituted receipts,
+and retains uncertain reservations when prior-process liveness cannot be proved.
+This remains cooperative single-account Linux admission, not a same-UID sandbox
+or cross-host scheduler; see [marker safety](docs/inference-marker-safety.md).
+The successor evidence pipeline generates a strict CycloneDX 1.7 Python-profile
+SBOM and checks exact installed licence metadata/text against reviewed policy.
+The v2 receipt binds both reports; protected-main signing includes their bytes.
+Native/OS/model composition remains incomplete, and missing wheel notices and
+bundled native redistribution obligations remain unresolved. See
+[SBOM scope](docs/sbom.md), [licence dispositions](docs/security/dependency-licences.md)
+and [ADR-0037](docs/adr/0037-inference-custody-python-sbom.md). Configuration and
+local focused tests do not replace revision-bound installed/native CI evidence.

@@ -145,8 +145,10 @@ remain distinct from implemented regression subsets.
 
 An initial bounded type/security gate and source-bound build receipts now add to
 these controls; see [CONTRIBUTING](../CONTRIBUTING.md) and
-[build evidence](build-evidence.md). Full type coverage, standards-conformant SBOMs,
-licence dispositions, complete release assurance and the wider implementation
+[build evidence](build-evidence.md). The [Python-profile SBOM](sbom.md) and
+[licence evidence policy](security/dependency-licences.md) add bounded coverage;
+full type coverage, native/OS/model supply-chain closure, legal redistribution
+clearance, complete release assurance and the wider implementation
 backlog remain open. Main-push attestations are separate from PR receipts and do
 not establish operational runtime or independent quality.
 
@@ -197,3 +199,10 @@ The [initial CodeQL triage](testing/codeql-triage-2026-10-18.md) records actual
 operator/test input authority for all 21 initial alerts, the manifest hardening
 found during review, and a separate marker-race follow-up. Individual dispositions
 do not suppress the query family or certify future callers.
+
+The marker follow-up is implemented by [ADR-0037](adr/0037-inference-custody-python-sbom.md)
+and [the custody protocol](inference-marker-safety.md). A successful scan does not
+establish same-UID isolation or authorize removing an uncertain reservation.
+Dependency PRs must update exact licence evidence through actual reviewed wheel
+inspection, preserving unresolved outcomes. The maintained CycloneDX generator is
+a locked development tool; its packages do not belong to the runtime inventory.

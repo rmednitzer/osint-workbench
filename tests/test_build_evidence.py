@@ -190,8 +190,50 @@ def test_receipt_inputs_refuse_special_files_and_enforce_limit(monkeypatch, tmp_
     module.os.mkfifo(manifest)
     with pytest.raises(module.EvidenceError, match="INPUT_REFUSED"):
         module.verify_evidence({"artifact": "original"}, output)
+
     manifest.unlink()
     manifest.write_bytes(b"too large")
     monkeypatch.setattr(module, "MAX_MANIFEST", 4)
     with pytest.raises(module.EvidenceError, match="INPUT_REFUSED"):
         module.verify_evidence({"artifact": "original"}, output)
+
+
+def test_supplements_bind_exact_bytes_and_refuse_unselected_or_unsafe_inputs(tmp_path):
+    module = evidence()
+    assert module.supplementary_inventory(None) == []
+    supplements = tmp_path / "assurance"
+    supplements.mkdir()
+    for name in module.SUPPLEMENTS:
+        (supplements / name).write_text("{}\n")
+    original = {"related_evidence": module.supplementary_inventory(supplements)}
+    output = tmp_path / "receipt"
+    module.write_evidence(original, output)
+    module.verify_evidence(original, output)
+    selected = supplements / "sbom.cdx.json"
+    selected.write_text('{"changed":true}\n')
+    with pytest.raises(module.EvidenceError, match="INTEGRITY_MISMATCH"):
+        module.verify_evidence(
+            {"related_evidence": module.supplementary_inventory(supplements)}, output
+        )
+    (supplements / "unselected.json").write_text("{}")
+    with pytest.raises(module.EvidenceError, match="SUPPLEMENT_SET_REFUSED"):
+        module.supplementary_inventory(supplements)
+    (supplements / "unselected.json").unlink()
+    selected.unlink()
+    selected.symlink_to(supplements / "licence-review.json")
+    with pytest.raises(module.EvidenceError, match="INPUT_REFUSED"):
+        module.supplementary_inventory(supplements)
+
+
+def test_supplements_enforce_bounded_nonblocking_reads(monkeypatch, tmp_path):
+    module = evidence()
+    for name in module.SUPPLEMENTS:
+        (tmp_path / name).write_bytes(b"oversize")
+    monkeypatch.setattr(module, "MAX_MANIFEST", 4)
+    with pytest.raises(module.EvidenceError, match="INPUT_REFUSED"):
+        module.supplementary_inventory(tmp_path)
+    selected = tmp_path / "licence-review.json"
+    selected.unlink()
+    module.os.mkfifo(selected)
+    with pytest.raises(module.EvidenceError, match="INPUT_REFUSED"):
+        module.supplementary_inventory(tmp_path)
