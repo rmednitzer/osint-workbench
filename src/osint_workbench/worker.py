@@ -20,6 +20,31 @@ class AcceptedDocument(StrictModel):
     snapshot_id: str = Field(pattern=r"^[0-9a-f]{64}$")
 
 
+def run_batch(db: Database, store: EvidenceStore, *, max_jobs: int = 32) -> dict:
+    """One bounded tick; never claim unsupported downstream job kinds.
+
+    Results are aggregate-only for a service journal. Each successful job has
+    already committed independently; a failed tick does not roll those back.
+    """
+    if type(max_jobs) is not int or not 1 <= max_jobs <= 1000:
+        raise WorkbenchError("INVALID_WORK_LIMIT")
+    counts = {"succeeded": 0, "failed": 0, "superseded": 0}
+    idle = False
+    for _ in range(max_jobs):
+        result = run_once(db, store)
+        if result["status"] == "idle":
+            idle = True
+            break
+        counts[result["status"]] += 1
+    return {
+        "kind": "chunk_worker_tick",
+        "attempted": sum(counts.values()),
+        **counts,
+        "idle_observed": idle,
+        "limit_reached": not idle,
+    }
+
+
 def run_once(db: Database, store: EvidenceStore) -> dict:
     jobs = Jobs(db)
     job = jobs.claim(kinds=["document.accepted"], lease_seconds=60)

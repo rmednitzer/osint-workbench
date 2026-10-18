@@ -38,7 +38,7 @@ accepted product generation.
 | Usage, budgets and batch operations | Invoice/usage import and automatic provider reconciliation beyond the bounded reservation ledger and evidence-bound operator settlement (ADR-0042, ADR-0043); correction workflow for settlements; native token categories (cached, reasoning), dated price/currency records, unknown outcome accounting; batch submit/poll/cancel/retrieve/import with reconciliation | E38/E42/E43/E45: concurrent reservation limits, crashes and ambiguous remote acceptance, duplicate/missing/late results, no invented zero usage or blind chargeable replay |
 | Remote MCP and authorization | Maintained authenticated HTTP transport, issuer/audience/scope/origin checks, principal/workspace/session binding, expiry/revocation and explicit disable behaviour; profile-aware read tools for implemented domains | E08/E49–E51: real independent clients, positive and negative authorization, cross-session attacks and matching authorized stdio/HTTP semantics; no default unauthenticated listener |
 | Consumer export and publication | Versioned selected-field export with explicit URL/content disclosure; validated staged outbound bundles and separately scoped immutable publication receipts | E17/E18/E47: consumer schema round trip, disclosure canaries, receipt reconciliation and unknown publishing outcome; private checkpoints are not this feature |
-| Deployment, observability and reliability | Complete operational profile beyond the bounded non-root collector reference, remaining worker/provider process authorities beyond the scoped collector, readiness/dependency states, bounded aggregate metrics, dashboards/alerts and failure/recovery procedures | E08/E14/E15/E45/E46: clean installed profiles, permission-negative tests, mixed workloads, unavailable dependencies and representative recovered queries; no private host/service inventories |
+| Deployment, observability and reliability | Complete operational adoption beyond collector/chunk/health service templates and explicit group-readable storage: provider process authorities, supported downstream consumers, monitoring/notification routing, sustained workload/capacity and target-host failure/recovery | E08/E14/E15/E45/E46: revision-bound installed service/permission-negative tests, mixed workloads, unavailable dependencies and representative recovered queries; operator health/recovery targets; no private host/service inventories |
 | Secure development and release assurance | Select applicable versioned secure-coding controls and evidence; complete type/static analysis, dependency/license/SBOM dispositions, build provenance, reviewed repository/release protection and scoped vulnerability response | E13/E14/E16/E18/E44/E45: revision/artifact-bound evidence, all required checks run without unexpected skips, actual enforcement observed; adopted references are not formal conformance |
 
 Within these groups, establish deletion/recovery and permission boundaries before
@@ -57,10 +57,12 @@ individual implementation findings and severities. Priority follow-up includes:
   prevent schema/quote success from implying semantic support.
 - Separate reviewer authority from the producing writer; actor strings do not
   establish an independent reviewer.
-- Make MCP pagination respect the actual serialized result budget, and isolate
-  untrusted source text from local generation special-token parsing.
-- Narrow retrieval writer UPDATE authority, add exact reader-grant validation,
-  and make terminal-job deduplication/retry status explicit.
+- Retain native acceptance for byte-budget MCP pagination, literal source-token
+  isolation and exact reader-grant validation added by
+  [ADR-0045](adr/0045-bounded-operational-profile.md); verify intended assistant
+  clients and adopted tokenizer capabilities separately.
+- Narrow retrieval writer UPDATE authority and make terminal-job
+  deduplication/retry status explicit.
 - Retain revision-bound service acceptance when feed identity or its harness
   changes; the core-10 two-LTS receipt covers its named wheel, while historical
   receipts do not validate a newer oracle automatically.

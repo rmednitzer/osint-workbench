@@ -13,13 +13,14 @@ caller before editing; do not invent a path.
 
 | Work | Code and governing documents |
 | --- | --- |
-| CLI/configuration/MCP | CLI, configuration, service and MCP modules; [architecture](docs/architecture.md) |
+| CLI/configuration/MCP | CLI, configuration, service and MCP modules; [architecture](docs/architecture.md), [bounded read contract](docs/mcp-read-contract.md) |
 | SQL, evidence and jobs | `database.py`, `evidence.py`, job modules, `migrations/`; [workflows](docs/workflows.md), [lifecycle](docs/lifecycle.md) |
 | Acquisition | Collection, transport, parser/resolver workers; [scheduled acquisition](docs/scheduled-acquisition.md) |
 | Build/SBOM/licences | `scripts/build_evidence.py`, `scripts/check_sbom.py`, `scripts/check_licences.py`, `scripts/check_native.py`, `scripts/build_notices.py`; [build evidence](docs/build-evidence.md), [licence review](docs/security/dependency-licences.md), [native policy](docs/security/native-components.md) |
 | Local ML/retrieval | `local_encoder.py`, `encoder_process.py`, `vector_index.py`, local generation/reranker modules; [retrieval](docs/local-retrieval.md), [intelligence](docs/local-intelligence.md) |
 | Optional remote inference/accounting | `cloud.py`, CLI and intelligence modules; [cloud routes](docs/cloud-routes.md) |
 | Recovery/deletion | Recovery, GC and purge modules; [recovery](docs/recovery.md), [GC](docs/garbage-collection.md), [SQL purge](docs/retired-record-purge.md) |
+| Supervision/storage sharing/health | Worker, health and evidence modules, `config/systemd/` and guarded deployment harness; [operational profile](docs/operational-profile.md), [deployment](docs/deployment.md) |
 | Design/security | [ADRs](docs/adr/), [STPA](docs/assurance/stpa.md), [requirements](docs/assurance/requirements.md), [secure development](docs/security/secure-development.md) |
 
 Use [CONTRIBUTING.md](CONTRIBUTING.md) for verification commands and
@@ -46,6 +47,10 @@ Use [CONTRIBUTING.md](CONTRIBUTING.md) for verification commands and
 - Publish bounded sanitized diagnostics. Do not upload private logs, configuration
   or support bundles to AI/security tools merely to debug a failure. Scanner
   success is a backstop, not anonymity or security-conformance evidence.
+- Keep evidence private by default. Group-readable creation requires explicit
+  provisioning/selection; never repair a private tree's permissions implicitly.
+  Health thresholds are operator inputs; do not invent SLOs, recovery targets or
+  model adoption from synthetic passes. A bounded idle poll is not an empty queue.
 
 ## Implement and verify
 

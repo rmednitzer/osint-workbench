@@ -27,6 +27,13 @@ Only database acceptance is fenced. Chunk identity includes split parameters.
 `enrich work-once` is a separate explicit worker for its configured generator;
 the core worker does not claim enrichment or arbitrary queued job kinds.
 
+`work --max-jobs` repeats that same claim/acceptance path for one bounded tick
+and emits aggregate counts; `work-once` retains its per-job output. Both open
+the evidence store read-only. The [operational profile](operational-profile.md)
+defines cap/idle/failure semantics, supervision and the unsupported downstream
+backlog; the [deployment procedure](deployment.md) covers explicit shared read
+custody. Neither command initiates model downloads, inference or cloud work.
+
 Each collector holds a PostgreSQL session advisory lock for one source. Hash collisions
 may serialize unrelated sources but cannot grant extra authority. All acceptance uses
 that same connection. Lost connections stop acceptance and release the lock. Another

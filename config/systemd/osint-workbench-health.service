@@ -1,0 +1,49 @@
+# Explicit thresholds are required; root's manager reads the private environment file.
+[Unit]
+Description=OSINT Workbench read-only health observation
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=osint-workbench-health
+Group=osint-workbench-health
+SupplementaryGroups=osint-workbench-evidence
+EnvironmentFile=/etc/osint-workbench-health/runtime.env
+Environment=OW_EVIDENCE_ROOT=/var/lib/osint-workbench/evidence
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/osint-workbench/venv/bin/osint-workbench health --max-source-age-seconds ${OW_HEALTH_MAX_SOURCE_AGE_SECONDS} --max-pending-jobs ${OW_HEALTH_MAX_PENDING_JOBS} --max-failed-jobs ${OW_HEALTH_MAX_FAILED_JOBS}
+WorkingDirectory=/
+ReadOnlyPaths=/var/lib/osint-workbench/evidence
+InaccessiblePaths=-/etc/osint-workbench -/etc/osint-workbench-worker
+UMask=0077
+TimeoutStartSec=60s
+TimeoutStopSec=15s
+KillMode=control-group
+SendSIGKILL=yes
+Restart=no
+MemoryMax=384M
+TasksMax=16
+CPUQuota=50%
+LimitNOFILE=128
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+StandardOutput=journal
+StandardError=journal

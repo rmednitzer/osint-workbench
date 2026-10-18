@@ -91,7 +91,8 @@ def test_external_exception_diagnostic_excludes_message_class_and_external_frame
 
 
 @pytest.mark.parametrize("invalid_directive", [False, True])
-def test_systemd_reference_units_native_verifier(tmp_path, invalid_directive):
+@pytest.mark.parametrize("shared_cas", [False, True])
+def test_systemd_reference_units_native_verifier(tmp_path, invalid_directive, shared_cas):
     verifier = shutil.which("systemd-analyze")
     if not verifier:
         pytest.fail("systemd-analyze is required for reference-unit verification")
@@ -102,6 +103,12 @@ def test_systemd_reference_units_native_verifier(tmp_path, invalid_directive):
     assert units, "No reference deployment units were selected"
     for unit in units:
         shutil.copyfile(unit, unit_dir / unit.name)
+    if shared_cas:
+        dropin = unit_dir / "osint-workbench-collect.service.d"
+        dropin.mkdir()
+        shutil.copyfile(
+            ROOT / "config/systemd/osint-workbench-collect-shared.conf", dropin / "shared.conf"
+        )
     if invalid_directive:
         with (unit_dir / "osint-workbench-collect.service").open("a") as stream:
             stream.write("UnsupportedWorkbenchDirective=yes\n")

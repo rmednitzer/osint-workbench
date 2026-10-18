@@ -617,3 +617,17 @@ read access to titles and text would solve it with broader hostile-input
 authority; recomputing identity in the head's container needs only digests.
 U92 starts from trusting a product digest as evidence: a digest proves bytes,
 not that those bytes still agree with reviewed records.
+
+## Supervised profile boundary refinements
+
+[ADR-0045](../adr/0045-bounded-operational-profile.md) adds these controls to the
+first supervised profile. They refine existing requirements rather than closing
+the full operational, model-quality or recovery scenarios.
+
+| UCA | Hazardous context / category | Derived constraint and allocation | Discriminating evidence |
+| --- | --- | --- | --- |
+| U103 | CA7/N: valid pages routinely exceed the MCP serialized result limit, preventing evidence retrieval | H2,H6; C103: page intact records against actual UTF-8 byte budget, preserve explicit continuation scope, and refuse a single unrepresentable record without skipping it | Multibyte/control-character records, bounded-window continuation and complete record reconstruction |
+| U104 | CA10/P: source text becomes trusted tokenizer control IDs | H3,H8; C104: separately tokenize literal source and trusted template, verify automatic-prefix capability, submit exact IDs and version generator identity | Native special-token positive/negative controls, exact submitted IDs and old-kind non-claim |
+| U105 | CA7/P: an unforeseen readable relation/column or reachable role bypasses filtered reader projections | H1,H3; C105: exact effective reader relation/column allowlist and no alternate application identity | Direct, inherited, PUBLIC, column-only and SET ROLE grant refusals with normal core/retrieval controls |
+| U106 | CA7/N: a successful empty/partial tick implies healthy collection or complete processing | H2,H6; C106: explicit health thresholds, denial of unconfigured/stale/error/unavailable states, supported-job-only bounded ticks and honest all-kind backlog counts | Failure states and cap/idle distinction, real non-root service execution and restart |
+| U107 | CA4/P: adding workers silently exposes private evidence or grants shared writes | H1,H3; C107: opt-in pre-provisioned group-readable creation, anchored custody checks, no implicit permission repair, separate credentials and read-only consumer mounts | Private-default/unsafe-group/symlink/mode refusal, actual account read and write denial across new objects |

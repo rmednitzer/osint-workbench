@@ -82,57 +82,102 @@ class Database:
             raise
 
     def validate_reader(self) -> None:
+        """Refuse application reads beyond the published reader projection.
+
+        Effective ACL checks include inherited and PUBLIC grants. Unrelated role
+        memberships are refused even without inheritance: SET ROLE must not
+        recover broader authority after this startup check. Missing read grants
+        can reduce availability but cannot expand this allowlist.
+        """
+        document_columns = (
+            "document_id source_id external_key snapshot_id title body published_at search_vector"
+        )
+        assertion_columns = (
+            "assertion_id enrichment_id document_id subject predicate object statement polarity "
+            "start_offset end_offset quote"
+        )
+        columns = {
+            "active_documents": document_columns,
+            "visible_documents": document_columns,
+            "visible_snapshots": (
+                "snapshot_id source_id raw_sha256 text_sha256 extractor acquired_at"
+            ),
+            "visible_chunks": (
+                "chunk_id document_id chunker ordinal start_offset end_offset text_sha256 body"
+            ),
+            "visible_assertions": assertion_columns,
+            "current_assertions": assertion_columns + " review_state",
+            "visible_briefings": "briefing_id content created_at",
+            "source_status": "source_id enabled last_attempt last_success last_error freshness",
+            "pipeline_status": (
+                "documents snapshots sources ready_jobs running_jobs failed_jobs "
+                "cancelled_jobs chunks"
+            ),
+            "schema_status": "version",
+            "lifecycle_status": (
+                "visible_documents retired_items expired_items active_holds policy_revision"
+            ),
+            # Optional retrieval profile: only its public metadata and filtered
+            # views, never the backing member/vector/exclusion relations.
+            "embedding_spaces": "space_id manifest dimensions",
+            "retrieval_generations": (
+                "generation_id space_id dimensions corpus_sha256 status error_code created_at"
+            ),
+            "retrieval_active": "singleton generation_id",
+            "visible_retrieval_members": "generation_id document_id",
+            "visible_retrieval_vectors": (
+                "generation_id space_id dimensions document_id ordinal start_offset end_offset "
+                "text_sha256 embedding"
+            ),
+            "visible_retrieval_exclusions": "generation_id document_id reason",
+        }
+        tables = {"embedding_spaces", "retrieval_generations", "retrieval_active"}
+        relations = {("ow", name, "r" if name in tables else "v") for name in columns}
+        allowed = {
+            ("ow", name, column) for name, names in columns.items() for column in names.split()
+        }
         with self.connect() as conn:
-            row = conn.execute("""SELECT rolsuper,rolcreaterole,rolcreatedb,rolbypassrls,
-              session_user<>current_user AS changed_identity
-              FROM pg_roles WHERE rolname=current_user""").fetchone()
-            if any(row.values()):
-                raise WorkbenchError("UNSAFE_READER_IDENTITY")
-            if conn.execute(
-                """SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
-                WHERE n.nspname='ow' AND c.relname=ANY(%s::text[])
-                AND has_any_column_privilege(current_user,c.oid,'SELECT') LIMIT 1""",
-                (
-                    [
-                        "documents",
-                        "snapshots",
-                        "chunks",
-                        "assertions",
-                        "briefings",
-                        "jobs",
-                        "enrichments",
-                        "assertion_reviews",
-                        "retrieval_vectors",
-                        "retrieval_members",
-                        "retrieval_exclusions",
-                        "remote_operations",
-                        "lifecycle_control",
-                        "lifecycle_items",
-                        "lifecycle_holds",
-                        "lifecycle_tombstones",
-                        "lifecycle_events",
-                        "collection_state",
-                    ],
-                ),
-            ).fetchone():
-                raise WorkbenchError("UNSAFE_READER_IDENTITY")
             row = conn.execute("""SELECT
-              has_table_privilege(current_user,'ow.documents','INSERT,UPDATE,DELETE') AS docs,
-              has_table_privilege(current_user,'ow.jobs','INSERT,UPDATE,DELETE') AS jobs,
-              has_schema_privilege(current_user,'ow','CREATE') AS ddl,
-              pg_has_role(current_user,'ow_writer','MEMBER') AS writer,
-              pg_has_role(current_user,'ow_lifecycle','MEMBER') AS lifecycle,
-              pg_has_role(current_user,'ow_collector','MEMBER') AS collector,
-              pg_has_role(current_user,'ow_purger','MEMBER') AS purger,
-              pg_has_role(current_user,'ow_accounting','MEMBER') AS accounting""").fetchone()
+              session_user<>current_user AS changed_identity,
+              EXISTS(SELECT 1 FROM pg_roles r
+                WHERE pg_has_role(current_user,r.oid,'MEMBER') AND
+                  (r.rolsuper OR r.rolcreaterole OR r.rolcreatedb OR r.rolbypassrls
+                   OR r.rolreplication OR r.rolname NOT IN (current_user,'ow_reader')))
+                AS unsafe_roles,
+              EXISTS(SELECT 1 FROM pg_auth_members m
+                WHERE m.admin_option AND pg_has_role(current_user,m.member,'MEMBER'))
+                AS role_delegation,
+              EXISTS(SELECT 1 FROM pg_namespace n WHERE n.nspname IN ('ow','ow_vector')
+                AND has_schema_privilege(current_user,n.oid,'USAGE WITH GRANT OPTION'))
+                AS schema_delegation,
+              EXISTS(SELECT 1 FROM pg_namespace n WHERE n.nspname IN ('ow','ow_vector')
+                AND has_schema_privilege(current_user,n.oid,'CREATE')) AS ddl,
+              EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+                WHERE n.nspname IN ('ow','ow_vector') AND c.relkind='S'
+                AND has_sequence_privilege(current_user,c.oid,'USAGE,SELECT,UPDATE'))
+                AS sequence_authority,
+              EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+                WHERE n.nspname IN ('ow','ow_vector') AND c.relkind IN ('r','p','v','m','f')
+                AND (has_table_privilege(current_user,c.oid,
+                  'INSERT,UPDATE,DELETE,TRUNCATE,TRIGGER,REFERENCES,MAINTAIN') OR
+                  has_any_column_privilege(current_user,c.oid,'INSERT,UPDATE,REFERENCES') OR
+                  has_any_column_privilege(current_user,c.oid,'SELECT WITH GRANT OPTION')))
+                AS write_or_delegation""").fetchone()
             if any(row.values()):
                 raise WorkbenchError("UNSAFE_READER_IDENTITY")
-            if conn.execute("""SELECT 1 FROM pg_class c JOIN pg_namespace n
-              ON n.oid=c.relnamespace WHERE n.nspname IN ('ow','ow_vector')
-              AND c.relkind IN ('r','p','v','m','f') AND
-              (has_table_privilege(current_user,c.oid,'INSERT,UPDATE,DELETE,TRUNCATE,MAINTAIN') OR
-               has_any_column_privilege(current_user,c.oid,'INSERT,UPDATE'))
-              LIMIT 1""").fetchone():
+            readable = conn.execute("""SELECT n.nspname,c.relname,c.relkind
+              FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+              WHERE n.nspname IN ('ow','ow_vector') AND c.relkind IN ('r','p','v','m','f')
+              AND (has_table_privilege(current_user,c.oid,'SELECT') OR
+                   has_any_column_privilege(current_user,c.oid,'SELECT'))""").fetchall()
+            if any((r["nspname"], r["relname"], r["relkind"]) not in relations for r in readable):
+                raise WorkbenchError("UNSAFE_READER_IDENTITY")
+            granted = conn.execute("""SELECT n.nspname,c.relname,a.attname
+              FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+              JOIN pg_attribute a ON a.attrelid=c.oid AND a.attnum>0 AND NOT a.attisdropped
+              WHERE n.nspname IN ('ow','ow_vector') AND c.relkind IN ('r','p','v','m','f')
+              AND has_column_privilege(current_user,c.oid,a.attnum,'SELECT')""").fetchall()
+            if any((r["nspname"], r["relname"], r["attname"]) not in allowed for r in granted):
                 raise WorkbenchError("UNSAFE_READER_IDENTITY")
 
     def validate_collector(self) -> None:
