@@ -192,6 +192,8 @@ def test_native_fixture_expired_server_deadline_refuses_valid_request(network_he
         ("v1", "/records", "synthetic-fixture-token", 200),
         ("v2", "/records?cursor=page-2", "synthetic-fixture-token", 200),
         ("fail", "/records", "synthetic-fixture-token", 503),
+        ("kev", "/records", "synthetic-fixture-token", 200),
+        ("kev-invalid", "/records", "synthetic-fixture-token", 200),
         ("v1", "/records", "synthetic-invalid-token", 401),
         ("v2", "/records", "synthetic-fixture-token", 400),
     ],

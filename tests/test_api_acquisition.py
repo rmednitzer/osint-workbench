@@ -14,6 +14,8 @@ from osint_workbench.errors import WorkbenchError
 from osint_workbench.evidence import EvidenceStore
 from osint_workbench.text import digest
 from tests.test_api_transport import response, source
+from tests.test_kev import RECORD, catalogue
+from tests.test_kev import raw as kev_raw
 from tests.tls_fixture import generate_certificates, tls_peer
 
 pytestmark = pytest.mark.integration
@@ -70,6 +72,96 @@ def assert_no_secret(roles, store):
     assert all(
         TOKEN.encode() not in file.read_bytes() for file in store.root.rglob("*") if file.is_file()
     )
+
+
+def test_actual_kev_tls_replay_revision_absence_and_atomic_rejection(
+    databases, tmp_path, monkeypatch, collection_certificates
+):
+    _, _, roles = databases
+    collector = Database(roles["collector"])
+    collector.validate_collector()
+    store = EvidenceStore(tmp_path / "objects")
+    configuration = source(adapter="cisa-kev/1")
+    second = dict(RECORD, cveID="CVE-2099-10002")
+    pages = [
+        catalogue([RECORD, second]),
+        catalogue([RECORD, second], catalogVersion="synthetic-2"),
+        catalogue([dict(RECORD, shortDescription="Revised synthetic evidence")]),
+        catalogue([]),
+    ]
+    for page in pages:
+        wire_body = kev_raw(page)
+        with tls_peer(monkeypatch, collection_certificates, wire=response(wire_body)) as peer:
+            result = collect_api(configuration, collector, store)
+        assert result["status"] == "success" and result["documents"] == page["count"]
+        assert peer.requests[0].startswith(b"GET /records HTTP/1.1\r\n")
+        assert b"Authorization:" not in peer.requests[0]
+        assert store.get(digest(wire_body)) == wire_body
+        make_due(roles)
+    with Database(roles["writer"]).connect() as conn:
+        assert conn.execute("SELECT count(*) AS n FROM ow.documents").fetchone()["n"] == 3
+        assert conn.execute("SELECT count(*) AS n FROM ow.document_heads").fetchone()["n"] == 2
+        assert conn.execute("SELECT count(*) AS n FROM ow.jobs").fetchone()["n"] == 3
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM ow.collection_runs WHERE raw_sha256 IS NOT NULL "
+                "AND status='succeeded'"
+            ).fetchone()["n"]
+            == 4
+        )
+        rows = conn.execute(
+            "SELECT d.body,d.published_at,s.extractor FROM ow.document_heads h "
+            "JOIN ow.documents d USING(document_id) JOIN ow.snapshots s USING(snapshot_id)"
+        ).fetchall()
+        assert {json.loads(row["body"])["shortDescription"] for row in rows} == {
+            "Revised synthetic evidence",
+            RECORD["shortDescription"],
+        }
+        assert all(row["published_at"] is None and row["extractor"] == "cisa-kev/1" for row in rows)
+    before = {p.name for p in store.root.rglob("*") if p.is_file()}
+    bad = kev_raw(catalogue([dict(RECORD, shortDescription="Must not be admitted")], count=2))
+    with tls_peer(monkeypatch, collection_certificates, wire=response(bad)):
+        with pytest.raises(WorkbenchError, match="^API_PARSE_FAILED$"):
+            collect_api(configuration, collector, store)
+    assert {p.name for p in store.root.rglob("*") if p.is_file()} == before
+    progress, source_state, heads = state(roles)
+    assert heads == 2 and progress["api_cursor"] is None
+    assert (
+        source_state["last_success"] is not None
+        and source_state["last_error"] == "API_PARSE_FAILED"
+    )
+
+
+def test_actual_kev_full_catalogue_exceeds_generic_page_size(
+    databases, tmp_path, monkeypatch, collection_certificates
+):
+    _, _, roles = databases
+    store = EvidenceStore(tmp_path / "objects")
+    items = [dict(RECORD, cveID=f"CVE-2099-{10000 + n}") for n in range(1001)]
+    wire_body = kev_raw(catalogue(items))
+    with tls_peer(monkeypatch, collection_certificates, wire=response(wire_body)):
+        result = collect_api(source(adapter="cisa-kev/1"), Database(roles["collector"]), store)
+    assert result["status"] == "success" and result["documents"] == 1001
+    progress, source_state, heads = state(roles)
+    assert heads == 1001 and progress["raw_sha256"] == digest(wire_body)
+    assert source_state["last_success"] is not None
+
+
+def test_adapter_change_discards_generic_continuation_before_provider_request(
+    databases, tmp_path, monkeypatch, collection_certificates
+):
+    _, _, roles = databases
+    store = EvidenceStore(tmp_path / "objects")
+    collector = Database(roles["collector"])
+    with tls_peer(
+        monkeypatch, collection_certificates, wire=response(body("generic", "old-cursor"))
+    ):
+        assert collect_api(source(), collector, store)["status"] == "partial"
+    with tls_peer(monkeypatch, collection_certificates, wire=response(kev_raw())) as peer:
+        assert collect_api(source(adapter="cisa-kev/1"), collector, store)["status"] == "success"
+    assert peer.requests[0].startswith(b"GET /records HTTP/1.1\r\n")
+    progress, _, heads = state(roles)
+    assert heads == 2 and progress["api_cursor"] is None and progress["api_seen_cursors"] == []
 
 
 def test_actual_tls_partial_acceptance_and_escaped_resume(
@@ -170,7 +262,9 @@ def test_native_cursor_loop_across_ticks_does_not_accept_repeated_page(
     # This test isolates native SQL progress/loop behavior; the test above uses
     # actual TLS and the disposable parser instead of substituting either.
     monkeypatch.setattr(
-        api_acquisition, "_documents", lambda raw, source_id, deadline: parse(raw, source_id)
+        api_acquisition,
+        "_documents",
+        lambda raw, source_id, deadline, adapter: parse(raw, source_id, adapter),
     )
     assert collect_api(source(), collector, store)["status"] == "partial"
     make_due(roles)
@@ -201,7 +295,9 @@ def test_native_failed_page_rolls_back_documents_and_cursor_together(
     ).encode()
     monkeypatch.setattr(api_acquisition, "_page", lambda *args: raw)
     monkeypatch.setattr(
-        api_acquisition, "_documents", lambda raw, source_id, deadline: parse(raw, source_id)
+        api_acquisition,
+        "_documents",
+        lambda raw, source_id, deadline, adapter: parse(raw, source_id, adapter),
     )
     original = collector.ingest_stored
 
@@ -274,7 +370,9 @@ def test_native_empty_and_reused_pages_retain_each_raw_attempt(databases, tmp_pa
     pages = iter(responses)
     monkeypatch.setattr(api_acquisition, "_page", lambda *args: next(pages))
     monkeypatch.setattr(
-        api_acquisition, "_documents", lambda raw, source_id, deadline: parse(raw, source_id)
+        api_acquisition,
+        "_documents",
+        lambda raw, source_id, deadline, adapter: parse(raw, source_id, adapter),
     )
     results = []
     for index in range(3):
@@ -301,7 +399,9 @@ def test_native_disabled_source_updates_state_without_resolving_missing_secret(
     store = EvidenceStore(tmp_path / "objects")
     monkeypatch.setattr(api_acquisition, "_page", lambda *args: body("first", "A"))
     monkeypatch.setattr(
-        api_acquisition, "_documents", lambda raw, source_id, deadline: parse(raw, source_id)
+        api_acquisition,
+        "_documents",
+        lambda raw, source_id, deadline, adapter: parse(raw, source_id, adapter),
     )
     assert collect_api(source(), collector, store)["status"] == "partial"
 
@@ -335,7 +435,9 @@ def test_native_not_due_does_not_resolve_credentials(databases, tmp_path, monkey
     configuration = configured(tmp_path)
     monkeypatch.setattr(api_acquisition, "_page", lambda *args: body("first", "A"))
     monkeypatch.setattr(
-        api_acquisition, "_documents", lambda raw, source_id, deadline: parse(raw, source_id)
+        api_acquisition,
+        "_documents",
+        lambda raw, source_id, deadline, adapter: parse(raw, source_id, adapter),
     )
     assert collect_api(configuration, collector, store)["status"] == "partial"
 
@@ -361,7 +463,9 @@ def test_native_explicit_restart_clears_cursor_history_success_and_due_state(
 
     monkeypatch.setattr(api_acquisition, "_page", scripted)
     monkeypatch.setattr(
-        api_acquisition, "_documents", lambda raw, source_id, deadline: parse(raw, source_id)
+        api_acquisition,
+        "_documents",
+        lambda raw, source_id, deadline, adapter: parse(raw, source_id, adapter),
     )
     assert collect_api(source(), collector, store)["status"] == "partial"
     with psycopg.connect(roles["admin"]) as conn:

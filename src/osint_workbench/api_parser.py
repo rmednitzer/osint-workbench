@@ -1,4 +1,4 @@
-"""Data-only JSON page parser for the explicitly configured synthetic API profile.
+"""Data-only JSON parser for explicitly configured, bounded API profiles.
 
 This process has resource limits, not a filesystem or network sandbox. It never
 interprets response text as a path, URL, script or instruction.
@@ -12,10 +12,12 @@ from pydantic import TypeAdapter, ValidationError
 from .advisory import UtcDatetime
 from .contracts import DocumentInput, Identifier
 from .errors import WorkbenchError
+from .kev import parse_catalogue
 
 MAX_INPUT = 10 * 1024 * 1024
 MAX_RESULT = 16 * 1024 * 1024
 MAX_ITEMS = 1000
+MAX_KEV_ITEMS = 10000
 MAX_DEPTH = 32
 _IDENTIFIER = TypeAdapter(Identifier)
 _TIMESTAMP = TypeAdapter(UtcDatetime)
@@ -77,17 +79,32 @@ def _serialize(documents: list[DocumentInput], cursor: str | None) -> bytes:
     return result
 
 
-def parse(raw: bytes, source_id: str) -> tuple[list[DocumentInput], str | None]:
+def item_limit(adapter: str) -> int:
+    if adapter == "bounded-json-pages/1":
+        return MAX_ITEMS
+    if adapter == "cisa-kev/1":
+        return MAX_KEV_ITEMS
+    raise WorkbenchError("API_INVALID_PAGE")
+
+
+def parse(
+    raw: bytes, source_id: str, adapter: str = "bounded-json-pages/1"
+) -> tuple[list[DocumentInput], str | None]:
     """Validate one strict page; reject malformed records without partial admission."""
     if type(raw) is not bytes:
         raise WorkbenchError("API_PARSE_FAILED")
     if len(raw) > MAX_INPUT:
         raise WorkbenchError("SOURCE_TOO_LARGE")
+    limit = item_limit(adapter)
     try:
         source_id = _IDENTIFIER.validate_python(source_id, strict=True)
         text = raw.decode("utf-8")
         _bounded_depth(text)
         page = json.loads(text, object_pairs_hook=_object, parse_constant=_reject_constant)
+        if adapter == "cisa-kev/1":
+            documents = parse_catalogue(page, source_id, limit)
+            _serialize(documents, None)
+            return documents, None
         if type(page) is not dict or set(page) != {"items", "next_cursor"}:
             raise ValueError("invalid envelope")
         items = page["items"]
@@ -138,9 +155,13 @@ def main():
         resource.setrlimit(resource.RLIMIT_AS, (512 * 1024 * 1024,) * 2)
         resource.setrlimit(resource.RLIMIT_FSIZE, (MAX_RESULT,) * 2)
         resource.setrlimit(resource.RLIMIT_NOFILE, (32, 32))
-        if len(sys.argv) != 2:
+        if len(sys.argv) not in (2, 3):
             raise WorkbenchError("API_INVALID_PAGE")
-        documents, cursor = parse(sys.stdin.buffer.read(MAX_INPUT + 1), sys.argv[1])
+        documents, cursor = parse(
+            sys.stdin.buffer.read(MAX_INPUT + 1),
+            sys.argv[1],
+            sys.argv[2] if len(sys.argv) == 3 else "bounded-json-pages/1",
+        )
         sys.stdout.buffer.write(_serialize(documents, cursor))
     except WorkbenchError as exc:
         sys.stdout.write(json.dumps({"error": exc.code}))

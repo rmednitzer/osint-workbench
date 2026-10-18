@@ -15,6 +15,7 @@ from psycopg.types.json import Jsonb
 from pydantic import Field, model_validator
 
 from . import fetch
+from .api_parser import item_limit
 from .collection import _collection_connection
 from .contracts import DocumentInput, Identifier, StrictModel
 from .credentials import CredentialRef, resolve_credential
@@ -42,7 +43,7 @@ class ApiSource(StrictModel):
     source_id: Identifier
     endpoint: str = Field(min_length=1, max_length=4096, repr=False)
     enabled: bool = False
-    adapter: Literal["bounded-json-pages/1"] = "bounded-json-pages/1"
+    adapter: Literal["bounded-json-pages/1", "cisa-kev/1"] = "bounded-json-pages/1"
     # Explicit operator attestations, not inferred legal clearance. Existing
     # consumers cannot enforce narrower rights, so those sources fail validation.
     rights: Literal["all-existing-uses-permitted"]
@@ -62,6 +63,8 @@ class ApiSource(StrictModel):
 
 def _page(source, cursor, secret, deadline):
     """No redirect, proxy, cookie jar, SDK retry or data-selected destination."""
+    if source.adapter == "cisa-kev/1" and cursor is not None:
+        raise WorkbenchError("API_CURSOR_INVALID")
     url = source.endpoint + ("?" + urlencode({"cursor": cursor}) if cursor is not None else "")
     headers = [("Accept", "application/json"), ("Accept-Encoding", "identity")]
     if source.auth.kind == "bearer":
@@ -133,11 +136,12 @@ def _page(source, cursor, secret, deadline):
         raise WorkbenchError("API_UNAVAILABLE") from None
 
 
-def _documents(raw, source_id, deadline):
+def _documents(raw, source_id, deadline, adapter="bounded-json-pages/1"):
+    limit = item_limit(adapter)
     with tempfile.TemporaryFile() as output:
         try:
             result = subprocess.run(  # noqa: S603
-                [sys.executable, "-I", "-m", "osint_workbench.api_parser", source_id],
+                [sys.executable, "-I", "-m", "osint_workbench.api_parser", source_id, adapter],
                 input=raw,
                 stdout=output,
                 stderr=subprocess.DEVNULL,
@@ -154,7 +158,7 @@ def _documents(raw, source_id, deadline):
         raise WorkbenchError("API_PARSE_FAILED")
     try:
         decoded = json.loads(data)
-        if set(decoded) != {"documents", "next_cursor"} or len(decoded["documents"]) > 1000:
+        if set(decoded) != {"documents", "next_cursor"} or len(decoded["documents"]) > limit:
             raise ValueError
         documents = [
             DocumentInput.model_validate_json(json.dumps(row)) for row in decoded["documents"]
@@ -162,6 +166,8 @@ def _documents(raw, source_id, deadline):
         if any(d.source_id != source_id for d in documents):
             raise ValueError
         cursor = decoded["next_cursor"]
+        if adapter == "cisa-kev/1" and cursor is not None:
+            raise ValueError
         if cursor is not None and (
             not isinstance(cursor, str)
             or len(cursor) > 1024
@@ -290,7 +296,7 @@ def collect_api(source: ApiSource, db, store, *, max_pages=1, timeout=60, restar
                 raw = _page(source, cursor, secret, deadline)
                 if secret and secret.encode() in raw:
                     raise WorkbenchError("API_CREDENTIAL_REFLECTED")
-                documents, next_cursor = _documents(raw, source.source_id, deadline)
+                documents, next_cursor = _documents(raw, source.source_id, deadline, source.adapter)
                 _no_reflection(raw, documents, next_cursor, secret)
                 token = digest(next_cursor.encode()) if next_cursor is not None else None
                 if token is not None and token in seen:
