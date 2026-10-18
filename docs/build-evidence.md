@@ -43,6 +43,13 @@ Upload only those artifacts and the two receipt files after successful validatio
 A later verifier needs the same source, artifact bytes and matching isolated
 inventory environment to recompute the receipt.
 
+Input reads open with no-follow and nonblocking flags, reject non-regular files
+before reading, and close descriptors on every outcome. Artifact and lock reads
+consume at most 256 MiB plus one refusal byte, even if a file grows after its
+initial size check. Receipt reads have separate 4 MiB and 65-byte limits. Observed
+size or modification-time changes during a read cause refusal; these checks do
+not provide an immutable filesystem snapshot against a malicious writer.
+
 ## Limits and unresolved licensing
 
 This is a machine-readable installed distribution inventory and integrity receipt,

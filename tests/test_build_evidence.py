@@ -107,3 +107,91 @@ def test_runtime_identity_checks_actual_os_and_python(monkeypatch):
     env["OW_EVIDENCE_OS"] = "ubuntu-24.04"
     with pytest.raises(module.EvidenceError, match="OS_MISMATCH"):
         module.runtime_identity(env)
+
+
+def test_fifo_replacement_is_nonblocking_and_closes_descriptor(monkeypatch, tmp_path):
+    module = evidence()
+    path = tmp_path / "artifact.whl"
+    path.write_bytes(b"regular before open")
+    original_open = module.os.open
+    descriptors = []
+
+    def replace_with_fifo(name, flags):
+        # Assert before the real open: a regression must fail, not hang the test.
+        assert flags & module.os.O_NONBLOCK
+        path.unlink()
+        module.os.mkfifo(path)
+        descriptor = original_open(name, flags)
+        descriptors.append(descriptor)
+        return descriptor
+
+    monkeypatch.setattr(module.os, "open", replace_with_fifo)
+    with pytest.raises(module.EvidenceError, match="INPUT_REFUSED"):
+        module.file_identity(path)
+    assert len(descriptors) == 1
+    with pytest.raises(OSError):
+        module.os.fstat(descriptors[0])
+
+
+def test_growing_input_cannot_exceed_cumulative_byte_budget(monkeypatch, tmp_path):
+    module = evidence()
+    monkeypatch.setattr(module, "MAX_INPUT_BYTES", 8)
+    path = tmp_path / "artifact.whl"
+    path.write_bytes(b"seed")
+    original_read = module.os.read
+    total = 0
+    descriptors = []
+
+    def grow_on_read(descriptor, count):
+        nonlocal total
+        # Grow after the initial fstat, on every read; count actual consumed bytes.
+        with path.open("ab") as stream:
+            stream.write(b"grow")
+        result = original_read(descriptor, min(count, 3))
+        total += len(result)
+        descriptors.append(descriptor)
+        return result
+
+    monkeypatch.setattr(module.os, "read", grow_on_read)
+    with pytest.raises(module.EvidenceError, match="INPUT_LIMIT"):
+        module.file_identity(path)
+    assert total == 9  # Budget plus exactly one refusal byte, not read-until-EOF.
+    with pytest.raises(OSError):
+        module.os.fstat(descriptors[0])
+
+
+def test_input_modified_within_budget_is_rejected(monkeypatch, tmp_path):
+    module = evidence()
+    monkeypatch.setattr(module, "MAX_INPUT_BYTES", 16)
+    path = tmp_path / "artifact.whl"
+    path.write_bytes(b"seed")
+    original_read = module.os.read
+    changed = False
+
+    def append_once(descriptor, count):
+        nonlocal changed
+        if not changed:
+            with path.open("ab") as stream:
+                stream.write(b"new")
+            changed = True
+        return original_read(descriptor, count)
+
+    monkeypatch.setattr(module.os, "read", append_once)
+    with pytest.raises(module.EvidenceError, match="INPUT_CHANGED"):
+        module.file_identity(path)
+
+
+def test_receipt_inputs_refuse_special_files_and_enforce_limit(monkeypatch, tmp_path):
+    module = evidence()
+    output = tmp_path / "receipt"
+    module.write_evidence({"artifact": "original"}, output)
+    manifest = output / "manifest.json"
+    manifest.unlink()
+    module.os.mkfifo(manifest)
+    with pytest.raises(module.EvidenceError, match="INPUT_REFUSED"):
+        module.verify_evidence({"artifact": "original"}, output)
+    manifest.unlink()
+    manifest.write_bytes(b"too large")
+    monkeypatch.setattr(module, "MAX_MANIFEST", 4)
+    with pytest.raises(module.EvidenceError, match="INPUT_REFUSED"):
+        module.verify_evidence({"artifact": "original"}, output)

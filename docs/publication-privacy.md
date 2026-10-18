@@ -50,6 +50,10 @@ overrides email admission, including inherited base identities. Keep this file
 outside Git and public CI; do not upload it in support logs or artifacts. Public
 CI uses generic pattern/email checks, never the private catalogue. The private
 check remains a separately required local publication responsibility.
+The final path component must be a regular file, opened without following a
+symlink and with nonblocking admission. FIFOs, devices, directories and oversized
+files fail before content reading. The opened descriptor is closed on rejection
+and success; parent-directory custody remains the operator's responsibility.
 
 Findings contain categories and commit object IDs, not matched names, addresses,
 messages, Git stderr or the private-policy path/content. Git failures and invalid

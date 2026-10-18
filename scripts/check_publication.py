@@ -9,6 +9,7 @@ import argparse
 import json
 import os
 import re
+import stat
 import subprocess
 import sys
 import tarfile
@@ -282,8 +283,15 @@ def main():
     private_file = os.environ.get("OW_PRIVATE_DENYLIST")
     try:
         if private_file:
-            with Path(private_file).open("rb") as stream:
-                raw = stream.read(MAX_PRIVATE_POLICY_BYTES + 1)
+            fd = os.open(private_file, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+            try:
+                info = os.fstat(fd)
+                if not stat.S_ISREG(info.st_mode) or info.st_size > MAX_PRIVATE_POLICY_BYTES:
+                    raise ValueError
+                with os.fdopen(fd, "rb", closefd=False) as stream:
+                    raw = stream.read(MAX_PRIVATE_POLICY_BYTES + 1)
+            finally:
+                os.close(fd)
             if len(raw) > MAX_PRIVATE_POLICY_BYTES:
                 raise ValueError
             values = json.loads(raw.decode("utf-8"))

@@ -15,6 +15,7 @@ from pathlib import Path
 FORMAT = "osint-workbench-build-evidence-v1"
 MAX_MANIFEST = 4 * 1024 * 1024
 MAX_PACKAGES = 512
+MAX_INPUT_BYTES = 256 * 1024 * 1024
 
 
 class EvidenceError(ValueError):
@@ -96,20 +97,43 @@ def inventory(distributions=None):
     }
 
 
-def file_identity(path):
-    if path.is_symlink() or not path.is_file():
-        raise EvidenceError("EVIDENCE_INPUT_REFUSED")
-    hasher = hashlib.sha256()
-    with os.fdopen(os.open(path, os.O_RDONLY | os.O_NOFOLLOW), "rb") as stream:
-        before = os.fstat(stream.fileno())
-        if not stat.S_ISREG(before.st_mode) or before.st_size > 256 * 1024 * 1024:
+def read_regular(path, limit, *, collect=False):
+    """Read at most limit + 1 bytes; reject special files before any read."""
+    try:
+        descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    except OSError:
+        raise EvidenceError("EVIDENCE_INPUT_REFUSED") from None
+    try:
+        before = os.fstat(descriptor)
+        if not stat.S_ISREG(before.st_mode) or before.st_size > limit:
             raise EvidenceError("EVIDENCE_INPUT_REFUSED")
-        while block := stream.read(1024 * 1024):
+        hasher = hashlib.sha256()
+        contents = bytearray() if collect else None
+        total = 0
+        while True:
+            block = os.read(descriptor, min(1024 * 1024, limit - total + 1))
+            if not block:
+                break
+            total += len(block)
+            if total > limit:
+                raise EvidenceError("EVIDENCE_INPUT_LIMIT")
             hasher.update(block)
-        after = os.fstat(stream.fileno())
-        if (before.st_size, before.st_mtime_ns) != (after.st_size, after.st_mtime_ns):
+            if contents is not None:
+                contents.extend(block)
+        after = os.fstat(descriptor)
+        if total != before.st_size or (before.st_size, before.st_mtime_ns) != (
+            after.st_size,
+            after.st_mtime_ns,
+        ):
             raise EvidenceError("EVIDENCE_INPUT_CHANGED")
-    return {"filename": path.name, "bytes": before.st_size, "sha256": hasher.hexdigest()}
+        return total, hasher.hexdigest(), bytes(contents) if contents is not None else None
+    finally:
+        os.close(descriptor)
+
+
+def file_identity(path):
+    size, digest, _ = read_regular(path, MAX_INPUT_BYTES)
+    return {"filename": path.name, "bytes": size, "sha256": digest}
 
 
 def artifact_inventory(directory):
@@ -168,14 +192,11 @@ def write_evidence(document, output):
 
 
 def verify_evidence(expected, output):
-    path = output / "manifest.json"
-    if path.is_symlink() or path.stat().st_size > MAX_MANIFEST:
-        raise EvidenceError("EVIDENCE_MANIFEST_REFUSED")
-    data = path.read_bytes()
-    checksum = output / "manifest.sha256"
-    if checksum.is_symlink() or checksum.stat().st_size != 65:
+    _, digest, data = read_regular(output / "manifest.json", MAX_MANIFEST, collect=True)
+    size, _, checksum = read_regular(output / "manifest.sha256", 65, collect=True)
+    if size != 65:
         raise EvidenceError("EVIDENCE_CHECKSUM_REFUSED")
-    if checksum.read_text() != hashlib.sha256(data).hexdigest() + "\n" or data != encoded(expected):
+    if checksum != (digest + "\n").encode() or data != encoded(expected):
         raise EvidenceError("EVIDENCE_INTEGRITY_MISMATCH")
 
 

@@ -4,6 +4,7 @@ import importlib.util
 import json
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -269,3 +270,64 @@ def test_metadata_git_invocations_cannot_use_even_local_fetch_transport(checker,
     git("fetch", str(repo), "HEAD")
     with pytest.raises(checker.MetadataError, match="^metadata-revision-unavailable$"):
         checker._git(repo, ["fetch", str(repo), "HEAD"])
+
+
+@pytest.mark.parametrize("kind", ["fifo", "symlink", "device", "directory", "missing", "oversized"])
+def test_real_cli_refuses_unsafe_private_policy_files_without_hanging_or_disclosure(tmp_path, kind):
+    policy = tmp_path / "synthetic-private-path-canary"
+    if kind == "fifo":
+        os.mkfifo(policy, mode=0o600)
+    elif kind == "symlink":
+        target = tmp_path / "synthetic-private-content-canary.json"
+        target.write_text('["synthetic-private-content-canary"]')
+        policy.symlink_to(target)
+    elif kind == "device":
+        policy = Path(os.devnull)
+    elif kind == "directory":
+        policy.mkdir()
+    elif kind == "oversized":
+        with policy.open("wb") as stream:
+            stream.truncate(1024 * 1024 + 1)
+    script = Path(__file__).resolve().parents[1] / "scripts/check_publication.py"
+    result = subprocess.run(
+        [sys.executable, str(script)],
+        env={**os.environ, "OW_PRIVATE_DENYLIST": str(policy)},
+        capture_output=True,
+        timeout=5,
+        check=False,
+    )
+    assert result.returncode == 1
+    assert json.loads(result.stdout) == {"findings": [{"category": "invalid-private-policy"}]}
+    assert result.stderr == b""
+    assert b"canary" not in result.stdout + result.stderr
+    assert str(policy).encode() not in result.stdout + result.stderr
+
+
+@pytest.mark.parametrize("kind", ["directory", "valid", "malformed"])
+def test_policy_descriptor_is_closed_on_guard_rejection_parse_failure_and_success(
+    checker, tmp_path, monkeypatch, capsys, kind
+):
+    policy = tmp_path / "synthetic-policy"
+    if kind == "directory":
+        policy.mkdir()
+    else:
+        policy.write_text("[]" if kind == "valid" else "{")
+    opened = []
+    original_open = os.open
+
+    def observed_open(*args, **kwargs):
+        fd = original_open(*args, **kwargs)
+        opened.append(fd)
+        return fd
+
+    monkeypatch.setattr(checker.os, "open", observed_open)
+    monkeypatch.setattr(checker, "selected_files", lambda: [])
+    monkeypatch.setenv("OW_PRIVATE_DENYLIST", str(policy))
+    monkeypatch.setattr("sys.argv", ["check_publication.py"])
+    assert checker.main() == (0 if kind == "valid" else 1)
+    assert len(opened) == 1
+    with pytest.raises(OSError):
+        os.fstat(opened[0])
+    assert json.loads(capsys.readouterr().out)["findings"] == (
+        [] if kind == "valid" else [{"category": "invalid-private-policy"}]
+    )

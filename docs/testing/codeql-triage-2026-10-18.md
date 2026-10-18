@@ -47,3 +47,21 @@ environment-to-path flows and is not closed by their disposition.
 The review does not establish absence of vulnerabilities, private-data safety of
 all Git history, a complete dependency/native audit, or operational deployment
 acceptance. No query family is disabled and no broad source path is excluded.
+
+## PR-only successor findings
+
+The PR-head analysis `1974894041` at `3fe2e188dc8c842b170cdd0f9a94bb6d1513644d`
+raised three additional high-severity path alerts. The alert API defaults to the
+main branch: query `ref=refs/pull/5/head` and inspect the separate CodeQL security
+summary, not only successful analysis jobs or the default-branch alert count.
+
+| Alert | Actual SARIF source | Disposition and additional work |
+| --- | --- | --- |
+| 22 | Evidence helper's operator `--lock` argument | Intentional lock selector; CI supplies fixed `uv.lock`. Review separately found a blocking-open/growing-file robustness gap. Nonblocking/no-follow descriptor reads now validate regular files before reading and enforce an actual cumulative byte budget. Native FIFO replacement, continuous growth, mutation and receipt tests cover it. |
+| 23 | External private-policy environment path | Same intentional maintainer selector as alert 1. Nonblocking/no-follow regular-file admission now also prevents invalid policy files from blocking before their byte limit. |
+| 24 | Model manifest CLI/environment selector | Same intended authority as alert 2, now at the hardened descriptor open. The actual CLI and size-growth tests cover admission; no MCP/source/model setter exists. |
+
+These are individual path-authority false-positive dispositions, distinct from
+fixing the additional availability/robustness issues. Future helper changes can
+create new alert identities and need fresh PR-specific review. Their resolution
+must not be inferred from a clean main-branch alert list.
