@@ -88,7 +88,7 @@ through review. Do not drop unknown fields to obtain a successful tick.
 `tests/test_kev.py` and native TLS/SQL acquisition cases cover mapping, bounds,
 revisions, metadata-only changes, absence, malformed responses and adapter changes.
 The guarded service harness additionally exercises synthetic KEV collection,
-replay, schema refusal, worker and reader units. Candidate-bound execution evidence
-is required separately; these fixtures do not prove operational provider access,
+replay, schema refusal, worker and reader units. The [two-LTS service receipt](testing/kev-service-2026-10-18.json) records
+passing execution at its named source and wheel. These fixtures do not prove operational provider access,
 production catalogue capacity, local applicability or complete vulnerability
 intelligence. See [ADR-0048](adr/0048-kev-catalogue-adapter.md).

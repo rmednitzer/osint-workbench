@@ -40,6 +40,13 @@ chunks used by the optional retrieval profile.
 
 ## Verified baseline and evidence scope
 
+The KEV service candidate `2789f99bf00602b3a81c08d6c9acb20272ec71c7` passed
+both LTS service and credential-isolation profiles in run `39166863336`. Its
+[receipt](docs/testing/kev-service-2026-10-18.json) binds source, harness/unit
+hashes and wheel to synthetic collection, replay, schema refusal and actual
+worker/reader acceptance. This is not operational publisher access, full-catalogue
+capacity or local-asset applicability evidence. Foundation checks remain separate.
+
 The operational-profile candidate `d4a1e64be1e399eb052db13f35ddcf0fc5234b81`
 passed **1,203 tests with no skips on each** of Ubuntu 24.04/Python 3.12,
 Ubuntu 24.04/Python 3.13 and Ubuntu 26.04/Python 3.14 in foundation run
