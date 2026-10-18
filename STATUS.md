@@ -34,7 +34,7 @@ concurrency and policy-gated isolated recovery. See
 [the earlier revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
 models establish execution contracts, not pretrained semantic quality.
 
-The full programme covers 28 capability areas, 38 ADRs, 58 requirements and 51
+The full programme covers 28 capability areas, 39 ADRs, 58 requirements and 51
 acceptance scenarios. The tests in this repository currently establish only a
 foundation subset. Detailed future specifications are under `docs/`; they are not
 execution receipts. CI results are authoritative for a particular tested revision.
@@ -211,3 +211,17 @@ See [native inventory](docs/native-inventory.md),
 [notice scope](docs/security/supplementary-notices.md) and
 [ADR-0038](docs/adr/0038-native-file-evidence-notices.md). Exact installed/native
 and signature results remain specific to the tested revision.
+
+The dependency refresh adopts MCP SDK 2.3.0 with explicit low-level handlers,
+retained seven-tool validation and a per-server telemetry opt-out. Real stdio
+tests cover modern discovery and legacy initialization, sanitized refusal,
+incidental stdout, child pipes and cancellation. Cancellation suppresses the
+response; it does not terminate an executing synchronous worker. Native SQL and
+installed-wheel acceptance remain tied to the candidate's required CI, rather
+than inferred from protocol fixtures. See
+[ADR-0039](docs/adr/0039-mcp-v2-dependency-refresh.md),
+[dated Python currency](docs/testing/dependency-currency-2026-10-18.json) and
+[external tool pins](docs/testing/dependency-tools-2026-10-18.json).
+CPython 3.15 and real assistant/remote HTTP compatibility are outside the current
+3.12–3.14 support claim. The updated licence/native policies describe the actual
+47-distribution runtime; earlier receipts retain their original inventories.

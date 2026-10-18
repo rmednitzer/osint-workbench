@@ -1,6 +1,6 @@
 # Native ELF evidence boundary
 
-This policy inventories ELF objects belonging to the 49 locked Python runtime
+This policy inventories ELF objects belonging to the 47 locked Python runtime
 plus retrieval distributions on supported Linux x86_64 profiles. It adds a binary
 evidence check alongside the distribution inventory, SBOM and licence-text review.
 It is not a complete native dependency graph, vulnerability assessment, licence
@@ -18,15 +18,23 @@ publisher-supplied metadata, not cryptographic archive-origin proof. An empty se
 ELF object to a previously non-ELF distribution requires review. Distribution
 names and versions must match the exact runtime inventory.
 
-The initial policy contains 69 archive variants: 30 standard-ABI/ABI3 native
-registry wheels, 38 universal registry wheels and one baseline application wheel.
-There are 147 ELF-file proof entries across these variants; repeated files across
-archives remain part of each complete set. The inspected universal protobuf wheel
-has an empty ELF set, while its ABI3 wheel has an extension object. All inspected
-universal wheels had no ELF objects. The frozen CPython 3.12 installation contains
-50 RECORD-listed ELF files across 11 distributions, and those complete sets match
-the reviewed policy. This local byte/metadata comparison is not a hosted runtime
-acceptance result for every supported Python minor.
+The current MCP 2.3.0 refresh policy contains 67 archive variants: 30
+standard-ABI/ABI3 native registry wheels, 36 universal registry wheels and one
+newly built application wheel. There are 147 ELF-file proof entries across these
+variants; repeated files across archives remain part of each complete set. The
+inspected universal protobuf wheel has an empty ELF set, while its ABI3 wheel
+has an extension object. All inspected universal wheels had no ELF objects.
+The frozen CPython 3.12 installation contains 50 RECORD-listed ELF files across
+11 distributions, and those complete sets match the current reviewed policy.
+This local byte/metadata comparison is not a hosted runtime acceptance result for
+every supported Python minor.
+
+The prior policy at source `331d597` accounted for 49 distributions and 69
+archive variants (30 native registry, 38 universal registry and the application).
+Its 147 native ELF proof entries remain byte-for-byte unchanged in this refresh.
+Only pure-package membership, MCP/filelock versions and the application wheel
+identity change; the former review remains in Git history. Package additions and
+removals are listed in [the licence review](dependency-licences.md).
 
 Wheel archive bytes are obtained from the public locked registry URLs and checked
 against their `uv.lock` SHA-256 before ZIP inspection. Supported archive evidence

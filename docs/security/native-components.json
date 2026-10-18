@@ -2,7 +2,15 @@
   "schema_version": 1,
   "review_date": "2026-10-18",
   "scope": "RECORD-listed ELF file-set identity; standard CPython3.12-3.14 manylinux x86_64 and compatible ABI3; no native dependency closure or legal approval",
-  "lock_sha256": "b589fb960fb0b93b36720dd484b4c9bb1a66e510703aa52bd9eb9d4e375a62fa",
+  "lock_sha256": "3487aad2b6d8e5a83f5a43dda945abed1dd146d7bba78254a72a380091ae5918",
+  "review_history": [
+    {
+      "source_commit": "331d597",
+      "distributions": 49,
+      "archive_variants": 69,
+      "note": "Prior exact review retained in Git; successor MCP2 closure has47 distributions."
+    }
+  ],
   "distributions": [
     {
       "name": "annotated-types",
@@ -312,12 +320,12 @@
     },
     {
       "name": "filelock",
-      "version": "4.2.1",
+      "version": "4.2.2",
       "native_dependency_closure": "not-established-by-empty-ELF-set",
       "variants": [
         {
-          "wheel_filename": "filelock-4.2.1-py3-none-any.whl",
-          "wheel_sha256": "7be2662e9e826b9bba28afc0f843a123280d799a2ea44bb5d35ccec67905ae44",
+          "wheel_filename": "filelock-4.2.2-py3-none-any.whl",
+          "wheel_sha256": "1851d2f14ca2901e98069d68333b33ad7409f56904e17b48cc0c32a0db8ed73a",
           "files": []
         }
       ]
@@ -416,30 +424,6 @@
       ]
     },
     {
-      "name": "httpx",
-      "version": "0.28.1",
-      "native_dependency_closure": "not-established-by-empty-ELF-set",
-      "variants": [
-        {
-          "wheel_filename": "httpx-0.28.1-py3-none-any.whl",
-          "wheel_sha256": "d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad",
-          "files": []
-        }
-      ]
-    },
-    {
-      "name": "httpx-sse",
-      "version": "0.4.3",
-      "native_dependency_closure": "not-established-by-empty-ELF-set",
-      "variants": [
-        {
-          "wheel_filename": "httpx_sse-0.4.3-py3-none-any.whl",
-          "wheel_sha256": "0ac1c9fe3c0afad2e0ebb25a934a59f4c7823b60792691f779fad2c5568830fc",
-          "files": []
-        }
-      ]
-    },
-    {
       "name": "httpx2",
       "version": "2.13.1",
       "native_dependency_closure": "not-established-by-empty-ELF-set",
@@ -501,12 +485,24 @@
     },
     {
       "name": "mcp",
-      "version": "1.30.0",
+      "version": "2.3.0",
       "native_dependency_closure": "not-established-by-empty-ELF-set",
       "variants": [
         {
-          "wheel_filename": "mcp-1.30.0-py3-none-any.whl",
-          "wheel_sha256": "666edb5009503e1047c9d60346a756f94b261f05cc2625f23d41c728ffc484d0",
+          "wheel_filename": "mcp-2.3.0-py3-none-any.whl",
+          "wheel_sha256": "dd0c44c089d16453e8ae31a3877a0054d7a2314caaa81f5e0541b9b1734b2377",
+          "files": []
+        }
+      ]
+    },
+    {
+      "name": "mcp-types",
+      "version": "2.3.0",
+      "native_dependency_closure": "not-established-by-empty-ELF-set",
+      "variants": [
+        {
+          "wheel_filename": "mcp_types-2.3.0-py3-none-any.whl",
+          "wheel_sha256": "968efdbdaedfab06adae40d378a34395f1090c5921d4be3c9cde283aaf76d91d",
           "files": []
         }
       ]
@@ -1726,13 +1722,25 @@
       ]
     },
     {
+      "name": "opentelemetry-api",
+      "version": "1.45.1",
+      "native_dependency_closure": "not-established-by-empty-ELF-set",
+      "variants": [
+        {
+          "wheel_filename": "opentelemetry_api-1.45.1-py3-none-any.whl",
+          "wheel_sha256": "b31553efa588ae44bc306f863c785c5333a9ecc091248c6ee68b4b6c87fdedfb",
+          "files": []
+        }
+      ]
+    },
+    {
       "name": "osint-workbench",
       "version": "0.1.0.dev1",
       "native_dependency_closure": "not-established-by-empty-ELF-set",
       "variants": [
         {
           "wheel_filename": "osint_workbench-0.1.0.dev1-py3-none-any.whl",
-          "wheel_sha256": "18b00172609856c317a936b4affcbf6a50c39f9b266efadb8f03b3e7d188d75c",
+          "wheel_sha256": "f10996b455929d14ec99d5e832806b1a177e8bef3d6400a1a1c8accee58c4609",
           "files": []
         }
       ]
@@ -2733,18 +2741,6 @@
       ]
     },
     {
-      "name": "pydantic-settings",
-      "version": "2.16.0",
-      "native_dependency_closure": "not-established-by-empty-ELF-set",
-      "variants": [
-        {
-          "wheel_filename": "pydantic_settings-2.16.0-py3-none-any.whl",
-          "wheel_sha256": "7e73acf7f61936a15e5a3b6eedaea29f133357faf7272f2607ba479b049dd7f2",
-          "files": []
-        }
-      ]
-    },
-    {
       "name": "pydantic-core",
       "version": "2.50.1",
       "native_dependency_closure": "unresolved",
@@ -2834,18 +2830,6 @@
         {
           "wheel_filename": "pyjwt-2.15.1-py3-none-any.whl",
           "wheel_sha256": "42d59d631f7768a1028a64c7ff581a9bf7519804daf91fc5b6c56e30eec5e193",
-          "files": []
-        }
-      ]
-    },
-    {
-      "name": "python-dotenv",
-      "version": "1.2.4",
-      "native_dependency_closure": "not-established-by-empty-ELF-set",
-      "variants": [
-        {
-          "wheel_filename": "python_dotenv-1.2.4-py3-none-any.whl",
-          "wheel_sha256": "42269a8a5b3fd54ffa6f3d84b18abed50064717576b4ecf03dc4a55d8aa04fdc",
           "files": []
         }
       ]
@@ -3103,18 +3087,6 @@
       ]
     },
     {
-      "name": "typing-inspection",
-      "version": "0.4.4",
-      "native_dependency_closure": "not-established-by-empty-ELF-set",
-      "variants": [
-        {
-          "wheel_filename": "typing_inspection-0.4.4-py3-none-any.whl",
-          "wheel_sha256": "65b8397ba37ccbce054456aaccddfc91e6e3083c92824df348d96ca832f3f147",
-          "files": []
-        }
-      ]
-    },
-    {
       "name": "typing-extensions",
       "version": "4.16.0",
       "native_dependency_closure": "not-established-by-empty-ELF-set",
@@ -3122,6 +3094,18 @@
         {
           "wheel_filename": "typing_extensions-4.16.0-py3-none-any.whl",
           "wheel_sha256": "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8",
+          "files": []
+        }
+      ]
+    },
+    {
+      "name": "typing-inspection",
+      "version": "0.4.4",
+      "native_dependency_closure": "not-established-by-empty-ELF-set",
+      "variants": [
+        {
+          "wheel_filename": "typing_inspection-0.4.4-py3-none-any.whl",
+          "wheel_sha256": "65b8397ba37ccbce054456aaccddfc91e6e3083c92824df348d96ca832f3f147",
           "files": []
         }
       ]

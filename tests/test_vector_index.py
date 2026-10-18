@@ -114,7 +114,7 @@ def test_hybrid_search_through_real_mcp_transport(retrieval, tmp_path):
         async with stdio_client(params) as (read, write), ClientSession(read, write) as session:
             await session.initialize()
             result = await session.call_tool("search_documents", {"query": "disk"})
-            assert not result.isError
+            assert not result.is_error
             value = json.loads(result.content[0].text)
             assert value["strategy"] == "hybrid-exact"
             assert value["generation_id"] == generation["generation_id"]

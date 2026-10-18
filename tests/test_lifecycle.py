@@ -175,7 +175,7 @@ def test_retirement_revokes_reader_and_fences_all_versions(databases, tmp_path):
                 ("get_briefing", {"briefing_id": brief}),
             ):
                 result = await client.call_tool(tool, args)
-                assert result.isError and "Straße storage" not in result.content[0].text
+                assert result.is_error and "Straße storage" not in result.content[0].text
             tools = await client.list_tools()
             assert len(tools.tools) == 7 and not any("retire" in t.name for t in tools.tools)
 

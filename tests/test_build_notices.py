@@ -84,7 +84,7 @@ def test_policy_drift_cannot_relabel_vendored_text(checkout, change):
     if change == "schema":
         policy["schema_version"] = 2
     elif change == "version":
-        selected["version"] = "0.23.4"
+        selected["version"] = "0.0.0+unreviewed"
     elif change == "commit":
         selected["upstream_evidence"]["commit"] = "0" * 40
     elif change == "hash":
@@ -118,7 +118,8 @@ def test_exact_two_component_selection_cannot_silently_expand_or_shrink(checkout
 def test_changed_missing_or_unsafe_source_cannot_produce_a_bundle(checkout, change):
     root, policy = checkout
     builder = module()
-    source = root / "docs/security/notices/tokenizers-0.23.3.LICENSE"
+    version = builder.SELECTION["tokenizers"]["version"]
+    source = root / f"docs/security/notices/tokenizers-{version}.LICENSE"
     original = source.read_bytes()
     source.unlink()
     if change == "bytes":

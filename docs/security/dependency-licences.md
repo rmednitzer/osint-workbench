@@ -1,14 +1,14 @@
 # Dependency licence evidence and outstanding dispositions
 
-This review accounts for the 49 installed Python distributions in the locked
+This review accounts for the 47 installed Python distributions in the locked
 runtime plus retrieval profile on 2026-10-18. It includes the Apache-2.0
 application. It is an engineering inventory of declarations, shipped texts and
 remaining work, **not legal approval or a redistribution clearance**.
 
 [The machine-readable policy](dependency-licences.json) records exact versions,
 publisher `License-Expression` separately from text summaries, wheel-relative
-METADATA/licence paths and SHA-256 hashes. Fourteen distributions have no
-`License-Expression`; that does not mean they have no licence. Twelve of those
+METADATA/licence paths and SHA-256 hashes. Twelve distributions have no
+`License-Expression`; that does not mean they have no licence. Ten of those
 ship relevant texts. Flatbuffers and tokenizers ship no licence text in the
 reviewed wheels and remain explicitly unresolved for distribution notices.
 Exact-release upstream Apache-2.0 texts were independently obtained for those
@@ -20,22 +20,35 @@ evidence nor classifiers/legacy declarations resolve missing wheel notices.
 
 ## Evidence and verification
 
-The initial evidence comes from the hashed, no-development runtime plus retrieval
-installation on CPython 3.12/Linux x86_64. Separately, 31 locked manylinux x86_64
-wheels were downloaded from their exact public registry artifact URLs and
-checked against `uv.lock` SHA-256 values before ZIP inspection. Thirty cover
-standard CPython 3.12, 3.13 and 3.14 and compatible ABI3 tags; the remaining
-ONNX Runtime archive uses the free-threaded CPython 3.13 ABI and is outside the
-supported runtime profiles. Their referenced METADATA and licence-text
-bytes match the initial evidence. The policy records those wheel filenames and
-hashes. The additional free-threaded archive inspection does not establish runtime
-support. Musl, Windows, macOS, other architectures and source builds are outside
-that wheel inspection. Hashes establish byte identity, not publisher
-truth, completeness of notices or legal compatibility.
+The current MCP 2.3.0 refresh uses a newly built application wheel and frozen,
+no-development runtime plus retrieval installation on CPython 3.12/Linux x86_64.
+It reviews 67 archives: 30 standard-ABI/compatible-ABI3 manylinux x86_64 native
+registry wheels, 36 universal registry wheels and the application wheel. Every
+registry archive was rechecked against the current lock's SHA-256 before
+inspection. All supported archive METADATA/licence evidence sets agree with the
+installed proofs; the policy records 116 referenced files and exact reviewed
+archive identities.
+
+Compared with the prior 49-distribution review at source `331d597`, MCP changes
+from 1.30.0 to 2.3.0 and filelock from 4.2.1 to 4.2.2. New dependencies are
+mcp-types 2.3.0 (shipped MIT text, no `License-Expression`) and opentelemetry-api
+1.45.1 (declared and shipped Apache-2.0). MCP and filelock licence-text bytes are
+unchanged. HTTPX 0.28.1, httpx-sse, pydantic-settings and python-dotenv leave this
+closure; the distinct HTTPX2 distribution remains. Their old review is retained
+in Git history, not represented as a current installed dependency. The exact two
+upstream-only notice supplements and unresolved native obligations remain.
+
+Historically, the initial review inspected 31 manylinux archives: 30 supported
+standard/ABI3 archives and one additional unsupported free-threaded CPython 3.13
+ONNX Runtime archive. The current review admits only the 30 supported native
+archives. No free-threaded, musl, Windows, macOS, other architecture or source-build
+support follows from those inspections. Hashes establish byte identity, not
+publisher truth, completeness of notices or legal compatibility.
 
 `locked_wheel_sha256` lists registry candidates present in the lock, including
 platforms outside this review; it is not a list of inspected artifacts. The
-separate `reviewed_native_wheels` list identifies actual inspected native wheels.
+separate `reviewed_native_wheels` list identifies current inspected native wheels;
+`reviewed_archives` also accounts for universal and application archives.
 The application's recorded wheel hash identifies the baseline used for review;
 future builds can change application code while preserving its licence evidence.
 The build receipt separately binds each actual build artifact.

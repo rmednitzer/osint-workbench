@@ -40,6 +40,11 @@ configuration is not a dependency compatibility assessment.
 - Do not automatically rewrite Python support bounds, the runner generation or
   the build-system requirement. Those are tested compatibility/closure decisions.
   Revisit exclusions during dependency review; they are not permanent freezes.
+- Review major caps against upstream stable releases during a complete refresh,
+  including new transitive packages and the separately hashed build closure.
+  Distinguish separate distribution names such as `httpcore` and `httpcore2`.
+  Record supported-version exceptions and dated primary-source observations;
+  lock-file success alone does not establish currency or compatibility.
 - Retain GitHub dependency alerts and Dependabot security fixes. Security PRs may
   arrive outside routine Renovate scheduling. Do not automatically suppress
   duplicate advisories; inspect and reconcile equivalent update branches.
@@ -152,11 +157,13 @@ clearance, complete release assurance and the wider implementation
 backlog remain open. Main-push attestations are separate from PR receipts and do
 not establish operational runtime or independent quality.
 
-The reviewed runtime-compatibility change updates SHA-pinned checkout, artifact
-upload and setup-uv actions, and pins uv 0.13.1. It also reviews the two targeted
-filelock/platformdirs patch updates. This explicit compatibility review is separate
-from routine bot scheduling/release-age eligibility; MCP remains on its reviewed
-1.x API contract and native source/checksum remain unchanged.
+The earlier runtime-compatibility increment updated SHA-pinned checkout,
+artifact upload and setup-uv actions, pinned uv 0.13.1 and reviewed targeted
+filelock/platformdirs patches. It retained the 1.x MCP API and native source at
+that revision. [ADR-0039](adr/0039-mcp-v2-dependency-refresh.md) supersedes those
+two retained selections with the MCP v2 and stable native-source transition.
+Explicit compatibility review remains separate from routine bot scheduling and
+release-age eligibility.
 
 ## Official guidance
 
@@ -214,3 +221,10 @@ ABI distinctions and unresolved static/native/OS/model composition. V3 receipts
 retain eight fixed files per leg, and the isolated main signer admits exactly
 that set. The actual inline admission script is exercised by synthetic positive
 and refusal fixtures, including optimization, substitution and wrong identities.
+
+[ADR-0039](adr/0039-mcp-v2-dependency-refresh.md) governs the MCP v2 transition
+and complete dependency refresh. The recurring Renovate dashboard stays open;
+its pending items are reconciled by the bot after reviewed changes merge.
+An updated lock also requires matching installed licence/native evidence,
+modern and legacy protocol acceptance and fresh protected CI. Keep dated
+currency observations separate from the revision-bound execution receipts.

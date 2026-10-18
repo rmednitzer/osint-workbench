@@ -226,7 +226,7 @@ def test_all_versions_and_sql_derivatives_purged_with_permanent_policy_and_real_
         async with stdio_client(params) as (read, write), ClientSession(read, write) as client:
             await client.initialize()
             response = await client.call_tool("get_document", {"document_id": document})
-            assert response.isError and "Straße storage" not in response.content[0].text
+            assert response.is_error and "Straße storage" not in response.content[0].text
             inventory = await client.list_tools()
             assert len(inventory.tools) == 7 and not any(
                 "purge" in tool.name for tool in inventory.tools

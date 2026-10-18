@@ -79,7 +79,7 @@ Evidence: revision/profile/fixture/tool identity, assertions, bounded sanitized 
 
 ### E07: Real MCP interoperability
 
-Action: Use a real maintained MCP SDK client against installed stdio server: initialize, discover enabled-profile read tools, call every registered tool, paginate, reject disabled-profile tools and shut down.
+Action: Use a real maintained MCP SDK client against the installed stdio server in modern discovery and legacy initialization modes: discover enabled-profile read tools, call every registered tool, paginate, reject disabled-profile tools and shut down. Record the negotiated version per mode and exercise the adapter with its SDK tracing middleware removed.
 
 Oracle / pass condition: Negotiation and schemas validate; registered tools exactly match the versioned capability manifest; no writes/admin/model execution. stdout is protocol-only and shutdown leaves no owned tasks.
 

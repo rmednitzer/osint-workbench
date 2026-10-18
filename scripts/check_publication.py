@@ -47,6 +47,8 @@ DOCUMENTATION_HOSTS = {
     "github.com",
     "raw.githubusercontent.com",
     "modelcontextprotocol.io",
+    "py.sdk.modelcontextprotocol.io",
+    "pypi.org",
     "www.postgresql.org",
     "www.rfc-editor.org",
     "docs.python.org",
