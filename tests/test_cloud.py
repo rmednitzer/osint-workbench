@@ -7,6 +7,7 @@ live-provider, sovereignty or invoice claim.
 
 import json
 import threading
+import time
 from decimal import Decimal
 
 import httpcore
@@ -15,6 +16,7 @@ import pytest
 
 from osint_workbench import cloud, fetch
 from osint_workbench import intelligence as intel
+from osint_workbench.database import Database
 from osint_workbench.errors import WorkbenchError
 from tests.test_intelligence import claim, setup
 from tests.test_recovery import destination as destination
@@ -574,3 +576,89 @@ def test_ledger_survives_checkpoint_and_restore_exactly(
     assert cloud.exposure(Database(destination["writer"]), "fixture-eu", "EUR") == cloud.exposure(
         writer, "fixture-eu", "EUR"
     )
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("same_operation", [False, True], ids=["cap", "unresolved-replay"])
+def test_waiting_reservations_refresh_state_with_repeatable_read_default(databases, same_operation):
+    writer, _, roles, *_ = databases
+    parsed, sha = policy(route(cap="0.010000000"))
+    target = parsed.routes[0]
+    ready = threading.Barrier(3)
+    pids, outcomes, failures = [], [], []
+
+    class RepeatableReadDatabase(Database):
+        def connect(self):
+            conn = super().connect()
+            try:
+                # Change the actual session default without altering a shared
+                # role or database. Return an idle connection with no snapshot.
+                conn.execute(
+                    "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL REPEATABLE READ"
+                )
+                conn.commit()
+                assert (
+                    conn.execute("SHOW transaction_isolation").fetchone()["transaction_isolation"]
+                    == "repeatable read"
+                )
+                conn.commit()
+                pids.append(conn.info.backend_pid)
+                ready.wait(timeout=3)
+                return conn
+            except BaseException:
+                conn.close()
+                raise
+
+    led = cloud.Ledger(RepeatableReadDatabase(roles["writer"]))
+    reserve = Decimal("0.001000000" if same_operation else "0.006000000")
+
+    def reserve_once(index):
+        try:
+            outcomes.append(
+                led.record(
+                    operation_id="same-operation" if same_operation else f"cap-operation-{index}",
+                    route=target,
+                    policy_sha=sha,
+                    task="structured_extraction",
+                    data_class="public",
+                    decision="conforming",
+                    reason=None,
+                    packet_sha="a" * 64,
+                    reserve=reserve,
+                )[1:]
+            )
+        except Exception as exc:
+            failures.append(exc)
+
+    threads = [threading.Thread(target=reserve_once, args=(index,)) for index in range(2)]
+    key = "ow.remote:" + target.route_id + ":" + target.pricebook.currency
+    with psycopg.connect(roles["admin"], autocommit=True) as gate:
+        gate.execute("SELECT pg_advisory_lock(hashtextextended(%s,0))", (key,))
+        try:
+            for thread in threads:
+                thread.start()
+            ready.wait(timeout=3)
+            # Both workers must reach the actual blocking SELECT before either
+            # is released. Without the fix their RR snapshots both see no rows.
+            deadline = time.monotonic() + 3
+            while True:
+                waiting = gate.execute(
+                    "SELECT count(*) FROM pg_stat_activity WHERE pid=ANY(%s::int[]) "
+                    "AND wait_event_type='Lock' AND wait_event='advisory'",
+                    (pids,),
+                ).fetchone()[0]
+                if waiting == 2:
+                    break
+                assert time.monotonic() < deadline, "reservations did not both wait on the gate"
+                time.sleep(0.01)
+        finally:
+            gate.execute("SELECT pg_advisory_unlock(hashtextextended(%s,0))", (key,))
+            for thread in threads:
+                if thread.ident is not None:
+                    thread.join(timeout=8)
+    assert all(not thread.is_alive() for thread in threads)
+    assert failures == []
+    expected_reason = "PRIOR_ATTEMPT_UNRESOLVED" if same_operation else "BUDGET_EXHAUSTED"
+    assert sorted(outcomes) == [("conforming", None), ("denied", expected_reason)]
+    assert cloud.exposure(writer, target.route_id, target.pricebook.currency) == reserve
+    assert sorted(row["status"] for row in ledger(roles)) == ["denied", "reserved"]

@@ -166,6 +166,37 @@ def _public_email(email, base_emails):
     )
 
 
+def _metadata_categories(text, private_values, base_emails=()):
+    categories = set(inspect_text("docs/commit-metadata", text, private_values)) - {"email"}
+    if any(not _public_email(e, base_emails) for e in METADATA_EMAILS.findall(text)):
+        categories.add("metadata-email")
+    return sorted(categories)
+
+
+def scan_message_file(path, private_values=()):
+    """Preflight an exact planned public message without creating a Git object.
+
+    No identity inheritance: use reserved public identities in optional trailers.
+    Diagnostics never reproduce the selected path or message.
+    """
+    try:
+        descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        try:
+            info = os.fstat(descriptor)
+            if not stat.S_ISREG(info.st_mode) or info.st_size > MAX_COMMIT_BYTES:
+                raise ValueError
+            with os.fdopen(descriptor, "rb", closefd=False) as stream:
+                raw = stream.read(MAX_COMMIT_BYTES + 1)
+        finally:
+            os.close(descriptor)
+        if len(raw) > MAX_COMMIT_BYTES or b"\0" in raw:
+            raise ValueError
+        categories = _metadata_categories(raw.decode("utf-8"), private_values)
+    except (OSError, ValueError):
+        categories = ["message-input-refused"]
+    return [{"path": "<planned-message>", "category": category} for category in categories]
+
+
 def scan_commit_metadata(root, base_revision, private_values=(), *, allow_base_identities=False):
     """Only commits newly reachable from HEAD, excluding an explicitly trusted base.
 
@@ -189,11 +220,8 @@ def scan_commit_metadata(root, base_revision, private_values=(), *, allow_base_i
             total += size
             if total > MAX_METADATA_BYTES:
                 raise MetadataError("metadata-limit-exceeded")
-            categories = set(inspect_text("docs/commit-metadata", text, private_values)) - {"email"}
-            if any(
-                not _public_email(e, base_emails)
-                for e in [*identities, *METADATA_EMAILS.findall(text)]
-            ):
+            categories = set(_metadata_categories(text, private_values, base_emails))
+            if any(not _public_email(e, base_emails) for e in identities):
                 categories.add("metadata-email")
             findings.extend({"commit": revision, "category": c} for c in sorted(categories))
         return {"scanned_commits": len(revisions), "findings": findings}
@@ -328,6 +356,9 @@ def main():
     parser.add_argument("--evidence", type=Path, action="append", default=[])
     parser.add_argument("--base-revision", help="Explicit reviewed ancestor; scan only base..HEAD")
     parser.add_argument("--allow-base-identities", action="store_true")
+    parser.add_argument(
+        "--message-file", type=Path, help="Preflight an exact planned public message"
+    )
     args = parser.parse_args()
     if args.allow_base_identities and args.base_revision is None:
         parser.error("--allow-base-identities requires --base-revision")
@@ -408,6 +439,8 @@ def main():
                 )
     for directory in args.evidence:
         findings.extend(scan_generated_evidence(directory, values))
+    if args.message_file is not None:
+        findings.extend(scan_message_file(args.message_file, values))
     metadata = (
         scan_commit_metadata(
             ROOT, args.base_revision, values, allow_base_identities=args.allow_base_identities

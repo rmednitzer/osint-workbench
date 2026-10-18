@@ -263,6 +263,10 @@ class Ledger:
         attempt, route_id = uuid.uuid4(), route.route_id
         currency = route.pricebook.currency
         with self.db.connect() as conn:
+            # The advisory lock can wait. Repeatable Read would retain the
+            # snapshot taken before that wait and miss the preceding holder's
+            # reservation. Each admission read must see its committed state.
+            conn.execute("SET TRANSACTION ISOLATION LEVEL READ COMMITTED")
             if decision != "denied":
                 # Serialize reservations per route and currency across workers.
                 # A job binds one route, so this also serializes its attempts.

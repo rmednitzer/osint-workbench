@@ -38,6 +38,15 @@ omit URLs; the next merge scans only commits after `e594e949`.
 
 ## Open, with rationale
 
+The subsequent review of merged PRs #9–#12 found two integration defects:
+populated `remote_operations` rows were missing a purge inventory key, and
+reservation locks did not refresh Repeatable Read snapshots. The successor
+corrections and native acceptance cases are specified in
+[ADR-0044](../adr/0044-ledger-integration-boundaries.md). Candidate CI establishes
+their runtime results. Earlier migration bytes, grants and public history remain
+unchanged. A full-range scan from `a5251478` still identifies the historical
+`e594e949` message; the planned-message preflight does not clear that finding.
+
 | Finding | Severity | Disposition |
 | --- | --- | --- |
 | Enrichment subject/object are not required to occur in the quoted span, yet are labelled source mentions | Medium | Needs a decision between span-bound mention validation and renaming the field contract; affects model-output acceptance and existing assertions |

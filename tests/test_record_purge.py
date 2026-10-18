@@ -9,6 +9,7 @@ import stat
 import sys
 import uuid
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 
 import psycopg
 import pytest
@@ -19,7 +20,7 @@ from psycopg.conninfo import make_conninfo
 from psycopg.types.json import Jsonb
 from pydantic import ValidationError
 
-from osint_workbench import intelligence, lifecycle, record_purge, recovery
+from osint_workbench import cloud, intelligence, lifecycle, record_purge, recovery
 from osint_workbench.database import Database
 from osint_workbench.errors import WorkbenchError
 from osint_workbench.evidence import EvidenceStore
@@ -27,6 +28,7 @@ from osint_workbench.jobs import Jobs
 from osint_workbench.service import ReadService
 from osint_workbench.text import digest
 from osint_workbench.vector_index import VectorIndex
+from tests.test_cloud import policy, route
 from tests.test_recovery import _fixture, _input, policy_arguments, published_pair
 from tests.test_recovery import destination as destination
 
@@ -149,6 +151,70 @@ def assert_absent(context, identifiers):
                 ),
                 (identifiers,),
             ).fetchone()
+
+
+def test_purge_with_populated_remote_ledger_preserves_attempts_and_settlements(context):
+    document = retired_document(context)
+    parsed, policy_sha = policy(route())
+    ledger = cloud.Ledger(context["writer"])
+    identifiers = []
+    for status in ("denied", "reserved", "dispatched", "outcome_unknown", "settled"):
+        identifier, decision, _ = ledger.record(
+            operation_id="synthetic-purge-ledger-" + status,
+            route=parsed.routes[0],
+            policy_sha=policy_sha,
+            task="structured_extraction",
+            data_class="public",
+            decision="denied" if status == "denied" else "conforming",
+            reason="SYNTHETIC_DENIAL" if status == "denied" else None,
+            packet_sha="a" * 64,
+            reserve=Decimal("0.002000000"),
+        )
+        assert decision == ("denied" if status == "denied" else "conforming")
+        identifiers.append(identifier)
+        if status not in ("denied", "reserved"):
+            ledger.transition(identifier, "reserved", "dispatched")
+        if status in ("outcome_unknown", "settled"):
+            ledger.transition(
+                identifier, "dispatched", "outcome_unknown", error_code="REMOTE_OUTCOME_UNKNOWN"
+            )
+        if status == "settled":
+            cloud.settle(
+                Database(context["roles"]["accounting"]),
+                cloud.Settlement.model_validate_json(
+                    json.dumps(
+                        {
+                            "attempt_id": str(identifier),
+                            "basis": "provider_statement",
+                            "cost": "0.001234567",
+                            "currency": "EUR",
+                            "evidence_sha256": "b" * 64,
+                            "actor": "synthetic-accountant",
+                            "rationale": "Synthetic statement retained across unrelated SQL purge.",
+                        }
+                    )
+                ),
+            )
+
+    def attempts():
+        with context["admin"].connect() as conn:
+            return conn.execute("SELECT * FROM ow.remote_operations ORDER BY attempt_id").fetchall()
+
+    before = attempts()
+    assert {row["attempt_id"] for row in before} == set(identifiers)
+    assert next(row for row in before if row["settlement_basis"])["settled_cost"] == Decimal(
+        "0.001234567"
+    )
+    exposure = cloud.exposure(context["writer"], "fixture-eu", "EUR")
+    path, receipt = plan(context, document)
+    assert attempts() == before
+    result = record_purge.apply(context["purger"], path, receipt["sha256"])
+    assert result["sql_deleted"] and result["counts"]["documents"] == 1
+    assert_absent(context, [document])
+    assert attempts() == before
+    assert cloud.exposure(context["writer"], "fixture-eu", "EUR") == exposure
+    assert record_purge.apply(context["purger"], path, receipt["sha256"])["replayed"]
+    assert attempts() == before
 
 
 def test_all_versions_and_sql_derivatives_purged_with_permanent_policy_and_real_mcp(context):

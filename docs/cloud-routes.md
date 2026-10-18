@@ -106,6 +106,12 @@ nothing after that, and a settled attempt is final. Exposure is per route and
 currency and is never summed across currencies or converted. Estimates are not
 invoices.
 
+Reservation admission explicitly uses Read Committed before acquiring the
+per-route-and-currency transaction lock. After waiting, the replay and exposure
+queries see the preceding holder's committed attempt, including when the login
+or database defaults to Repeatable Read. Other transactions keep their configured
+isolation. See [ADR-0044](adr/0044-ledger-integration-boundaries.md).
+
 No attempt is retried automatically. Any unsettled attempt that may have
 reached the provider blocks further attempts for the same job, and the
 enrichment job fails terminally. Conservative exposure can therefore exhaust a

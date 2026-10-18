@@ -34,7 +34,7 @@ concurrency and policy-gated isolated recovery. See
 [the earlier revision-bound receipt](docs/testing/verification-evidence.json). Synthetic
 models establish execution contracts, not pretrained semantic quality.
 
-The full programme covers 28 capability areas, 39 ADRs, 58 requirements and 51
+The full programme covers 28 capability areas, 44 ADRs, 58 requirements and 51
 acceptance scenarios. The tests in this repository currently establish only a
 foundation subset. Detailed future specifications are under `docs/`; they are not
 execution receipts. CI results are authoritative for a particular tested revision.
@@ -274,3 +274,12 @@ deadline now starts before dispatch is committed.
 Native vendor adapters, streaming, batches, invoice import, a separate
 dispatcher identity and any live-provider, sovereignty or invoice evidence
 remain open.
+
+The ledger integration corrections ([ADR-0044](docs/adr/0044-ledger-integration-boundaries.md))
+allow SQL purge planning with populated remote accounting while preserving all
+attempt and settlement rows. Reservation transactions explicitly select Read
+Committed before locking, so higher session defaults do not admit stale budget
+or replay checks. Native regressions cover populated-ledger purge and concurrent
+Repeatable Read sessions; their pass evidence belongs to candidate CI. A bounded
+planned-message publication preflight and agent/merge guidance address the
+session-link incident without rewriting or clearing historical metadata.

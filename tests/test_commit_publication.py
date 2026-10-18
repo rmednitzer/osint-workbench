@@ -180,6 +180,78 @@ def test_merge_range_checks_side_commits_not_only_merge_message(checker, history
     assert {"commit": bad, "category": "private-identifier"} in result["findings"]
 
 
+def test_agent_session_link_is_refused_before_merge_and_in_merge_metadata(
+    checker, history, tmp_path
+):
+    repo, git, commit = history
+    base = commit()
+    git("checkout", "--quiet", "-b", "synthetic-fix")
+    commit()
+    assert checker.scan_commit_metadata(repo, base)["findings"] == []
+    # Synthetic link only; never import an actual session identifier.
+    session = "https:" + "//claude.ai/code/synthetic-session-canary"
+    message = "Synthetic merge\n\nGenerated with an agent: " + session
+    planned = tmp_path / "synthetic-message"
+    planned.write_text(message)
+    assert checker.scan_message_file(planned) == [
+        {"path": "<planned-message>", "category": "unclassified-url"}
+    ]
+    git("checkout", "--quiet", "--detach", base)
+    git("merge", "--quiet", "--no-ff", "synthetic-fix", "-m", message)
+    head = git("rev-parse", "HEAD")
+    result = checker.scan_commit_metadata(repo, base)
+    assert result["findings"] == [{"commit": head, "category": "unclassified-url"}]
+    assert session not in json.dumps(result)
+
+
+@pytest.mark.parametrize(
+    "kind", ["fifo", "symlink", "directory", "missing", "oversized", "utf8", "nul"]
+)
+def test_planned_message_refuses_unsafe_inputs_without_disclosure(checker, tmp_path, kind):
+    message = tmp_path / "synthetic-message-path-canary"
+    if kind == "fifo":
+        os.mkfifo(message, mode=0o600)
+    elif kind == "symlink":
+        target = tmp_path / "synthetic-target"
+        target.write_text("Synthetic message")
+        message.symlink_to(target)
+    elif kind == "directory":
+        message.mkdir()
+    elif kind == "oversized":
+        with message.open("wb") as stream:
+            stream.truncate(checker.MAX_COMMIT_BYTES + 1)
+    elif kind in ("utf8", "nul"):
+        message.write_bytes(b"\xff" if kind == "utf8" else b"Synthetic\0message")
+    assert checker.scan_message_file(message) == [
+        {"path": "<planned-message>", "category": "message-input-refused"}
+    ]
+
+
+def test_cli_preflights_public_message_and_applies_private_policy(
+    checker, history, tmp_path, monkeypatch, capsys
+):
+    repo, _, commit = history
+    commit()
+    message = tmp_path / "synthetic-private-message-path"
+    message.write_text("Synthetic public fix\n\nCo-authored-by: Automation <bot@example.invalid>")
+    monkeypatch.setattr(checker, "ROOT", repo)
+    monkeypatch.delenv("OW_PRIVATE_DENYLIST", raising=False)
+    monkeypatch.setattr("sys.argv", ["check_publication.py", "--message-file", str(message)])
+    assert checker.main() == 0
+    assert json.loads(capsys.readouterr().out)["findings"] == []
+    canary = "synthetic-message-private-value"
+    message.write_text(canary)
+    policy = tmp_path / "synthetic-policy"
+    policy.write_text(json.dumps([canary]))
+    monkeypatch.setenv("OW_PRIVATE_DENYLIST", str(policy))
+    assert checker.main() == 1
+    output = capsys.readouterr().out
+    assert json.loads(output)["findings"] == [
+        {"path": "<planned-message>", "category": "private-identifier"}
+    ]
+    assert canary not in output and str(message) not in output and str(policy) not in output
+
+
 def test_commit_count_and_byte_limits_fail_closed(checker, history, monkeypatch):
     repo, _, commit = history
     base = commit()
