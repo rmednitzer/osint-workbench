@@ -13,7 +13,9 @@ No operational deployment or provider subscription is implied.
 An operator supplies one private `ApiSource` JSON object outside Git. The endpoint
 must use HTTPS, contain no configured query string or credentials, and pass the
 existing public-destination validation. The worker pins validated addresses while
-preserving TLS identity. It makes GET requests only and refuses every redirect.
+preserving TLS identity. Data acquisition makes GET requests and refuses every redirect. The optional
+[OAuth client-credentials mode](oauth-acquisition.md) makes one explicit bounded
+token POST before the resource GET; it cannot select a provider search POST.
 The provider cannot select another destination through its response: the only
 continuation is a bounded opaque value encoded into the configured endpoint's
 `cursor` query parameter. Cookies, arbitrary authentication headers and SDK retry
@@ -57,11 +59,14 @@ operator configuration with an authorized contract-compatible endpoint.
 }
 ```
 
-`auth.kind` supports `none`, `bearer` and `api-key`. Authentication requires a
+`auth.kind` supports `none`, `bearer`, `api-key` and
+[`oauth-client-credentials`](oauth-acquisition.md). Authentication requires a
 credential reference and a non-`public` context identifier. The context identifies
 the operator's authentication scope/version; it is not a secret. API keys support
 only the fixed `X-API-Key` or `apiKey` header names. Arbitrary destinations, header
-names, query credentials, OAuth and interactive sign-in are unsupported.
+names, query credentials, other OAuth flows and interactive sign-in are unsupported.
+OAuth additionally requires the private `auth.oauth` object; existing static modes
+refuse that object and omit it from serialization, preserving their profile hashes.
 
 With privately configured `OW_COLLECTOR_DSN` and `OW_EVIDENCE_ROOT`, run:
 
@@ -203,7 +208,7 @@ operational claims. The [scheduled API service receipt](testing/scheduled-api-ha
 records the passing disconnected two-LTS service path at its named revision. A
 parser, unit or synthetic service pass does not establish actual provider operation.
 
-Provider schemas beyond the bounded KEV mapping, other pagination, documented search POSTs, OAuth/mTLS,
+Provider schemas beyond the bounded KEV mapping, other pagination, documented search POSTs, OAuth beyond client credentials, mTLS,
 signed requests, compressed documents, HTML/JSON-LD, JavaScript rendering,
 webhooks/streaming, paid queries, source qualification, rights-domain enforcement,
 query-disclosure policy and broader real-provider acceptance remain outstanding.

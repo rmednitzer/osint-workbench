@@ -1,4 +1,4 @@
-"""Bounded, secret-free credential references for operator-provisioned tokens.
+"""Bounded, secret-free credential references for operator-provisioned tokens and client secrets.
 
 The service environment may select a systemd credential directory; it never
 supplies credential values. These Linux file checks protect against other users,

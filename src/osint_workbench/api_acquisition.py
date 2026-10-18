@@ -10,33 +10,45 @@ from datetime import timedelta
 from typing import Literal
 from urllib.parse import urlencode, urlsplit
 
-import httpcore
 from psycopg.types.json import Jsonb
-from pydantic import Field, model_validator
+from pydantic import Field, model_serializer, model_validator
 
 from . import fetch
+from .api_http import request_json
 from .api_parser import item_limit
 from .collection import _collection_connection
 from .contracts import DocumentInput, Identifier, StrictModel
 from .credentials import CredentialRef, resolve_credential
 from .errors import SourceHTTPError, WorkbenchError
 from .lifecycle import assert_key_visible
+from .oauth import OAuthClient, obtain_token
 from .text import digest
 
 
 class ApiAuth(StrictModel):
-    kind: Literal["none", "bearer", "api-key"] = "none"
+    kind: Literal["none", "bearer", "api-key", "oauth-client-credentials"] = "none"
     credential: CredentialRef | None = Field(default=None, repr=False)
     header: Literal["X-API-Key", "apiKey"] = "X-API-Key"
     context: Identifier = "public"
+    oauth: OAuthClient | None = Field(default=None, repr=False)
 
     @model_validator(mode="after")
     def coherent(self):
         if (self.kind == "none") != (self.credential is None):
             raise ValueError("API_AUTH_CONFIGURATION_INVALID")
+        if (self.kind == "oauth-client-credentials") != (self.oauth is not None):
+            raise ValueError("OAUTH_CONFIGURATION_INVALID")
         if self.kind != "none" and self.context == "public":
             raise ValueError("API_AUTH_CONTEXT_REQUIRED")
         return self
+
+    @model_serializer(mode="wrap")
+    def serialize(self, handler):
+        result = handler(self)
+        # Preserve legacy profile hashes and pending cursors for unchanged sources.
+        if self.oauth is None:
+            result.pop("oauth", None)
+        return result
 
 
 class ApiSource(StrictModel):
@@ -67,73 +79,11 @@ def _page(source, cursor, secret, deadline):
         raise WorkbenchError("API_CURSOR_INVALID")
     url = source.endpoint + ("?" + urlencode({"cursor": cursor}) if cursor is not None else "")
     headers = [("Accept", "application/json"), ("Accept-Encoding", "identity")]
-    if source.auth.kind == "bearer":
+    if source.auth.kind in {"bearer", "oauth-client-credentials"}:
         headers.append(("Authorization", "Bearer " + secret))
     elif source.auth.kind == "api-key":
         headers.append((source.auth.header, secret))
-    try:
-        fetch._remaining(deadline)
-        with httpcore.ConnectionPool(
-            network_backend=fetch._PublicBackend(deadline),
-            max_connections=1,
-            max_keepalive_connections=0,
-        ) as pool:
-            with pool.stream(
-                "GET",
-                url,
-                headers=headers,
-                extensions={
-                    "timeout": {k: fetch._remaining(deadline) for k in ("connect", "read", "write")}
-                },
-            ) as response:
-                if response.status in {301, 302, 303, 307, 308}:
-                    raise WorkbenchError("API_REDIRECT_REFUSED")
-                if response.status in {401, 403}:
-                    raise WorkbenchError(
-                        "API_AUTHENTICATION_FAILED"
-                        if response.status == 401
-                        else "API_ENTITLEMENT_DENIED"
-                    )
-                if response.status in {429, 503}:
-                    hint = fetch._single_header(
-                        response.headers, b"retry-after", "INVALID_RETRY_AFTER"
-                    )
-                    seconds, when = (
-                        fetch.parse_retry_after(hint) if hint is not None else (None, None)
-                    )
-                    raise SourceHTTPError(retry_after_seconds=seconds, retry_after_at=when)
-                if response.status != 200:
-                    raise WorkbenchError("API_HTTP_ERROR")
-                mime = fetch._single_header(
-                    response.headers, b"content-type", "API_MEDIA_TYPE_INVALID"
-                )
-                if mime is None or mime.split(b";", 1)[0].strip().lower() != b"application/json":
-                    raise WorkbenchError("API_MEDIA_TYPE_INVALID")
-                encoding = fetch._single_header(
-                    response.headers, b"content-encoding", "UNSUPPORTED_CONTENT_ENCODING"
-                )
-                if encoding is not None and encoding.lower() != b"identity":
-                    raise WorkbenchError("UNSUPPORTED_CONTENT_ENCODING")
-                body = bytearray()
-                for chunk in response.iter_stream():
-                    fetch._remaining(deadline)
-                    if len(body) + len(chunk) > fetch.MAX_BYTES:
-                        raise WorkbenchError("SOURCE_TOO_LARGE")
-                    body.extend(chunk)
-                return bytes(body)
-    except WorkbenchError:
-        raise
-    except (
-        httpcore.TimeoutException,
-        httpcore.NetworkError,
-        httpcore.ProtocolError,
-        httpcore.ProxyError,
-        httpcore.UnsupportedProtocol,
-        OSError,
-        UnicodeError,
-        EOFError,
-    ):
-        raise WorkbenchError("API_UNAVAILABLE") from None
+    return request_json(url, headers, deadline)
 
 
 def _documents(raw, source_id, deadline, adapter="bounded-json-pages/1"):
@@ -285,19 +235,26 @@ def collect_api(source: ApiSource, db, store, *, max_pages=1, timeout=60, restar
         accepted = pages = 0
         cursor, page, seen = state["api_cursor"], state["api_page"], state["api_seen_cursors"]
         try:
-            secret = (
+            if page >= 128:
+                raise WorkbenchError("API_CYCLE_PAGE_LIMIT")
+            credential = (
                 resolve_credential(source.auth.credential).get_secret_value()
                 if source.auth.credential
                 else ""
             )
+            secret, resource_deadline = credential, deadline
+            if source.auth.kind == "oauth-client-credentials":
+                grant = obtain_token(source.auth.oauth, credential, deadline)
+                secret = grant.token.get_secret_value()
+                resource_deadline = min(deadline, grant.expires_at)
+            sensitive = {value for value in (secret, credential) if value}
             for _ in range(max_pages):
-                if page >= 128:
-                    raise WorkbenchError("API_CYCLE_PAGE_LIMIT")
-                raw = _page(source, cursor, secret, deadline)
-                if secret and secret.encode() in raw:
+                raw = _page(source, cursor, secret, resource_deadline)
+                if any(value.encode() in raw for value in sensitive):
                     raise WorkbenchError("API_CREDENTIAL_REFLECTED")
                 documents, next_cursor = _documents(raw, source.source_id, deadline, source.adapter)
-                _no_reflection(raw, documents, next_cursor, secret)
+                for value in sensitive:
+                    _no_reflection(raw, documents, next_cursor, value)
                 token = digest(next_cursor.encode()) if next_cursor is not None else None
                 if token is not None and token in seen:
                     raise WorkbenchError("API_CURSOR_LOOP")

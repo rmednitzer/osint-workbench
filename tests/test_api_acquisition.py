@@ -1,6 +1,7 @@
 """API page acceptance using actual TLS, isolated parsing and native collector SQL."""
 
 import json
+import time
 
 import psycopg
 import pytest
@@ -16,6 +17,7 @@ from osint_workbench.text import digest
 from tests.test_api_transport import response, source
 from tests.test_kev import RECORD, catalogue
 from tests.test_kev import raw as kev_raw
+from tests.test_oauth import ACCESS_TOKEN, CLIENT_SECRET, client, token_response
 from tests.tls_fixture import generate_certificates, tls_peer
 
 pytestmark = pytest.mark.integration
@@ -72,6 +74,140 @@ def assert_no_secret(roles, store):
     assert all(
         TOKEN.encode() not in file.read_bytes() for file in store.root.rglob("*") if file.is_file()
     )
+
+
+def oauth_source(tmp_path, **changes):
+    secret = tmp_path / "oauth-secret"
+    secret.write_text(CLIENT_SECRET)
+    secret.chmod(0o400)
+    return source(
+        auth=ApiAuth(
+            kind="oauth-client-credentials",
+            context="synthetic-oauth-account",
+            credential=CredentialRef(kind="file", path=str(secret)),
+            oauth=client(),
+        ),
+        **changes,
+    )
+
+
+def assert_oauth_not_retained(roles, store):
+    with psycopg.connect(roles["admin"]) as conn:
+        for relation in ("documents", "snapshots", "collection_state", "collection_runs", "jobs"):
+            rows = conn.execute(f"SELECT row_to_json(t)::text FROM ow.{relation} t").fetchall()
+            assert CLIENT_SECRET not in repr(rows) and ACCESS_TOKEN not in repr(rows)
+    for file in store.root.rglob("*"):
+        if file.is_file():
+            data = file.read_bytes()
+            assert CLIENT_SECRET.encode() not in data and ACCESS_TOKEN.encode() not in data
+
+
+def test_actual_oauth_token_resource_sql_and_non_due_no_dispatch(
+    databases, tmp_path, monkeypatch, collection_certificates
+):
+    _, _, roles = databases
+    configuration = oauth_source(tmp_path)
+    collector, store = Database(roles["collector"]), EvidenceStore(tmp_path / "objects")
+    wire_body = body("oauth-record")
+    original_page = api_acquisition._page
+    before = time.monotonic()
+
+    def bounded_page(source, cursor, secret, deadline):
+        assert before < deadline < before + 11
+        return original_page(source, cursor, secret, deadline)
+
+    monkeypatch.setattr(api_acquisition, "_page", bounded_page)
+    with tls_peer(
+        monkeypatch,
+        collection_certificates,
+        wires=[response(token_response(expires_in=10)), response(wire_body)],
+    ) as peer:
+        result = collect_api(configuration, collector, store)
+    assert result["status"] == "success" and result["documents"] == 1
+    assert peer.sni == ["auth.fixture.invalid", "feed.fixture.invalid"]
+    assert b"Basic " in peer.requests[0] and b"Bearer " not in peer.requests[0]
+    assert b"Bearer " + ACCESS_TOKEN.encode() in peer.requests[1]
+    assert store.get(digest(wire_body)) == wire_body
+    (tmp_path / "oauth-secret").unlink()
+    monkeypatch.setattr(
+        api_acquisition, "obtain_token", lambda *args: pytest.fail("unexpected token request")
+    )
+    assert collect_api(configuration, collector, store)["status"] == "not_due"
+    with psycopg.connect(roles["admin"]) as conn:
+        conn.execute(
+            "UPDATE ow.collection_state SET api_page=128,"
+            "next_attempt=clock_timestamp()-interval '1 second'"
+        )
+    with pytest.raises(WorkbenchError, match="^API_CYCLE_PAGE_LIMIT$"):
+        collect_api(configuration, collector, store)
+    assert_oauth_not_retained(roles, store)
+
+
+@pytest.mark.parametrize("reflected", [ACCESS_TOKEN, CLIENT_SECRET])
+def test_actual_oauth_reflection_of_either_secret_refused_before_storage(
+    databases, tmp_path, monkeypatch, collection_certificates, reflected
+):
+    _, _, roles = databases
+    store = EvidenceStore(tmp_path / "objects")
+    wire_body = body("reflection", text=reflected).replace(b"synthetic", b"\\u0073ynthetic")
+    with tls_peer(
+        monkeypatch,
+        collection_certificates,
+        wires=[response(token_response()), response(wire_body)],
+    ):
+        with pytest.raises(WorkbenchError, match="^API_CREDENTIAL_REFLECTED$"):
+            collect_api(oauth_source(tmp_path), Database(roles["collector"]), store)
+    assert state(roles)[2] == 0
+    assert not any(p.is_file() for p in store.root.rglob("*"))
+    assert_oauth_not_retained(roles, store)
+
+
+@pytest.mark.parametrize("stage", ["token", "resource"])
+def test_actual_oauth_denial_never_reauthenticates_or_persists_response(
+    databases, tmp_path, monkeypatch, collection_certificates, stage
+):
+    _, _, roles = databases
+    store = EvidenceStore(tmp_path / "objects")
+    denied = response(token_response(), b"401 Unauthorized")
+    wires = [denied] if stage == "token" else [response(token_response()), denied]
+    with tls_peer(monkeypatch, collection_certificates, wires=wires) as peer:
+        with pytest.raises(WorkbenchError) as caught:
+            collect_api(oauth_source(tmp_path), Database(roles["collector"]), store)
+    assert caught.value.code == (
+        "OAUTH_TOKEN_REJECTED" if stage == "token" else "API_AUTHENTICATION_FAILED"
+    )
+    assert len(peer.requests) == (1 if stage == "token" else 2)
+    assert state(roles)[2] == 0 and not any(p.is_file() for p in store.root.rglob("*"))
+    assert_oauth_not_retained(roles, store)
+
+
+def test_disabled_oauth_source_never_resolves_secret_or_token_endpoint(
+    databases, tmp_path, monkeypatch
+):
+    _, _, roles = databases
+    config = oauth_source(tmp_path, enabled=False)
+    (tmp_path / "oauth-secret").unlink()
+    monkeypatch.setattr(
+        api_acquisition, "obtain_token", lambda *args: pytest.fail("disabled dispatch")
+    )
+    assert collect_api(config, Database(roles["collector"]), None)["status"] == "disabled"
+
+
+def test_actual_oauth_token_retry_after_persisted_without_resource_request(
+    databases, tmp_path, monkeypatch, collection_certificates
+):
+    _, _, roles = databases
+    store = EvidenceStore(tmp_path / "objects")
+    wire = response(b"synthetic-token-failure", b"503 Unavailable", b"Retry-After: 120\r\n")
+    with tls_peer(monkeypatch, collection_certificates, wire=wire) as peer:
+        with pytest.raises(WorkbenchError, match="^SOURCE_HTTP_ERROR$"):
+            collect_api(oauth_source(tmp_path), Database(roles["collector"]), store)
+    assert len(peer.requests) == 1 and state(roles)[2] == 0
+    with psycopg.connect(roles["admin"]) as conn:
+        assert conn.execute(
+            "SELECT next_attempt>clock_timestamp()+interval '110 seconds' FROM ow.collection_state"
+        ).fetchone()[0]
+    assert_oauth_not_retained(roles, store)
 
 
 def test_actual_kev_tls_replay_revision_absence_and_atomic_rejection(

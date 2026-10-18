@@ -110,7 +110,7 @@ keyUsage=critical,digitalSignature,keyEncipherment
 extendedKeyUsage=serverAuth
 subjectKeyIdentifier=hash
 authorityKeyIdentifier=keyid:always
-subjectAltName=DNS:{name}
+subjectAltName=DNS:{name}{",DNS:auth.fixture.invalid" if kind == "valid" else ""}
 """
         (directory / f"{kind}.cnf").write_text(config)
         start = (
@@ -162,6 +162,7 @@ def tls_peer(
     mode="tls",
     body=b"TLS evidence",
     wire=None,
+    wires=None,
 ):
     """Route TCP only; retain original HTTPS origin, SNI and certificate checks."""
     peer = Peer()
@@ -185,96 +186,106 @@ def tls_peer(
 
         def serve():
             try:
-                while not stopping.is_set():
-                    try:
-                        connection, _ = listener.accept()
-                        break
-                    except TimeoutError:
-                        continue
-                else:
-                    return
-                peer.connections += 1
-                with connection:
-                    connection.settimeout(1.5)
-                    if mode == "stall":
-                        stopping.wait(2)
+                for selected_wire in [wire] if wires is None else wires:
+                    while not stopping.is_set():
+                        try:
+                            connection, _ = listener.accept()
+                            break
+                        except TimeoutError:
+                            continue
+                    else:
                         return
-                    if mode == "plaintext":
-                        connection.sendall(b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n")
-                        return
-                    try:
-                        secure = server_context.wrap_socket(connection, server_side=True)
-                    except ssl.SSLError:
-                        peer.handshake_failures += 1
-                        return
-                    with secure:
-                        request = bytearray()
-                        request_deadline = time.monotonic() + 1.5
-                        while b"\r\n\r\n" not in request:
-                            remaining = request_deadline - time.monotonic()
-                            if remaining <= 0:
-                                raise RuntimeError("synthetic TLS request exceeded deadline")
-                            secure.settimeout(remaining)
-                            part = secure.recv(1024)
-                            if not part:
-                                raise RuntimeError("synthetic TLS client closed before request")
-                            request.extend(part)
-                            if len(request) > 8192:
-                                raise RuntimeError("synthetic TLS request exceeded bound")
-                        head, _, rest = bytes(request).partition(b"\r\n\r\n")
-                        peer.requests.append(head + b"\r\n\r\n")
-                        # Read a declared request body so POST clients finish writing
-                        # before the scripted response; GET requests declare none.
-                        length = 0
-                        for line in head.split(b"\r\n")[1:]:
-                            name, _, value = line.partition(b":")
-                            if name.strip().lower() == b"content-length":
-                                length = int(value.strip())
-                        if length > 1024 * 1024:
-                            raise RuntimeError("synthetic TLS request body exceeded bound")
-                        body_in = bytearray(rest)
-                        while len(body_in) < length:
-                            remaining = request_deadline - time.monotonic()
-                            if remaining <= 0:
-                                raise RuntimeError("synthetic TLS body exceeded deadline")
-                            secure.settimeout(remaining)
-                            part = secure.recv(65536)
-                            if not part:
-                                raise RuntimeError("synthetic TLS client closed in body")
-                            body_in.extend(part)
-                        peer.bodies.append(bytes(body_in))
-                        if mode == "drip":
-                            try:
-                                secure.sendall(
-                                    b"HTTP/1.1 200 OK\r\nContent-Length: 1024\r\n"
-                                    b"Connection: close\r\n\r\n"
-                                )
-                                for _ in range(32):
-                                    if stopping.wait(0.06):
-                                        break
-                                    secure.sendall(b"x")
-                                    peer.body_bytes_sent += 1
-                            except OSError:
-                                # Client deadline closes an established TLS stream.
-                                pass
+                    peer.connections += 1
+                    with connection:
+                        connection.settimeout(1.5)
+                        if mode == "stall":
+                            stopping.wait(2)
                             return
-                        response = (
-                            wire
-                            if wire is not None
-                            else (
-                                b"HTTP/1.1 200 OK\r\nContent-Length: "
-                                + str(len(body)).encode()
-                                + b"\r\nConnection: close\r\n\r\n"
-                                + body
+                        if mode == "plaintext":
+                            connection.sendall(b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n")
+                            return
+                        try:
+                            secure = server_context.wrap_socket(connection, server_side=True)
+                        except ssl.SSLError:
+                            peer.handshake_failures += 1
+                            return
+                        with secure:
+                            request = bytearray()
+                            request_deadline = time.monotonic() + 1.5
+                            while b"\r\n\r\n" not in request:
+                                remaining = request_deadline - time.monotonic()
+                                if remaining <= 0:
+                                    raise RuntimeError("synthetic TLS request exceeded deadline")
+                                secure.settimeout(remaining)
+                                part = secure.recv(1024)
+                                if not part:
+                                    raise RuntimeError("synthetic TLS client closed before request")
+                                request.extend(part)
+                                if len(request) > 8192:
+                                    raise RuntimeError("synthetic TLS request exceeded bound")
+                            head, _, rest = bytes(request).partition(b"\r\n\r\n")
+                            peer.requests.append(head + b"\r\n\r\n")
+                            # Read a declared request body so POST clients finish writing
+                            # before the scripted response; GET requests declare none.
+                            length = 0
+                            for line in head.split(b"\r\n")[1:]:
+                                name, _, value = line.partition(b":")
+                                if name.strip().lower() == b"content-length":
+                                    length = int(value.strip())
+                            if length > 1024 * 1024:
+                                raise RuntimeError("synthetic TLS request body exceeded bound")
+                            body_in = bytearray(rest)
+                            while len(body_in) < length:
+                                remaining = request_deadline - time.monotonic()
+                                if remaining <= 0:
+                                    raise RuntimeError("synthetic TLS body exceeded deadline")
+                                secure.settimeout(remaining)
+                                part = secure.recv(65536)
+                                if not part:
+                                    raise RuntimeError("synthetic TLS client closed in body")
+                                body_in.extend(part)
+                            peer.bodies.append(bytes(body_in))
+                            if mode == "drip":
+                                try:
+                                    secure.sendall(
+                                        b"HTTP/1.1 200 OK\r\nContent-Length: 1024\r\n"
+                                        b"Connection: close\r\n\r\n"
+                                    )
+                                    for _ in range(32):
+                                        if stopping.wait(0.06):
+                                            break
+                                        secure.sendall(b"x")
+                                        peer.body_bytes_sent += 1
+                                except OSError:
+                                    # Client deadline closes an established TLS stream.
+                                    pass
+                                return
+                            response = (
+                                selected_wire
+                                if selected_wire is not None
+                                else (
+                                    b"HTTP/1.1 200 OK\r\nContent-Length: "
+                                    + str(len(body)).encode()
+                                    + b"\r\nConnection: close\r\n\r\n"
+                                    + body
+                                )
                             )
-                        )
-                        secure.sendall(response)
+                            secure.sendall(response)
             except Exception as error:
                 errors.append(type(error).__name__)
 
         class RoutedBackend(acquisition._PublicBackend):
             def connect_tcp(self, host, port, timeout=None, **kwargs):
-                assert host in ("feed.fixture.invalid", b"feed.fixture.invalid") and port == 443
+                assert (
+                    host
+                    in (
+                        "feed.fixture.invalid",
+                        b"feed.fixture.invalid",
+                        "auth.fixture.invalid",
+                        b"auth.fixture.invalid",
+                    )
+                    and port == 443
+                )
                 stream = httpcore.SyncBackend.connect_tcp(
                     self, "127.0.0.1", listener_port, timeout=acquisition._remaining(self.deadline)
                 )
