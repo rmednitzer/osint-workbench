@@ -260,9 +260,13 @@ def _state(conn):
     history = recovery._history(conn)
     recovery._full_visibility(conn)
     # Unknown deletion side effects cannot be inferred from the reference schema.
+    # The single reviewed exception is the ledger state-machine trigger: it fires
+    # only BEFORE UPDATE per row (tgtype ROW|BEFORE|UPDATE = 19) on a table purge
+    # never modifies, so it cannot have a deletion side effect.
     if conn.execute("""SELECT 1 FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid
         JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='ow'
-        AND NOT t.tgisinternal UNION ALL
+        AND NOT t.tgisinternal AND NOT (c.relname='remote_operations'
+          AND t.tgname='remote_operation_transition' AND t.tgtype=19) UNION ALL
         SELECT 1 FROM pg_rewrite w JOIN pg_class c ON c.oid=w.ev_class
         JOIN pg_namespace n ON n.oid=c.relnamespace
         WHERE n.nspname='ow' AND w.rulename<>'_RETURN' UNION ALL

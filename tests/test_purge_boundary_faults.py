@@ -13,13 +13,28 @@ from tests.test_record_purge import plan, retired_document, state
 pytestmark = pytest.mark.integration
 
 
-@pytest.mark.parametrize("customization", ["column", "rule"])
+@pytest.mark.parametrize(
+    "customization", ["column", "rule", "widened-ledger-trigger", "extra-ledger-trigger"]
+)
 def test_unreviewed_column_or_rewrite_rule_refused_before_mutation(context, customization):
     document = retired_document(context)
     path, receipt = plan(context, document)
     with context["admin"].connect() as conn:
         if customization == "column":
             conn.execute("ALTER TABLE ow.chunks ADD COLUMN synthetic_reference text")
+        elif customization == "widened-ledger-trigger":
+            # The reviewed name no longer implies the reviewed UPDATE-only timing.
+            conn.execute(
+                "DROP TRIGGER remote_operation_transition ON ow.remote_operations;"
+                "CREATE TRIGGER remote_operation_transition BEFORE UPDATE OR DELETE "
+                "ON ow.remote_operations FOR EACH ROW "
+                "EXECUTE FUNCTION ow.remote_operation_transition()"
+            )
+        elif customization == "extra-ledger-trigger":
+            conn.execute(
+                "CREATE TRIGGER synthetic_extra BEFORE UPDATE ON ow.remote_operations "
+                "FOR EACH ROW EXECUTE FUNCTION ow.remote_operation_transition()"
+            )
         else:
             conn.execute(
                 "CREATE RULE synthetic_extra_write AS ON DELETE TO ow.chunks "
@@ -36,6 +51,15 @@ def test_unreviewed_column_or_rewrite_rule_refused_before_mutation(context, cust
         with context["admin"].connect() as conn:
             if customization == "column":
                 conn.execute("ALTER TABLE ow.chunks DROP COLUMN synthetic_reference")
+            elif customization == "widened-ledger-trigger":
+                conn.execute(
+                    "DROP TRIGGER remote_operation_transition ON ow.remote_operations;"
+                    "CREATE TRIGGER remote_operation_transition BEFORE UPDATE "
+                    "ON ow.remote_operations FOR EACH ROW "
+                    "EXECUTE FUNCTION ow.remote_operation_transition()"
+                )
+            elif customization == "extra-ledger-trigger":
+                conn.execute("DROP TRIGGER synthetic_extra ON ow.remote_operations")
             else:
                 conn.execute("DROP RULE synthetic_extra_write ON ow.chunks")
 

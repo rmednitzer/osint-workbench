@@ -13,9 +13,13 @@ therefore denies everything.
 ## Policy file
 
 The file is at most 64 KiB, read without following a final symlink, and bound
-to its SHA-256 in every ledger row. Money values are decimal strings; JSON
-numbers are refused. Endpoints must be HTTPS on port 443 and pass the same
-public-destination, pinned-resolution and certificate checks as acquisition.
+to its SHA-256 in every ledger row. Money values are plain decimal strings below
+1,000,000 with at most nine decimals; JSON numbers, exponents and digit
+separators are refused, and a pricebook needs at least one positive rate.
+Endpoints must be HTTPS on port 443 with a qualified host name, no IP literal,
+no query and no credentials, and pass the same public-destination,
+pinned-resolution and certificate checks as acquisition at connection time.
+A credential that is not a single printable header token is denied.
 
 ```json
 {
@@ -87,8 +91,16 @@ Each attempt is one `ow.remote_operations` row, written before any connection:
 | `failed` | Non-200 or malformed response | reservation unless usage was reported |
 | `outcome_unknown` | Connection lost or deadline after sending | reservation |
 
-The reservation assumes one token per input character plus the route's maximum
-output tokens at the declared prices, rounded up. Exposure is per route and
+The reservation assumes one input token per UTF-8 byte of the whole request body
+(prompt, schema and framing; byte-level and byte-fallback tokenizers emit at
+most one token per byte) plus the route's maximum output tokens at the
+declared prices, rounded up. Reported usage counts only when it is possible for
+the request: at least one and at most one input token per request byte, and no
+more output tokens than the route allows. Otherwise it is recorded as missing
+and the reservation stands, so a reported estimate never exceeds or undercuts
+its reservation through implausible numbers. A database trigger enforces the
+state machine: reserved to dispatched, dispatched to exactly one outcome, and
+nothing after that. Exposure is per route and
 currency and is never summed across currencies or converted. Estimates are not
 invoices.
 

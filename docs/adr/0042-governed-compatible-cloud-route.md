@@ -45,7 +45,14 @@ kinds; a local failure never creates remote work, and no route falls back to
 another.
 
 Before any network activity a decision row is written: denied (with a reason),
-or reserved with the worst-case cost of the bounded request. Reservation takes
+or reserved with the worst-case cost of the bounded request, counting one
+input token per UTF-8 byte of the whole request body plus the maximum output.
+Reported usage counts only within those physical bounds; implausible or zero
+usage is recorded as missing so the reservation stands. Stored amounts stay
+below one million with nine decimals so checkpoint JSON round-trips exactly.
+A trigger enforces the attempt state machine against the writer role;
+retired-record purge, which otherwise refuses unreviewed triggers, accepts only
+this exact UPDATE-only trigger on a table it never modifies. Reservation takes
 a per-route-and-currency transaction lock and refuses when existing exposure
 plus the new reservation would exceed the cap. Exposure counts every attempt
 that could have cost money: reserved, dispatched and unknown outcomes at their

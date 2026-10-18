@@ -5,13 +5,16 @@ conservative reservation before any network activity; see ADR-0042.
 """
 
 import hashlib
+import ipaddress
 import json
 import os
+import re
 import time
 import uuid
 from datetime import date
 from decimal import ROUND_CEILING, Decimal
 from typing import Annotated, Literal
+from urllib.parse import urlsplit
 
 import httpcore
 from jsonschema import Draft202012Validator
@@ -33,22 +36,37 @@ DataClass = Literal["public", "internal", "personal", "special"]
 Task = Literal["structured_extraction"]
 MAX_POLICY_BYTES = 65536
 MAX_RESPONSE_BYTES = 1024 * 1024
-# Characters per token is not a model fact; one token per character bounds any
-# tokenizer that emits at most one token per input character for the request.
+# Input is reserved per UTF-8 byte of the whole request body, not per prompt
+# character: byte-level and byte-fallback tokenizers emit at most one token per
+# byte, while one character can need several tokens.
 _MILLION = Decimal(1_000_000)
+# Stored amounts stay within 15 significant digits so checkpoint JSON numbers
+# round-trip exactly through binary floating point.
+MAX_MONEY = Decimal("999999.999999999")
+_CREDENTIAL = re.compile(r"[\x21-\x7e]{1,4096}")
 
 
 def _decimal_text(value):
     # Money is exact decimal text; a JSON float is ambiguous in a pricebook.
-    if not isinstance(value, str):
-        raise ValueError("decimal amounts must be strings")
+    if not isinstance(value, str) or not re.fullmatch(r"[0-9]{1,6}(\.[0-9]{1,9})?", value):
+        raise ValueError("decimal amounts must be plain decimal strings")
     return Decimal(value)
 
 
 Money = Annotated[
-    Decimal, BeforeValidator(_decimal_text), Field(ge=0, max_digits=20, decimal_places=9)
+    Decimal,
+    BeforeValidator(_decimal_text),
+    Field(ge=0, le=MAX_MONEY, max_digits=15, decimal_places=9),
 ]
 Region = Annotated[str, Field(pattern=r"^([A-Z]{2}|unknown)$")]
+
+
+def _is_address(host):
+    try:
+        ipaddress.ip_address(host.strip("[]"))
+    except ValueError:
+        return False
+    return True
 
 
 class ProviderFacts(StrictModel):
@@ -81,6 +99,13 @@ class Pricebook(StrictModel):
     output_per_million: Money
     effective_date: date
 
+    @model_validator(mode="after")
+    def priced(self):
+        # An all-zero pricebook would reserve nothing and never enforce a cap.
+        if self.input_per_million == 0 and self.output_per_million == 0:
+            raise ValueError("a pricebook needs at least one positive rate")
+        return self
+
 
 class SovereigntyException(StrictModel):
     rationale: str = Field(min_length=1, max_length=500)
@@ -108,11 +133,17 @@ class Route(StrictModel):
     @classmethod
     def https_origin(cls, value):
         try:
-            _, port = fetch.validate_url(value)
+            host, port = fetch.validate_url(value)
         except WorkbenchError:
             raise ValueError("invalid endpoint") from None
         if not value.startswith("https://") or port != 443:
             raise ValueError("endpoint must be HTTPS on port 443")
+        # A query can carry secrets to the provider and its logs; credentials
+        # belong in the environment. Require a named public host.
+        if urlsplit(value).query or "?" in value:
+            raise ValueError("endpoint must not carry a query")
+        if _is_address(host) or "." not in host or host.endswith(".") or host == "localhost":
+            raise ValueError("endpoint must name a qualified public host")
         return value
 
     @model_validator(mode="after")
@@ -166,15 +197,19 @@ def decide(route: Route | None, task, data_class, *, environ=None):
         if route.exception is None or task not in route.exception.tasks:
             return "denied", "SOVEREIGNTY_NONCONFORMING"
         decision = "exception"
-    if not environ.get(route.credential_env):
+    credential = environ.get(route.credential_env)
+    if not credential:
         return "denied", "CREDENTIAL_MISSING"
+    if not _CREDENTIAL.fullmatch(credential):
+        # Never send a value that cannot be a single header token.
+        return "denied", "CREDENTIAL_INVALID"
     return decision, None
 
 
-def worst_case_cost(route: Route, input_chars: int):
+def worst_case_cost(route: Route, input_bytes: int):
     price = route.pricebook
     amount = (
-        Decimal(input_chars) * price.input_per_million
+        Decimal(input_bytes) * price.input_per_million
         + Decimal(route.max_output_tokens) * price.output_per_million
     ) / _MILLION
     return amount.quantize(Decimal("0.000000001"), rounding=ROUND_CEILING)
@@ -410,7 +445,7 @@ class GovernedGenerator:
             decision=decision,
             reason=reason,
             packet_sha=packet_sha,
-            reserve=worst_case_cost(route, len(prompt)),
+            reserve=worst_case_cost(route, len(body)),
         )
         if decision == "denied":
             raise WorkbenchError("REMOTE_" + reason)
@@ -432,82 +467,68 @@ class GovernedGenerator:
                 attempt, "dispatched", "outcome_unknown", error_code="REMOTE_OUTCOME_UNKNOWN"
             )
             raise WorkbenchError("REMOTE_OUTCOME_UNKNOWN") from None
-        return self._settle(attempt, status, content, schema, prompt)
-
-    def _settle(self, attempt, status, content, schema, prompt):
-        route = self.route
-        response_sha = digest(content)
-        if status != 200:
-            self.ledger.transition(
-                attempt,
-                "dispatched",
-                "failed",
-                error_code=f"HTTP_{status}" if 100 <= status <= 599 else "HTTP_INVALID",
-                response_sha256=response_sha,
-            )
-            raise WorkbenchError("REMOTE_HTTP_FAILURE")
-        try:
-            decoded = json.loads(content)
-            choice = decoded["choices"][0]
-            message = choice["message"]
-            finish = choice.get("finish_reason")
-        except (ValueError, KeyError, IndexError, TypeError):
-            self.ledger.transition(
-                attempt,
-                "dispatched",
-                "failed",
-                error_code="REMOTE_PROTOCOL_ERROR",
-                response_sha256=response_sha,
-            )
-            raise WorkbenchError("REMOTE_PROTOCOL_ERROR") from None
-        usage = decoded.get("usage") if isinstance(decoded, dict) else None
-        tokens = {}
-        if (
-            isinstance(usage, dict)
-            and type(usage.get("prompt_tokens")) is int
-            and type(usage.get("completion_tokens")) is int
-            and usage["prompt_tokens"] >= 0
-            and usage["completion_tokens"] >= 0
-        ):
-            tokens = {
-                "input_tokens": usage["prompt_tokens"],
-                "output_tokens": usage["completion_tokens"],
-                "usage": "reported",
-                "estimated_cost": observed_cost(
-                    route, usage["prompt_tokens"], usage["completion_tokens"]
-                ),
-            }
-        else:
-            # Missing or malformed usage is unknown, never zero.
-            tokens = {"usage": "missing"}
-        if isinstance(message, dict) and message.get("refusal"):
-            outcome, code = "refused", "REMOTE_REFUSED"
-        elif finish == "content_filter":
-            outcome, code = "refused", "REMOTE_REFUSED"
-        elif finish == "length":
-            outcome, code = "incomplete", "GENERATION_INCOMPLETE"
-        elif finish != "stop":
-            outcome, code = "failed", "REMOTE_PROTOCOL_ERROR"
-        else:
-            outcome, code = "completed", None
-        text = message.get("content") if isinstance(message, dict) else None
-        output = None
-        if outcome == "completed":
-            try:
-                if not isinstance(text, str) or len(text) > 65536:
-                    raise ValueError
-                output = json.loads(text)
-                Draft202012Validator(schema).validate(output)
-            except Exception:
-                outcome, code = "completed", "INVALID_MODEL_RESULT"
-        self.ledger.transition(
-            attempt, "dispatched", outcome, response_sha256=response_sha, error_code=code, **tokens
-        )
+        outcome, code, fields, output, text_sha = self._classify(status, content, schema, len(body))
+        recorded = fields.pop("error_code", code)
+        self.ledger.transition(attempt, "dispatched", outcome, error_code=recorded, **fields)
         if code is not None:
             raise WorkbenchError(code)
         return {
             "output": output,
-            "response_sha256": digest(text.encode()),
+            "response_sha256": text_sha,
             "prompt_sha256": digest(prompt.encode()),
             "generator_id": self.manifest.identity(),
         }
+
+    def _classify(self, status, content, schema, request_bytes):
+        """Pure classification of a complete response; it cannot leave a paid
+        attempt in `dispatched`. Any unexpected shape is a protocol failure."""
+        fields = {"response_sha256": digest(content), "usage": "missing"}
+        if status != 200:
+            recorded = f"HTTP_{status}" if 100 <= status <= 599 else "HTTP_INVALID"
+            fields.update(usage=None, error_code=recorded)
+            return "failed", "REMOTE_HTTP_FAILURE", fields, None, None
+        try:
+            decoded = json.loads(content)
+            choice = decoded["choices"][0]
+            message = choice["message"]
+            if not isinstance(message, dict):
+                raise TypeError
+            finish = choice.get("finish_reason")
+            usage = decoded.get("usage")
+        except Exception:
+            # Includes RecursionError from adversarial nesting.
+            return "failed", "REMOTE_PROTOCOL_ERROR", fields, None, None
+        if (
+            isinstance(usage, dict)
+            and type(usage.get("prompt_tokens")) is int
+            and type(usage.get("completion_tokens")) is int
+            # Reported usage must be physically possible for this request;
+            # otherwise it is unknown and the reservation stands.
+            and 1 <= usage["prompt_tokens"] <= request_bytes
+            and 0 <= usage["completion_tokens"] <= self.route.max_output_tokens
+        ):
+            fields.update(
+                input_tokens=usage["prompt_tokens"],
+                output_tokens=usage["completion_tokens"],
+                usage="reported",
+                estimated_cost=observed_cost(
+                    self.route, usage["prompt_tokens"], usage["completion_tokens"]
+                ),
+            )
+        if message.get("refusal") or finish == "content_filter":
+            return "refused", "REMOTE_REFUSED", fields, None, None
+        if finish == "length":
+            return "incomplete", "GENERATION_INCOMPLETE", fields, None, None
+        if finish != "stop":
+            return "failed", "REMOTE_PROTOCOL_ERROR", fields, None, None
+        text = message.get("content")
+        try:
+            if not isinstance(text, str) or len(text) > 65536:
+                raise ValueError
+            # Lone surrogates cannot be stored or hashed as UTF-8 evidence.
+            text_sha = digest(text.encode("utf-8"))
+            output = json.loads(text)
+            Draft202012Validator(schema).validate(output)
+        except Exception:
+            return "completed", "INVALID_MODEL_RESULT", fields, None, None
+        return "completed", None, fields, output, text_sha

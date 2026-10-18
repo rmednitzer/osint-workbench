@@ -123,6 +123,13 @@ def test_exception_is_explicit_task_scoped_and_never_relabelled():
         "denied",
         "ROUTE_UNKNOWN",
     )
+    for bad in ("two words", "line\r\nInjected: header", "nön-ascii"):
+        assert cloud.decide(
+            parsed.routes[0],
+            "structured_extraction",
+            "public",
+            environ={**KEY, "OW_ROUTE_FIXTURE_KEY": bad},
+        ) == ("denied", "CREDENTIAL_INVALID")
 
 
 @pytest.mark.parametrize(
@@ -136,6 +143,15 @@ def test_exception_is_explicit_task_scoped_and_never_relabelled():
         {"pricebook": {"input_per_million": 0.4}},
         {"credential_env": "AWS_SECRET_ACCESS_KEY"},
         {"unexpected": True},
+        {"endpoint": "https://feed.fixture.invalid/v1?key=secret"},
+        {"endpoint": "https:" + "//203.0.113.7/v1"},
+        {"endpoint": "https:" + "//[2001:db8::1]/v1"},
+        {"endpoint": "https:" + "//localhost/v1"},
+        {"endpoint": "https:" + "//feed.fixture.invalid./v1"},
+        {"pricebook": {"input_per_million": "0", "output_per_million": "0"}},
+        {"pricebook": {"input_per_million": "1_0"}},
+        {"cap": "1000000"},
+        {"cap": "1e3"},
     ],
 )
 def test_policy_rejects_unsafe_or_ambiguous_configuration(changes):
@@ -225,6 +241,8 @@ def test_routed_enrichment_reaches_proposals_and_settles_reported_usage(
     assert body["model"] == "synthetic-model" and body["temperature"] == 0
     assert body["response_format"]["json_schema"]["strict"] is True
     (row,) = ledger(roles)
+    # The reservation covers every request byte, not just prompt characters.
+    assert row["reserved"] == cloud.worst_case_cost(generator.route, len(peer.bodies[0]))
     assert row["status"] == "completed" and row["decision"] == "conforming"
     assert row["usage"] == "reported" and (row["input_tokens"], row["output_tokens"]) == (120, 30)
     assert row["estimated_cost"] == Decimal("0.000084000")
@@ -285,6 +303,40 @@ def test_missing_credential_denies_without_egress(databases, tmp_path, monkeypat
     [
         (completion(proposals(claim()), usage=None), "completed", None, "missing"),
         (completion(proposals(claim()), usage={"prompt_tokens": -1}), "completed", None, "missing"),
+        # Zero or impossible usage cannot shrink exposure below the reservation.
+        (
+            completion(proposals(claim()), usage={"prompt_tokens": 0, "completion_tokens": 0}),
+            "completed",
+            None,
+            "missing",
+        ),
+        (
+            completion(proposals(claim()), usage={"prompt_tokens": 10**12, "completion_tokens": 1}),
+            "completed",
+            None,
+            "missing",
+        ),
+        (
+            completion(proposals(claim()), usage={"prompt_tokens": 10, "completion_tokens": 10**6}),
+            "completed",
+            None,
+            "missing",
+        ),
+        # Adversarial nesting and unstorable text settle instead of sticking.
+        (
+            b"HTTP/1.1 200 OK\r\nContent-Length: 200000\r\nConnection: close\r\n\r\n"
+            + b"[" * 200000,
+            "failed",
+            "REMOTE_PROTOCOL_ERROR",
+            "missing",
+        ),
+        # Schema-valid output whose text holds a lone surrogate cannot be stored.
+        (
+            completion(json.dumps({"claims": [{**claim(), "subject": "\ud800"}]})),
+            "completed",
+            "INVALID_MODEL_RESULT",
+            "reported",
+        ),
         (completion(None, refusal="Synthetic refusal"), "refused", "REMOTE_REFUSED", "reported"),
         (completion(None, finish="content_filter"), "refused", "REMOTE_REFUSED", "reported"),
         (
@@ -319,6 +371,7 @@ def test_provider_outcomes_are_explicit_and_never_free(
         assert result == {"status": "failed", "error": code}
     (row,) = ledger(roles)
     assert row["status"] == status and row["usage"] == usage
+    assert row["status"] != "dispatched"
     expected = row["estimated_cost"] if usage == "reported" else row["reserved"]
     # Unreported usage keeps the full reservation as exposure; it is never zero.
     assert cloud.exposure(writer, "fixture-eu", "EUR") == expected > 0
@@ -424,6 +477,50 @@ def test_reader_and_collector_cannot_see_the_ledger(databases):
 
 
 @pytest.mark.integration
+def test_writer_cannot_skip_or_rewind_the_attempt_state_machine(databases, tmp_path):
+    writer, reader, roles, store, doc = setup(databases, tmp_path)
+    parsed, sha = policy(route())
+    led = cloud.Ledger(writer)
+    attempt, decision, _ = led.record(
+        operation_id="machine",
+        route=parsed.routes[0],
+        policy_sha=sha,
+        task="structured_extraction",
+        data_class="public",
+        decision="conforming",
+        reason=None,
+        packet_sha="b" * 64,
+        reserve=Decimal("0.010000000"),
+    )
+    assert decision == "conforming"
+
+    def update(sql, *params):
+        with psycopg.connect(roles["writer"]) as conn:
+            conn.execute(sql, (*params, attempt))
+
+    # Skipping dispatch, settling usage on a reserved row, or exceeding the reservation fail.
+    for sql in (
+        "UPDATE ow.remote_operations SET status='completed' WHERE attempt_id=%s",
+        "UPDATE ow.remote_operations SET status='released' WHERE attempt_id=%s",
+        "UPDATE ow.remote_operations SET usage='missing' WHERE attempt_id=%s",
+    ):
+        with pytest.raises(psycopg.errors.CheckViolation):
+            update(sql)
+    led.transition(attempt, "reserved", "dispatched")
+    with pytest.raises(psycopg.errors.CheckViolation):
+        update(
+            "UPDATE ow.remote_operations SET status='completed',usage='reported',"
+            "estimated_cost=1 WHERE attempt_id=%s"
+        )
+    led.transition(attempt, "dispatched", "outcome_unknown", error_code="REMOTE_OUTCOME_UNKNOWN")
+    # A terminal attempt cannot be released to clear its exposure.
+    for target in ("released", "dispatched", "completed"):
+        with pytest.raises(psycopg.errors.CheckViolation):
+            update("UPDATE ow.remote_operations SET status=%s WHERE attempt_id=%s", target)
+    assert cloud.exposure(writer, "fixture-eu", "EUR") == Decimal("0.010000000")
+
+
+@pytest.mark.integration
 def test_ledger_survives_checkpoint_and_restore_exactly(
     databases, destination, tmp_path, monkeypatch, certificates
 ):
@@ -447,7 +544,21 @@ def test_ledger_survives_checkpoint_and_restore_exactly(
                     "data_class": "public",
                 },
             )
+    # The largest storable amount must survive checkpoint JSON exactly.
+    large, large_sha = policy(route(route_id="fixture-large", cap="999999.999999999"))
+    cloud.Ledger(writer).record(
+        operation_id="large",
+        route=large.routes[0],
+        policy_sha=large_sha,
+        task="structured_extraction",
+        data_class="public",
+        decision="conforming",
+        reason=None,
+        packet_sha="c" * 64,
+        reserve=Decimal("999999.123456789"),
+    )
     before = ledger(roles)
+    assert Decimal("999999.123456789") in {row["reserved"] for row in before}
     path = tmp_path / "ledger.owcp"
     receipt = recovery.checkpoint(Database(roles["admin"]), store, path)
     recovery.restore(
