@@ -259,5 +259,46 @@ def test_majority_exclusion_and_runtime_failures_still_fail_the_build(retrieval)
                 rationale="Remove unencodable synthetic entries",
             ),
         )
-    for code in ("ENCODER_TIMEOUT", "ENCODER_UNAVAILABLE", "MODEL_INTEGRITY_MISMATCH"):
+    for code in (
+        "ENCODER_TIMEOUT",
+        "ENCODER_UNAVAILABLE",
+        "MODEL_INTEGRITY_MISMATCH",
+        "ENCODER_INCOMPATIBLE",
+        "ENCODER_INVALID_RESULT",
+        "INVALID_EMBEDDING_VECTOR",
+        "INVALID_ENCODER_PACKET",
+    ):
         failed(VectorIndex(writer, Unavailable(code)), code)
+
+
+def test_member_with_both_dispositions_cannot_activate(retrieval):
+    writer, reader, roles, store, encoder = retrieval
+    index = VectorIndex(writer, encoder)
+    built = index.build(store)
+    # A writer-authority row must not give an encoded member a second disposition.
+    with Database(roles["admin"]).connect() as conn:
+        conn.execute(
+            "INSERT INTO ow.retrieval_exclusions SELECT generation_id,document_id,"
+            "'INVALID_ENCODER_INPUT' FROM ow.retrieval_members WHERE generation_id=%s LIMIT 1",
+            (built["generation_id"],),
+        )
+    with pytest.raises(WorkbenchError, match="^INCOMPLETE_RETRIEVAL_GENERATION$"):
+        index.activate(built["generation_id"])
+
+
+def test_unmigrated_profile_is_reported_typed_not_as_raw_sql(retrieval):
+    writer, reader, roles, store, encoder = retrieval
+    index = VectorIndex(writer, encoder)
+    index.activate(index.build(store)["generation_id"])
+    service = ReadService(reader, EvidenceStore(store.root, read_only=True), encoder=encoder)
+    # Fault injection: hide the profile-4 view as an older profile would lack it.
+    with psycopg.connect(roles["admin"]) as conn:
+        conn.execute("ALTER VIEW ow.visible_retrieval_exclusions RENAME TO hidden_exclusions")
+    try:
+        assert service.status()["retrieval_state"] == "migration_required"
+        with pytest.raises(WorkbenchError, match="^RETRIEVAL_MIGRATION_REQUIRED$"):
+            service.search("storage")
+    finally:
+        with psycopg.connect(roles["admin"]) as conn:
+            conn.execute("ALTER VIEW ow.hidden_exclusions RENAME TO visible_retrieval_exclusions")
+    assert service.search("storage")["excluded_documents"] == 0

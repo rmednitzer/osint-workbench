@@ -41,16 +41,19 @@ interrupted build.
 
 Retrieval-profile migration 4 adds `ow.retrieval_exclusions(generation_id,
 document_id, reason)`, keyed to an existing member, with a fixed reason
-vocabulary: `INVALID_ENCODER_INPUT`, `ENCODER_PACKET_TOO_LARGE`,
-`ENCODER_INPUT_TOO_LONG`, `TOKEN_OFFSETS_UNSUPPORTED`, `ENCODER_CHUNK_LIMIT`,
-`ENCODER_RESULT_LIMIT` and `INVALID_EMBEDDING_NORM` (a chunk of only unknown
-tokens can pool to a zero vector, as the synthetic fixture demonstrates for
-zero-width-only text). Only those encoder refusals become exclusions.
-Integrity, compatibility, timeout, busy, unavailable and aggregate-limit
-failures still fail the build. A generation in which every member, or more
-than half of the members, would be excluded fails with
-`RETRIEVAL_EXCLUSION_LIMIT`, so a wrong or incompatible encoder cannot
-silently produce an almost empty index.
+vocabulary: `INVALID_ENCODER_INPUT` (blank or over 200,000 code points),
+`ENCODER_PACKET_TOO_LARGE`, `ENCODER_INPUT_TOO_LONG` (a templated chunk over the
+token bound), `TOKEN_OFFSETS_UNSUPPORTED`, `ENCODER_CHUNK_LIMIT`,
+`ENCODER_RESULT_LIMIT` and `INVALID_EMBEDDING_NORM` (a finite zero vector; a
+chunk of only unknown tokens can pool to one, as the synthetic fixture shows
+for zero-width-only text). Only those encoder refusals become exclusions.
+Non-finite output is `INVALID_EMBEDDING_VECTOR`, and a manifest whose template
+leaves no chunk budget is `ENCODER_INCOMPATIBLE`; both, like integrity,
+compatibility, timeout, busy, unavailable and aggregate-limit failures, still
+fail the build. A generation in which every member, or more than half of the
+members, would be excluded fails with `RETRIEVAL_EXCLUSION_LIMIT`, so a wrong
+or incompatible encoder cannot silently produce an almost empty index. Each
+member must have exactly one disposition: vectors or one exclusion.
 
 The writer gains SELECT and INSERT on the table; the reader sees it only
 through a lifecycle-filtered view; the purger gains SELECT and DELETE so
@@ -67,10 +70,15 @@ available to lexical search, evidence reads and enrichment.
 ## Consequences, blast radius and reversibility
 
 A single unencodable document no longer blocks semantic index maintenance.
-Coverage loss becomes visible instead of global. A source that floods the
-corpus with unencodable entries can still exceed the half-corpus bound; that
-is an explicit, operator-visible refusal rather than a silent degradation, and
-the remedy is the existing source disable/retire controls.
+Coverage loss becomes visible instead of global. A source can deliberately
+keep up to half of the corpus out of semantic retrieval; the count is reported
+but not alarmed. Flooding beyond half is an explicit build refusal, and the
+remedy is the existing source disable/retire controls. A document whose
+encoding exceeds the per-call time, CPU or memory bounds still fails the build
+as a runtime failure: those limits cannot distinguish hostile content from an
+overloaded host, so this decision does not remove every single-document block.
+A newer binary against an unmigrated profile reports `migration_required` in
+status and `RETRIEVAL_MIGRATION_REQUIRED` from hybrid search.
 
 Stop index builders before upgrading, then run `migrate-retrieval`. An older
 binary refuses profile 4. Reverting the code requires restoring a compatible

@@ -81,7 +81,10 @@ compatibility, timeout and availability failures still fail it, and a build in
 which more than half the members would be excluded fails with
 `RETRIEVAL_EXCLUSION_LIMIT`. Builds, index status and hybrid search report
 `excluded_documents`; excluded documents remain lexically searchable and
-readable as evidence. See [ADR-0041](adr/0041-explicit-retrieval-exclusions.md). Partial
+readable as evidence. Non-finite model output and a manifest without chunk budget
+are runtime/compatibility failures, not exclusions. Before `migrate-retrieval`
+runs, status reports `migration_required` and hybrid search fails with
+`RETRIEVAL_MIGRATION_REQUIRED`. See [ADR-0041](adr/0041-explicit-retrieval-exclusions.md). Partial
 builds stay inactive and are marked failed; a process crash can leave an inactive
 building record. No automatic resumer/cleanup exists yet. Search uses exact pgvector
 scans and PostgreSQL statement timeouts; no ANN performance claim is made.

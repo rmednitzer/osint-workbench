@@ -81,12 +81,20 @@ EXCLUSION_REASONS = frozenset(
     }
 )
 
-# Members with neither vectors nor an explicit exclusion make a generation incomplete.
+# Each member has exactly one disposition: vectors or an explicit exclusion.
 _UNACCOUNTED = """SELECT 1 FROM ow.retrieval_members m WHERE generation_id=%s
-    AND NOT EXISTS (SELECT 1 FROM ow.retrieval_vectors v
+    AND EXISTS (SELECT 1 FROM ow.retrieval_vectors v
     WHERE v.generation_id=m.generation_id AND v.document_id=m.document_id)
-    AND NOT EXISTS (SELECT 1 FROM ow.retrieval_exclusions e
+    = EXISTS (SELECT 1 FROM ow.retrieval_exclusions e
     WHERE e.generation_id=m.generation_id AND e.document_id=m.document_id) LIMIT 1"""
+
+
+def _profile_current(conn):
+    # A newer binary on an unmigrated profile must fail typed, never with raw SQL.
+    return (
+        conn.execute("SELECT to_regclass('ow.visible_retrieval_exclusions') AS v").fetchone()["v"]
+        is not None
+    )
 
 
 def _excluded(conn, generation_id):
@@ -291,6 +299,8 @@ class VectorIndex:
             ).fetchone()["relation"]
             if exists is None:
                 return {"retrieval": "hybrid-exact", "retrieval_state": "unconfigured"}
+            if not _profile_current(conn):
+                return {"retrieval": "hybrid-exact", "retrieval_state": "migration_required"}
             row = conn.execute("""SELECT g.space_id,g.generation_id,g.status
                 FROM ow.retrieval_active a JOIN ow.retrieval_generations g
                 USING(generation_id)""").fetchone()
@@ -319,6 +329,8 @@ class VectorIndex:
                                    USING(generation_id)""").fetchone()
             if not active:
                 raise WorkbenchError("RETRIEVAL_UNCONFIGURED")
+            if not _profile_current(conn):
+                raise WorkbenchError("RETRIEVAL_MIGRATION_REQUIRED")
             if active["space_id"] != self.space_id or active["status"] != "ready":
                 raise WorkbenchError("INCOMPATIBLE_GENERATION")
             vector = self.encoder.query(query)
