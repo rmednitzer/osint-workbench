@@ -204,6 +204,9 @@ def test_explicit_resubmission_keeps_failed_operation_history(databases, tmp_pat
         ("statement", "The source says storage is fully available."),
         ("polarity", "asserted"),
         ("source_id", "other-source"),
+        ("document_id", "0" * 64),
+        ("assertion_id", None),
+        ("degraded", True),
     ],
 )
 def test_self_consistent_briefing_cannot_misstate_its_cited_assertion(
@@ -220,7 +223,12 @@ def test_self_consistent_briefing_cannot_misstate_its_cited_assertion(
     assert service.briefing(genuine["briefing_id"])["items"][0]["statement"] == row["statement"]
     # A writer-authority row can carry a recomputed digest over altered content.
     content = {k: v for k, v in genuine.items() if k != "briefing_id"}
-    content["items"] = [{**content["items"][0], field: value}]
+    if field == "degraded":
+        content["degraded"] = value
+    elif value is None:
+        content["items"] = [{k: v for k, v in content["items"][0].items() if k != field}]
+    else:
+        content["items"] = [{**content["items"][0], field: value}]
     forged = digest(json.dumps(content, sort_keys=True).encode())
     with psycopg.connect(roles["admin"]) as conn:
         conn.execute(

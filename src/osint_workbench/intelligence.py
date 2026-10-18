@@ -271,6 +271,12 @@ def _briefing_item(r):
     }
 
 
+_ITEM_FIELDS = frozenset(
+    "assertion_id document_id snapshot_id source_id statement polarity quote "
+    "start_offset end_offset review".split()
+)
+
+
 def create_briefing(db, document_ids):
     if (
         not isinstance(document_ids, list)
@@ -328,9 +334,25 @@ def get_briefing(db, store, briefing_id):
         content = row["content"]
         if digest(json.dumps(content, sort_keys=True).encode()) != briefing_id:
             raise WorkbenchError("BRIEFING_INTEGRITY_MISMATCH")
-        for item in content["items"]:
+        items, selected = content.get("items"), content.get("selected_documents")
+        # Membership and the empty-digest disposition must match the recorded
+        # selection; later accepted assertions after the cutoff are not omissions.
+        if (
+            not isinstance(items, list)
+            or not isinstance(selected, list)
+            or any(
+                not isinstance(i, dict)
+                or set(i) != _ITEM_FIELDS
+                or i["document_id"] not in selected
+                for i in items
+            )
+            or content.get("degraded") is not (not items)
+            or content.get("omission_reason") != (None if items else "no_reviewed_assertions")
+        ):
+            raise WorkbenchError("BRIEFING_EVIDENCE_MISMATCH")
+        for item in items:
             active = conn.execute(
-                _ACCEPTED_ITEMS + " AND a.assertion_id=%s", (item["assertion_id"],)
+                _ACCEPTED_ITEMS + " AND a.assertion_id=%s", (item.get("assertion_id"),)
             ).fetchone()
             if not active:
                 raise WorkbenchError("BRIEFING_STALE")

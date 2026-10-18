@@ -13,10 +13,10 @@ run of the candidate commit, not to this file.
 | Feed item re-versioning | One changed byte in a feed container re-versioned and re-enqueued every unchanged item | Current-head identity reuse with two collector column grants, core migration 8; [ADR-0040](../adr/0040-feed-item-version-reuse.md) | `test_feed_revision_reuses_unchanged_item_versions[writer,collector]` |
 | Ambiguous response framing | Repeated `Content-Encoding`/`Location` collapsed last-wins; gzip bytes were accepted as identity | Repeated framing fields fail closed with their existing typed errors | `tests/test_http_response_fields.py` |
 | Redirect fragment | A `Location` fragment was rejected as an invalid source URL | Fragment removed before validation; it is never sent on the wire | Same file; TLS-downgrade control retained |
-| Non-ASCII redirect | A non-ASCII `Location` raised an untyped decode exception | Typed `INVALID_REDIRECT` | Same file |
+| Non-ASCII redirect | A non-ASCII `Location` was reported as generic `SOURCE_UNAVAILABLE` | Specific `INVALID_REDIRECT` | Same file |
 | Site-local IPv6 | Deprecated `fec0::/10` passed the destination filter | Blocked as non-public | Same file |
 | Search past build limits | Unattended growth past the reference build bounds made hybrid/reranked search fail with `REFERENCE_CORPUS_LIMIT` | Over-limit corpus is necessarily drifted: search is `degraded`/`CORPUS_CHANGED`; builds and activation still enforce bounds | `test_unattended_growth_past_build_limit_degrades_search_instead_of_failing` |
-| Briefing field binding | A briefing with a recomputed digest could misstate statement, polarity or source of a real accepted assertion and still be served | Each item must equal the live accepted assertion projection, else `BRIEFING_EVIDENCE_MISMATCH` | `test_self_consistent_briefing_cannot_misstate_its_cited_assertion` |
+| Briefing field binding | A briefing with a recomputed digest could misstate statement, polarity, source or document of a real accepted assertion, or carry malformed items and an inconsistent empty disposition, and still be served | Each item must have the exact item fields, belong to the recorded selection and equal the live accepted assertion projection; degraded/omission state must match; else `BRIEFING_EVIDENCE_MISMATCH` | `test_self_consistent_briefing_cannot_misstate_its_cited_assertion` |
 
 ## Open, with rationale
 

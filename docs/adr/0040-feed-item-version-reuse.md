@@ -48,23 +48,31 @@ version. Generic `ingest` and replay semantics are unchanged.
 
 Additive core migration 8 grants `ow_collector` SELECT on `documents.snapshot_id`
 and on `snapshots(snapshot_id,raw_sha256)`. The collector still cannot read
-titles, bodies, text digests, derived records or job state. Container digests
-were already visible to it through its own collection state. The exact
+titles, bodies, text digests, derived records or job state. It can now map any
+document version, across sources, to its snapshot and that snapshot's container
+digest. These are hashes only, but they let the collector test whether a known
+container produced a known version; its own collection state already exposed
+the latest container digest per source. The exact
 collector grant allowlist and migration-history checks include the new grants.
 Exact published core7/profile3 checkpoints are adopted under the existing
 independent current-policy restore checks; no table layout changes.
 
 Reuse compares only with the current head. If an item changes and later returns
 to earlier content inside a different container, that is a change from the
-current head and a new immutable version is recorded. Byte-identical earlier
-containers still reconcile to the retained earlier version per ADR-0024. Every
+current head and a new immutable version is recorded. A byte-identical earlier
+container reconciles an item to its retained earlier version per ADR-0024 only
+when that item's content differs from the current head; content equal to the
+head keeps the head, even if an older version from that exact container exists.
+This narrows ADR-0024's exact-A rule to items whose content actually changed. Every
 fetched container remains retained and referenced by its run record, so GC and
 recovery keep the raw evidence. The run's accepted count still counts observed
 current items, not newly created versions.
 
 ## Consequences, blast radius and reversibility
 
-Unchanged items no longer create redundant versions or jobs. Search, MCP reads,
+Unchanged items no longer create redundant versions or jobs. A container change
+therefore no longer re-enqueues downstream work for an unchanged item whose
+earlier job failed or never ran; that work must be resubmitted explicitly. Search, MCP reads,
 lifecycle and purge contracts are unchanged; an unchanged item's evidence span
 continues to reference the container in which it was first accepted. A trusted
 writer can still bypass cooperative locks through direct SQL; this is
