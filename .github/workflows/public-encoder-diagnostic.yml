@@ -124,3 +124,5 @@ jobs:
           uv pip install --python /tmp/ow-reference-core/bin/python --no-deps dist/*.whl
       - name: Accept the actual service and sandbox on this disposable runner
         run: sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT /tmp/ow-reference-core/bin/python scripts/test_reference_deployment.py --core-venv /tmp/ow-reference-core --units config/systemd --database-fixture --enabled-http-fixture --operational-fixture
+      - name: Accept installed credential delivery and cross-unit isolation
+        run: sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT /tmp/ow-reference-core/bin/python scripts/test_service_credentials.py --core-venv /tmp/ow-reference-core

@@ -8,8 +8,8 @@ runbooks, target specifications, decisions and historical evidence.
 
 ## Current contracts
 
-Core schema **10**, retrieval profile **4**, checkpoint format **2**.
-The programme contains 45 ADRs, 58 requirements and 51 full acceptance scenarios.
+Core schema **11**, retrieval profile **4**, checkpoint format **2**.
+The programme contains 46 ADRs, 58 requirements and 51 full acceptance scenarios.
 Earlier published SQL resources remain immutable. Legacy checkpoint format 1 is
 not silently adopted. The [requirements](docs/assurance/requirements.md) and
 [verification matrix](docs/testing/verification-plan.md) retain their full target
@@ -19,6 +19,7 @@ scope; passing foundation regressions does not close every scenario.
 | --- | --- | --- |
 | Configuration and storage | Typed external configuration, empty bundled source list, packaged additive migrations, immutable versions/current heads and hashed evidence objects | Single-operator reference; no complete tenancy, physical media integrity or full-host recovery claim |
 | Collection | RSS/Atom extraction, public-destination HTTP with DNS pinning/TLS, per-hop redirect checks, framing/byte/deadline limits, due ticks, conditional validators, backoff and bounded Retry-After | No article crawling, ZIP/PDF or specialist upstream adapters; compressed responses rejected; shared-host quotas and representative Internet/deployment acceptance remain open |
+| API acquisition | Opt-in HTTPS GET `bounded-json-pages/1`, checked systemd/file credential references, fixed bearer/API-key headers, per-page atomic continuation, partial freshness and bounded cross-tick loop detection; [runbook](docs/api-acquisition.md) | Explicit all-existing-uses-permitted/unmetered declarations only; no restricted licensed content, provider adapters, OAuth, paid queries, API service unit or actual provider acceptance |
 | Item identity | Changed feed containers retain raw run evidence; unchanged items reuse their current heads and enqueue no new work | No feed-absence deletion or whole-feed atomic replacement; exact old-container replay follows ADR-0040 |
 | Jobs | Leases, fencing, bounded retries, renewal/cancellation and atomic character-chunk acceptance | Cancellation revokes result acceptance, not physical computation or incurred remote effects; terminal-job deduplication is not a reset command |
 | MCP | Seven read-only stdio tools with strict application schemas, UTF-8 byte-budget pagination, exact reader relation/column checks; MCP SDK 2.3 low-level handlers and per-server tracing opt-out | Source enumeration now uses a results envelope; briefing pages retain full product identity with explicit partial scope; live pages are not snapshots; no remote listener or observed assistant-client compatibility matrix |

@@ -772,7 +772,7 @@ def test_post_purge_checkpoint_restores_but_older_data_cannot_be_reintroduced(co
         )
 
 
-@pytest.mark.parametrize("version,profile", [(6, 2), (7, 3), (8, 3), (8, 4), (9, 4)])
+@pytest.mark.parametrize("version,profile", [(6, 2), (7, 3), (8, 3), (8, 4), (9, 4), (10, 4)])
 def test_known_core_checkpoint_adopts_into_current_schema(
     context, destination, encoder_bundle, version, profile
 ):
@@ -808,7 +808,7 @@ def test_known_core_checkpoint_adopts_into_current_schema(
     with pytest.raises(WorkbenchError, match="DOCUMENT_NOT_FOUND"):
         service.document(document)
     with Database(destination["admin"]).connect() as conn:
-        assert conn.execute("SELECT max(version) AS v FROM ow.migrations").fetchone()["v"] == 10
+        assert conn.execute("SELECT max(version) AS v FROM ow.migrations").fetchone()["v"] == 11
         assert conn.execute("SELECT count(*) AS n FROM ow.remote_operations").fetchone()["n"] == 0
         assert (
             conn.execute("SELECT max(version) AS v FROM ow.retrieval_migrations").fetchone()["v"]

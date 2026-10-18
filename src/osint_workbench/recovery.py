@@ -49,6 +49,12 @@ RETRIEVAL = (
     "retrieval_vectors",
     "retrieval_active",
 )
+API_STATE_DEFAULTS = {
+    "api_cursor": None,
+    "api_profile_sha256": None,
+    "api_page": 0,
+    "api_seen_cursors": [],
+}
 SEQUENCES = {"job_events": "event_id", "assertion_reviews": "review_id"}
 SETTLEMENT_COLUMNS = (
     "settlement_basis",
@@ -76,6 +82,7 @@ def _history(conn):
         "migrations/008_collector_item_reuse.sql",
         "migrations/009_cloud_ledger.sql",
         "migrations/010_cloud_settlement.sql",
+        "migrations/011_api_collection_state.sql",
     ]
     expected = {
         str(i): digest(files("osint_workbench").joinpath(p).read_bytes())
@@ -319,7 +326,7 @@ def _read(path, expected_sha):
 
 
 # Published core version -> the optional retrieval profiles it shipped with.
-PUBLISHED_PAIRS = {4: (2,), 5: (2,), 6: (2,), 7: (3,), 8: (3, 4), 9: (4,)}
+PUBLISHED_PAIRS = {4: (2,), 5: (2,), 6: (2,), 7: (3,), 8: (3, 4), 9: (4,), 10: (4,)}
 
 
 def _known_legacy_history(observed, current, version):
@@ -395,14 +402,23 @@ def restore(
         if any(adopted.values()):
             for name in absent & set(names):
                 tables[name] = []
-            # Core 9 predates settlement: every adopted attempt is unsettled.
-            attempts = tables["remote_operations"]
-            if not isinstance(attempts, list) or not all(isinstance(r, dict) for r in attempts):
-                raise WorkbenchError("INVALID_RECOVERY_BUNDLE")
-            for row in attempts:
-                if set(SETTLEMENT_COLUMNS) & set(row):
-                    raise WorkbenchError("RECOVERY_COLUMNS_MISMATCH")
-                row.update(dict.fromkeys(SETTLEMENT_COLUMNS))
+            # Core 9 predates settlement; core 10 already preserves settlements.
+            if core < 10:
+                attempts = tables["remote_operations"]
+                if not isinstance(attempts, list) or not all(isinstance(r, dict) for r in attempts):
+                    raise WorkbenchError("INVALID_RECOVERY_BUNDLE")
+                for row in attempts:
+                    if set(SETTLEMENT_COLUMNS) & set(row):
+                        raise WorkbenchError("RECOVERY_COLUMNS_MISMATCH")
+                    row.update(dict.fromkeys(SETTLEMENT_COLUMNS))
+            if not adopted_v4:
+                state = tables["collection_state"]
+                if not isinstance(state, list) or not all(isinstance(r, dict) for r in state):
+                    raise WorkbenchError("INVALID_RECOVERY_BUNDLE")
+                for row in state:
+                    if set(API_STATE_DEFAULTS) & set(row):
+                        raise WorkbenchError("RECOVERY_COLUMNS_MISMATCH")
+                    row.update({**API_STATE_DEFAULTS, "api_seen_cursors": []})
         if adopted_v4:
             tables["collection_state"] = []
             if any("http_status" in row for row in tables["collection_runs"]):
@@ -494,7 +510,8 @@ def restore(
             conn.execute("UPDATE ow.sources SET enabled=false")
             conn.execute(
                 "UPDATE ow.collection_state SET etag=NULL,last_modified=NULL,"
-                "raw_sha256=NULL,failures=0,next_attempt=clock_timestamp()"
+                "raw_sha256=NULL,failures=0,next_attempt=clock_timestamp(),"
+                "api_cursor=NULL,api_profile_sha256=NULL,api_page=0,api_seen_cursors='[]'::jsonb"
             )
             conn.execute("""UPDATE ow.collection_runs SET status='interrupted',
                 error_code='RECOVERY_RECONCILIATION_REQUIRED',finished_at=clock_timestamp()

@@ -6,7 +6,7 @@
 > acceptance are not implemented.
 
 The routed enrichment CLI is off unless all of the following hold: an operator policy
-file outside Git, a route in it, the route's credential in the environment, an
+file outside Git, a route in it, the route's configured credential available through its selected channel, an
 enrichment job explicitly enqueued for that route, and an explicit data class
 on that job. The tracked `config/cloud-policy.example.json` has no routes and
 therefore denies everything.
@@ -33,7 +33,7 @@ the final-component guard does not establish a trusted directory tree.
       "adapter": "openai-compatible-chat",
       "endpoint": "https://provider.example.invalid/v1/chat/completions",
       "model": "example-model",
-      "credential_env": "OW_ROUTE_EXAMPLE_KEY",
+      "credential": {"kind": "systemd", "name": "example-key"},
       "tasks": ["structured_extraction"],
       "data_classes": ["public"],
       "provider": {
@@ -69,10 +69,28 @@ classification, not verified legal or sovereignty approval. Evidence and pricebo
 dates are retained; the implementation does not fetch facts/prices or enforce an
 automatic age/expiry rule.
 
+## Credential delivery and compatibility
+
+Prefer `credential` references to a provisioned systemd credential name or a
+checked absolute file path. Both use the shared [credential custody contract](api-acquisition.md#credential-custody),
+including bounded printable tokens, protected ancestors, no symlinks and private
+file modes. `CREDENTIALS_DIRECTORY` selects the systemd directory; it does not
+contain a token value. Actual service delivery requires separately provisioned
+and tested host configuration; this increment does not install that service.
+
+Exactly one of `credential` or `credential_env` must be configured. The explicit
+legacy `credential_env` channel remains supported for compatibility but is
+deprecated; new configurations should use references. A missing or unsafe
+credential reference fails closed without falling back to an environment value.
+A route cannot configure both channels. Changing the channel/reference changes
+the exact route identity and does not silently redirect old queued work.
+Replacing local credential material does not revoke the old provider token;
+rotation includes provider-side revocation and independently tested recovery.
+
 ## Running a routed enrichment
 
 ```sh
-# OW_WRITER_DSN, OW_EVIDENCE_ROOT and the route credential are set privately.
+# OW_WRITER_DSN, OW_EVIDENCE_ROOT and credential delivery are configured privately.
 osint-workbench enrich enqueue --route example-eu --cloud-policy /etc/ow/cloud.json \
   --document-id DOCUMENT_SHA256 --data-class public
 osint-workbench enrich work-once --route example-eu --cloud-policy /etc/ow/cloud.json
@@ -206,9 +224,10 @@ The request contains the enrichment prompt: the document title and full text
 as untrusted data, and the proposal schema. Dispatch rows store payload digests
 and accounting rather than prompt/response bodies. Settlement additionally
 retains the operator-supplied actor and rationale as plaintext, including in
-checkpoints; keep private provider content out of those fields. Credentials are
-read from the named environment variable, sent
-only as a bearer header to the configured origin and never stored or logged.
+checkpoints; keep private provider content out of those fields. Credentials resolve through the selected reference or explicitly configured
+legacy environment channel, and are sent only as a bearer header to the configured
+origin. Values are excluded from normal diagnostics and ledger fields; this does
+not establish resistance to arbitrary provider reflection or process compromise.
 Lifecycle retirement and job cancellation do not recall already-admitted or
 physically in-flight provider requests, or prove provider-side deletion.
 Model output passes the same schema, quotation and review controls as local

@@ -392,3 +392,45 @@ def test_narrow_current_role_cannot_conceal_broader_session_identity(
     validate = narrow.validate_reader if identity == "reader" else narrow.validate_collector
     with pytest.raises(WorkbenchError, match=f"UNSAFE_{identity.upper()}_IDENTITY"):
         validate()
+
+
+@pytest.mark.parametrize(
+    "assignments,parameters",
+    [
+        ("api_page=%s", (-1,)),
+        ("api_page=%s", (129,)),
+        ("api_seen_cursors=%s::jsonb", ("{}",)),
+        ("api_seen_cursors=%s::jsonb", ("[" + ",".join('"digest"' for _ in range(129)) + "]",)),
+        ("api_cursor=%s", ("x" * 1025,)),
+        ("api_cursor=%s", ("cursor\n",)),
+        ("api_profile_sha256=%s", ("invalid",)),
+    ],
+)
+def test_api_progress_constraints_and_collector_grants(databases, assignments, parameters):
+    writer, _, roles = databases
+    with writer.connect() as conn:
+        conn.execute("INSERT INTO ow.sources(source_id) VALUES ('api-fixture')")
+    collector = Database(roles["collector"])
+    collector.validate_collector()
+    with collector.connect() as conn:
+        conn.execute(
+            "INSERT INTO ow.collection_state(source_id,resource_sha256) VALUES ('api-fixture',%s)",
+            ("a" * 64,),
+        )
+        assert conn.execute(
+            "SELECT api_cursor,api_profile_sha256,api_page,api_seen_cursors "
+            "FROM ow.collection_state"
+        ).fetchone() == {
+            "api_cursor": None,
+            "api_profile_sha256": None,
+            "api_page": 0,
+            "api_seen_cursors": [],
+        }
+        conn.execute(
+            "UPDATE ow.collection_state SET api_cursor='synthetic-cursor',"
+            "api_profile_sha256=%s,api_page=1",
+            ("b" * 64,),
+        )
+    with collector.connect() as conn:
+        with pytest.raises(psycopg.errors.CheckViolation):
+            conn.execute("UPDATE ow.collection_state SET " + assignments, parameters)

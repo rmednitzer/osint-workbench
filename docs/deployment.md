@@ -213,7 +213,7 @@ receipt below did. Native unit parsing is a separate, narrower evidence level.
 The enabled-source extension passed at core schema 7 on source
 `064be8bb629a61e50ed9d4708a52a7b13675cb28`, as recorded in the collector receipt.
 That historical receipt preserves failed fixture attempts and their corrections.
-It does not establish service acceptance for the current core schema 10,
+It does not establish service acceptance for the current core schema 11,
 MCP/dependency closure, both LTS runners or this documentation revision. Repeat
 the manual workflow for the intended candidate and retain its observed reports.
 A successor [2026-10-18 service receipt](testing/documentation-service-2026-10-18.json)

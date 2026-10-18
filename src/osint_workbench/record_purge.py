@@ -77,7 +77,7 @@ COLUMNS = {
     "collection_runs": "run_id source_id status accepted_documents raw_sha256 error_code "
     "started_at finished_at suppressed_documents http_status",
     "collection_state": "source_id resource_sha256 next_attempt failures etag "
-    "last_modified raw_sha256",
+    "last_modified raw_sha256 api_cursor api_profile_sha256 api_page api_seen_cursors",
     "enrichments": "enrichment_id document_id job_id generator_id prompt_version prompt_sha256 "
     "response_sha256 status created_at",
     "assertions": "assertion_id enrichment_id document_id subject predicate object "

@@ -24,6 +24,7 @@ cannot substitute for runtime, semantic, provider or recovery evidence.
 | Task | Runbook |
 | --- | --- |
 | Collect due RSS/Atom sources and handle validators/backoff | [Scheduled acquisition](scheduled-acquisition.md) |
+| Acquire explicitly permitted unmetered JSON APIs and resolve credential references | [API acquisition](api-acquisition.md) |
 | Process jobs, retries and cancellation | [Durable workflows](workflows.md) |
 | Build, activate and query a local retrieval generation | [Local retrieval](local-retrieval.md) |
 | Generate proposals, review assertions and read cited products | [Local intelligence](local-intelligence.md) |

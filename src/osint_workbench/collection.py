@@ -134,7 +134,8 @@ def collect(source: Source, db: Database, store: EvidenceStore, *, due_only=Fals
             conn.execute(
                 "UPDATE ow.collection_state SET resource_sha256=%s,"
                 "next_attempt=clock_timestamp(),failures=0,etag=NULL,last_modified=NULL,"
-                "raw_sha256=NULL WHERE source_id=%s",
+                "raw_sha256=NULL,api_cursor=NULL,api_profile_sha256=NULL,api_page=0,"
+                "api_seen_cursors='[]' WHERE source_id=%s",
                 (resource, source.source_id),
             )
             conn.execute(

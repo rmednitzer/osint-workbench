@@ -19,6 +19,7 @@ from . import (
     record_purge,
     recovery,
 )
+from .api_acquisition import ApiSource, collect_api
 from .collection import collect, collect_due
 from .contracts import DocumentInput, SourceConfig
 from .database import SCHEMA_VERSION, Database, migrate
@@ -210,6 +211,11 @@ def main():
     scan.add_argument("--config", type=Path, required=True)
     scan.add_argument("--due-only", action="store_true")
     scan.add_argument("--max-sources", type=int)
+    api_scan = sub.add_parser("collect-api")
+    api_scan.add_argument("--config", type=Path, required=True)
+    api_scan.add_argument("--max-pages", type=int, default=1)
+    api_scan.add_argument("--timeout-seconds", type=float, default=60)
+    api_scan.add_argument("--restart", action="store_true")
     sub.add_parser("status")
     probe = sub.add_parser("health")
     probe.add_argument("--max-source-age-seconds", type=int, required=True)
@@ -452,6 +458,18 @@ def main():
             store = _writable_store()
             identifier = Database(_dsn("OW_WRITER_DSN")).ingest(document, raw, store)
             value = {"document_id": identifier}
+        elif args.command == "collect-api":
+            source = _manifest(args.config, ApiSource)
+            db = Database(_dsn("OW_COLLECTOR_DSN"))
+            db.validate_collector()
+            value = collect_api(
+                source,
+                db,
+                _writable_store(),
+                max_pages=args.max_pages,
+                timeout=args.timeout_seconds,
+                restart=args.restart,
+            )
         elif args.command == "collect":
             if args.max_sources is not None:
                 if not args.due_only:

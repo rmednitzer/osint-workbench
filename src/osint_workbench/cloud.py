@@ -14,16 +14,18 @@ import time
 import uuid
 from datetime import date
 from decimal import ROUND_CEILING, Decimal
+from pathlib import Path
 from typing import Annotated, Literal
 from urllib.parse import urlsplit
 
 import httpcore
 import psycopg
 from jsonschema import Draft202012Validator
-from pydantic import BeforeValidator, Field, field_validator, model_validator
+from pydantic import BeforeValidator, Field, SecretStr, field_validator, model_validator
 
 from . import fetch
 from .contracts import Digest, StrictModel
+from .credentials import CredentialError, CredentialRef, resolve_credential
 from .database import Database
 from .errors import WorkbenchError
 from .text import digest
@@ -119,7 +121,8 @@ class Route(StrictModel):
     adapter: Literal["openai-compatible-chat"]
     endpoint: str = Field(min_length=1, max_length=2048, repr=False)
     model: str = Field(pattern=r"^[\x21-\x7e]{1,200}$")
-    credential_env: str = Field(pattern=r"^OW_[A-Z0-9_]{1,64}$")
+    credential_env: str | None = Field(default=None, pattern=r"^OW_[A-Z0-9_]{1,64}$", repr=False)
+    credential: CredentialRef | None = Field(default=None, repr=False)
     tasks: list[Task] = Field(min_length=1)
     data_classes: list[DataClass] = Field(min_length=1)
     provider: ProviderFacts
@@ -141,7 +144,7 @@ class Route(StrictModel):
         if not value.startswith("https://") or port != 443:
             raise ValueError("endpoint must be HTTPS on port 443")
         # A query can carry secrets to the provider and its logs; credentials
-        # belong in the environment. Require a named public host.
+        # belong in the selected credential channel. Require a named public host.
         if urlsplit(value).query or "?" in value:
             raise ValueError("endpoint must not carry a query")
         if _is_address(host) or "." not in host or host.endswith(".") or host == "localhost":
@@ -152,6 +155,8 @@ class Route(StrictModel):
     def positive_cap(self):
         if self.cap <= 0:
             raise ValueError("cap must be positive")
+        if (self.credential is None) == (self.credential_env is None):
+            raise ValueError("exactly one credential channel is required")
         return self
 
 
@@ -180,7 +185,41 @@ def load_policy(data: bytes):
 
 def decide(route: Route | None, task, data_class, *, environ=None):
     """Classify operator-declared facts; unknown or missing inputs deny dispatch."""
+    decision, reason, _ = _decision_and_credential(route, task, data_class, environ=environ)
+    return decision, reason
+
+
+def _decision_and_credential(route: Route | None, task, data_class, *, environ=None):
+    """Resolve once after policy approval; the same token binds decision and send."""
     environ = os.environ if environ is None else environ
+    decision, reason = _policy_decision(route, task, data_class)
+    if decision == "denied":
+        return decision, reason, None
+    if route is None:
+        return "denied", "ROUTE_MISSING", None
+    if route.credential is not None:
+        try:
+            directory = None
+            if route.credential.kind == "systemd":
+                selected = environ.get("CREDENTIALS_DIRECTORY")
+                if not selected:
+                    raise CredentialError()
+                directory = Path(selected)
+            credential = resolve_credential(route.credential, credentials_directory=directory)
+        except CredentialError as exc:
+            return "denied", exc.code, None
+        return decision, None, credential
+    # Explicit compatibility only. Managed references never fall back to a key
+    # in the environment when their resolution fails.
+    credential = environ.get(route.credential_env)
+    if not credential:
+        return "denied", "CREDENTIAL_MISSING", None
+    if not isinstance(credential, str) or not _CREDENTIAL.fullmatch(credential):
+        return "denied", "CREDENTIAL_INVALID", None
+    return decision, None, SecretStr(credential)
+
+
+def _policy_decision(route: Route | None, task, data_class):
     if route is None:
         return "denied", "ROUTE_UNKNOWN"
     if not route.enabled:
@@ -199,12 +238,6 @@ def decide(route: Route | None, task, data_class, *, environ=None):
         if route.exception is None or task not in route.exception.tasks:
             return "denied", "SOVEREIGNTY_NONCONFORMING"
         decision = "exception"
-    credential = environ.get(route.credential_env)
-    if not credential:
-        return "denied", "CREDENTIAL_MISSING"
-    if not _CREDENTIAL.fullmatch(credential):
-        # Never send a value that cannot be a single header token.
-        return "denied", "CREDENTIAL_INVALID"
     return decision, None
 
 
@@ -602,9 +635,13 @@ class GovernedGenerator:
 
         def identity(self):
             # Jobs bind the exact route definition, not just its name.
+            # Preserve the published legacy route identity when its sole channel
+            # is credential_env; introducing an optional reference is additive.
+            excluded = {"credential"} if self.route.credential is None else set()
             return digest(
                 json.dumps(
-                    ["remote-route/1", self.route.model_dump(mode="json")], sort_keys=True
+                    ["remote-route/1", self.route.model_dump(mode="json", exclude=excluded)],
+                    sort_keys=True,
                 ).encode()
             )
 
@@ -636,7 +673,7 @@ class GovernedGenerator:
         }
         body = json.dumps(request, ensure_ascii=False, separators=(",", ":")).encode()
         packet_sha = digest(body)
-        decision, reason = decide(
+        decision, reason, credential = _decision_and_credential(
             route, operation["task"], operation.get("data_class"), environ=self.environ
         )
         attempt, decision, reason = self.ledger.record(
@@ -652,7 +689,8 @@ class GovernedGenerator:
         )
         if decision == "denied":
             raise WorkbenchError("REMOTE_" + reason)
-        credential = self.environ.get(route.credential_env, "")
+        if credential is None:
+            raise WorkbenchError("REMOTE_CREDENTIAL_MISSING")
         # Anchor the deadline before dispatch commits so a stalled worker cannot
         # begin a new send after expiry. Partial sends and host suspend retain
         # the transport limits documented in the cloud runbook.
@@ -662,7 +700,7 @@ class GovernedGenerator:
             status, content = post_json(
                 route.endpoint,
                 body,
-                [("Authorization", "Bearer " + credential)],
+                [("Authorization", "Bearer " + credential.get_secret_value())],
                 deadline,
             )
         except _NotSent as exc:

@@ -217,6 +217,10 @@ def published_pair(payload, core, profile=None):
             del payload["migrations"][key]
     if profile < 4:
         payload["tables"].pop("retrieval_exclusions", None)
+    if core < 11:
+        for row in payload["tables"].get("collection_state", []):
+            for column in recovery.API_STATE_DEFAULTS:
+                del row[column]
     if core < 9:
         payload["tables"].pop("remote_operations", None)
     elif core < 10:
@@ -429,7 +433,7 @@ def test_non_regular_objects_and_oversize_bundles_fail_without_blocking(tmp_path
     ],
 )
 def test_legacy_checkpoint_history_requires_complete_exact_known_pair(version, profile):
-    current = {str(i): digest(f"published migration {i}".encode()) for i in range(1, 11)}
+    current = {str(i): digest(f"published migration {i}".encode()) for i in range(1, 12)}
     current.update({f"retrieval/{i}": str(i) * 64 for i in range(1, 5)})
     known = {
         key: value
@@ -453,7 +457,7 @@ def test_legacy_checkpoint_history_requires_complete_exact_known_pair(version, p
     )
     assert not recovery._known_legacy_history(known, current, 3)
     # The current pair itself is not legacy; it takes the ordinary exact path.
-    assert not recovery._known_legacy_history(current, current, 10)
+    assert not recovery._known_legacy_history(current, current, 11)
 
 
 @pytest.mark.integration
@@ -517,7 +521,7 @@ def test_known_v5_checkpoint_restores_retained_data_with_current_policy(
             conn.execute("SELECT hold_id FROM ow.lifecycle_holds").fetchone()["hold_id"]
             == "hold-v5"
         )
-        assert conn.execute("SELECT max(version) AS v FROM ow.migrations").fetchone()["v"] == 10
+        assert conn.execute("SELECT max(version) AS v FROM ow.migrations").fetchone()["v"] == 11
         jobs = conn.execute(
             "SELECT status FROM ow.jobs WHERE job_id=ANY(%s::uuid[])", ([pending, leased],)
         ).fetchall()
@@ -573,3 +577,44 @@ def test_format1_checkpoint_remains_explicitly_unsupported(tmp_path):
     path.write_bytes(recovery._json({"payload": payload, "sha256": sha}))
     with pytest.raises(WorkbenchError, match="INVALID_RECOVERY_BUNDLE"):
         recovery._read(path, sha)
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("legacy", [False, True])
+def test_api_progress_is_private_and_not_revived_by_restore(
+    databases, destination, tmp_path, legacy
+):
+    if legacy and os.environ.get("OW_TEST_RETRIEVAL") != "1":
+        pytest.skip("published core10 checkpoint requires retrieval4")
+    writer, _, roles = databases
+    store = EvidenceStore(tmp_path / "objects")
+    writer.ingest(_input(), b"synthetic API evidence", store)
+    with writer.connect() as conn:
+        conn.execute(
+            "INSERT INTO ow.collection_state(source_id,resource_sha256,api_cursor,"
+            "api_profile_sha256,api_page,api_seen_cursors) "
+            "VALUES ('fixture',%s,%s,%s,7,jsonb_build_array(%s::text))",
+            ("a" * 64, "synthetic-private-cursor", "b" * 64, "c" * 64),
+        )
+    with Database(roles["reader"]).connect() as conn:
+        with pytest.raises(psycopg.errors.InsufficientPrivilege):
+            conn.execute("SELECT api_cursor FROM ow.collection_state")
+    path = tmp_path / "api-state.owcp"
+    sha = recovery.checkpoint(Database(roles["admin"]), store, path)["sha256"]
+    if legacy:
+        sha = _rewrite(path, lambda payload: published_pair(payload, 10, 4))
+    result = recovery.restore(
+        Database(destination["admin"]),
+        path,
+        sha,
+        tmp_path / "restored-api",
+        **policy_arguments(roles, path),
+    )
+    assert result["adopted_core_v10"] is legacy
+    with Database(destination["admin"]).connect() as conn:
+        state = conn.execute(
+            "SELECT api_cursor,api_profile_sha256,api_page,api_seen_cursors "
+            "FROM ow.collection_state"
+        ).fetchone()
+        assert state == recovery.API_STATE_DEFAULTS
+        assert not conn.execute("SELECT enabled FROM ow.sources").fetchone()["enabled"]
