@@ -19,3 +19,5 @@ Disable a route without disabling local evidence reads; preserve pending remote 
 
 ## Verification
 R43-R45,R55; E37,E38,E41,E44. No implementation evidence yet.
+
+> Successor note (2026-10-18): [ADR-0042](0042-governed-compatible-cloud-route.md) implements one declared-compatible route under this policy model. Native adapters and fallback edges remain proposed.

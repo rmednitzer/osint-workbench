@@ -2,9 +2,11 @@
 
 # Local inference, cloud APIs and governance
 
-Scope: C12-C17 and C21. Cloud integration remains in the implementation scope;
-adapters are not implemented yet. External activation will be optional and denied
-by default. No paid call was performed for planning.
+Scope: C12-C17 and C21. Cloud integration remains in the implementation scope.
+One declared-compatible chat-completions route with a policy gate and
+reservation ledger is implemented ([ADR-0042](../adr/0042-governed-compatible-cloud-route.md));
+native adapters, streaming, batches and reconciliation are not. External
+activation is optional and denied by default. No paid call was performed.
 
 ## Provider-independent task contract
 

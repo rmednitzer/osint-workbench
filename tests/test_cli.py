@@ -160,3 +160,60 @@ def test_collection_requires_separate_collector_dsn_without_writer_fallback(tmp_
     )
     assert result.returncode == 1 and result.stdout == ""
     assert json.loads(result.stderr) == {"error": "DATABASE_CONFIGURATION_REQUIRED"}
+
+
+def _cli(*arguments, env=None):
+    result = subprocess.run(
+        [sys.executable, "-m", "osint_workbench.cli", *arguments],
+        capture_output=True,
+        text=True,
+        env={
+            **{k: v for k, v in os.environ.items() if not k.startswith("OW_")},
+            **(env or {}),
+        },
+    )
+    return result.returncode, result.stdout, result.stderr
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    [
+        ["enrich", "work-once"],
+        ["enrich", "work-once", "--manifest", "m.json", "--route", "r"],
+    ],
+)
+def test_enrichment_requires_exactly_one_generator_selection(tmp_path, arguments):
+    code, out, err = _cli(*arguments, env={"OW_WRITER_DSN": "postgresql:///never-used"})
+    assert code == 1 and out == ""
+    assert json.loads(err) == {"error": "GENERATOR_SELECTION_REQUIRED"}
+
+
+def test_routed_enrichment_requires_a_policy_file(tmp_path):
+    code, out, err = _cli(
+        "enrich", "work-once", "--route", "r", env={"OW_WRITER_DSN": "postgresql:///never-used"}
+    )
+    assert code == 1 and json.loads(err) == {"error": "CLOUD_POLICY_REQUIRED"}
+
+
+def test_cloud_policy_symlink_and_float_money_are_refused(tmp_path):
+    policy = tmp_path / "policy.json"
+    policy.write_text(json.dumps({"schema_version": 1, "routes": [{"route_id": "r", "cap": 1.0}]}))
+    link = tmp_path / "link.json"
+    link.symlink_to(policy)
+    code, _, err = _cli("cloud-exposure", "--cloud-policy", str(link))
+    assert code == 1 and json.loads(err) == {"error": "MODEL_CONFIGURATION_UNAVAILABLE"}
+    code, _, err = _cli("cloud-exposure", "--cloud-policy", str(policy))
+    assert code == 1 and json.loads(err) == {"error": "CLOUD_POLICY_INVALID"}
+
+
+def test_empty_example_policy_reports_no_routes_without_a_database_write(tmp_path):
+    from pathlib import Path
+
+    example = Path(__file__).resolve().parents[1] / "config" / "cloud-policy.example.json"
+    code, out, err = _cli(
+        "cloud-exposure",
+        "--cloud-policy",
+        str(example),
+        env={"OW_WRITER_DSN": "postgresql:///never-used"},
+    )
+    assert code == 0 and json.loads(out)["routes"] == []

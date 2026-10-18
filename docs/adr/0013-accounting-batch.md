@@ -19,3 +19,5 @@ Stop new dispatch on ledger uncertainty; reconcile before releasing reservations
 
 ## Verification
 R46,R47; E38,E42,E43. No implementation evidence yet.
+
+> Successor note (2026-10-18): [ADR-0042](0042-governed-compatible-cloud-route.md) implements the reservation and unknown-outcome ledger for one compatible route. Batch lifecycle, native usage categories and reconciliation remain proposed.

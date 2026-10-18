@@ -146,6 +146,8 @@ subjectAltName=DNS:{name}
 class Peer:
     sni: list = field(default_factory=list)
     requests: list = field(default_factory=list)
+    bodies: list = field(default_factory=list)
+    connections: int = 0
     handshake_failures: int = 0
     body_bytes_sent: int = 0
 
@@ -191,6 +193,7 @@ def tls_peer(
                         continue
                 else:
                     return
+                peer.connections += 1
                 with connection:
                     connection.settimeout(1.5)
                     if mode == "stall":
@@ -218,7 +221,28 @@ def tls_peer(
                             request.extend(part)
                             if len(request) > 8192:
                                 raise RuntimeError("synthetic TLS request exceeded bound")
-                        peer.requests.append(bytes(request))
+                        head, _, rest = bytes(request).partition(b"\r\n\r\n")
+                        peer.requests.append(head + b"\r\n\r\n")
+                        # Read a declared request body so POST clients finish writing
+                        # before the scripted response; GET requests declare none.
+                        length = 0
+                        for line in head.split(b"\r\n")[1:]:
+                            name, _, value = line.partition(b":")
+                            if name.strip().lower() == b"content-length":
+                                length = int(value.strip())
+                        if length > 1024 * 1024:
+                            raise RuntimeError("synthetic TLS request body exceeded bound")
+                        body_in = bytearray(rest)
+                        while len(body_in) < length:
+                            remaining = request_deadline - time.monotonic()
+                            if remaining <= 0:
+                                raise RuntimeError("synthetic TLS body exceeded deadline")
+                            secure.settimeout(remaining)
+                            part = secure.recv(65536)
+                            if not part:
+                                raise RuntimeError("synthetic TLS client closed in body")
+                            body_in.extend(part)
+                        peer.bodies.append(bytes(body_in))
                         if mode == "drip":
                             try:
                                 secure.sendall(

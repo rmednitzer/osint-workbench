@@ -202,19 +202,22 @@ def test_checkpoint_excludes_concurrent_acceptance(databases, destination, tmp_p
     assert writer.document(later)["document_id"] == later
 
 
-def published_pair(payload, core):
+def published_pair(payload, core, profile=None):
     """Reduce a current checkpoint to an exact published core/profile pair.
 
-    Later migrations add grants, defaults or the empty-at-adoption exclusion table
-    only; the retained record layout is otherwise identical.
+    Later migrations add grants, defaults or tables that are empty at adoption
+    (exclusions, remote attempts); the retained record layout is otherwise identical.
     """
-    profile = recovery.PUBLISHED_PAIRS[core]
+    profile = max(recovery.PUBLISHED_PAIRS[core]) if profile is None else profile
+    assert profile in recovery.PUBLISHED_PAIRS[core]
     for key in list(payload["migrations"]):
         version = int(key.removeprefix("retrieval/"))
         if version > (profile if key.startswith("retrieval/") else core):
             del payload["migrations"][key]
     if profile < 4:
         payload["tables"].pop("retrieval_exclusions", None)
+    if core < 9:
+        payload["tables"].pop("remote_operations", None)
 
 
 def _rewrite(path, change):
@@ -411,11 +414,17 @@ def test_non_regular_objects_and_oversize_bundles_fail_without_blocking(tmp_path
         recovery._read(large, "0" * 64)
 
 
-@pytest.mark.parametrize("version", sorted(recovery.PUBLISHED_PAIRS))
-def test_legacy_checkpoint_history_requires_complete_exact_known_pair(version):
-    current = {str(i): digest(f"published migration {i}".encode()) for i in range(1, 9)}
+@pytest.mark.parametrize(
+    "version,profile",
+    [
+        (core, profile)
+        for core, profiles in recovery.PUBLISHED_PAIRS.items()
+        for profile in profiles
+    ],
+)
+def test_legacy_checkpoint_history_requires_complete_exact_known_pair(version, profile):
+    current = {str(i): digest(f"published migration {i}".encode()) for i in range(1, 10)}
     current.update({f"retrieval/{i}": str(i) * 64 for i in range(1, 5)})
-    profile = recovery.PUBLISHED_PAIRS[version]
     known = {
         key: value
         for key, value in current.items()
@@ -426,16 +435,19 @@ def test_legacy_checkpoint_history_requires_complete_exact_known_pair(version):
     assert not recovery._known_legacy_history({**known, "retrieval/2": "f" * 64}, current, version)
     missing_profile = {key: value for key, value in known.items() if key != "retrieval/2"}
     assert not recovery._known_legacy_history(missing_profile, current, version)
-    # A newer profile than the one that shipped with this core is a mixed history.
-    newer = f"retrieval/{profile + 1}"
-    assert not recovery._known_legacy_history({**known, newer: current[newer]}, current, version)
-    if version < 8:
+    # A profile newer than any that shipped with this core is a mixed history.
+    newest = max(recovery.PUBLISHED_PAIRS[version])
+    if newest < 4:
+        newer = f"retrieval/{newest + 1}"
         assert not recovery._known_legacy_history(
-            {**known, str(version + 1): current[str(version + 1)]}, current, version
+            {**known, newer: current[newer]}, current, version
         )
+    assert not recovery._known_legacy_history(
+        {**known, str(version + 1): current[str(version + 1)]}, current, version
+    )
     assert not recovery._known_legacy_history(known, current, 3)
     # The current pair itself is not legacy; it takes the ordinary exact path.
-    assert not recovery._known_legacy_history(current, current, 8)
+    assert not recovery._known_legacy_history(current, current, 9)
 
 
 @pytest.mark.integration
@@ -499,7 +511,7 @@ def test_known_v5_checkpoint_restores_retained_data_with_current_policy(
             conn.execute("SELECT hold_id FROM ow.lifecycle_holds").fetchone()["hold_id"]
             == "hold-v5"
         )
-        assert conn.execute("SELECT max(version) AS v FROM ow.migrations").fetchone()["v"] == 8
+        assert conn.execute("SELECT max(version) AS v FROM ow.migrations").fetchone()["v"] == 9
         jobs = conn.execute(
             "SELECT status FROM ow.jobs WHERE job_id=ANY(%s::uuid[])", ([pending, leased],)
         ).fetchall()

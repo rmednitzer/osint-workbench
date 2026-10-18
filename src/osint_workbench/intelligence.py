@@ -46,22 +46,33 @@ class EnrichmentInput(StrictModel):
     generator_id: Digest
     prompt_version: Literal["assertion-proposals/1"] = PROMPT_VERSION
     operation_id: Identifier = "initial"
+    # Operator-assigned classification; remote routes deny when it is absent.
+    data_class: Literal["public", "internal", "personal", "special"] | None = None
 
 
 def _kind(generator):
     return "document.enrich/" + generator.manifest.identity()
 
 
-def enqueue(db: Database, generator: LocalGenerator, document_id: str, operation_id="initial"):
+def enqueue(
+    db: Database,
+    generator: LocalGenerator,
+    document_id: str,
+    operation_id="initial",
+    data_class=None,
+):
     doc = db.document(document_id)
     payload = EnrichmentInput(
         document_id=document_id,
         snapshot_id=doc["snapshot_id"],
         generator_id=generator.manifest.identity(),
         operation_id=operation_id,
+        data_class=data_class,
     )
-    key = digest(json.dumps(payload.model_dump(), sort_keys=True).encode())
-    return db.enqueue(_kind(generator), key, payload.model_dump())
+    # Unclassified payloads keep their published shape and deduplication key.
+    value = payload.model_dump(exclude_none=True)
+    key = digest(json.dumps(value, sort_keys=True).encode())
+    return db.enqueue(_kind(generator), key, value)
 
 
 def enrich_once(db: Database, store: EvidenceStore, generator: LocalGenerator):
@@ -95,7 +106,20 @@ def enrich_once(db: Database, store: EvidenceStore, generator: LocalGenerator):
         )
         with db.connect() as authority:
             assert_document_visible(authority, payload.document_id)
-            result = generator.generate(prompt, Proposals.model_json_schema())
+            if getattr(generator, "governed", False):
+                # One logical remote operation per job: a retried job can never
+                # replay an attempt the ledger has not resolved.
+                result = generator.generate(
+                    prompt,
+                    Proposals.model_json_schema(),
+                    operation={
+                        "operation_id": str(job["job_id"]),
+                        "task": "structured_extraction",
+                        "data_class": payload.data_class,
+                    },
+                )
+            else:
+                result = generator.generate(prompt, Proposals.model_json_schema())
         proposals = Proposals.model_validate(result["output"])
         validated = []
         for proposal in proposals.claims:

@@ -9,6 +9,7 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from . import (
+    cloud,
     evaluation,
     garbage_collection,
     intelligence,
@@ -40,6 +41,15 @@ def _dsn(name):
 
 
 def _manifest(path, model):
+    data = _operator_bytes(path)
+    try:
+        return model.model_validate_json(data)
+    except (ValidationError, ValueError):
+        # Retain the CLI's existing malformed-configuration error contract.
+        raise WorkbenchError("INVALID_CONFIGURATION_OR_INPUT") from None
+
+
+def _operator_bytes(path):
     # The operator selects configuration paths; MCP/source/model text does not.
     # Refuse final symlinks, devices and FIFOs before reading so configuration
     # loading cannot block outside the native inference deadline.
@@ -61,11 +71,20 @@ def _manifest(path, model):
             os.close(fd)
     if len(data) > 65536:
         raise WorkbenchError("MODEL_CONFIGURATION_TOO_LARGE")
-    try:
-        return model.model_validate_json(data)
-    except (ValidationError, ValueError):
-        # Retain the CLI's existing malformed-configuration error contract.
-        raise WorkbenchError("INVALID_CONFIGURATION_OR_INPUT") from None
+    return data
+
+
+def _generator(args, db=None):
+    # Exactly one of a local manifest or an explicit remote route; never both,
+    # and a local configuration never implies a remote fallback.
+    if (args.manifest is None) == (args.route is None):
+        raise WorkbenchError("GENERATOR_SELECTION_REQUIRED")
+    if args.manifest is not None:
+        return LocalGenerator(_manifest(args.manifest, GeneratorManifest))
+    if args.cloud_policy is None or db is None:
+        raise WorkbenchError("CLOUD_POLICY_REQUIRED")
+    policy, policy_sha = cloud.load_policy(_operator_bytes(args.cloud_policy))
+    return cloud.GovernedGenerator(db, policy, policy_sha, args.route)
 
 
 def _encoder(path):
@@ -138,9 +157,14 @@ def main():
     life.add_argument("--file", type=Path)
     enrich = sub.add_parser("enrich")
     enrich.add_argument("action", choices=["enqueue", "work-once", "reconcile"])
-    enrich.add_argument("--manifest", type=Path, required=True)
+    enrich.add_argument("--manifest", type=Path)
+    enrich.add_argument("--route")
+    enrich.add_argument("--cloud-policy", type=Path)
+    enrich.add_argument("--data-class", choices=["public", "internal", "personal", "special"])
     enrich.add_argument("--document-id")
     enrich.add_argument("--operation-id", default="initial")
+    exposure = sub.add_parser("cloud-exposure")
+    exposure.add_argument("--cloud-policy", type=Path, required=True)
     rev = sub.add_parser("review")
     rev.add_argument("assertion_id")
     rev.add_argument("--decision", choices=["accept", "reject"], required=True)
@@ -279,19 +303,22 @@ def main():
             value = {"schema_version": SCHEMA_VERSION}
         elif args.command == "migrate-retrieval":
             migrate_retrieval(_dsn("OW_MIGRATION_DSN"))
-            value = {"schema_version": SCHEMA_VERSION, "retrieval_schema_version": 3}
+            value = {"schema_version": SCHEMA_VERSION, "retrieval_schema_version": 4}
         elif args.command == "enrich":
-            generator = LocalGenerator(_manifest(args.manifest, GeneratorManifest))
+            db = Database(_dsn("OW_WRITER_DSN")) if args.route is not None else None
+            generator = _generator(args, db)
             if args.action == "reconcile":
+                if args.route is not None:
+                    raise WorkbenchError("REMOTE_RECONCILE_UNSUPPORTED")
                 value = generator.reconcile()
             else:
-                db = Database(_dsn("OW_WRITER_DSN"))
+                db = db or Database(_dsn("OW_WRITER_DSN"))
                 if args.action == "enqueue":
                     if not args.document_id:
                         raise WorkbenchError("DOCUMENT_ID_REQUIRED")
                     value = {
                         "job_id": intelligence.enqueue(
-                            db, generator, args.document_id, args.operation_id
+                            db, generator, args.document_id, args.operation_id, args.data_class
                         )
                     }
                 else:
@@ -300,6 +327,24 @@ def main():
                         EvidenceStore(Path(os.environ["OW_EVIDENCE_ROOT"]), read_only=True),
                         generator,
                     )
+        elif args.command == "cloud-exposure":
+            # Read-only aggregate: per route and currency, never summed across them.
+            policy, policy_sha = cloud.load_policy(_operator_bytes(args.cloud_policy))
+            db = Database(_dsn("OW_WRITER_DSN"))
+            value = {
+                "policy_sha256": policy_sha,
+                "routes": [
+                    {
+                        "route_id": route.route_id,
+                        "currency": route.pricebook.currency,
+                        "cap": str(route.cap),
+                        "exposure": str(
+                            cloud.exposure(db, route.route_id, route.pricebook.currency)
+                        ),
+                    }
+                    for route in policy.routes
+                ],
+            }
         elif args.command == "review":
             value = intelligence.review(
                 Database(_dsn("OW_WRITER_DSN")),

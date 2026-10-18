@@ -706,9 +706,9 @@ def test_post_purge_checkpoint_restores_but_older_data_cannot_be_reintroduced(co
         )
 
 
-@pytest.mark.parametrize("version", [6, 7, 8])
+@pytest.mark.parametrize("version,profile", [(6, 2), (7, 3), (8, 3), (8, 4)])
 def test_known_core_checkpoint_adopts_into_current_schema(
-    context, destination, encoder_bundle, version
+    context, destination, encoder_bundle, version, profile
 ):
     if os.environ.get("OW_TEST_RETRIEVAL") != "1":
         pytest.skip("native optional retrieval profile unavailable")
@@ -719,19 +719,19 @@ def test_known_core_checkpoint_adopts_into_current_schema(
     index = VectorIndex(context["writer"], encoder_bundle)
     generation = index.build(context["store"])["generation_id"]
     index.activate(generation)
-    path = context["tmp"] / f"known-core-{version}.owcp"
+    path = context["tmp"] / f"known-core-{version}-{profile}.owcp"
     recovery.checkpoint(context["admin"], context["store"], path)
     # Core7/profile3 add operator authority and event vocabulary; core8 adds
     # collector grants only. No purge event exists in this captured dataset.
     # Preserve real document/vector rows and change only the exact known
     # published migration pair for adoption.
     bundle = json.loads(path.read_bytes())
-    published_pair(bundle["payload"], version)
+    published_pair(bundle["payload"], version, profile)
     bundle["sha256"] = digest(recovery._json(bundle["payload"]))
     path.write_bytes(recovery._json(bundle))
     change(context, document, "retire")
     policy = policy_arguments(context["roles"], path)
-    restored = context["tmp"] / f"adopted-core-{version}"
+    restored = context["tmp"] / f"adopted-core-{version}-{profile}"
     result = recovery.restore(
         Database(destination["admin"]), path, bundle["sha256"], restored, **policy
     )
@@ -742,7 +742,8 @@ def test_known_core_checkpoint_adopts_into_current_schema(
     with pytest.raises(WorkbenchError, match="DOCUMENT_NOT_FOUND"):
         service.document(document)
     with Database(destination["admin"]).connect() as conn:
-        assert conn.execute("SELECT max(version) AS v FROM ow.migrations").fetchone()["v"] == 8
+        assert conn.execute("SELECT max(version) AS v FROM ow.migrations").fetchone()["v"] == 9
+        assert conn.execute("SELECT count(*) AS n FROM ow.remote_operations").fetchone()["n"] == 0
         assert (
             conn.execute("SELECT max(version) AS v FROM ow.retrieval_migrations").fetchone()["v"]
             == 4

@@ -89,7 +89,7 @@ def test_holds_expiry_idempotency_and_permanent_logical_key(databases, tmp_path)
         writer.enqueue("document.accepted", "new-operation", {"document_id": doc})
     receipt = lifecycle.export_policy(operator, tmp_path / "policy.owpolicy")
     assert receipt["revision"] == 6
-    assert reader.status()["schema_version"] == 8
+    assert reader.status()["schema_version"] == 9
     assert reader.status()["lifecycle"]["retired_items"] == 1
 
 

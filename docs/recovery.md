@@ -164,11 +164,14 @@ checks; exact v4 normalization remains supported. Mixed, modified or incomplete
 histories are rejected. Restore does not provision an operational login or enable
 sources. Provision and validate the separate collector principal after recovery.
 
-The current supported layout is core v8 and, when enabled, retrieval-profile v4,
+The current supported layout is core v9 and, when enabled, retrieval-profile v4,
 using checkpoint format 2. Core v7 adds purge history and the separately scoped
-purger; core v8 adds collector item-reuse grants only; profile v4 adds explicit
-retrieval exclusions. Exact published core/profile pairs (core4-6 with profile2, core7-8 with
-profile3) are adopted under the same policy checks with an empty exclusion table. Restore checks current independently retained policy before accepting
+purger; core v8 adds collector item-reuse grants only; core v9 adds the remote
+attempt ledger; profile v4 adds explicit retrieval exclusions. Exact published
+core/profile pairs (core4-6 with profile2, core7 with profile3, core8 with
+profile3 or profile4) are adopted under the same policy checks; tables
+introduced later are empty at adoption. Restored remote attempts keep their
+status and reservations: an unknown outcome is never reset by recovery. Restore checks current independently retained policy before accepting
 historical content. A pre-purge checkpoint containing records forbidden by that
 policy fails with `RECOVERY_PURGED_CONTENT_PRESENT`; restoring hidden rows and
 merely filtering them is not a substitute. Compatible post-purge state and exact
