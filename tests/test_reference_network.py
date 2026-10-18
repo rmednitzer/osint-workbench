@@ -278,3 +278,27 @@ def test_oauth_fixture_resource_never_accepts_client_authentication(network_help
         actual, _, body, rows = exchange(network_helper, "oauth", wire, api=True)
         assert actual == status and rows[0]["stage"] == "resource"
         assert body == (network_helper.API_PAGES["oauth"] if status == 200 else b"")
+
+
+@pytest.mark.parametrize("foreign_file", [False, True])
+def test_fixture_cleanup_retires_both_owned_verifiers_and_preserves_unknown_files(
+    tmp_path, monkeypatch, foreign_file
+):
+    helper = load_helper()
+    owned = tmp_path / "owned-fixture"
+    owned.mkdir()
+    monkeypatch.setattr(helper, "ROOT", owned)
+    for name in ("api-token.sha256", "api-client.sha256"):
+        (owned / name).write_text("synthetic-verifier")
+    if foreign_file:
+        (owned / "foreign-canary").write_text("must remain")
+    fixture = helper.ReferenceNetwork()
+    fixture._directory_owned = True
+    if foreign_file:
+        with pytest.raises(OSError):
+            fixture.close()
+        assert (owned / "foreign-canary").read_text() == "must remain"
+        assert sorted(p.name for p in owned.iterdir()) == ["foreign-canary"]
+    else:
+        fixture.close()
+        assert not owned.exists()

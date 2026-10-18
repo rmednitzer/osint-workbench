@@ -587,6 +587,7 @@ class ReferenceNetwork:
                 "ready",
                 "hosts",
                 "api-token.sha256",
+                "api-client.sha256",
                 "api.pem",
                 "api.key",
             ):
