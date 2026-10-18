@@ -117,7 +117,7 @@ envelope, just like checkpoint receipts. A raw-file checksum is a separate value
 
 ## Recovery policy and compatibility
 
-The current compatibility pair is core schema v9 and retrieval-profile v4, with
+The current compatibility pair is core schema v10 and retrieval-profile v4, with
 checkpoint format 2. Core v5 introduced collection scheduling; subsequent v6/v7/v8
 and profile-v3/v4 migrations add scoped collector/purge authority and explicit
 retrieval exclusions. These are additive;

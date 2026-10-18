@@ -4,8 +4,9 @@
 
 Scope: C12-C17 and C21. Cloud integration remains in the implementation scope.
 One declared-compatible chat-completions route with a policy gate and
-reservation ledger is implemented ([ADR-0042](../adr/0042-governed-compatible-cloud-route.md));
-native adapters, streaming, batches and reconciliation are not. External
+reservation ledger is implemented ([ADR-0042](../adr/0042-governed-compatible-cloud-route.md)),
+with evidence-bound operator settlement ([ADR-0043](../adr/0043-remote-attempt-settlement.md));
+native adapters, streaming, batches and automatic usage or invoice import are not. External
 activation is optional and denied by default. No paid call was performed.
 
 ## Provider-independent task contract

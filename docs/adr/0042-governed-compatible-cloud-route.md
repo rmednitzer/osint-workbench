@@ -1,6 +1,8 @@
 # ADR-0042: Govern one declared-compatible cloud route with a reservation ledger
 
 Status: ACCEPTED for the bounded compatible-route slice. Date: 2026-10-18.
+Successor: [ADR-0043](0043-remote-attempt-settlement.md) adds operator
+settlement; the "no reconciliation command" consequence below is superseded.
 Refines the proposed [ADR-0012](0012-cloud-policy.md) and
 [ADR-0013](0013-accounting-batch.md); native OpenAI/Anthropic adapters, batches,
 streaming and live-provider evidence remain open under those records.

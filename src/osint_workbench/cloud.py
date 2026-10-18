@@ -9,6 +9,7 @@ import ipaddress
 import json
 import os
 import re
+import stat
 import time
 import uuid
 from datetime import date
@@ -17,11 +18,12 @@ from typing import Annotated, Literal
 from urllib.parse import urlsplit
 
 import httpcore
+import psycopg
 from jsonschema import Draft202012Validator
 from pydantic import BeforeValidator, Field, field_validator, model_validator
 
 from . import fetch
-from .contracts import StrictModel
+from .contracts import Digest, StrictModel
 from .database import Database
 from .errors import WorkbenchError
 from .text import digest
@@ -225,8 +227,10 @@ def observed_cost(route: Route, input_tokens: int, output_tokens: int):
 
 
 # Anything that could have cost money counts at its reservation unless usage
-# was reported; denied and released attempts never reached the provider.
+# was reported; denied and released attempts never reached the provider. An
+# operator settlement bound to provider evidence replaces either estimate.
 _EXPOSURE = """SELECT coalesce(sum(CASE
+    WHEN settlement_basis IS NOT NULL THEN settled_cost
     WHEN status IN ('denied','released') THEN 0
     WHEN usage='reported' THEN estimated_cost
     ELSE reserved END),0) AS exposure
@@ -267,10 +271,11 @@ class Ledger:
                     ("ow.remote:" + route_id + ":" + currency,),
                 )
                 # No blind replay: any attempt that may have reached the provider
-                # blocks another for the same logical operation until reconciled.
+                # blocks another for the same logical operation until settled.
                 prior = conn.execute(
                     "SELECT 1 FROM ow.remote_operations WHERE operation_id=%s "
-                    "AND status NOT IN ('denied','released') LIMIT 1",
+                    "AND status NOT IN ('denied','released') "
+                    "AND settlement_basis IS NULL LIMIT 1",
                     (operation_id,),
                 ).fetchone()
                 current = conn.execute(_EXPOSURE, (route_id, currency)).fetchone()["exposure"]
@@ -314,16 +319,197 @@ class Ledger:
         if set(columns) - allowed:
             raise WorkbenchError("INVALID_LEDGER_TRANSITION")
         assignments = ",".join(f"{name}=%s" for name in columns)  # fixed internal names
-        with self.db.connect() as conn:
-            row = conn.execute(
-                "UPDATE ow.remote_operations SET "  # noqa: S608
-                + assignments
-                + ",updated_at=clock_timestamp() WHERE attempt_id=%s AND status=%s "
-                "RETURNING attempt_id",
-                (*columns.values(), attempt, expected),
-            ).fetchone()
+        try:
+            with self.db.connect() as conn:
+                row = conn.execute(
+                    "UPDATE ow.remote_operations SET "  # noqa: S608
+                    + assignments
+                    + ",updated_at=clock_timestamp() WHERE attempt_id=%s AND status=%s "
+                    "RETURNING attempt_id",
+                    (*columns.values(), attempt, expected),
+                ).fetchone()
+        except (psycopg.errors.CheckViolation, psycopg.errors.SerializationFailure):
+            # A settled attempt is final; a late worker outcome is refused.
+            raise WorkbenchError("INVALID_LEDGER_TRANSITION") from None
         if row is None:
             raise WorkbenchError("INVALID_LEDGER_TRANSITION")
+
+
+# Settlement replaces conservative exposure with an operator-asserted amount
+# bound to private provider evidence by digest. The writer never settles.
+MAX_EVIDENCE_BYTES = 64 * 1024 * 1024
+MAX_LISTED = 500
+# Mirrors migration 10: reserved or dispatched rows younger than this may still
+# belong to a live worker and are refused by the database as well.
+_IN_FLIGHT = (
+    "status IN ('reserved','dispatched') AND updated_at > clock_timestamp() - interval '10 minutes'"
+)
+_ATTEMPT = (
+    "attempt_id,operation_id,route_id,currency,status,reserved,usage,estimated_cost,"
+    "error_code,created_at,updated_at,settlement_basis,settled_cost,"
+    "settlement_evidence_sha256,settled_by,settlement_rationale,settled_at,"
+    "(" + _IN_FLIGHT + ") AS in_flight"
+)
+
+
+class Settlement(StrictModel):
+    attempt_id: uuid.UUID
+    basis: Literal["invoice", "usage_export", "provider_statement", "not_dispatched"]
+    cost: Money
+    currency: str = Field(pattern=r"^[A-Z]{3}$")
+    evidence_sha256: Digest | None = None
+    actor: str = Field(min_length=1, max_length=96)
+    rationale: str = Field(min_length=1, max_length=2000)
+
+    @model_validator(mode="after")
+    def evidence_bound(self):
+        # Only a reservation that never reached dispatch is settled without
+        # provider evidence, and then only at zero.
+        if self.basis == "not_dispatched":
+            if self.cost != 0 or self.evidence_sha256 is not None:
+                raise ValueError("not_dispatched settles at zero without evidence")
+        elif self.evidence_sha256 is None:
+            raise ValueError("provider evidence is required")
+        return self
+
+
+def evidence_digest(path):
+    """Digest an operator evidence file without following a final symlink."""
+    fd = None
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode) or not 0 < info.st_size <= MAX_EVIDENCE_BYTES:
+            raise WorkbenchError("SETTLEMENT_EVIDENCE_INVALID")
+        hasher, total = hashlib.sha256(), 0
+        with os.fdopen(fd, "rb") as stream:
+            fd = None
+            while block := stream.read(1024 * 1024):
+                total += len(block)
+                if total > MAX_EVIDENCE_BYTES:
+                    raise WorkbenchError("SETTLEMENT_EVIDENCE_INVALID")
+                hasher.update(block)
+    except OSError:
+        raise WorkbenchError("SETTLEMENT_EVIDENCE_UNAVAILABLE") from None
+    finally:
+        if fd is not None:
+            os.close(fd)
+    return hasher.hexdigest()
+
+
+def _accounting(conn):
+    # Admit authority from the catalog before reading ledger rows. Writer
+    # membership is refused so the identity that spends cannot settle.
+    row = conn.execute(
+        "SELECT coalesce(pg_has_role(current_user,to_regrole('ow_accounting')::oid,'USAGE'),"
+        "false) AS accounting,pg_has_role(current_user,'ow_writer','MEMBER') AS writer"
+    ).fetchone()
+    if not row["accounting"] or row["writer"]:
+        raise WorkbenchError("ACCOUNTING_OPERATOR_REQUIRED")
+
+
+def _view(row):
+    def text(value):
+        if value is None or isinstance(value, bool | int | str):
+            return value
+        if isinstance(value, Decimal):
+            return str(value)
+        return value.isoformat() if hasattr(value, "isoformat") else str(value)
+
+    return {key: text(value) for key, value in row.items()}
+
+
+def unsettled(db: Database, *, route_id=None, include_estimated=False, limit=MAX_LISTED):
+    """Attempts that still hold estimated exposure, oldest first."""
+    if not 1 <= limit <= MAX_LISTED:
+        raise WorkbenchError("INVALID_LIST_LIMIT")
+    with db.connect() as conn:
+        _accounting(conn)
+        rows = conn.execute(
+            "SELECT " + _ATTEMPT + " FROM ow.remote_operations "  # noqa: S608
+            "WHERE settlement_basis IS NULL AND status NOT IN ('denied','released') "
+            "AND (%s OR usage IS DISTINCT FROM 'reported') "
+            "AND (%s::text IS NULL OR route_id=%s) "
+            "ORDER BY created_at,attempt_id LIMIT %s",
+            (include_estimated, route_id, route_id, limit + 1),
+        ).fetchall()
+    return {
+        "attempts": [_view(r) for r in rows[:limit]],
+        "truncated": len(rows) > limit,
+    }
+
+
+def settle(db: Database, settlement: Settlement):
+    """Record one immutable settlement; an identical retry returns its receipt."""
+    with db.connect() as conn:
+        _accounting(conn)
+        # The row lock orders this against a late worker outcome; the trigger
+        # then refuses any later transition of a settled attempt.
+        row = conn.execute(
+            "SELECT " + _ATTEMPT + " FROM ow.remote_operations "  # noqa: S608
+            "WHERE attempt_id=%s FOR UPDATE",
+            (settlement.attempt_id,),
+        ).fetchone()
+        if row is None:
+            raise WorkbenchError("ATTEMPT_NOT_FOUND")
+        if row["settlement_basis"] is not None:
+            same = (
+                row["settlement_basis"] == settlement.basis
+                and row["settled_cost"] == settlement.cost
+                and row["currency"] == settlement.currency
+                and row["settlement_evidence_sha256"] == settlement.evidence_sha256
+                and row["settled_by"] == settlement.actor
+                and row["settlement_rationale"] == settlement.rationale
+            )
+            if not same:
+                raise WorkbenchError("SETTLEMENT_CONFLICT")
+            return {**_receipt(row), "replayed": True}
+        if row["status"] in ("denied", "released"):
+            raise WorkbenchError("SETTLEMENT_NOT_REQUIRED")
+        if row["currency"] != settlement.currency:
+            raise WorkbenchError("SETTLEMENT_CURRENCY_MISMATCH")
+        if settlement.basis == "not_dispatched" and row["status"] != "reserved":
+            raise WorkbenchError("SETTLEMENT_BASIS_INVALID")
+        if row["in_flight"]:
+            raise WorkbenchError("SETTLEMENT_IN_FLIGHT")
+        try:
+            row = conn.execute(
+                "UPDATE ow.remote_operations SET settlement_basis=%s,settled_cost=%s,"  # noqa: S608
+                "settlement_evidence_sha256=%s,settled_by=%s,settlement_rationale=%s "
+                "WHERE attempt_id=%s AND settlement_basis IS NULL RETURNING " + _ATTEMPT,
+                (
+                    settlement.basis,
+                    settlement.cost,
+                    settlement.evidence_sha256,
+                    settlement.actor,
+                    settlement.rationale,
+                    settlement.attempt_id,
+                ),
+            ).fetchone()
+        except psycopg.errors.CheckViolation:
+            raise WorkbenchError("SETTLEMENT_REFUSED") from None
+        conn.commit()
+    return {**_receipt(row), "replayed": False}
+
+
+def _receipt(row):
+    view = _view(row)
+    return {
+        key: view[key]
+        for key in (
+            "attempt_id",
+            "operation_id",
+            "route_id",
+            "currency",
+            "status",
+            "reserved",
+            "settlement_basis",
+            "settled_cost",
+            "settlement_evidence_sha256",
+            "settled_by",
+            "settled_at",
+        )
+    }
 
 
 class _NotSent(Exception):
@@ -334,10 +520,14 @@ class _NotSent(Exception):
         self.code = code
 
 
-def post_json(url, body: bytes, headers, timeout, max_bytes=MAX_RESPONSE_BYTES):
+def post_json(url, body: bytes, headers, deadline, max_bytes=MAX_RESPONSE_BYTES):
     """POST over the public-destination, verified-TLS transport. No redirects."""
     fetch.validate_url(url)
-    deadline = time.monotonic() + timeout
+    try:
+        fetch._remaining(deadline)
+    except WorkbenchError:
+        # A worker that stalled past its deadline before sending never sends.
+        raise _NotSent("REMOTE_DEADLINE_BEFORE_SEND") from None
     try:
         with httpcore.ConnectionPool(
             network_backend=fetch._PublicBackend(deadline),
@@ -450,13 +640,16 @@ class GovernedGenerator:
         if decision == "denied":
             raise WorkbenchError("REMOTE_" + reason)
         credential = self.environ.get(route.credential_env, "")
+        # The deadline starts before the dispatched row commits, so no request
+        # byte leaves after the settlement window for in-flight attempts opens.
+        deadline = time.monotonic() + route.timeout_seconds
         self.ledger.transition(attempt, "reserved", "dispatched")
         try:
             status, content = post_json(
                 route.endpoint,
                 body,
                 [("Authorization", "Bearer " + credential)],
-                route.timeout_seconds,
+                deadline,
             )
         except _NotSent as exc:
             self.ledger.transition(attempt, "dispatched", "released", error_code=exc.code)

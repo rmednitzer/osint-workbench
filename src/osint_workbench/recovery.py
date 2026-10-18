@@ -50,6 +50,14 @@ RETRIEVAL = (
     "retrieval_active",
 )
 SEQUENCES = {"job_events": "event_id", "assertion_reviews": "review_id"}
+SETTLEMENT_COLUMNS = (
+    "settlement_basis",
+    "settled_cost",
+    "settlement_evidence_sha256",
+    "settled_by",
+    "settlement_rationale",
+    "settled_at",
+)
 
 
 def _json(value):
@@ -67,6 +75,7 @@ def _history(conn):
         "migrations/007_retired_record_purge.sql",
         "migrations/008_collector_item_reuse.sql",
         "migrations/009_cloud_ledger.sql",
+        "migrations/010_cloud_settlement.sql",
     ]
     expected = {
         str(i): digest(files("osint_workbench").joinpath(p).read_bytes())
@@ -310,7 +319,7 @@ def _read(path, expected_sha):
 
 
 # Published core version -> the optional retrieval profiles it shipped with.
-PUBLISHED_PAIRS = {4: (2,), 5: (2,), 6: (2,), 7: (3,), 8: (3, 4)}
+PUBLISHED_PAIRS = {4: (2,), 5: (2,), 6: (2,), 7: (3,), 8: (3, 4), 9: (4,)}
 
 
 def _known_legacy_history(observed, current, version):
@@ -353,21 +362,27 @@ def restore(
         history = _history(conn)
         _full_visibility(conn)
         names = CORE + (RETRIEVAL if "retrieval/1" in history else ())
+
         # V6/V7/V8 change defaults, grants and allowed lifecycle actions only.
         # Exact known v5-v8 retain the same core layout; v4 needs an empty schedule.
         # Profiles before 4 have no exclusion table: no generation excluded anything.
         # No schema3/format1 inference or mixed migration history is accepted.
         # Tables introduced after a legacy pair are empty at adoption: no older
         # release recorded remote attempts or retrieval exclusions.
-        profile = max(
-            (
-                int(k.removeprefix("retrieval/"))
-                for k in payload["migrations"]
-                if k.startswith("retrieval/") and k.removeprefix("retrieval/").isdigit()
-            ),
-            default=0,
+        def latest(prefix):
+            return max(
+                (
+                    int(k.removeprefix(prefix))
+                    for k in payload["migrations"]
+                    if k.startswith(prefix) and k.removeprefix(prefix).isdigit()
+                ),
+                default=0,
+            )
+
+        core, profile = latest(""), latest("retrieval/")
+        absent = ({"remote_operations"} if core < 9 else set()) | (
+            {"retrieval_exclusions"} if profile < 4 else set()
         )
-        absent = {"remote_operations"} | ({"retrieval_exclusions"} if profile < 4 else set())
         legacy = set(names) - absent
         adopted = {
             version: _known_legacy_history(payload["migrations"], history, version)
@@ -378,6 +393,14 @@ def restore(
         if any(adopted.values()):
             for name in absent & set(names):
                 tables[name] = []
+            # Core 9 predates settlement: every adopted attempt is unsettled.
+            attempts = tables["remote_operations"]
+            if not isinstance(attempts, list) or not all(isinstance(r, dict) for r in attempts):
+                raise WorkbenchError("INVALID_RECOVERY_BUNDLE")
+            for row in attempts:
+                if set(SETTLEMENT_COLUMNS) & set(row):
+                    raise WorkbenchError("RECOVERY_COLUMNS_MISMATCH")
+                row.update(dict.fromkeys(SETTLEMENT_COLUMNS))
         if adopted_v4:
             tables["collection_state"] = []
             if any("http_status" in row for row in tables["collection_runs"]):
