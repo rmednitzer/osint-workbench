@@ -1,5 +1,6 @@
 """Native loopback protocol checks; never create or enter a network namespace."""
 
+import hashlib
 import importlib.util
 import socket
 import threading
@@ -23,7 +24,7 @@ def network_helper():
     return load_helper()
 
 
-def exchange(helper, phase, request, *, deadline=None):
+def exchange(helper, phase, request, *, deadline=None, api=False):
     records, errors = [], []
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
         listener.bind(("127.0.0.1", 0))
@@ -34,7 +35,18 @@ def exchange(helper, phase, request, *, deadline=None):
             try:
                 connection, _ = listener.accept()
                 with connection:
-                    helper.handle_connection(connection, phase, records.append, deadline=deadline)
+                    if api:
+                        helper.handle_api_connection(
+                            connection,
+                            phase,
+                            hashlib.sha256(b"Bearer synthetic-fixture-token").hexdigest(),
+                            records.append,
+                            deadline=deadline,
+                        )
+                    else:
+                        helper.handle_connection(
+                            connection, phase, records.append, deadline=deadline
+                        )
             except Exception as error:
                 errors.append(type(error).__name__)
 
@@ -172,3 +184,46 @@ def test_native_fixture_expired_server_deadline_refuses_valid_request(network_he
     status, _, body, records = exchange(network_helper, "v1", request(), deadline=started - 1)
     assert status == 400 and body == b"" and records == []
     assert time.monotonic() - started < 1
+
+
+@pytest.mark.parametrize(
+    "phase,path,token,status",
+    [
+        ("v1", "/records", "synthetic-fixture-token", 200),
+        ("v2", "/records?cursor=page-2", "synthetic-fixture-token", 200),
+        ("fail", "/records", "synthetic-fixture-token", 503),
+        ("v1", "/records", "synthetic-invalid-token", 401),
+        ("v2", "/records", "synthetic-fixture-token", 400),
+    ],
+)
+def test_api_peer_records_only_status_and_booleans(network_helper, phase, path, token, status):
+    wire = (
+        f"GET {path} HTTP/1.1\r\nHost: feed.fixture.invalid\r\n"
+        f"Authorization: Bearer {token}\r\n\r\n"
+    ).encode()
+    observed, headers, body, records = exchange(network_helper, phase, wire, api=True)
+    assert observed == status and headers["content-type"] == "application/json"
+    assert body == (network_helper.API_PAGES[phase] if status == 200 else b"")
+    assert records == [
+        {
+            "phase": phase,
+            "status": status,
+            "authorized": token == "synthetic-fixture-token",
+            "path_ok": path == ("/records?cursor=page-2" if phase == "v2" else "/records"),
+        }
+    ]
+    if status == 503:
+        assert headers["retry-after"] == "120"
+
+
+def test_api_fixture_guard_precedes_tls_or_listener_creation(monkeypatch):
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("unguarded fixture attempted TLS or listener creation")
+
+    helper = load_helper()
+    monkeypatch.setattr(helper.ssl, "SSLContext", forbidden)
+    monkeypatch.setattr(socket, "socket", forbidden)
+    with pytest.raises(RuntimeError):
+        helper.serve(0, 0, api=True)

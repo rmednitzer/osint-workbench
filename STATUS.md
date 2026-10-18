@@ -9,7 +9,7 @@ runbooks, target specifications, decisions and historical evidence.
 ## Current contracts
 
 Core schema **11**, retrieval profile **4**, checkpoint format **2**.
-The programme contains 46 ADRs, 58 requirements and 51 full acceptance scenarios.
+The programme contains 47 ADRs, 58 requirements and 51 full acceptance scenarios.
 Earlier published SQL resources remain immutable. Legacy checkpoint format 1 is
 not silently adopted. The [requirements](docs/assurance/requirements.md) and
 [verification matrix](docs/testing/verification-plan.md) retain their full target
@@ -19,7 +19,7 @@ scope; passing foundation regressions does not close every scenario.
 | --- | --- | --- |
 | Configuration and storage | Typed external configuration, empty bundled source list, packaged additive migrations, immutable versions/current heads and hashed evidence objects | Single-operator reference; no complete tenancy, physical media integrity or full-host recovery claim |
 | Collection | RSS/Atom extraction, public-destination HTTP with DNS pinning/TLS, per-hop redirect checks, framing/byte/deadline limits, due ticks, conditional validators, backoff and bounded Retry-After | No article crawling, ZIP/PDF or specialist upstream adapters; compressed responses rejected; shared-host quotas and representative Internet/deployment acceptance remain open |
-| API acquisition | Opt-in HTTPS GET `bounded-json-pages/1`, checked systemd/file credential references, fixed bearer/API-key headers, per-page atomic continuation, partial freshness and bounded cross-tick loop detection; [runbook](docs/api-acquisition.md) | Explicit all-existing-uses-permitted/unmetered declarations only; no restricted licensed content, provider adapters, OAuth, paid queries, API service unit or actual provider acceptance |
+| API acquisition | Opt-in HTTPS GET `bounded-json-pages/1`, checked systemd/file credential references, fixed bearer/API-key headers, per-page atomic continuation, partial freshness and bounded cross-tick loop detection; [runbook](docs/api-acquisition.md) | Explicit all-existing-uses-permitted/unmetered declarations only; opt-in single-source systemd service/timer; no restricted licensed content, provider adapters, OAuth, paid queries or actual provider acceptance |
 | Item identity | Changed feed containers retain raw run evidence; unchanged items reuse their current heads and enqueue no new work | No feed-absence deletion or whole-feed atomic replacement; exact old-container replay follows ADR-0040 |
 | Jobs | Leases, fencing, bounded retries, renewal/cancellation and atomic character-chunk acceptance | Cancellation revokes result acceptance, not physical computation or incurred remote effects; terminal-job deduplication is not a reset command |
 | MCP | Seven read-only stdio tools with strict application schemas, UTF-8 byte-budget pagination, exact reader relation/column checks; MCP SDK 2.3 low-level handlers and per-server tracing opt-out | Source enumeration now uses a results envelope; briefing pages retain full product identity with explicit partial scope; live pages are not snapshots; no remote listener or observed assistant-client compatibility matrix |
@@ -30,7 +30,7 @@ scope; passing foundation regressions does not close every scenario.
 | Governed cloud | Explicitly routed/classified compatible chat-completions enrichment, declared provider facts, denial records, Decimal per-currency reservations and unresolved-attempt replay guard | Provider facts are operator declarations; no independent sovereignty verification, live-provider acceptance, native vendor adapters, streaming, batches, silent fallback or separate dispatcher identity |
 | Accounting | Immutable evidence-digest-bound operator settlement under separate accounting authority; database transition times and row-lock ordering; Read Committed reservation admission before the route lock | No invoice import, automatic reconciliation or settlement correction workflow; settlement asserts an amount, not verified invoice semantics; same terminal job is not requeued automatically |
 | Lifecycle and recovery | Retention/holds/logical retirement, filtered reads, current-policy restore reconciliation, bounded private checkpoint/empty-target restore, reviewed orphan GC and transactional retired-record SQL purge | Purge preserves remote ledger rows; CAS/shared feeds/WAL/backups/provider and published copies are not erased; independent policy custody, larger-corpus and full-host/PITR acceptance remain open |
-| Deployment | Non-root collector, bounded chunk-worker and aggregate-health service/timer templates; explicit group-readable evidence creation option and guarded disposable reference-service harness | Thresholds are operator choices; unsupported downstream jobs remain queued; historical receipts cover named revisions; no complete stack, dashboard/notification routing, backup automation or operational-host acceptance |
+| Deployment | Non-root feed/API collectors, bounded chunk-worker and aggregate-health service/timer templates; explicit group-readable evidence creation option and guarded disposable reference-service harness | Thresholds are operator choices; unsupported downstream jobs remain queued; historical receipts cover named revisions; no complete stack, dashboard/notification routing, backup automation or operational-host acceptance |
 | Publication and supply chain | Positive file selection, source/artifact/new-metadata scans, planned-message preflight, locked builds, Python CycloneDX SBOM, reviewed licence/native-file evidence and separate main-push signing | Private exact-value scans stay outside public CI; native/OS/model composition and redistribution clearance remain incomplete; neither scanner success nor signatures establish anonymity or full assurance |
 
 The generic chunk worker handles only `document.accepted`. Enrichment claims only
@@ -50,6 +50,22 @@ failure/recovery and accelerated timer acceptance using the same wheel. See
 [the detailed evidence](docs/testing/operational-acceptance-2026-10-18.md) and
 [service receipt](docs/testing/operational-service-2026-10-18.json).
 Later changes need their own checks; these results are not a floating current pass.
+
+The scheduled API candidate `9c03e4eb053998ccd4b5022e81f93941ab1b4f63`
+passed the separate Ubuntu 24.04/Python 3.12 and Ubuntu 26.04/Python 3.14 service
+jobs in run `39153966588`. Its [service receipt](docs/testing/scheduled-api-service-2026-10-18.json)
+binds the wheel and unit/harness hashes to observed authenticated HTTPS,
+partial/terminal continuation, accelerated timer, credential failure/replacement,
+backoff, recovery and downstream worker/reader outcomes. Its TLS peer is synthetic
+and disconnected; no actual provider or operational host was contacted. This
+service evidence does not substitute for the candidate's foundation matrix.
+The [hardening successor](docs/testing/scheduled-api-hardening-2026-10-18.json)
+records both LTS service passes in `39154880281` at
+`e3e13af7003ebe31965732e8868ca618838b9e55`, with explicit fixture TLS minimum and
+a hash-only synthetic peer verifier. The matching CodeQL disposition is recorded
+[individually](docs/testing/codeql-triage-2026-10-18.md#scheduled-api-fixture-successor);
+no query/path exclusion was introduced. Older receipt hashes remain historical.
+
 
 These are installed-wheel tests against disposable PostgreSQL 18/pgvector,
 native HTTP/TLS/Unix transports and authored synthetic ONNX/GGUF fixtures. They

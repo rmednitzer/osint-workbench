@@ -3,7 +3,8 @@
 This first profile implements one explicit JSON contract, not a generic provider
 SDK or a Janes integration. Core schema **11**, optional retrieval profile **4**
 and checkpoint format **2** apply. Run the packaged migration before acquisition.
-There are no bundled endpoints, credentials, scheduled API units or enabled sources.
+There are no bundled endpoints, credentials or enabled sources. An opt-in
+[single-source service/timer](deployment.md#scheduled-api-profile) is available.
 No operational deployment or provider subscription is implied.
 
 ## Admission and authority
@@ -78,7 +79,7 @@ only after reconciling an expired cursor, cycle limit or changed upstream contra
 it does not establish that the abandoned cycle was complete. Without `--restart`,
 the durable schedule and continuation remain authoritative. `poll_seconds` is
 60–86400, independently of `freshness_seconds` (60–31536000). Disabled and
-not-due configurations dispatch no request. An external scheduler is separately
+not-due configurations dispatch no request. The optional API timer is separately
 provisioned; the RSS timer does not automatically discover API configurations.
 
 ## Provider page contract
@@ -154,9 +155,9 @@ are never read from a token environment variable. Systemd resolution uses the
 trusted service-provided `CREDENTIALS_DIRECTORY`; file references use the same
 checked descriptor walk. A guarded disposable-runner fixture tests real systemd
 delivery and cross-unit isolation on both supported LTS releases; its execution
-receipt is required separately from local unit tests. No API deployment unit ships
-in this increment. Provision and test the selected host delivery independently
-before adoption.
+receipt is required separately from local unit tests. The optional API service
+uses the same delivery contract; provision and test the selected host delivery
+independently before adoption.
 
 The resolver refuses symlink components, writable/untrusted ancestors, nonregular
 files, multiple hard links, unsafe owner/mode and files changing during the read.
@@ -197,7 +198,9 @@ an independently controlled reprovisioning procedure.
 `tests/test_api_acquisition.py`, collector-role tests and recovery tests exercise
 synthetic contracts. Installed native transport/database and both LTS service
 credential-delivery evidence must be bound to the candidate artifact before
-operational claims. A parser or unit pass does not establish provider operation.
+operational claims. The [scheduled API service receipt](testing/scheduled-api-hardening-2026-10-18.json)
+records the passing disconnected two-LTS service path at its named revision. A
+parser, unit or synthetic service pass does not establish actual provider operation.
 
 Provider-specific schemas and pagination, documented search POSTs, OAuth/mTLS,
 signed requests, compressed documents, HTML/JSON-LD, JavaScript rendering,

@@ -1,0 +1,49 @@
+# Opt-in single-source API collector; provision private api.env and api-source.json.
+# Model workers and stdio MCP require separate identities and supervision.
+[Unit]
+Description=OSINT Workbench bounded API acquisition tick
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=osint-workbench
+Group=osint-workbench
+EnvironmentFile=/etc/osint-workbench/api.env
+Environment=OW_EVIDENCE_ROOT=/var/lib/osint-workbench/evidence
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/osint-workbench/venv/bin/osint-workbench collect-api --config /etc/osint-workbench/api-source.json --max-pages 1 --timeout-seconds 60
+StateDirectory=osint-workbench/evidence
+StateDirectoryMode=0700
+WorkingDirectory=/var/lib/osint-workbench/evidence
+UMask=0077
+TimeoutStartSec=150s
+TimeoutStopSec=15s
+KillMode=control-group
+SendSIGKILL=yes
+Restart=no
+MemoryMax=768M
+TasksMax=32
+CPUQuota=100%
+LimitNOFILE=256
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+StandardOutput=journal
+StandardError=journal

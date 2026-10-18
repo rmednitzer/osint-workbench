@@ -138,3 +138,33 @@ configuration remain outside the boundary. Reassess if another deployment actor,
 network client, MCP parameter or source/model content can select these inputs.
 Actual systemd delivery and cross-unit isolation require their separate LTS
 fixture results; the static disposition does not establish service acceptance.
+
+## Scheduled API fixture successor
+
+Python SARIF `1976587736` at `e3e13af7003ebe31965732e8868ca618838b9e55`
+reported alert 46, `py/weak-sensitive-data-hashing`, at the SHA-256 peer verifier.
+The complete reported flow contains the `_api_token` attribute and its encoding
+at `scripts/reference_network.py:364`; the classifier calls it a password.
+Call-site review finds one credentialed `ReferenceNetwork` caller in the guarded
+service harness. It generates a fresh token using `secrets.token_urlsafe(32)`.
+The other caller uses the unauthenticated feed fixture. There is no operator
+password, acquired content or MCP setter for this synthetic provider token.
+
+Disposition: individually dismissed as a false positive. This is a high-entropy
+random verifier, not a low-entropy human password. The disconnected peer stores
+the full SHA-256 verifier and uses `hmac.compare_digest`; the separate root-private
+source file exists for actual `LoadCredential` delivery. This does not claim
+at-rest encryption or protection from privileged fixture administrators. The
+[OWASP session-token guidance](https://github.com/OWASP/CheatSheetSeries/blob/master/cheatsheets/Session_Management_Cheat_Sheet.md)
+distinguishes random verifiers from passwords. The
+[CodeQL rule](https://github.com/github/codeql/blob/main/python/ql/src/Security/CWE-327/WeakSensitiveDataHashing.ql)
+requires interpretation of its password classification against actual callers.
+Review sources were checked on 2026-10-18. Reassess if generation, callers or the
+fixture-only authority changes, especially if human-selected passwords become
+possible. No query family, path or gate was excluded.
+
+The earlier plaintext-verifier and implicit-TLS-default findings no longer occur
+in that analysis after moving the peer to hash-only storage and explicitly setting
+TLS 1.2 as its minimum. The [successor service receipt](scheduled-api-hardening-2026-10-18.json)
+records passing real installed service execution on both LTS defaults in run
+`39154880281`; static disposition does not establish actual provider acceptance.

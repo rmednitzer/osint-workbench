@@ -67,3 +67,13 @@ cannot substitute for runtime, semantic, provider or recovery evidence.
 
 The [2026-10-18 coherence audit](testing/documentation-coherence-2026-10-18.md)
 records this reconciliation's scope, corrections and verification limits.
+
+
+The [scheduled API service receipt](testing/scheduled-api-service-2026-10-18.json)
+is historical revision-bound execution evidence for ADR-0047. The API and deployment
+runbooks describe current behavior; the receipt's source/wheel/unit hashes bound
+its observed disconnected two-LTS scope.
+
+The [API fixture hardening successor](testing/scheduled-api-hardening-2026-10-18.json)
+binds the subsequent TLS/verifier change to its own two-LTS run. It does not
+relabel the earlier receipt or establish actual-provider or host adoption.
