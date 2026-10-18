@@ -249,7 +249,7 @@ def test_actual_tls_escaped_publication_timestamp_token_is_not_stored(
             }
         )
         .encode()
-        .replace(b"2026", b"\\u0032026")
+        .replace(b"2026", b"\\u0032\\u0030\\u0032\\u0036")
     )
     # The JSON string decodes to the credential; raw-byte scanning cannot see it.
     assert date_token.encode() not in raw
