@@ -63,7 +63,9 @@ def native(databases, tmp_path, monkeypatch):
             pass
 
     with ThreadingHTTPServer(("127.0.0.1", 0), Handler) as server:
-        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread = threading.Thread(
+            target=server.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True
+        )
         thread.start()
 
         class RoutedBackend(acquisition._PublicBackend):

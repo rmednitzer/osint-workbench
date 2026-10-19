@@ -415,7 +415,9 @@ def test_native_http_server_to_postgresql_revalidation(databases, tmp_path, monk
     # Fixture routing only: actual sockets/framing/deadlines/parser/database;
     # production DNS/TLS/address policy is deliberately not asserted by this test.
     with ThreadingHTTPServer(("127.0.0.1", 0), Handler) as server:
-        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread = threading.Thread(
+            target=server.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True
+        )
         thread.start()
 
         class RoutedBackend(acquisition._PublicBackend):

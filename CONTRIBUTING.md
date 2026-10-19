@@ -31,6 +31,38 @@ Existing interpreters are preferable for review. Do not synchronize/install into
 another task's active environment; `uv run` can silently replace an installed wheel
 with the editable checkout. Record unavailable integration separately from passes.
 
+## Proportional test design
+
+Choose tests by the independent fault they detect and the consequence of missing
+it. There is no required test count, per-change test quota or coverage-percentage
+target. A case count is an observation of a revision, not evidence of completeness.
+Use the requirements, actual trust boundaries and known defects to select cases.
+
+Keep cheap input partitions in parameterized unit tests. Use native transport,
+SQL, process and installed-CLI cases for behavior those unit tests cannot prove:
+authorization, framing, transactional acceptance, concurrency, deadlines, crash
+recovery and packaging. Similar assertion bodies can be necessary when their
+inputs distinguish different hazards; function-count reduction alone is not a
+simplification. Avoid Cartesian products of independent options without a named
+interaction to detect. Consolidate cases when their failure-detection purpose is
+duplicated and remains covered at the appropriate layer.
+
+For a fix, add a regression only when existing coverage does not distinguish the
+fault. Documentation, comments and reversible low-impact fixture changes normally
+need relevant existing checks rather than new tests. Material architecture changes
+need an ADR; ordinary test maintenance does not require a new decision record.
+Do not shorten meaningful timeout/crash waits or replace actual integration with
+mock success to improve timing. Optimize setup, cleanup and unnecessary imports
+before removing useful boundary coverage.
+
+For development, run the affected cases first. Use `--durations=25
+--durations-min=0.1` to find expensive calls/setup/teardown; these observations are
+not a performance SLO. Full installed/native acceptance on both required LTS
+profiles remains the merge/signing contract. PostgreSQL fixtures share database
+state: do not enable parallel pytest workers without isolated databases and
+independent lifecycle/admission resources. See the bounded
+[2026-10-19 cost review](docs/testing/test-cost-review-2026-10-19.md).
+
 ## Verify the installed wheel
 
 Use a dedicated environment and actual locked dependencies. These commands do not

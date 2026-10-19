@@ -108,7 +108,7 @@ jobs:
           uv pip sync --python /tmp/ow-installed/bin/python --require-hashes /tmp/ow-test-requirements.txt
           uv pip install --python /tmp/ow-installed/bin/python --no-deps dist/*.whl
           /tmp/ow-installed/bin/python -c 'import osint_workbench; assert "site-packages" in osint_workbench.__file__'
-          /tmp/ow-installed/bin/python -m pytest --require-integration --import-mode=importlib
+          /tmp/ow-installed/bin/python -m pytest --require-integration --import-mode=importlib --durations=25 --durations-min=0.1
       - name: Verify packaged file selection
         run: .venv/bin/python scripts/check_publication.py --artifacts dist
       # Evidence is generated and retained only after installed tests and package scans pass.
