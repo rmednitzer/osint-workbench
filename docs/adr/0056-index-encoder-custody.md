@@ -68,3 +68,17 @@ and exact stored vectors despite caller mutation, and preserve the expected RRF
 score after query-template mutation. Existing inference-failure classifications,
 failed-build isolation, purge-before-late-dispatch and reader/activation cases must
 continue to exercise the real owned client. No model quality is inferred.
+
+
+## Registry-conflict follow-up: 2026-10-19
+
+Historical aliasing could also have registered a different manifest under the
+captured space key. `ON CONFLICT DO NOTHING` alone would retain that mismatch
+on an ordinary rebuild. After registration, the build now compares the stored
+manifest and dimensions against its captured contract in the same transaction,
+before generation insertion or native work. A conflict reports
+`INCOMPATIBLE_EMBEDDING_SPACE` and retains the original registry and generation
+state. This does not repair or approve old vectors. A conflicting registry needs
+a separately reviewed reconstruction or migration plan; it cannot be requalified
+by an ordinary rebuild alone. Native cases cover both manifest and dimension
+conflicts with zero new generations or active pointers.

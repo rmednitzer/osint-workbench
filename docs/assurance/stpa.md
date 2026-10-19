@@ -894,3 +894,11 @@ vectors and fused query scores. Existing failed-build and purge-interleaving
 cases retain their failure/admission assertions through the owned native client.
 These bounds do not establish historical producer custody, useful pretrained
 quality, workspace authorization or a sandbox against privileged code mutation.
+
+
+The ADR-0056 registry follow-up also refuses a pre-existing space key whose stored
+manifest or dimensions conflict with the owned contract. The check precedes
+generation insertion/native work in the registration transaction. Native cases
+retain the original row and assert zero new generations/active pointers. This
+prevents a safe rebuild command from silently inheriting inconsistent metadata;
+it does not authorize automatic repair of historical evidence.

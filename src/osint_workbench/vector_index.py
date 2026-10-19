@@ -149,6 +149,12 @@ class VectorIndex:
                           VALUES (%s,%s,%s) ON CONFLICT DO NOTHING""",
                 (self.space_id, Jsonb(manifest), dimensions),
             )
+            registered = conn.execute(
+                "SELECT manifest,dimensions FROM ow.embedding_spaces WHERE space_id=%s",
+                (self.space_id,),
+            ).fetchone()
+            if registered != {"manifest": manifest, "dimensions": dimensions}:
+                raise WorkbenchError("INCOMPATIBLE_EMBEDDING_SPACE")
             conn.execute(
                 """INSERT INTO ow.retrieval_generations
                           (generation_id,space_id,dimensions,corpus_sha256,status)
