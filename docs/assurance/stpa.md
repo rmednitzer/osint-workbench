@@ -777,3 +777,15 @@ No operational leak is established by the synthetic counterexample. This
 backstop detects exact active-token occurrences, not arbitrary encodings, other
 secrets or all personal information. Source classification and independently
 accepted provider/data policies remain separate prerequisites.
+
+## Assertion label-contract refinement
+
+SC2/SC4 and U19/C19 distinguish a located quotation from a label occurrence,
+entity resolution or semantic support. The v1 read envelope encouraged a faulty
+process model by calling quotation-bound label hashes source mentions. Under
+[ADR-0051](../adr/0051-honest-assertion-label-bindings.md), response v2 names them
+label bindings and explicitly reports entity resolution as not performed.
+No stronger extraction or reviewer authority is implied. Tests preserve hash
+inputs and original evidence while exercising absent labels, empty responses,
+role/source/span isolation and the actual stdio projection. Human interpretation,
+independent review and full E27/E28 semantic acceptance remain open.

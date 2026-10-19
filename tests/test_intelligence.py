@@ -68,7 +68,12 @@ def test_proposals_review_cited_product_rejection_and_source_updates(databases, 
     result = intel.enrich_once(writer, store, generator)
     assert result["status"] == "proposed" and len(generator.calls) == 1
     assert intel.enrich_once(writer, store, generator)["status"] == "idle"
-    row = intel.assertions(reader)["results"][0]
+    response = intel.assertions(reader)
+    assert response["ontology_version"] == "assertion-proposals/2"
+    assert response["entity_resolution"] == "not-performed"
+    row = response["results"][0]
+    assert row["object"] not in row["quote"]
+    assert "object_label_binding_id" in row and "object_mention_id" not in row
     assert row["review_state"] == "pending" and row["quote"] == claim()["quote"]
     assert intel.create_briefing(writer, [doc])["degraded"]  # Never promote pending proposals.
     intel.review(
@@ -179,7 +184,13 @@ def test_cited_product_over_real_mcp_stdio(databases, tmp_path):
         async with stdio_client(params) as (read, write), ClientSession(read, write) as client:
             await client.initialize()
             proposals = await client.call_tool("list_assertions", {"document_id": doc})
-            assert json.loads(proposals.content[0].text)["results"][0]["review_state"] == "accept"
+            response = json.loads(proposals.content[0].text)
+            assert response["ontology_version"] == "assertion-proposals/2"
+            assert response["entity_resolution"] == "not-performed"
+            row = response["results"][0]
+            assert row["review_state"] == "accept"
+            assert row["object"] not in row["quote"]
+            assert "object_label_binding_id" in row and "object_mention_id" not in row
             result = await client.call_tool(
                 "get_briefing", {"briefing_id": briefing["briefing_id"]}
             )

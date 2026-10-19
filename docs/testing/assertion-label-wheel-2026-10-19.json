@@ -1,0 +1,21 @@
+{
+  "format": "osint-workbench-label-contract-wheel-review-v1",
+  "date": "2026-10-19",
+  "baseline_commit": "c866f6cd74b723cf0470675cbeff56be2ac74aa8",
+  "previous_wheel_sha256": "adc1df0fb3c77f584d4f3b7ba9b48ac970e7f2df295cd4f5d321af0addba38df",
+  "candidate_wheel_sha256": "e31f4506d20e4118b8b6258ad109cc0e1aa12247e38b30e1cd4373606d67f23b",
+  "lock_sha256": "b5a4684da62a5a3457e445595fc4bbd867ad4db81f3da74adcde00f4d66c62c9",
+  "archive_members": 59,
+  "changed_members": [
+    "osint_workbench/intelligence.py",
+    "osint_workbench-0.1.0.dev1.dist-info/RECORD"
+  ],
+  "metadata_and_licence_bytes_unchanged": true,
+  "elf_members": 0,
+  "uv_version": "0.13.1",
+  "limits": [
+    "Read projection correction only; labels need not occur in quotation and entity resolution is not performed.",
+    "No independent reviewer authority or full semantic acceptance established.",
+    "Native tests and signatures need exact-revision evidence."
+  ]
+}

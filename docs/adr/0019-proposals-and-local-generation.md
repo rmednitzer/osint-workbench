@@ -53,3 +53,10 @@ lineage, full native composition or legal clearance. The original blanket
 supply-chain deferral must be read with that distinction. Local marker custody
 is refined by [ADR-0037](0037-inference-custody-python-sbom.md); it remains
 cooperative host-local admission rather than remote resource ownership.
+
+## Label-contract successor (2026-10-19)
+
+[ADR-0051](0051-honest-assertion-label-bindings.md) supersedes this decision's
+source-mention description. Current reads expose quotation-bound proposal-label
+bindings and explicitly report that entity resolution has not been performed.
+Quotation validation and the original stored records remain unchanged.

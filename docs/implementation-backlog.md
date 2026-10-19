@@ -59,8 +59,9 @@ or optional profiles merely to simplify completion claims.
 The [dated audit dispositions](testing/audit-remediation-2026-10-18.md) retain the
 individual implementation findings and severities. Priority follow-up includes:
 
-- Bind subject/object labels to the quoted span or rename the mention contract;
-  prevent schema/quote success from implying semantic support.
+- The misleading mention contract is replaced by explicit proposal-label bindings
+  in [ADR-0051](adr/0051-honest-assertion-label-bindings.md). Label-specific spans,
+  entity resolution and independently verified semantic support remain future work.
 - Separate reviewer authority from the producing writer; actor strings do not
   establish an independent reviewer.
 - Retain native acceptance for byte-budget MCP pagination, literal source-token

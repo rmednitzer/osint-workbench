@@ -7,7 +7,7 @@
 [Local intelligence](../local-intelligence.md) implements bounded proposals,
 quotation coordinates, writer-authorized reviews and cited assertion digests.
 Subject/object labels are not yet required to occur within their supporting
-quotation; returned mention-like hashes do not establish entity identity or
+quotation; response v2 explicitly names quotation-bound label bindings, which establish neither entity identity nor
 label-specific spans. Actor labels are operator attribution, not independently
 authenticated reviewer identities. The MCP v2 stdio tools can read assertions and
 briefings but cannot enqueue, review, publish or select a provider. A separately
