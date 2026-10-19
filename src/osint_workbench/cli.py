@@ -33,7 +33,7 @@ from .local_reranker import LocalReranker, RerankerManifest
 from .mcp_server import serve
 from .service import ReadService
 from .vector_index import VectorIndex, migrate_retrieval
-from .worker import run_batch, run_once
+from .worker import enqueue_chunk, run_batch, run_once
 
 
 def _dsn(name):
@@ -256,6 +256,10 @@ def main():
     search.add_argument("query")
     sub.add_parser("mcp")
     sub.add_parser("work-once")
+    chunk = sub.add_parser("chunk")
+    chunk.add_argument("action", choices=["enqueue"])
+    chunk.add_argument("--document-id", required=True)
+    chunk.add_argument("--operation-id", required=True)
     batch = sub.add_parser("work")
     batch.add_argument("--max-jobs", type=int, default=32)
     job = sub.add_parser("job")
@@ -485,6 +489,10 @@ def main():
                 value = index.build(
                     EvidenceStore(Path(os.environ["OW_EVIDENCE_ROOT"]), read_only=True)
                 )
+        elif args.command == "chunk":
+            value = enqueue_chunk(
+                Database(_dsn("OW_WRITER_DSN")), args.document_id, args.operation_id
+            )
         elif args.command in {"work-once", "work"}:
             if args.command == "work" and not 1 <= args.max_jobs <= 1000:
                 raise WorkbenchError("INVALID_WORK_LIMIT")
@@ -510,8 +518,7 @@ def main():
                 text=raw.decode("utf-8"),
             )
             store = _writable_store()
-            identifier = Database(_dsn("OW_WRITER_DSN")).ingest(document, raw, store)
-            value = {"document_id": identifier}
+            value = Database(_dsn("OW_WRITER_DSN")).ingest(document, raw, store, describe=True)
         elif args.command == "collect-api":
             source = _manifest(args.config, ApiSource)
             db = Database(_dsn("OW_COLLECTOR_DSN"))
