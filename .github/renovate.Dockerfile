@@ -1,2 +1,2 @@
 # Immutable validation tool, maintained by Renovate's Dockerfile manager.
-FROM ghcr.io/renovatebot/renovate:44.167.6@sha256:7a99aeb8faaf30c8f7ae9d2d723b1dac131067bd2adf1579826c44ba2fad67d5
+FROM ghcr.io/renovatebot/renovate:44.167.7@sha256:756a6b0a12154d076e90f38332f674e87ddc5bbbfeaf9ec796f80c435c5c3de5
