@@ -205,3 +205,8 @@ The [local API custody successor](../testing/local-api-custody-wheel-2026-10-19.
 compares the next candidate with that initial API wheel. Only inference-state
 custody and RECORD change; metadata, licence and every third-party entry remain
 unchanged. The initial comparison remains historical evidence for its own bytes.
+
+The [bounded audit-name successor](../testing/local-api-resolution-name-wheel-2026-10-19.json)
+changes only inference-state custody and RECORD again; metadata, licence and all
+third-party/native evidence remain unchanged. It binds the current archive after
+UUID audit-name validation and retains both earlier comparison receipts.

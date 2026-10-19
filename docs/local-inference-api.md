@@ -122,8 +122,10 @@ osint-workbench enrich reconcile --local-api-manifest /private/local-api.json --
 ```
 
 The command records an **operator termination attestation**, not independent proof.
-It writes/fsyncs a private `.resolved-REQUEST_UUID` audit beside the lock before
-removing the exact marker. A retry after write-before-unlink failure accepts only
+It writes/fsyncs a private `ow-inference-resolution-REQUEST_UUID.json` audit in the lock directory before
+removing the exact marker. Earlier lock-basename audit records are retained; this client does not adopt or
+remove them automatically. Current resolution always requires explicit confirmation.
+A retry after write-before-unlink failure accepts only
 the identical evidence digest. Conflicting, unsafe or partial audit records stay
 blocked and require private operator recovery. Preserve audit records under the
 operator's retention/backup policy; they are not checkpointed or shared through

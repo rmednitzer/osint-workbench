@@ -311,7 +311,7 @@ def test_ambiguous_post_retains_reservation_and_cannot_retry(lock, changes):
         )["status"]
         == "resolved"
     )
-    audit = Path(str(lock) + ".resolved-" + OPERATION["operation_id"])
+    audit = lock.parent / ("ow-inference-resolution-" + OPERATION["operation_id"] + ".json")
     record = json.loads(audit.read_text())
     assert record["receipt"] == receipt.value
     assert record["evidence_sha256"] == "c" * 64
@@ -456,6 +456,7 @@ def test_actual_tls_private_trust_and_peer_identity(lock, tmp_path):
 
     server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    context.minimum_version = ssl.TLSVersion.TLSv1_2
     context.load_cert_chain(cert, key)
     server.socket = context.wrap_socket(server.socket, server_side=True)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -545,7 +546,7 @@ def test_unsafe_resolution_audit_never_clears_reservation(lock, tmp_path, kind):
 
     with admission() as held:
         held.create_api_marker(manifest().identity(), OPERATION["operation_id"], "d" * 64)
-    audit = Path(str(lock) + ".resolved-" + OPERATION["operation_id"])
+    audit = lock.parent / ("ow-inference-resolution-" + OPERATION["operation_id"] + ".json")
     target = tmp_path / "unchanged"
     target.write_text("fixture-canary")
     target.chmod(0o600)
@@ -619,7 +620,7 @@ def test_resolution_audit_replacement_after_write_keeps_marker(
 
     with admission() as held:
         held.create_api_marker(manifest().identity(), OPERATION["operation_id"], "d" * 64)
-    audit = Path(str(lock) + ".resolved-" + OPERATION["operation_id"])
+    audit = lock.parent / ("ow-inference-resolution-" + OPERATION["operation_id"] + ".json")
     if existing:
         with admission(allow_uncertain=True) as held:
             value = {
@@ -654,3 +655,31 @@ def test_resolution_audit_replacement_after_write_keeps_marker(
             operation_id=OPERATION["operation_id"], evidence_sha256="c" * 64, confirmed=True
         )
     assert changed and Path(str(lock) + ".unknown").exists()
+
+
+def test_long_lock_basename_still_has_bounded_resolution_filename(lock, monkeypatch):
+    long_lock = lock.parent / ("x" * 220)
+    monkeypatch.setenv("OW_INFERENCE_LOCK", str(long_lock))
+    with admission() as held:
+        held.create_api_marker(manifest().identity(), OPERATION["operation_id"], "d" * 64)
+    result = LocalApiGenerator(manifest()).reconcile(
+        operation_id=OPERATION["operation_id"], evidence_sha256="c" * 64, confirmed=True
+    )
+    assert result["status"] == "resolved"
+    assert not Path(str(long_lock) + ".unknown").exists()
+    assert (
+        lock.parent / ("ow-inference-resolution-" + OPERATION["operation_id"] + ".json")
+    ).exists()
+
+
+@pytest.mark.parametrize("operation_id", ["../escape", "a/b", "unqualified", 42])
+def test_resolution_rejects_unqualified_basename_input_before_file_effects(lock, operation_id):
+    from dataclasses import replace
+
+    with admission() as held:
+        receipt = held.create_api_marker(manifest().identity(), OPERATION["operation_id"], "d" * 64)
+        forged = replace(receipt, value={**receipt.value, "operation_id": operation_id})
+        with pytest.raises(WorkbenchError, match="INFERENCE_LOCK_UNSAFE"):
+            held.resolve_api_marker(forged, "c" * 64)
+        assert held.read_marker() == receipt
+    assert not list(lock.parent.glob("ow-inference-resolution-*"))

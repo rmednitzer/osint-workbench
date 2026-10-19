@@ -268,7 +268,17 @@ class Admission:
             "evidence_sha256": evidence_sha256,
         }
         data = json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
-        name = self.path.name + ".resolved-" + expected.value["operation_id"]
+        # A bounded UUID basename is independent of operator-selected lock paths.
+        operation_id = expected.value.get("operation_id")
+        if (
+            not isinstance(operation_id, str)
+            or re.fullmatch(
+                r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", operation_id
+            )
+            is None
+        ):
+            raise _unsafe()
+        name = "ow-inference-resolution-" + operation_id + ".json"
         fd = None
         try:
             self._current()

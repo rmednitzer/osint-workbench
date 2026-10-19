@@ -93,7 +93,8 @@ job is terminal for this code, and job cancellation does not prove termination.
 A generic health/model probe cannot establish prior request termination. Explicit
 reconciliation requires the exact operation UUID, operator confirmation and a
 private evidence digest. Write/fsync an exclusive private resolution record before
-removing the exact marker. A crash after audit write can be retried idempotently;
+removing the exact marker. Audit names use a bounded validated operation UUID,
+independent of the configured lock basename. A crash after audit write can be retried idempotently;
 conflicting, partial or unsafe records remain blocked. This is an operator
 termination attestation, not an API cancellation or independent termination proof.
 Native reconciliation cannot clear API receipts and vice versa. The original
