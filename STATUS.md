@@ -6,6 +6,12 @@ receipts establish tested scope; target requirements and ADRs establish neither.
 Use the [documentation map](docs/documentation-map.md) to distinguish current
 runbooks, target specifications, decisions and historical evidence.
 
+The [2026-10-19 roadmap alignment review](docs/testing/roadmap-alignment-2026-10-19.md)
+accounts for all 58 requirements and 51 full scenarios. It corrects overview
+drift and operator-file admission, and adds an initial bounded
+[ASVS control assessment](docs/security/control-evidence.md). Full-profile
+acceptance remains open; the review is not a replacement runtime receipt.
+
 ## Current runtime qualification
 
 Required foundation and signed build evidence covers Ubuntu 24.04/CPython 3.12

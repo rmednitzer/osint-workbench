@@ -1,0 +1,27 @@
+{
+  "format": "osint-workbench-readme-alignment-wheel-review-v1",
+  "date": "2026-10-19",
+  "baseline_commit": "6fce1feb09e2f1474ba6cc2b7bd89fcfc805abb2",
+  "baseline_wheel_sha256": "05b9496e487c271a03cfc6910ecbebf9e9924311287df18a3e076d345e568106",
+  "candidate_wheel_sha256": "a8a17f7f5d229f5e30d87729c1f90d8c010307f7ae5bacfbf78dde7710ae5d54",
+  "lock_sha256": "b5a4684da62a5a3457e445595fc4bbd867ad4db81f3da74adcde00f4d66c62c9",
+  "archive_members": 59,
+  "changed_members": [
+    "osint_workbench/cli.py",
+    "osint_workbench-0.1.0.dev1.dist-info/METADATA",
+    "osint_workbench-0.1.0.dev1.dist-info/RECORD"
+  ],
+  "metadata_headers_unchanged": true,
+  "shipped_licence_bytes_unchanged": true,
+  "elf_members": 0,
+  "cli_source_sha256": "b40bd2dd525cdaf6c92e8b0e04997486ecc81704fe72ea7587f716756b73a54e",
+  "uv_version": "0.13.1",
+  "limits": [
+    "Application-only review; third-party evidence and unresolved outcomes unchanged.",
+    "Candidate native/service/signature acceptance belongs to exact-revision GitHub runs.",
+    "No dependency, SQL, schema, profile-bound or operational deployment change."
+  ],
+  "removed_stale_application_registry_hashes": [
+    "f10996b455929d14ec99d5e832806b1a177e8bef3d6400a1a1c8accee58c4609"
+  ]
+}

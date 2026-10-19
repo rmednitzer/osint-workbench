@@ -1,5 +1,12 @@
 # Native ELF evidence boundary
 
+The [README/input-admission successor](../testing/readme-alignment-wheel-2026-10-19.json)
+inspects every member of the newly built application wheel. Its only changes are
+`cli.py`, METADATA and RECORD; no ELF member is present. The application's explicit
+empty-set archive identity changes, while every third-party variant and all 147
+native proof entries remain unchanged relative to the named baseline. Empty sets
+do not establish external/native dependency closure.
+
 This policy inventories ELF objects belonging to the 47 locked Python runtime
 plus retrieval distributions on supported Linux x86_64 profiles. It adds a binary
 evidence check alongside the distribution inventory, SBOM and licence-text review.

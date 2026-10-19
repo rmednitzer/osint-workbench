@@ -13,8 +13,11 @@ authenticated reviewer identities. The MCP v2 stdio tools can read assertions an
 briefings but cannot enqueue, review, publish or select a provider. A separately
 governed [cloud route](../cloud-routes.md) supports explicit structured extraction;
 its existence does not implement the broader analyst workflows below. General
-entity resolution, source-diverse analytical briefings, domain acquisition and
-external publication remain targets; see [STATUS](../../STATUS.md).
+entity resolution, source-diverse analytical briefings, qualified domain
+persistence/applicability and external publication remain targets. Bounded
+[KEV-format document acquisition](../kev-acquisition.md) exists; it does not
+populate the advisory-observation envelope or establish asset exposure.
+See [STATUS](../../STATUS.md).
 
 ## Durable enrichment and analyst workflows
 

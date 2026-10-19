@@ -1,5 +1,10 @@
 # Scheduled RSS/Atom acquisition
 
+`collect --config` accepts a regular file of at most 8 MiB and refuses final
+symlinks, FIFOs, devices and directories before reading. It also bounds a file
+that grows after its initial size check. Parent-directory custody remains an
+operator responsibility; ordinary regular-file I/O has no physical deadline.
+
 Core schema v5 introduced the private durable schedule. Core v11 adds private
 API progress alongside this feed state; see [API acquisition](api-acquisition.md). The current supported
 layout is core v11 and, when enabled, retrieval-profile v4. Run the explicit

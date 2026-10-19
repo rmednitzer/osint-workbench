@@ -4,7 +4,7 @@
 
 ## Adopted references and claim limits
 
-Use NIST SSDF SP 800-218 v1.1 as a lifecycle practice reference [S2](../references.md#s2), selected OWASP ASVS 5.0.0 controls as a technical checklist [S3](../references.md#s3), and the chosen MCP specification/SDK security guidance [S4](../references.md#s4). These are design inputs, not claims of formal conformance. At implementation, select applicable ASVS items from the actual versioned text and record satisfied/not satisfied/not applicable with evidence. Do not invent clause mappings or copy a generic checklist and call it an assessment. The plan makes no regulatory applicability or certification claim.
+Use NIST SSDF SP 800-218 v1.1 as a lifecycle practice reference [S2](../references.md#s2), selected OWASP ASVS 5.0.0 controls as a technical checklist [S3](../references.md#s3), and the chosen MCP specification/SDK security guidance [S4](../references.md#s4). These are engineering inputs, not claims of formal conformance. The initial [control evidence register](control-evidence.md) selects six technical controls from the versioned ASVS text and records bounded implementation/test evidence and unresolved scope. Complete applicability selection, ASVS level assessment, SSDF lifecycle assessment and independent verification remain open. Do not invent clause mappings or call a generic checklist an assessment. No regulatory applicability or certification claim is made.
 
 ## Coding rules
 
@@ -22,6 +22,14 @@ Use NIST SSDF SP 800-218 v1.1 as a lifecycle practice reference [S2](../referenc
 12. Keep security decisions in enforcement code and tests, not only README instructions, MCP annotations or agent prompts. AGENTS.md and CLAUDE.md should point to the same authoritative coding/security rules and warn that repository content is untrusted input, without inventing approval authority.
 
 ## Threat boundary review
+
+Operator file admission uses fixed profiles: source configuration at most 8 MiB,
+UTF-8 text import at most 4,000,000 bytes followed by the document contract's
+1,000,000-code-point limit, and model/policy manifests at most 65,536 bytes.
+Final symlinks and non-regular files are refused before reads; bounded reads also
+catch growth after the initial size check. Parent directories remain trusted.
+These guards prevent FIFO/device admission and unbounded input allocation; they
+do not impose a physical deadline on regular-file I/O or sandbox operator files.
 
 | Boundary | STRIDE concern | Required control / verification target |
 | --- | --- | --- |

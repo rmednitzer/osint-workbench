@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import subprocess
 import sys
 import uuid
 
@@ -20,6 +21,45 @@ pytestmark = pytest.mark.integration
 
 def document(text="Persistent evidence for storage systems."):
     return DocumentInput(source_id="fixture", external_id="fixture-1", title="Storage", text=text)
+
+
+def test_installed_text_import_preserves_utf8_evidence_and_reader_contract(databases, tmp_path):
+    _, reader, roles = databases
+    path = tmp_path / "synthetic.txt"
+    text = "Straße, normalized evidence and \U0001f98a remain literal."
+    raw = text.encode("utf-8")
+    path.write_bytes(raw)
+    root = tmp_path / "imported-evidence"
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-I",
+            "-m",
+            "osint_workbench.cli",
+            "import-text",
+            "--file",
+            str(path),
+            "--source-id",
+            "fixture",
+            "--title",
+            "Imported fixture",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=15,
+        env={
+            **{key: value for key, value in os.environ.items() if not key.startswith("OW_")},
+            "OW_WRITER_DSN": roles["writer"],
+            "OW_EVIDENCE_ROOT": str(root),
+        },
+        check=False,
+    )
+    assert result.returncode == 0 and result.stderr == ""
+    service = ReadService(reader, EvidenceStore(root, read_only=True))
+    observed = service.document(json.loads(result.stdout)["document_id"])
+    assert observed["text"] == text and observed["integrity"] == "verified"
+    snapshot = reader.snapshot(observed["snapshot_id"])
+    assert service.store.get(snapshot["raw_sha256"]) == raw
 
 
 def test_replay_versions_heads_outbox_and_reader(databases, tmp_path):

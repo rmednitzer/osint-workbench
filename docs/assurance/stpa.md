@@ -741,3 +741,22 @@ Discriminating checks execute the aggregate/profile-admission/signer scripts
 against missing required, extra optional, substituted-runtime and corrupted-byte
 fixtures; actual GitHub runs separately exercise required and optional routing.
 See [ADR-0050](../adr/0050-required-lts-and-optional-python-profiles.md).
+
+## Operator file-admission refinement
+
+SC1/SC2/SC3/SC6 and existing C7/C43/C45 apply before a collector tick or explicit
+text import reaches database/model work. Treating a private path as necessarily
+bounded regular input was a process-model error: a FIFO blocked startup and an
+oversized text file was fully allocated before validation. Fixed call-site
+profiles now reuse no-follow/nonblocking regular-file admission, initial size
+checks and bounded reads with growth refusal. Errors omit paths and payloads;
+valid empty source configuration still reports non-execution before DB access.
+Actual installed CLI special-file/refusal cases, exact UTF-8/byte bounds and a
+native import-to-evidence/read round trip provide discriminating tests in
+`tests/test_operator_input.py` and `tests/test_integration.py`.
+
+The operator retains path authority; no source/MCP/model-selected path is added.
+These are discrete admission actions. The guards do not impose physical
+regular-file I/O deadlines, verify parent-directory custody or establish a
+filesystem sandbox. Supervision and the rest of the tick's deadlines remain
+separate controls. Full-scenario acceptance remains open.
