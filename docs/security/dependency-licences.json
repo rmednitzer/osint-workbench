@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "scope": "runtime-plus-retrieval; CPython3.12 Linux x86_64 installed wheel evidence and reviewed supported archive variants; no legal approval",
-  "review_date": "2026-10-18",
-  "lock_sha256": "05adee02ff9c0b038171f2c1977acbf4e5f152bb296650914a96d6a09f112c42",
+  "review_date": "2026-10-19",
+  "lock_sha256": "61beb462fa524ab65d01cac2b3823edcb25b4dcd397726409c19902f28a14ece",
   "distributions": [
     {
       "name": "annotated-types",
@@ -372,7 +372,7 @@
     },
     {
       "name": "filelock",
-      "version": "4.2.2",
+      "version": "4.2.3",
       "declared_expression": "MIT",
       "reviewed_text_summary": "MIT",
       "outcome": "declared-and-shipped-text",
@@ -382,20 +382,20 @@
       ],
       "evidence": [
         {
-          "path": "filelock-4.2.2.dist-info/METADATA",
-          "sha256": "f90ff0d5b9c21397b09f9e94310e9428f881a2d87792117429f1fa230e12b6fa",
+          "path": "filelock-4.2.3.dist-info/METADATA",
           "bytes": 1976,
+          "sha256": "4285adacb31d97b5bc1d4a103999b95ad2d80104949ac683d04ae7712379ccbc",
           "kind": "metadata"
         },
         {
-          "path": "filelock-4.2.2.dist-info/licenses/LICENSE",
+          "path": "filelock-4.2.3.dist-info/licenses/LICENSE",
           "sha256": "608c89d5060ae9921adccf3236695bc654a9946e12323ef6c021dfa04e294d48",
           "bytes": 1088,
           "kind": "licence-text"
         }
       ],
       "locked_wheel_sha256": [
-        "1851d2f14ca2901e98069d68333b33ad7409f56904e17b48cc0c32a0db8ed73a"
+        "8a09a56992ac9c4eb58d17c6c723c1fe5209fbcd4d569b49d58c1a9103295061"
       ]
     },
     {
@@ -559,7 +559,7 @@
     },
     {
       "name": "httpcore2",
-      "version": "2.13.1",
+      "version": "2.14.0",
       "declared_expression": "BSD-3-Clause",
       "reviewed_text_summary": "BSD-3-Clause",
       "outcome": "declared-and-shipped-text",
@@ -569,25 +569,25 @@
       ],
       "evidence": [
         {
-          "path": "httpcore2-2.13.1.dist-info/METADATA",
-          "sha256": "37a0ea0674e98b7c3a1f99c17d9bb5457de27a0f93c8b6560c9d17d525139abb",
-          "bytes": 26537,
+          "path": "httpcore2-2.14.0.dist-info/METADATA",
+          "bytes": 27093,
+          "sha256": "e2b884adfbba0f83a3ebd40a9507ae272ff965bc77c4f84c2dc1b00599362b27",
           "kind": "metadata"
         },
         {
-          "path": "httpcore2-2.13.1.dist-info/licenses/LICENSE.md",
+          "path": "httpcore2-2.14.0.dist-info/licenses/LICENSE.md",
           "sha256": "c4df125c807b0613501e943a5c92496dd11d2c16604ce396097a8dde396304d9",
           "bytes": 1599,
           "kind": "licence-text"
         }
       ],
       "locked_wheel_sha256": [
-        "e1e05d4f25f7d7d496bfb96748f6f4b67657b03da069b3a68c36069f3db73d0a"
+        "4c4f64f4b544afeb778c42c0ffb5941b29e671157e90ed3f6dc787c4bca90cd1"
       ]
     },
     {
       "name": "httpx2",
-      "version": "2.13.1",
+      "version": "2.14.0",
       "declared_expression": "BSD-3-Clause",
       "reviewed_text_summary": "BSD-3-Clause",
       "outcome": "declared-and-shipped-text",
@@ -597,20 +597,20 @@
       ],
       "evidence": [
         {
-          "path": "httpx2-2.13.1.dist-info/METADATA",
-          "sha256": "b75b03a003b5593e000907cf7239fcc3f688b8f17db4ecff883d11221ea988fc",
-          "bytes": 9799,
+          "path": "httpx2-2.14.0.dist-info/METADATA",
+          "bytes": 10759,
+          "sha256": "24d5a419ff7691eb11244d13e5fd64ad2c5ae69d0e71e1491328c9466cff43e8",
           "kind": "metadata"
         },
         {
-          "path": "httpx2-2.13.1.dist-info/licenses/LICENSE.md",
+          "path": "httpx2-2.14.0.dist-info/licenses/LICENSE.md",
           "sha256": "7e7d6dbaf7fe160d39fd6e84fd02c33cab96bcbea34d36998d545bceb4a19c30",
           "bytes": 1589,
           "kind": "licence-text"
         }
       ],
       "locked_wheel_sha256": [
-        "6dff50fabc270ee5fd25d845d0b078ed20564579744d6d962850975996d2f9a4"
+        "9d20c13a10bae1773a0be3b0f1e5beeb4bdd549bc3a2ba18efa32897c65403e4"
       ]
     },
     {
@@ -2131,8 +2131,8 @@
     },
     {
       "name": "filelock",
-      "filename": "filelock-4.2.2-py3-none-any.whl",
-      "sha256": "1851d2f14ca2901e98069d68333b33ad7409f56904e17b48cc0c32a0db8ed73a"
+      "filename": "filelock-4.2.3-py3-none-any.whl",
+      "sha256": "8a09a56992ac9c4eb58d17c6c723c1fe5209fbcd4d569b49d58c1a9103295061"
     },
     {
       "name": "flatbuffers",
@@ -2161,13 +2161,13 @@
     },
     {
       "name": "httpcore2",
-      "filename": "httpcore2-2.13.1-py3-none-any.whl",
-      "sha256": "e1e05d4f25f7d7d496bfb96748f6f4b67657b03da069b3a68c36069f3db73d0a"
+      "filename": "httpcore2-2.14.0-py3-none-any.whl",
+      "sha256": "4c4f64f4b544afeb778c42c0ffb5941b29e671157e90ed3f6dc787c4bca90cd1"
     },
     {
       "name": "httpx2",
-      "filename": "httpx2-2.13.1-py3-none-any.whl",
-      "sha256": "6dff50fabc270ee5fd25d845d0b078ed20564579744d6d962850975996d2f9a4"
+      "filename": "httpx2-2.14.0-py3-none-any.whl",
+      "sha256": "9d20c13a10bae1773a0be3b0f1e5beeb4bdd549bc3a2ba18efa32897c65403e4"
     },
     {
       "name": "huggingface-hub",

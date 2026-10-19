@@ -10,6 +10,9 @@ runbooks, target specifications, decisions and historical evidence.
 
 Core schema **11**, retrieval profile **4**, checkpoint format **2**.
 The programme contains 49 ADRs, 58 requirements and 51 full acceptance scenarios.
+Native Ubuntu installs use the distro Python in a venv: 24.04/3.12 and
+26.04/3.14. Python 3.14 is not the global minimum; see
+[runtime support](docs/runtime-support.md#native-ubuntu-installation).
 Earlier published SQL resources remain immutable. Legacy checkpoint format 1 is
 not silently adopted. The [requirements](docs/assurance/requirements.md) and
 [verification matrix](docs/testing/verification-plan.md) retain their full target
@@ -101,6 +104,12 @@ Older evidence remains deliberately revision-bound:
 | [Local quality observations](docs/local-quality.md) | Six document/eight query pretrained diagnostic calls on public authored cases; lexical and encoder aggregates tied, both failed unsupported-query abstention; no model adoption |
 | [Dependency currency](docs/testing/dependency-currency-2026-10-18.json), [tool pins](docs/testing/dependency-tools-2026-10-18.json) and [security settings](docs/testing/security-settings-2026-10-18.json) | Dated reviewed selections and observed settings, not perpetual freshness or conformance |
 | [Audit dispositions](docs/testing/audit-remediation-2026-10-18.md) and [CodeQL triage](docs/testing/codeql-triage-2026-10-18.md) | Specific corrected findings and unresolved authority/quality issues; per-alert dispositions are not query exclusions |
+
+The [2026-10-19 lock-maintenance service successor](docs/testing/lock-maintenance-service-2026-10-19.json)
+records successful actual service and credential-isolation runs on both LTS distro
+interpreters at `237660c0`, with the exact updated dependency lock and unchanged
+application wheel. This remains core-service fixture evidence; foundation CI
+separately verifies the complete runtime/retrieval profiles.
 
 ## Open acceptance and release limits
 

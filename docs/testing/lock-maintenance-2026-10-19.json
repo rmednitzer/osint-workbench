@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-10-19",
+  "pull_request": 25,
+  "reviewed_bot_head": "052a5c7412f9a5cddc33f3384d8a34cba47fa583",
+  "base_commit": "c6219f67832c4e611ec6a9408ece6a2ffac33f43",
+  "previous_lock_sha256": "05adee02ff9c0b038171f2c1977acbf4e5f152bb296650914a96d6a09f112c42",
+  "lock_sha256": "61beb462fa524ab65d01cac2b3823edcb25b4dcd397726409c19902f28a14ece",
+  "verification": "Old and new universal wheels downloaded, SHA-256 checked against each source lock before ZIP METADATA and full shipped licence/attribution text inspection. All five shipped licence text sets are byte-identical to their predecessors.",
+  "reviews": [
+    {
+      "name": "filelock",
+      "old_version": "4.2.2",
+      "version": "4.2.3",
+      "filename": "filelock-4.2.3-py3-none-any.whl",
+      "sha256": "8a09a56992ac9c4eb58d17c6c723c1fe5209fbcd4d569b49d58c1a9103295061",
+      "expression": "MIT",
+      "python": ">=3.11",
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "filelock-4.2.3.dist-info/METADATA",
+          "bytes": 1976,
+          "sha256": "4285adacb31d97b5bc1d4a103999b95ad2d80104949ac683d04ae7712379ccbc",
+          "kind": "metadata"
+        },
+        {
+          "path": "filelock-4.2.3.dist-info/licenses/LICENSE",
+          "sha256": "608c89d5060ae9921adccf3236695bc654a9946e12323ef6c021dfa04e294d48",
+          "bytes": 1088,
+          "kind": "licence-text"
+        }
+      ],
+      "scope": "runtime-plus-retrieval",
+      "reviewed_text_summary": "MIT"
+    },
+    {
+      "name": "httpcore2",
+      "old_version": "2.13.1",
+      "version": "2.14.0",
+      "filename": "httpcore2-2.14.0-py3-none-any.whl",
+      "sha256": "4c4f64f4b544afeb778c42c0ffb5941b29e671157e90ed3f6dc787c4bca90cd1",
+      "expression": "BSD-3-Clause",
+      "python": ">=3.10",
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "httpcore2-2.14.0.dist-info/METADATA",
+          "bytes": 27093,
+          "sha256": "e2b884adfbba0f83a3ebd40a9507ae272ff965bc77c4f84c2dc1b00599362b27",
+          "kind": "metadata"
+        },
+        {
+          "path": "httpcore2-2.14.0.dist-info/licenses/LICENSE.md",
+          "sha256": "c4df125c807b0613501e943a5c92496dd11d2c16604ce396097a8dde396304d9",
+          "bytes": 1599,
+          "kind": "licence-text"
+        }
+      ],
+      "scope": "runtime-plus-retrieval",
+      "reviewed_text_summary": "BSD-3-Clause"
+    },
+    {
+      "name": "httpx2",
+      "old_version": "2.13.1",
+      "version": "2.14.0",
+      "filename": "httpx2-2.14.0-py3-none-any.whl",
+      "sha256": "9d20c13a10bae1773a0be3b0f1e5beeb4bdd549bc3a2ba18efa32897c65403e4",
+      "expression": "BSD-3-Clause",
+      "python": ">=3.10",
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "httpx2-2.14.0.dist-info/METADATA",
+          "bytes": 10759,
+          "sha256": "24d5a419ff7691eb11244d13e5fd64ad2c5ae69d0e71e1491328c9466cff43e8",
+          "kind": "metadata"
+        },
+        {
+          "path": "httpx2-2.14.0.dist-info/licenses/LICENSE.md",
+          "sha256": "7e7d6dbaf7fe160d39fd6e84fd02c33cab96bcbea34d36998d545bceb4a19c30",
+          "bytes": 1589,
+          "kind": "licence-text"
+        }
+      ],
+      "scope": "runtime-plus-retrieval",
+      "reviewed_text_summary": "BSD-3-Clause"
+    },
+    {
+      "name": "jsonpointer",
+      "old_version": "3.2.1",
+      "version": "3.3",
+      "filename": "jsonpointer-3.3-py3-none-any.whl",
+      "sha256": "1e9b099b883a4617561960f754879a1af62b6d2e0f4e4a8029e8326e923e6723",
+      "expression": null,
+      "python": ">=3.10",
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "jsonpointer-3.3.dist-info/METADATA",
+          "bytes": 2638,
+          "sha256": "fcfc0aaa3588bdea7bf09e93143a2ce049d13447f37b00ca9045d3e4bea49448",
+          "kind": "metadata"
+        },
+        {
+          "path": "jsonpointer-3.3.dist-info/licenses/AUTHORS",
+          "sha256": "4d58319d0f59c87bef5b07b3fe4db0f19c2d7d5545b034c6bf7b57c89bbef57f",
+          "bytes": 113,
+          "kind": "attribution"
+        },
+        {
+          "path": "jsonpointer-3.3.dist-info/licenses/LICENSE.txt",
+          "sha256": "d8b24f15d472885f788a2d6e985850f264627b86012a17bb242c83f310d907e5",
+          "bytes": 1413,
+          "kind": "licence-text"
+        }
+      ],
+      "scope": "development-only; outside runtime licence-policy inventory",
+      "reviewed_text_summary": "BSD-3-Clause"
+    },
+    {
+      "name": "platformdirs",
+      "old_version": "4.13.4",
+      "version": "4.13.5",
+      "filename": "platformdirs-4.13.5-py3-none-any.whl",
+      "sha256": "53d3ec4280b815c1e0b02edad7f9ee8fda1ba9c0865dd9c2e6e63849ce82fc1e",
+      "expression": "MIT",
+      "python": ">=3.11",
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "platformdirs-4.13.5.dist-info/METADATA",
+          "bytes": 5468,
+          "sha256": "b42a0ee84bde8921b95c6c1e84e7675d34e67c5a61170ebcf7b44e394b64a768",
+          "kind": "metadata"
+        },
+        {
+          "path": "platformdirs-4.13.5.dist-info/licenses/LICENSE",
+          "sha256": "29e0fd62e929850e86eb28c3fdccf0cefdf4fa94879011cffb3d0d4bed6d4db6",
+          "bytes": 1089,
+          "kind": "licence-text"
+        }
+      ],
+      "scope": "development-only; outside runtime licence-policy inventory",
+      "reviewed_text_summary": "MIT"
+    }
+  ],
+  "limits": [
+    "Runtime policy remains 47 distributions; development-only reviews do not add development tools to the runtime inventory.",
+    "No legal approval, native-closure clearance, provider adoption or full operational acceptance.",
+    "Compatibility and service acceptance require separate exact-revision CI evidence."
+  ],
+  "archive_native_inspection": [
+    {
+      "name": "filelock",
+      "archive_members": 28,
+      "elf_members": 0
+    },
+    {
+      "name": "httpcore2",
+      "archive_members": 36,
+      "elf_members": 0
+    },
+    {
+      "name": "httpx2",
+      "archive_members": 36,
+      "elf_members": 0
+    },
+    {
+      "name": "jsonpointer",
+      "archive_members": 8,
+      "elf_members": 0
+    },
+    {
+      "name": "platformdirs",
+      "archive_members": 18,
+      "elf_members": 0
+    }
+  ],
+  "native_scope": "Every member of each changed universal wheel inspected for ELF magic after archive hash verification; no ELF members found. Runtime policy retains three explicit empty sets, the existing native variants and all 147 ELF proof entries."
+}

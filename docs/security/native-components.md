@@ -49,6 +49,14 @@ empty variant changes archive identity; the 147 ELF proof entries remain unchang
 The CA trust-data change is described in [the licence review](dependency-licences.md)
 and remains separate from native binary identity.
 
+The [2026-10-19 lock maintenance](../testing/lock-maintenance-2026-10-19.json)
+checks every ZIP member in each of the five changed universal wheels after
+verifying its locked hash. None contains an ELF object. Runtime policy updates
+the filelock/httpcore2/httpx2 archive identities and retains their explicit empty
+sets; the other two packages are development-only. All native variants and 147
+ELF proof entries remain unchanged. The lock binding changes to the reviewed
+resolution; empty sets still do not establish transitive native closure.
+
 Wheel archive bytes are obtained from the public locked registry URLs and checked
 against their `uv.lock` SHA-256 before ZIP inspection. Supported archive evidence
 covers standard CPython 3.12, 3.13 and 3.14 manylinux x86_64 wheels and compatible

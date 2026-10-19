@@ -157,8 +157,10 @@ Install a reviewed wheel and locked dependencies under
 `/opt/osint-workbench/venv`; root owns this installation and the service cannot
 modify it. Retain the wheel, dependency lock, receipt and migration hashes used.
 The CLI supports CPython 3.12–3.14. Use the system Python in a dedicated venv
-on Ubuntu 24.04 (3.12) or 26.04 (3.14), with the
-[runtime verification limits](runtime-support.md). This profile uses only core dependencies:
+on Ubuntu 24.04 (3.12) or 26.04 (3.14). Python 3.14 is not required on 24.04;
+create the venv with `/usr/bin/python3` as described in the
+[native installation guidance](runtime-support.md#native-ubuntu-installation),
+with the [runtime verification limits](runtime-support.md). This profile uses only core dependencies:
 no model, GPU, cloud provider or runtime download is needed. Installing packages
 still requires a separately controlled dependency supply chain.
 
