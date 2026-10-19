@@ -848,3 +848,20 @@ and retirement tests preserve lifecycle constraints. A different chunk operation
 ID authorizes character computation only; it cannot resolve or replay uncertain
 model/API/cloud execution. Full workflow scheduling, semantic quality and human
 review acceptance remain outside this refinement.
+
+## Frozen reranker diagnostics: ADR-0055
+
+SC2/SC4 and C9/C12 apply to diagnostic scoring. A model score or completed run must
+not be presented as supported interpretation, calibrated confidence or independent
+quality acceptance. The rank-only profile retains unsupported questions and their
+failed abstention gate. Complete-corpus scoring does not establish production
+candidate recall, filtering or end-to-end retrieval quality.
+
+The causal errors are rebinding mutable model configuration after freezing the
+protocol, accepting scores for unsubmitted IDs, truncating judged text, or hiding
+a late failure behind earlier successful systems. An owned manifest snapshot,
+preflight complete-text bounds, exact ID/numeric correspondence and durable
+per-query observations constrain these paths. Native CLI, model-tamper, identity
+mismatch and caller-mutation cases discriminate the constraints. Unresolved
+inference admission remains blocking; no automatic download, dispatch or learned
+workflow promotion is introduced. Independent labels and adoption remain open.

@@ -92,7 +92,9 @@ claimed failure and preserve existing lifecycle/permission boundaries.
    cover their bounded producers. Broader workflow/DAG scheduling and automatic
    backfill remain open. Preserve intentional operation identity, terminal history
    and uncertain local/API/cloud admission; acquisition counts never prove downstream completion.
-4. Qualify selected useful local models and actual API server deployments, including
+4. The [frozen diagnostic](local-quality.md) supports encoder and stand-alone
+   reranker execution; independent useful-model/cascade quality remains open.
+   Qualify selected useful local models and actual API server deployments, including
    disabled forwarding, licence/provenance, chat templates, context/resource limits,
    controlled held-out support/abstention/relevance and acceleration evidence.
 

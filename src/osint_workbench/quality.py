@@ -14,6 +14,7 @@ from pathlib import Path
 from .errors import WorkbenchError
 from .evaluation import Suite, digest, evaluate, parse_predictions
 from .local_encoder import LocalEncoder
+from .local_reranker import LocalReranker, RerankerManifest
 
 MAX_DOCUMENTS = 32
 MAX_QUERIES = 32
@@ -35,6 +36,16 @@ MODEL_POLICY = {
     "query_operation": "query",
     "truncation": "forbidden",
 }
+RERANKER_POLICY = {
+    "version": 1,
+    "candidates": "complete-corpus",
+    "text": "complete-untruncated",
+    "score": "manifest-selected-output-descending",
+    "ties": "document-id-ascending",
+    "abstention": "none-rank-only",
+    "max_document_characters": 1000,
+    "max_query_characters": 2000,
+}
 SAFE_ERRORS = {
     "MODEL_INTEGRITY_MISMATCH",
     "TOKENIZER_INTEGRITY_MISMATCH",
@@ -51,6 +62,12 @@ SAFE_ERRORS = {
     "INFERENCE_OUTCOME_UNKNOWN",
     "QUALITY_BUDGET_EXHAUSTED",
     "QUALITY_ENCODER_RESULT_INVALID",
+    "RERANK_INPUT_TOO_LONG",
+    "RERANK_INCOMPATIBLE",
+    "RERANK_TIMEOUT",
+    "RERANK_INVALID_RESULT",
+    "RERANK_UNAVAILABLE",
+    "QUALITY_RERANK_RESULT_INVALID",
 }
 
 
@@ -90,9 +107,9 @@ def _tokens(text):
     return set(re.findall(r"[^\W_]+", unicodedata.normalize("NFKC", text).casefold()))
 
 
-def _versions():
+def _versions(extra=()):
     result = {"python": sys.version.split()[0]}
-    for package in ("osint-workbench", "onnxruntime", "tokenizers"):
+    for package in ("osint-workbench", "onnxruntime", "tokenizers", *extra):
         try:
             result[package] = importlib.metadata.version(package)
         except importlib.metadata.PackageNotFoundError:
@@ -108,19 +125,36 @@ def _vector(encoder, rows):
     return vector
 
 
+def _rerank_scores(rows, expected_ids):
+    """Bind every numeric observation to exactly the submitted corpus."""
+    try:
+        if not isinstance(rows, list) or len(rows) != len(expected_ids):
+            raise ValueError
+        values = [(row["document_id"], row["rerank_score"]) for row in rows]
+        if {identifier for identifier, _ in values} != expected_ids or any(
+            type(score) not in (int, float) or not math.isfinite(score) for _, score in values
+        ):
+            raise ValueError
+        return sorted(values, key=lambda row: (-row[1], row[0]))
+    except (ValueError, TypeError, KeyError, OverflowError):
+        raise WorkbenchError("QUALITY_RERANK_RESULT_INVALID") from None
+
+
 def run(
     suite: Suite,
     output: Path,
     encoder: LocalEncoder | None = None,
     budget_seconds=120,
     source_revision=None,
+    *,
+    reranker: LocalReranker | None = None,
 ) -> dict:
     """Run frozen lexical and optional local-model diagnostics into a new private dir.
 
-    Budget is cooperative: checked before each call; one native encoder call can
+    Budget is cooperative: checked before each call; one native model call can
     take up to its existing 45-second timeout beyond that budget. Suite validation
     and protocol-file setup precede the timer; native artifact verification/loading
-    occurs inside each timed encoder call. Never retry
+    occurs inside each timed model call. Never retry
     into an existing output directory. Incomplete journals require operator review.
     """
     if (
@@ -139,12 +173,29 @@ def run(
             )
         )
         or (encoder is not None and not isinstance(encoder, LocalEncoder))
+        or (reranker is not None and not isinstance(reranker, LocalReranker))
     ):
         raise WorkbenchError("QUALITY_CONFIGURATION_INVALID")
     # Revalidate even an operator-created model_copy, before creating any outputs.
     from .evaluation import parse_suite
 
     suite = parse_suite(suite.model_dump_json().encode())
+    if reranker is not None:
+        try:
+            # Own a validated snapshot: caller mutation cannot rebind a frozen run.
+            reranker = LocalReranker(
+                RerankerManifest.model_validate_json(reranker.manifest.model_dump_json())
+            )
+        except (ValueError, TypeError):
+            raise WorkbenchError("QUALITY_CONFIGURATION_INVALID") from None
+    if reranker is not None and (
+        any(len(d.text) > RERANKER_POLICY["max_document_characters"] for d in suite.corpus)
+        or any(
+            not q.text.strip() or len(q.text) > RERANKER_POLICY["max_query_characters"]
+            for q in suite.queries
+        )
+    ):
+        raise WorkbenchError("QUALITY_RERANK_INPUT_INVALID")
     protocol = {
         "format": 1,
         "kind": "frozen_local_quality_protocol",
@@ -155,13 +206,23 @@ def run(
         "encoder_policy": dict(MODEL_POLICY),
         "encoder_identity": encoder.manifest.identity() if encoder else None,
         "encoder_threads": encoder.manifest.threads if encoder else None,
-        "software_versions": _versions(),
+        "software_versions": _versions(("numpy",) if reranker is not None else ()),
         "max_documents": MAX_DOCUMENTS,
         "max_queries": MAX_QUERIES,
         "native_call_timeout_seconds": 45,
         "deadline_policy": "check-before-call-no-interrupt",
         "semantic_acceptance": "not_established_by_public_diagnostic",
     }
+    if reranker is not None:
+        # Preserve the existing v1 protocol when no reranker is selected.
+        protocol.update(
+            {
+                "format": 2,
+                "reranker_policy": dict(RERANKER_POLICY),
+                "reranker_identity": reranker.manifest.identity(),
+                "reranker_threads": reranker.manifest.threads,
+            }
+        )
     protocol_sha = _sha(protocol)
     try:
         os.mkdir(output, 0o700)
@@ -184,6 +245,8 @@ def run(
             "completed_encoder_documents": 0,
             "completed_encoder_queries": 0,
         }
+        if reranker is not None:
+            progress["completed_reranker_queries"] = 0
 
         def check_budget():
             if time.monotonic() - started >= budget_seconds:
@@ -318,6 +381,50 @@ def run(
                     rankings,
                     scores,
                     time.monotonic() - model_started,
+                )
+            if reranker is not None:
+                rerank_started = time.monotonic()
+                progress["phase"] = "reranker_queries"
+                candidates = [
+                    {"document_id": d.document_id, "excerpt": d.text}
+                    for d in sorted(suite.corpus, key=lambda d: d.document_id)
+                ]
+                expected_ids = {d.document_id for d in suite.corpus}
+                rankings, scores = [], []
+                for ordinal, query in enumerate(suite.queries):
+                    check_budget()
+                    query_started = time.monotonic()
+                    scored = _rerank_scores(reranker.rank(query.text, candidates), expected_ids)
+                    observation = {
+                        "protocol_sha256": protocol_sha,
+                        "query_id": query.query_id,
+                        "scores": scored,
+                        "elapsed_seconds": time.monotonic() - query_started,
+                    }
+                    _write(directory_fd, f"reranker-query-{ordinal:03d}.json", observation)
+                    scores.append(observation)
+                    rankings.append(
+                        {
+                            "query_id": query.query_id,
+                            "abstained": False,
+                            "document_ids": [
+                                identifier for identifier, _ in scored[: suite.cutoff]
+                            ],
+                        }
+                    )
+                    progress["completed_reranker_queries"] += 1
+                progress["phase"] = "reranker_receipts"
+                persist(
+                    "reranker",
+                    _sha(
+                        {
+                            "model_identity": protocol["reranker_identity"],
+                            "ranking_policy": protocol["reranker_policy"],
+                        }
+                    ),
+                    rankings,
+                    scores,
+                    time.monotonic() - rerank_started,
                 )
             progress["phase"] = "completed"
             outcome = {

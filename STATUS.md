@@ -25,7 +25,7 @@ profiles and counts; this policy change is not a new runtime acceptance result.
 ## Current contracts
 
 Core schema **12**, retrieval profile **5**, checkpoint format **2**.
-The programme contains 54 ADRs, 58 requirements and 51 full acceptance scenarios.
+The programme contains 55 ADRs, 58 requirements and 51 full acceptance scenarios.
 Native Ubuntu installs use the distro Python in a venv: 24.04/3.12 and
 26.04/3.14. Python 3.14 is not the global minimum; see
 [runtime support](docs/runtime-support.md#native-ubuntu-installation).
@@ -56,6 +56,12 @@ The generic chunk worker handles only `document.accepted`. Enrichment claims onl
 its explicitly selected local generator or cloud route identity. Other job kinds
 remain queued. Character chunks preserve offsets but are not the token-aware
 chunks used by the optional retrieval profile.
+
+[Frozen local ranking diagnostics](docs/local-quality.md) can compare lexical,
+encoder and explicit stand-alone ONNX reranker profiles. Reranker observations
+bind a manifest snapshot and ranking policy, preserve partial failures and retain
+the unsupported-query abstention failure. This does not adopt useful models or
+qualify the production retrieval cascade or independent semantic quality.
 
 Governed cloud output refuses exact active-credential reflection after JSON
 decoding and before assertion acceptance. The completed remote attempt preserves
