@@ -114,3 +114,17 @@ native generation tests continue to cover ONNX execution, disconnect/crash,
 uncertain-work refusal and explicit reconciliation. Exact passing evidence must
 be bound to the tested revision; local environments that deny Unix sockets cannot
 establish the native generation acceptance boundary.
+
+## Local API receipt successor
+
+[ADR-0052](adr/0052-local-inference-chat-api.md) preserves the native receipt shape
+and adds a distinct `local-api-operation/1` shape with operation UUID, generator
+identity and request hash. Both reserve the same stable lock. API receipts contain
+no native peer PID/start claim. Neither adapter may reconcile another format.
+The [API runbook](local-inference-api.md#ambiguous-outcome-and-explicit-resolution)
+requires explicit operator termination confirmation and an evidence digest,
+retaining a private exclusive resolution record before marker removal. A retry
+accepts identical evidence only. An API health check cannot establish termination.
+Resolution is operator attestation, not independent process/API proof. Resolution
+files stay private and outside checkpoint/MCP/publication scope. Older clients
+refuse this format; stop work and resolve with the current client before rollback.

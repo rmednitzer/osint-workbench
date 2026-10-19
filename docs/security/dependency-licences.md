@@ -192,3 +192,11 @@ RECORD change. METADATA and shipped licence bytes match exactly. The reviewed
 application archive identity advances; its metadata evidence and every
 third-party evidence/disposition remain unchanged. The earlier receipt retains
 its original wheel identity.
+
+The [local API successor](../testing/local-api-wheel-2026-10-19.json) adds the
+client module and changes the declared application source members plus README
+metadata. Every archive member was compared: metadata headers and shipped licence
+bytes match, and the application still has no ELF members. Only the inspected
+application metadata/archive identities change; third-party policy and recorded
+native variants retain their prior dispositions. This adds no legal or native
+closure approval.

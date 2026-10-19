@@ -789,3 +789,24 @@ No stronger extraction or reviewer authority is implied. Tests preserve hash
 inputs and original evidence while exercising absent labels, empty responses,
 role/source/span isolation and the actual stdio projection. Human interpretation,
 independent review and full E27/E28 semantic acceptance remain open.
+
+## Operator-controlled local API refinement
+
+SC1/SC2/SC3/SC4/SC7 and existing inference/dispatch constraints apply when the
+client cannot verify a local runtime PID or model file. Under
+[ADR-0052](../adr/0052-local-inference-chat-api.md), explicit private-address
+routing, verified TLS outside loopback HTTP, managed credentials, declared data
+classes and qualification/no-forwarding/unmetered assertions prevent implicit
+route selection. Endpoint locality does not establish sovereignty or absence of
+cloud forwarding. Source/model input cannot select a destination or credential.
+
+The unsafe control action is dispatching another operation after timeout/crash
+without resolving possible ongoing API work. Persisting a secret-free API receipt
+before POST blocks all cooperating local inference until recognized completion
+or evidence-bound operator termination attestation. Health, caller timeout and job
+cancellation are insufficient. An exclusive fsynced resolution record precedes
+exact marker removal; conflicting/unsafe records remain blocked. Native/API
+formats cannot clear each other's ownership. Normal completion, non-execution,
+secret refusal, malformed/oversized/delayed responses, concurrent admission and
+write-before-unlink recovery require discriminating tests. Full E34–E38/E41/E44
+acceptance, operational deployment and independent reviewer authority remain open.

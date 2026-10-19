@@ -315,7 +315,10 @@ class LocalGenerator:
             marker = held.read_marker()
             if marker is not None:
                 receipt = marker.value
-                if receipt["generator_id"] != self.manifest.identity():
+                if (
+                    receipt.get("format") is not None
+                    or receipt["generator_id"] != self.manifest.identity()
+                ):
                     raise WorkbenchError("INFERENCE_OWNER_MISMATCH")
                 _check_prior_process(receipt["pid"], receipt["start"], self._peer.get("pid"))
                 held.remove_marker(marker)

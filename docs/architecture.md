@@ -17,7 +17,10 @@ writer still combines normal ingest, enrichment, retrieval and selected cloud
 work; a separate credential-holding dispatcher and per-workspace authorization
 are not implemented. Local search can execute its configured encoder/reranker;
 the seven MCP tools do not expose arbitrary model selectors or generation jobs.
-The remote enrichment route is implemented; remote MCP transport is not.
+The remote enrichment route is implemented; remote MCP transport is not. An
+explicit [local chat API profile](local-inference-api.md) connects operator-qualified
+private-address services. Its server/model/forwarding assertions are weaker than
+the native Unix-socket identity checks and are not cloud-policy exceptions.
 
 The non-root feed/API collector, bounded chunk-worker and aggregate-health
 systemd templates and disposable service harness already exist. API acquisition

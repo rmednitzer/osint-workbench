@@ -30,7 +30,7 @@ cannot substitute for runtime, semantic, provider or recovery evidence.
 | Acquire a qualified KEV-format catalogue without exposure inference | [KEV acquisition](kev-acquisition.md) |
 | Process jobs, retries and cancellation | [Durable workflows](workflows.md) |
 | Build, activate and query a local retrieval generation | [Local retrieval](local-retrieval.md) |
-| Generate proposals, review assertions and read cited products | [Local intelligence](local-intelligence.md) |
+| Generate proposals, review assertions and read cited products | [Local intelligence](local-intelligence.md) and [local chat API](local-inference-api.md) |
 | Diagnose model quality without claiming adoption | [Local quality](local-quality.md) |
 | Reconcile uncertain host-local inference ownership | [Inference marker safety](inference-marker-safety.md) |
 | Route explicit cloud work and settle retained exposure | [Cloud routes](cloud-routes.md) |

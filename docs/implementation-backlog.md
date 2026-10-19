@@ -68,8 +68,9 @@ individual implementation findings and severities. Priority follow-up includes:
   isolation and exact reader-grant validation added by
   [ADR-0045](adr/0045-bounded-operational-profile.md); verify intended assistant
   clients and adopted tokenizer capabilities separately.
-- Narrow retrieval writer UPDATE authority and make terminal-job
-  deduplication/retry status explicit.
+- Narrow retrieval writer UPDATE authority. Enrichment enqueue now reports
+  terminal preservation and atomic stored status; broader job producer retry/reset
+  contracts remain to be reviewed.
 - Retain revision-bound service acceptance when feed identity or its harness
   changes; the core-10 two-LTS receipt covers its named wheel, while historical
   receipts do not validate a newer oracle automatically.
@@ -77,6 +78,28 @@ individual implementation findings and severities. Priority follow-up includes:
 These are unfinished engineering and verification tasks, not claims that an
 exploit or operational incident occurred. New evidence must discriminate the
 claimed failure and preserve existing lifecycle/permission boundaries.
+
+## Next bounded changes after local API integration
+
+1. Separate reviewer SQL authority and record authenticated database provenance.
+   Preserve historical attribution without relabelling writer reviews as independent;
+   choose the acceptance/requalification policy explicitly. Add an immutable migration,
+   legacy/current checkpoint adoption, direct-writer denial, role-overlap/SET ROLE,
+   revoke, reader-disclosure and cited-product compatibility tests.
+2. Narrow retrieval writer UPDATE grants using actual installed catalog/negative
+   evidence; preserve generation activation, rollback, purge and recovery authority.
+3. Extend explicit enrichment enqueue dispositions to other job producers without replaying
+   uncertain local/API/cloud work. Keep intentional new-operation identity separate
+   from resuming a fenced attempt or clearing admission.
+4. Qualify selected useful local models and actual API server deployments, including
+   disabled forwarding, licence/provenance, chat templates, context/resource limits,
+   controlled held-out support/abstention/relevance and acceleration evidence.
+
+The [local API profile](local-inference-api.md) closes the missing explicit chat
+transport integration only. Embedding/reranking APIs, vendor-specific streaming,
+DNS/service discovery, actual Ollama/vLLM adoption and cross-host resource control
+remain open. Its operator qualification is not machine proof of local execution
+or sovereignty. Full workstream/scenario acceptance above remains open.
 
 ## Privacy and acceptance limits still open
 
