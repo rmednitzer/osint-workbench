@@ -70,7 +70,9 @@ individual implementation findings and severities. Priority follow-up includes:
   clients and adopted tokenizer capabilities separately.
 - Retrieval profile 5 narrows writer UPDATE to status/error and the active generation.
   [Index encoder custody](adr/0056-index-encoder-custody.md) binds new operations
-  to owned configuration; historical vectors need requalification where producer custody is uncertain.
+  to owned configuration; build, activation and read paths check registered metadata.
+  Historical vectors still need requalification where producer custody is uncertain;
+  matching metadata is not per-call production evidence.
   Enrichment enqueue now reports
   terminal preservation and atomic stored status; broader job producer retry/reset
   contracts remain to be reviewed.

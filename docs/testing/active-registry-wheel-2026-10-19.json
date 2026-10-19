@@ -1,0 +1,20 @@
+{
+  "format": "osint-workbench-active-registry-wheel-review-v1",
+  "date": "2026-10-19",
+  "baseline_commit": "4a35119099b8b9c79effdfa5e59b3fdbb46d01d1",
+  "previous_wheel_sha256": "9dcafeb6deec179d3a9643ac80b3623c5db2a8baeb9d7f0cce5053c8d1c74640",
+  "candidate_wheel_sha256": "364f23abde954e2b2366dcf34447309a4eb2a1e7669d0e850d4dd8912b029818",
+  "lock_sha256": "b5a4684da62a5a3457e445595fc4bbd867ad4db81f3da74adcde00f4d66c62c9",
+  "changed_members": [
+    "osint_workbench-0.1.0.dev1.dist-info/RECORD",
+    "osint_workbench/vector_index.py"
+  ],
+  "metadata_and_licence_bytes_unchanged": true,
+  "elf_members": 0,
+  "legal_approval": false,
+  "limits": [
+    "Checks registered metadata and generation dimensions; cannot establish historical vector-producer custody.",
+    "Exact PostgreSQL/pgvector fault-injection acceptance belongs to required native CI.",
+    "No automatic repair, schema, dependency or authority change."
+  ]
+}

@@ -386,3 +386,73 @@ def test_conflicting_registered_space_refuses_build_without_relabelling(retrieva
             conn.execute("SELECT count(*) AS n FROM ow.retrieval_generations").fetchone()["n"] == 0
         )
         assert conn.execute("SELECT count(*) AS n FROM ow.retrieval_active").fetchone()["n"] == 0
+
+
+@pytest.mark.parametrize("conflict", ["template", "normalized_type"])
+def test_active_registry_conflict_refuses_reads_and_activation_without_repair(
+    retrieval, monkeypatch, conflict
+):
+    from psycopg.types.json import Jsonb
+
+    writer, reader, roles, store, encoder = retrieval
+    index = VectorIndex(writer, encoder)
+    built = index.build(store)
+    index.activate(built["generation_id"])
+    service = ReadService(reader, EvidenceStore(store.root, read_only=True), encoder=encoder)
+    assert service.search("disk")["results"][0]["excerpt"] == "storage disk"
+    with writer.connect() as conn:
+        before = conn.execute(
+            "SELECT document_id,embedding::text AS embedding FROM ow.retrieval_vectors "
+            "WHERE generation_id=%s ORDER BY document_id,ordinal",
+            (built["generation_id"],),
+        ).fetchall()
+    # Reproduce a historical registry mismatch using fixture-admin authority.
+    # The application writer cannot update registered manifests.
+    manifest = encoder.manifest.model_dump(exclude={"model_path", "tokenizer_path", "threads"})
+    if conflict == "template":
+        manifest["space"]["query_template"] = "patch {text}"
+    else:
+        # Python dict equality accepts 1 == True; canonical model identity must not.
+        manifest["space"]["normalized"] = 1
+    with Database(roles["admin"]).connect() as conn:
+        conn.execute(
+            "UPDATE ow.embedding_spaces SET manifest=%s WHERE space_id=%s",
+            (Jsonb(manifest), index.space_id),
+        )
+
+    def unexpected_inference(self, query):
+        pytest.fail("conflicting registry reached query inference")
+
+    monkeypatch.setattr(LocalEncoder, "query", unexpected_inference)
+    assert service.status()["retrieval_state"] == "incompatible"
+    with pytest.raises(WorkbenchError, match="^INCOMPATIBLE_EMBEDDING_SPACE$"):
+        service.search("disk")
+    with pytest.raises(WorkbenchError, match="^INCOMPATIBLE_EMBEDDING_SPACE$"):
+        index.activate(built["generation_id"])
+    # Explicit lexical/evidence reads remain available with reader authority.
+    lexical = ReadService(reader, EvidenceStore(store.root, read_only=True))
+    assert lexical.search("disk")["results"][0]["excerpt"] == "storage disk"
+    with writer.connect() as conn:
+        assert conn.execute(
+            "SELECT manifest FROM ow.embedding_spaces WHERE space_id=%s", (index.space_id,)
+        ).fetchone() == {"manifest": manifest}
+        assert conn.execute(
+            "SELECT status FROM ow.retrieval_generations WHERE generation_id=%s",
+            (built["generation_id"],),
+        ).fetchone() == {"status": "ready"}
+        assert (
+            str(
+                conn.execute("SELECT generation_id FROM ow.retrieval_active").fetchone()[
+                    "generation_id"
+                ]
+            )
+            == built["generation_id"]
+        )
+        assert (
+            conn.execute(
+                "SELECT document_id,embedding::text AS embedding FROM ow.retrieval_vectors "
+                "WHERE generation_id=%s ORDER BY document_id,ordinal",
+                (built["generation_id"],),
+            ).fetchall()
+            == before
+        )
