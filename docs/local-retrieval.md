@@ -29,6 +29,27 @@ artifacts use token IDs; accepting a supported input name alone does not establi
 intended embedding semantics. Unsupported contracts fail. Identity includes every semantic/split
 parameter and artifact digest, excluding host paths and execution thread count.
 
+Each `VectorIndex` revalidates and owns a deep encoder-manifest snapshot at
+construction, including templates, artifact paths and thread count. Generation
+metadata, chunk encoding and query encoding use that captured contract. Changing
+the caller's encoder afterwards does not reconfigure an existing index or
+`ReadService`. Construct a new index/service to apply reviewed configuration;
+changed semantic identity remains incompatible with an old generation. An index
+uses its own built-in local adapter; caller subclass/instance overrides and
+in-flight queries are not adopted. Overlapping queries through the same index
+still share its instance-local flight, and shared host admission remains active.
+Invalid manifest configuration fails before database work. See
+[ADR-0056](adr/0056-index-encoder-custody.md).
+
+This correction does not establish the provenance of existing vectors. Old records
+cannot reveal whether their producer changed configuration between calls. If
+producer custody is uncertain, rebuild from reviewed unchanged artifacts and
+activate the new generation after its normal checks. Retain the old records;
+do not relabel vectors or rewrite their manifest. Keep unqualified hybrid results
+out of operational reliance until that requalification is complete. Model-file
+tampering after construction still fails per-call byte checks; a snapshot is not
+a file lease or protection against privileged Python mutation of index internals.
+
 Only supplied model/tokenizer files are opened; both are verified before use. The
 model is loaded from bytes, with external weight files unsupported. Model files and
 native inference are trusted operator inputs; resource limits are not a model sandbox.

@@ -877,3 +877,20 @@ prediction identity from the frozen protocol. Native nested-mutation and invalid
 nested-configuration counterexamples discriminate this correction. This does not
 freeze files on disk: per-call byte-integrity checks still refuse later artifact
 tampering and preserve partial observations. It does not establish model quality.
+
+
+## Production index encoder custody: ADR-0056
+
+SC2/SC4 and C9/C12 also constrain generation publication and hybrid reads. Capturing
+a space identity while retaining a mutable caller-owned encoder can bind stored
+vectors, metadata or query vectors to different semantic contracts. Constructor
+custody now revalidates and owns the complete encoder configuration; generation
+publication, activation compatibility and queries use that same contract. No
+automatic reconfiguration or repair of old vectors follows.
+
+Native numerical counterexamples distinguish original and changed templates.
+Installed PostgreSQL cases check recorded manifest/dimensions, exact stored
+vectors and fused query scores. Existing failed-build and purge-interleaving
+cases retain their failure/admission assertions through the owned native client.
+These bounds do not establish historical producer custody, useful pretrained
+quality, workspace authorization or a sandbox against privileged code mutation.

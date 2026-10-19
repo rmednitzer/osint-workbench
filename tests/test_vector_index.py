@@ -214,7 +214,7 @@ def test_content_refusals_become_explicit_exclusions_not_build_failures(retrieva
             conn.execute("SELECT 1 FROM ow.retrieval_exclusions")
 
 
-def test_majority_exclusion_and_runtime_failures_still_fail_the_build(retrieval):
+def test_majority_exclusion_and_runtime_failures_still_fail_the_build(retrieval, monkeypatch):
     writer, reader, roles, store, encoder = retrieval
     good = VectorIndex(writer, encoder).build(store)
     VectorIndex(writer, encoder).activate(good["generation_id"])
@@ -236,17 +236,6 @@ def test_majority_exclusion_and_runtime_failures_still_fail_the_build(retrieval)
     # silently produce an almost empty generation.
     failed(VectorIndex(writer, encoder), "RETRIEVAL_EXCLUSION_LIMIT")
 
-    class Unavailable:
-        manifest = encoder.manifest
-
-        def __init__(self, code):
-            self.code = code
-
-        def chunks(self, text):
-            if text == "storage disk":
-                raise WorkbenchError(self.code)
-            return encoder.chunks(text)
-
     # Retire the unencodable documents through the real operator path.
     for document in hidden:
         lifecycle.apply(
@@ -259,6 +248,7 @@ def test_majority_exclusion_and_runtime_failures_still_fail_the_build(retrieval)
                 rationale="Remove unencodable synthetic entries",
             ),
         )
+    invoke = LocalEncoder._invoke_packet
     for code in (
         "ENCODER_TIMEOUT",
         "ENCODER_UNAVAILABLE",
@@ -268,7 +258,15 @@ def test_majority_exclusion_and_runtime_failures_still_fail_the_build(retrieval)
         "INVALID_EMBEDDING_VECTOR",
         "INVALID_ENCODER_PACKET",
     ):
-        failed(VectorIndex(writer, Unavailable(code)), code)
+
+        def unavailable(self, manifest, packet, error=code):
+            if json.loads(packet)["text"] == "storage disk":
+                raise WorkbenchError(error)
+            return invoke(self, manifest, packet)
+
+        with monkeypatch.context() as patch:
+            patch.setattr(LocalEncoder, "_invoke_packet", unavailable)
+            failed(VectorIndex(writer, encoder), code)
 
 
 def test_member_with_both_dispositions_cannot_activate(retrieval):
@@ -302,3 +300,47 @@ def test_unmigrated_profile_is_reported_typed_not_as_raw_sql(retrieval):
         with psycopg.connect(roles["admin"]) as conn:
             conn.execute("ALTER VIEW ow.hidden_exclusions RENAME TO visible_retrieval_exclusions")
     assert service.search("storage")["excluded_documents"] == 0
+
+
+def test_caller_mutation_cannot_mislabel_persisted_generation(retrieval):
+    writer, reader, roles, store, encoder = retrieval
+    expected_id = encoder.manifest.identity()
+    expected_manifest = encoder.manifest.model_dump(
+        exclude={"model_path", "tokenizer_path", "threads"}
+    )
+    index = VectorIndex(writer, encoder)
+    encoder.manifest.space.document_template = "patch {text}"
+    built = index.build(store)
+    index.activate(built["generation_id"])
+    with writer.connect() as conn:
+        space = conn.execute(
+            "SELECT manifest,dimensions FROM ow.embedding_spaces WHERE space_id=%s",
+            (expected_id,),
+        ).fetchone()
+        rows = conn.execute(
+            "SELECT v.space_id,v.embedding::text AS embedding,d.body "
+            "FROM ow.retrieval_vectors v JOIN ow.active_documents d USING(document_id) "
+            "WHERE generation_id=%s",
+            (built["generation_id"],),
+        ).fetchall()
+    assert space == {"manifest": expected_manifest, "dimensions": 3}
+    assert built["space_id"] == expected_id and len(rows) == 2
+    expected_vectors = {"storage disk": [1, 0, 0], "vulnerability patch": [0, 1, 0]}
+    for row in rows:
+        assert row["space_id"] == expected_id
+        assert json.loads(row["embedding"]) == expected_vectors[row["body"]]
+
+
+def test_caller_query_template_mutation_cannot_rebind_hybrid_search(retrieval):
+    writer, reader, roles, store, encoder = retrieval
+    index = VectorIndex(writer, encoder)
+    built = index.build(store)
+    index.activate(built["generation_id"])
+    service = ReadService(reader, EvidenceStore(store.root, read_only=True), encoder=encoder)
+    encoder.manifest.space.query_template = "patch patch {text}"
+    found = service.search("disk")
+    assert found["space_id"] == built["space_id"] and not found["degraded"]
+    assert found["results"][0]["excerpt"] == "storage disk"
+    # Both exact native and lexical rankings put storage first under the captured
+    # contract; the changed template would put security first semantically.
+    assert found["results"][0]["rrf_score"] == pytest.approx(2 / 61)
