@@ -2,7 +2,7 @@
   "schema_version": 1,
   "scope": "runtime-plus-retrieval; CPython3.12 Linux x86_64 installed wheel evidence and reviewed supported archive variants; no legal approval",
   "review_date": "2026-10-19",
-  "lock_sha256": "61beb462fa524ab65d01cac2b3823edcb25b4dcd397726409c19902f28a14ece",
+  "lock_sha256": "b5a4684da62a5a3457e445595fc4bbd867ad4db81f3da74adcde00f4d66c62c9",
   "distributions": [
     {
       "name": "annotated-types",
@@ -372,7 +372,7 @@
     },
     {
       "name": "filelock",
-      "version": "4.2.3",
+      "version": "4.2.4",
       "declared_expression": "MIT",
       "reviewed_text_summary": "MIT",
       "outcome": "declared-and-shipped-text",
@@ -382,20 +382,20 @@
       ],
       "evidence": [
         {
-          "path": "filelock-4.2.3.dist-info/METADATA",
+          "path": "filelock-4.2.4.dist-info/METADATA",
+          "sha256": "d99c0f72a7ab84c924b734018a28a5001505fe0f96280c4462b864313edddb50",
           "bytes": 1976,
-          "sha256": "4285adacb31d97b5bc1d4a103999b95ad2d80104949ac683d04ae7712379ccbc",
           "kind": "metadata"
         },
         {
-          "path": "filelock-4.2.3.dist-info/licenses/LICENSE",
+          "path": "filelock-4.2.4.dist-info/licenses/LICENSE",
           "sha256": "608c89d5060ae9921adccf3236695bc654a9946e12323ef6c021dfa04e294d48",
           "bytes": 1088,
           "kind": "licence-text"
         }
       ],
       "locked_wheel_sha256": [
-        "8a09a56992ac9c4eb58d17c6c723c1fe5209fbcd4d569b49d58c1a9103295061"
+        "301241438c57936ef93f4243a94f2559022268bfcf9b375a9a72eb0f8db8358e"
       ]
     },
     {
@@ -2131,8 +2131,8 @@
     },
     {
       "name": "filelock",
-      "filename": "filelock-4.2.3-py3-none-any.whl",
-      "sha256": "8a09a56992ac9c4eb58d17c6c723c1fe5209fbcd4d569b49d58c1a9103295061"
+      "filename": "filelock-4.2.4-py3-none-any.whl",
+      "sha256": "301241438c57936ef93f4243a94f2559022268bfcf9b375a9a72eb0f8db8358e"
     },
     {
       "name": "flatbuffers",
