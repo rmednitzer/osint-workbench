@@ -53,7 +53,8 @@ do not rewrite public history without authorization.
 
 ## Full native integration
 
-The full gate is implemented in [.github/workflows/ci.yml](.github/workflows/ci.yml).
+The required gate is orchestrated by [.github/workflows/ci.yml](.github/workflows/ci.yml)
+and executes the same-commit [installed-profile workflow](.github/workflows/installed-profile.yml).
 It explicitly prepares source with `scripts/prepare_native.py`, verifies its
 archive digest, and builds the native CPU server with the exact flags in CI.
 This separate preparation requires network access; package imports and tests do

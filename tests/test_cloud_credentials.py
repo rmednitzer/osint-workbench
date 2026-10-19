@@ -217,3 +217,85 @@ def test_managed_reference_denial_persisted_in_real_ledger(databases, tmp_path, 
     (record,) = ledger(roles)
     assert record["status"] == "denied"
     assert record["reason"] == "CREDENTIAL_UNAVAILABLE"
+
+
+@pytest.mark.parametrize("channel", ["environment", "file", "systemd"])
+@pytest.mark.parametrize("escaped", [False, True])
+def test_active_credential_echo_is_refused_after_decoding_without_erasing_outcome(
+    tmp_path, monkeypatch, channel, escaped
+):
+    if channel == "environment":
+        configured, selected, token = route(), KEY, next(iter(KEY.values()))
+    else:
+        path, configured = _file_route(tmp_path)
+        selected, token = {}, CANARY
+        if channel == "systemd":
+            configured["credential"] = {"kind": "systemd", "name": path.name}
+            selected = {"CREDENTIALS_DIRECTORY": str(tmp_path)}
+    parsed, sha = policy(configured)
+    generator = cloud.GovernedGenerator(
+        None, parsed, sha, parsed.routes[0].route_id, environ=selected
+    )
+    recorder = _RecordingLedger()
+    generator.ledger = recorder
+    proposal = claim()
+    proposal["subject"] = token
+    text = proposals(proposal)
+    if escaped:
+        text = text.replace(token, "".join(f"\\u{ord(c):04x}" for c in token))
+    body = json.dumps(
+        {"choices": [{"message": {"content": text}, "finish_reason": "stop"}]}
+    ).encode()
+    calls = []
+
+    def post(url, request, headers, deadline):
+        calls.append(headers)
+        return 200, body
+
+    monkeypatch.setattr(cloud, "post_json", post)
+    with pytest.raises(WorkbenchError, match="^REMOTE_CREDENTIAL_REFLECTED$"):
+        generator.generate(
+            "Synthetic source input",
+            intel.Proposals.model_json_schema(),
+            operation={
+                "operation_id": "fixture",
+                "task": "structured_extraction",
+                "data_class": "public",
+            },
+        )
+    assert calls == [[("Authorization", "Bearer " + token)]]
+    assert recorder.transitions[-1][0] == ("fixture-attempt", "dispatched", "completed")
+    assert recorder.transitions[-1][1]["error_code"] == "REMOTE_CREDENTIAL_REFLECTED"
+    assert token not in repr(recorder.records) + repr(recorder.transitions)
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("escaped", [False, True])
+@pytest.mark.parametrize("reported_usage", [False, True])
+def test_credential_echo_real_tls_accepts_no_assertions_and_preserves_exposure(
+    databases, tmp_path, monkeypatch, certificates, escaped, reported_usage
+):
+    writer, reader, roles, store, doc = setup(databases, tmp_path)
+    _, configured = _file_route(tmp_path)
+    generator = governed(writer, configured, environ={})
+    intel.enqueue(writer, generator, doc, data_class="public")
+    proposal = claim()
+    proposal["subject"] = CANARY
+    text = proposals(proposal)
+    if escaped:
+        text = text.replace(CANARY, "".join(f"\\u{ord(c):04x}" for c in CANARY))
+    with tls_peer(
+        monkeypatch, certificates, wire=completion(text, usage=True if reported_usage else None)
+    ) as peer:
+        result = intel.enrich_once(writer, store, generator)
+    assert len(peer.requests) == 1
+    assert result == {"status": "failed", "error": "REMOTE_CREDENTIAL_REFLECTED"}
+    assert intel.assertions(reader)["results"] == []
+    assert intel.enrich_once(writer, store, generator) == {"status": "idle"}
+    (record,) = ledger(roles)
+    assert record["status"] == "completed" and record["error_code"] == "REMOTE_CREDENTIAL_REFLECTED"
+    assert record["usage"] == ("reported" if reported_usage else "missing")
+    exposure = cloud.exposure(writer, configured["route_id"], configured["pricebook"]["currency"])
+    expected = record["estimated_cost"] if reported_usage else record["reserved"]
+    assert exposure == expected and exposure > 0
+    assert CANARY not in repr(record)

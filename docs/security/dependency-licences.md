@@ -87,6 +87,10 @@ separate `reviewed_native_wheels` list identifies current inspected native wheel
 The application's recorded wheel hash identifies the baseline used for review;
 future builds can change application code while preserving its licence evidence.
 The build receipt separately binds each actual build artifact.
+The locally built application has no registry-wheel candidate in `uv.lock`;
+its review identity belongs only in `reviewed_archives`. The alignment successor
+removes a stale application-only `locked_wheel_sha256` field rather than implying
+that the old local wheel was locked from a registry.
 
 Run with the dedicated runtime interpreter, not an environment containing test
 or SBOM-generation tools:
@@ -174,3 +178,17 @@ source and shipped licence bytes match. Every ZIP member was inspected for ELF
 magic; the application's explicit empty set and all 147 native proof entries
 remain unchanged. Dependency versions, lock identity and existing unresolved
 notice/native obligations are unchanged.
+
+The [README/input-admission successor](../testing/readme-alignment-wheel-2026-10-19.json)
+compares the actual application wheels. Only `cli.py`, METADATA and RECORD
+change; metadata headers and the shipped Apache-2.0 text match. The own-project
+metadata and reviewed archive identity are updated after inspection. Third-party
+evidence/dispositions and the lock remain unchanged relative to this successor's
+named baseline; this is not new legal or native-closure approval.
+
+The [credential-output successor](../testing/readme-alignment-secret-successor-2026-10-19.json)
+compares the next actual wheel with that first candidate: only `cloud.py` and
+RECORD change. METADATA and shipped licence bytes match exactly. The reviewed
+application archive identity advances; its metadata evidence and every
+third-party evidence/disposition remain unchanged. The earlier receipt retains
+its original wheel identity.

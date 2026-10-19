@@ -28,9 +28,12 @@ NIST SSDF SP 800-218 v1.1:
 
 ## S3
 
-OWASP ASVS: [project and versioned releases](https://owasp.org/projects/asvs).
-The selected technical checklist is 5.0.0; applicable controls and evidence remain
-to be selected explicitly. Referencing the project is not conformance.
+OWASP ASVS: [project and versioned releases](https://github.com/OWASP/ASVS).
+The selected technical checklist is 5.0.0; the initial bounded selection uses the
+[versioned English source](https://raw.githubusercontent.com/OWASP/ASVS/v5.0.0/5.0/docs_en/OWASP_Application_Security_Verification_Standard_5.0.0_en.json).
+[Control evidence](security/control-evidence.md) records scope and gaps. Complete
+applicability and level assessment remain open; referencing the standard or
+passing selected tests is not conformance.
 
 ## S4
 

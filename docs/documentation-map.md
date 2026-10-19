@@ -16,6 +16,7 @@ cannot substitute for runtime, semantic, provider or recovery evidence.
 | What is the intended design? | [Architecture](architecture.md), [profiles](profiles/), [requirements](assurance/requirements.md) and [verification plan](testing/verification-plan.md) | Target responsibilities, testable outcomes and full scenarios; implemented refinements remain bounded |
 | Why was a decision made? | [ADR register](adr/) | Read status and successor notes; retain historical decisions and evidence rather than silently rewriting them |
 | What can go wrong? | [STPA](assurance/stpa.md), [secure development](security/secure-development.md) and [audit dispositions](testing/audit-remediation-2026-10-18.md) | Loss/control allocations, security boundaries and unresolved findings; no completeness or certification claim |
+| Is implementation still aligned with the complete programme? | [2026-10-19 alignment review](testing/roadmap-alignment-2026-10-19.md) and [control evidence](security/control-evidence.md) | Complete requirement/scenario accounting and bounded standards selection; neither is full acceptance |
 | How should an operator perform a supported task? | The runbooks below | Current CLI, identity, prerequisites, effects, failure state and recovery limits |
 | What proves an earlier result? | [Testing records](testing/), [build evidence](build-evidence.md) and [dated prototype lessons](prototype-lessons.md) | Exact source/artifact/environment scope; earlier receipts never float forward to a new revision |
 

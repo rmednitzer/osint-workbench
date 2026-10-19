@@ -61,8 +61,29 @@ def _manifest(path, model):
         raise WorkbenchError("INVALID_CONFIGURATION_OR_INPUT") from None
 
 
-def _operator_bytes(path):
-    # The operator selects configuration paths; MCP/source/model text does not.
+def _operator_bytes(path, *, profile="model"):
+    # Fixed call-site profiles, never selectors supplied by source/MCP/model text.
+    maximum, invalid, oversized, unavailable = {
+        "model": (
+            65536,
+            "MODEL_CONFIGURATION_INVALID",
+            "MODEL_CONFIGURATION_TOO_LARGE",
+            "MODEL_CONFIGURATION_UNAVAILABLE",
+        ),
+        "sources": (
+            8 * 1024 * 1024,
+            "INVALID_CONFIGURATION_OR_INPUT",
+            "SOURCE_CONFIGURATION_TOO_LARGE",
+            "INVALID_CONFIGURATION_OR_INPUT",
+        ),
+        "text": (
+            4_000_000,  # At most four UTF-8 bytes per permitted Unicode code point.
+            "INVALID_CONFIGURATION_OR_INPUT",
+            "IMPORT_INPUT_TOO_LARGE",
+            "INVALID_CONFIGURATION_OR_INPUT",
+        ),
+    }[profile]
+    # The operator selects paths; MCP/source/model text does not.
     # Refuse final symlinks, devices and FIFOs before reading, avoiding special-file
     # waits before inference deadlines apply. Regular-file I/O has no application deadline.
     fd = None
@@ -70,19 +91,19 @@ def _operator_bytes(path):
         fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
         info = os.fstat(fd)
         if not stat.S_ISREG(info.st_mode):
-            raise WorkbenchError("MODEL_CONFIGURATION_INVALID")
-        if info.st_size > 65536:
-            raise WorkbenchError("MODEL_CONFIGURATION_TOO_LARGE")
+            raise WorkbenchError(invalid)
+        if info.st_size > maximum:
+            raise WorkbenchError(oversized)
         with os.fdopen(fd, "rb") as stream:
             fd = None  # The stream owns the descriptor after successful wrapping.
-            data = stream.read(65537)
+            data = stream.read(maximum + 1)
     except OSError:
-        raise WorkbenchError("MODEL_CONFIGURATION_UNAVAILABLE") from None
+        raise WorkbenchError(unavailable) from None
     finally:
         if fd is not None:
             os.close(fd)
-    if len(data) > 65536:
-        raise WorkbenchError("MODEL_CONFIGURATION_TOO_LARGE")
+    if len(data) > maximum:
+        raise WorkbenchError(oversized)
     return data
 
 
@@ -448,7 +469,7 @@ def main():
             jobs = Jobs(Database(_dsn("OW_WRITER_DSN")))
             value = getattr(jobs, args.action)(args.job_id)
         elif args.command == "import-text":
-            raw = args.file.read_bytes()
+            raw = _operator_bytes(args.file, profile="text")
             document = DocumentInput(
                 source_id=args.source_id,
                 external_id=args.file.name,
@@ -476,10 +497,7 @@ def main():
                     raise WorkbenchError("MAX_SOURCES_REQUIRES_DUE_ONLY")
                 if not 1 <= args.max_sources <= 128:
                     raise WorkbenchError("INVALID_COLLECTION_LIMIT")
-            with args.config.open("rb") as stream:
-                encoded = stream.read(8 * 1024 * 1024 + 1)
-            if len(encoded) > 8 * 1024 * 1024:
-                raise WorkbenchError("SOURCE_CONFIGURATION_TOO_LARGE")
+            encoded = _operator_bytes(args.config, profile="sources")
             config = SourceConfig.model_validate_json(encoded)
             if not config.sources:
                 value = {"status": "unconfigured", "sources": 0}

@@ -19,10 +19,13 @@ are not implemented. Local search can execute its configured encoder/reranker;
 the seven MCP tools do not expose arbitrary model selectors or generation jobs.
 The remote enrichment route is implemented; remote MCP transport is not.
 
-The collector's systemd reference and disposable service harness already exist.
-A complete Compose deployment and the other process separations below remain
-targets. The [deployment guide](deployment.md) distinguishes current fixtures from
-operational acceptance.
+The non-root feed/API collector, bounded chunk-worker and aggregate-health
+systemd templates and disposable service harness already exist. API acquisition
+includes bounded credential references, client-credentials OAuth and a KEV-format
+adapter; it does not establish restricted-content isolation or actual provider
+qualification. A complete Compose deployment and the other process separations
+below remain targets. The [deployment guide](deployment.md) distinguishes current
+fixtures from operational acceptance.
 
 ## Structure and authority
 

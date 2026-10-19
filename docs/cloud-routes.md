@@ -104,6 +104,15 @@ generator and a remote route never fall back to each other.
 
 ## Ledger states and exposure
 
+Before accepting typed provider output, the adapter refuses an exact occurrence
+of the active dispatch credential in decoded output strings or keys, including
+JSON-escaped values. It reports `REMOTE_CREDENTIAL_REFLECTED` and accepts no
+assertions. The complete remote response still records a `completed` attempt,
+with its reported usage/estimate or retained reservation; application refusal is
+not proof of non-dispatch or zero cost, and the failed job is not blindly replayed.
+This is a credential-echo backstop, not arbitrary encoding/secret detection,
+zeroization or a substitute for source classification and provider trust.
+
 Each admitted dispatch attempt has an `ow.remote_operations` row committed before
 any provider connection; policy denials also get a row:
 

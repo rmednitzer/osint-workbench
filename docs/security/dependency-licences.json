@@ -1060,8 +1060,8 @@
       "evidence": [
         {
           "path": "osint_workbench-0.1.0.dev1.dist-info/METADATA",
-          "sha256": "013c7db5c675ef93397781bc7920322eee731c0c96d6080787af92d6a7227a61",
-          "bytes": 8964,
+          "sha256": "9a244b7cddb5d14544f2951b2b6156dfa0c23d4b373d088e6e37dce75b34e0db",
+          "bytes": 10839,
           "kind": "metadata"
         },
         {
@@ -1070,9 +1070,6 @@
           "bytes": 11357,
           "kind": "licence-text"
         }
-      ],
-      "locked_wheel_sha256": [
-        "f10996b455929d14ec99d5e832806b1a177e8bef3d6400a1a1c8accee58c4609"
       ]
     },
     {
@@ -2237,7 +2234,7 @@
     {
       "name": "osint-workbench",
       "filename": "osint_workbench-0.1.0.dev1-py3-none-any.whl",
-      "sha256": "05b9496e487c271a03cfc6910ecbebf9e9924311287df18a3e076d345e568106"
+      "sha256": "adc1df0fb3c77f584d4f3b7ba9b48ac970e7f2df295cd4f5d321af0addba38df"
     },
     {
       "name": "packaging",

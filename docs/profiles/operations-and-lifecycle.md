@@ -10,6 +10,9 @@ Current bounded contracts cover [checkpoint/restore](../recovery.md),
 and [retired-record SQL purge](../retired-record-purge.md). Those implementations
 do not establish this whole target profile: full-host/PITR recovery, copy expiry,
 metrics/dashboard/alert delivery and operational acceptance remain open.
+The [supervised profile](../operational-profile.md) also supplies bounded
+feed/API collection, chunk processing and aggregate health templates; their
+disposable systemd acceptance remains distinct from operational deployment.
 
 ## Database and storage
 
