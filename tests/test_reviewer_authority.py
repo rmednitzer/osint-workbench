@@ -261,3 +261,61 @@ def test_actual_core11_upgrade_preserves_reviews_but_withdraws_legacy_acceptance
             Database(target["reviewer"]), assertion, "accept", "reviewer", "Fresh review"
         )
         assert service.briefing(brief)["items"][0]["assertion_id"] == assertion
+
+
+@pytest.mark.parametrize("legacy", [False, True])
+def test_core_only_checkpoint_review_authority(roles, tmp_path, legacy):
+    with isolated(roles, retrieval=False) as source, isolated(roles, retrieval=False) as target:
+        writer = Database(source["writer"])
+        store = EvidenceStore(tmp_path / "objects")
+        _, _, brief, *_ = _fixture(writer, store, source)
+        path = tmp_path / "core-only.owcp"
+        sha = recovery.checkpoint(Database(source["admin"]), store, path)["sha256"]
+        if legacy:
+            sha = _rewrite(path, lambda payload: published_pair(payload, 11))
+        root = tmp_path / "restored"
+        result = recovery.restore(
+            Database(target["admin"]), path, sha, root, **policy_arguments(source, path)
+        )
+        assert result["adopted_core_v11"] is legacy
+        service = ReadService(Database(target["reader"]), EvidenceStore(root, read_only=True))
+        if legacy:
+            with pytest.raises(WorkbenchError, match="BRIEFING_STALE"):
+                service.briefing(brief)
+        else:
+            assert service.briefing(brief)["items"]
+
+
+@pytest.mark.parametrize("corruption", ["mapping", "bad-row", "forged-authority"])
+def test_legacy_review_normalization_refuses_malformed_or_invented_provenance(
+    databases, tmp_path, corruption
+):
+    writer, _, roles = databases
+    store = EvidenceStore(tmp_path / "objects")
+    _fixture(writer, store, roles)
+    path = tmp_path / "corrupt.owcp"
+    recovery.checkpoint(Database(roles["admin"]), store, path)
+
+    def corrupt(payload):
+        published_pair(payload, 11)
+        if corruption == "mapping":
+            payload["tables"]["assertion_reviews"] = {}
+        elif corruption == "bad-row":
+            payload["tables"]["assertion_reviews"] = ["not-a-record"]
+        else:
+            payload["tables"]["assertion_reviews"][0].update(
+                authority="authenticated_reviewer", database_principal="invented"
+            )
+
+    sha = _rewrite(path, corrupt)
+    root = tmp_path / "refused"
+    with isolated(roles, retrieval=os.environ.get("OW_TEST_RETRIEVAL") == "1") as target:
+        with pytest.raises(
+            WorkbenchError, match="INVALID_RECOVERY_BUNDLE|RECOVERY_COLUMNS_MISMATCH"
+        ):
+            recovery.restore(
+                Database(target["admin"]), path, sha, root, **policy_arguments(roles, path)
+            )
+        assert not root.exists()
+        with psycopg.connect(target["admin"]) as conn:
+            assert conn.execute("SELECT count(*) FROM ow.assertion_reviews").fetchone() == (0,)
