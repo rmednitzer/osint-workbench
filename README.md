@@ -40,8 +40,10 @@ cloud keys or operational data are required for the test suite.
 
 ## Development
 
-CPython 3.12–3.14 is supported. Required CI covers Ubuntu 24.04/Python 3.12 and
-3.13, plus Ubuntu 26.04/Python 3.14; PostgreSQL integration targets version 18.
+CPython 3.12–3.14 is permitted. Required CI qualifies Ubuntu 24.04/Python 3.12
+and Ubuntu 26.04/Python 3.14. Python 3.13 has optional weekly/manual compatibility
+coverage; Python 3.15 has a manual dependency-only probe and is outside the package
+bound. PostgreSQL integration targets version 18.
 See [runtime support](docs/runtime-support.md) for deployment and evidence limits.
 
 ```sh

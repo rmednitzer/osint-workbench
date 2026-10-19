@@ -6,10 +6,20 @@ receipts establish tested scope; target requirements and ADRs establish neither.
 Use the [documentation map](docs/documentation-map.md) to distinguish current
 runbooks, target specifications, decisions and historical evidence.
 
+## Current runtime qualification
+
+Required foundation and signed build evidence covers Ubuntu 24.04/CPython 3.12
+and Ubuntu 26.04/CPython 3.14. Python 3.13 remains permitted with optional
+weekly/manual compatibility coverage. The manual Python 3.15 probe covers locked
+dependency wheels only; the application bound remains `>=3.12,<3.15`.
+[ADR-0050](docs/adr/0050-required-lts-and-optional-python-profiles.md) supersedes
+the earlier three-profile requirement. Historical receipts retain their tested
+profiles and counts; this policy change is not a new runtime acceptance result.
+
 ## Current contracts
 
 Core schema **11**, retrieval profile **4**, checkpoint format **2**.
-The programme contains 49 ADRs, 58 requirements and 51 full acceptance scenarios.
+The programme contains 50 ADRs, 58 requirements and 51 full acceptance scenarios.
 Native Ubuntu installs use the distro Python in a venv: 24.04/3.12 and
 26.04/3.14. Python 3.14 is not the global minimum; see
 [runtime support](docs/runtime-support.md#native-ubuntu-installation).

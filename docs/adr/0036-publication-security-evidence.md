@@ -1,6 +1,6 @@
 # ADR-0036: Bind publication checks and build evidence to reviewed source
 
-Status: ACCEPTED. Date: 2026-10-18.
+Status: ACCEPTED; runtime qualification partly superseded by ADR-0050. Date: 2026-10-18.
 
 ## Context and drivers
 
@@ -81,3 +81,10 @@ licence/native review and notices to the retained and signed evidence set.
 The original plain-inventory and publication scope here is a baseline, not a
 claim that it is the whole current evidence set or that historical disclosure
 findings have been cleared.
+
+## Runtime qualification successor (2026-10-19)
+
+[ADR-0050](0050-required-lts-and-optional-python-profiles.md) supersedes the
+three-profile merge/signing requirement with two native LTS profiles and separate
+optional interpreter diagnostics. Earlier runtime fixes and source-bound evidence
+remain valid for their named revisions. Package bounds remain `>=3.12,<3.15`.

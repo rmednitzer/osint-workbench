@@ -1,0 +1,100 @@
+name: Optional Python compatibility
+on:
+  schedule:
+    # GitHub cron is UTC. Optional 3.13 coverage never gates merges or signing.
+    - cron: "41 6 * * 2"
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Explicit optional diagnostic scope
+        type: choice
+        required: true
+        default: "3.13"
+        options:
+          - "3.13"
+          - "3.15-dependencies"
+          - "both"
+permissions:
+  contents: read
+concurrency:
+  group: python-compatibility-${{ github.ref }}-${{ inputs.profile || '3.13' }}
+  cancel-in-progress: true
+jobs:
+  compatibility-3-13:
+    name: Optional Python 3.13
+    if: ${{ github.event_name == 'schedule' || inputs.profile == '3.13' || inputs.profile == 'both' }}
+    uses: ./.github/workflows/installed-profile.yml
+    with:
+      runner: ubuntu-24.04
+      ubuntu: "24.04"
+      python: "3.13"
+      artifact-prefix: compatibility-evidence
+  dependency-probe-3-15:
+    name: Experimental Python 3.15 dependency probe
+    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.profile == '3.15-dependencies' || inputs.profile == 'both') }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: "0.13.1"
+          prune-cache: true
+      - name: Prepare the explicit experimental interpreter
+        id: runtime
+        working-directory: ${{ runner.temp }}
+        run: |
+          uv venv /tmp/ow-python315-probe --python 3.15
+          /tmp/ow-python315-probe/bin/python -c 'import platform,sys,sysconfig; assert platform.python_implementation() == "CPython"; assert sys.version_info[:2] == (3, 15); assert not sysconfig.get_config_var("Py_GIL_DISABLED"); print(sys.version)'
+      - name: Probe locked dependency wheel availability without installing the application
+        id: dependencies
+        working-directory: ${{ runner.temp }}
+        run: |
+          uv export --project "$GITHUB_WORKSPACE" --locked --extra retrieval --no-dev --no-emit-project --output-file /tmp/ow-python315-requirements.txt > /dev/null
+          uv pip sync --python /tmp/ow-python315-probe/bin/python --require-hashes --only-binary :all: /tmp/ow-python315-requirements.txt
+      - name: Record the bounded probe outcome
+        if: ${{ always() }}
+        env:
+          RUNTIME_OUTCOME: ${{ steps.runtime.outcome }}
+          DEPENDENCY_OUTCOME: ${{ steps.dependencies.outcome }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          python3 -I - <<'PYTHON'
+          import hashlib, json, os, subprocess
+          from pathlib import Path
+          runtime = {}
+          executable = Path('/tmp/ow-python315-probe/bin/python')
+          if executable.is_file():
+              probe = subprocess.run(
+                  [str(executable), '-I', '-S', '-c',
+                   'import json,platform,sys; print(json.dumps({"version": platform.python_version(), "release_level": sys.version_info.releaselevel}))'],
+                  capture_output=True, text=True, timeout=10,
+              )
+              if probe.returncode == 0:
+                  runtime = json.loads(probe.stdout)
+          report = {
+              'scope': 'experimental-locked-dependency-wheel-availability-only',
+              'source_commit': os.environ['SOURCE_SHA'],
+              'lock_sha256': hashlib.sha256(Path('uv.lock').read_bytes()).hexdigest(),
+              'python_minor': '3.15',
+              'runtime_identity': runtime,
+              'runtime_outcome': os.environ['RUNTIME_OUTCOME'],
+              'dependency_outcome': os.environ['DEPENDENCY_OUTCOME'],
+              'application_installed': False,
+              'application_support_established': False,
+          }
+          Path('outputs').mkdir(exist_ok=True)
+          Path('outputs/python315-dependency-probe.json').write_text(json.dumps(report, indent=2) + '\n')
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              summary.write(f'Python 3.15 probe ({runtime.get("version", "unavailable")}): locked dependency wheels only. Application support is not established.\n')
+          PYTHON
+      - name: Retain the experimental outcome
+        if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: python315-dependency-probe-${{ github.sha }}
+          path: outputs/python315-dependency-probe.json
+          if-no-files-found: error
+          retention-days: 30

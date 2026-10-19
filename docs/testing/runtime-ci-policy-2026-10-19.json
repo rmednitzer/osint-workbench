@@ -1,0 +1,50 @@
+{
+  "format": "osint-workbench-runtime-ci-policy-review-v1",
+  "date": "2026-10-19",
+  "baseline_commit": "ee1006fb3c9d1c76b4f722bfd6def42ff8786e74",
+  "required_profiles": [
+    "ubuntu-24.04/python3.12",
+    "ubuntu-26.04/python3.14"
+  ],
+  "optional_profiles": {
+    "3.13": "weekly/manual full installed-native compatibility",
+    "3.15": "manual locked-dependency-wheel availability only; application not installed"
+  },
+  "wheel_sha256": "05b9496e487c271a03cfc6910ecbebf9e9924311287df18a3e076d345e568106",
+  "previous_wheel_sha256": "228c7becd2433bd4a5c5fbfdc1355ee3b92f24d2edc70da61400045ac9c53e36",
+  "changed_wheel_members": [
+    "osint_workbench-0.1.0.dev1.dist-info/METADATA",
+    "osint_workbench-0.1.0.dev1.dist-info/RECORD"
+  ],
+  "archive_members": 59,
+  "elf_members": 0,
+  "requires_python": "<3.15,>=3.12",
+  "license_expression": "Apache-2.0",
+  "limits": [
+    "Only application METADATA/RECORD changes; application source and shipped licence bytes match the baseline wheel.",
+    "No dependency lock, SQL, service authority or operational-host change.",
+    "Optional success cannot replace required LTS evidence; Python 3.15 probe does not establish application support.",
+    "Workflow behavior and signed artifacts require separate exact-revision GitHub acceptance."
+  ],
+  "workflow_static_review": {
+    "tool": "actionlint",
+    "version": "1.7.12",
+    "archive_sha256": "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8",
+    "reviewed_workflows": [
+      "ci.yml",
+      "installed-profile.yml",
+      "python-compatibility.yml"
+    ],
+    "result": "pass with the exact ubuntu-26.04 label-catalogue exception; no other rule suppressed",
+    "limitation": "The linter catalogue lacks the actually exercised GitHub-hosted ubuntu-26.04 label. Native hosted runtime assertions and completed GitHub jobs remain required. ShellCheck and Pyflakes were not invoked."
+  },
+  "local_forward_probe": {
+    "python": "3.15.0rc3",
+    "release_level": "candidate",
+    "scope": "locked dependency wheel availability; application not installed",
+    "outcome": "failure",
+    "reason": "Locked onnxruntime 1.31.0 has no cp315 wheel; no lock change or source-build fallback.",
+    "source_lock_commit": "d7ac3b6ea09ba480bbff01ab49e4e4d6ac5b150c",
+    "lock_sha256": "61beb462fa524ab65d01cac2b3823edcb25b4dcd397726409c19902f28a14ece"
+  }
+}

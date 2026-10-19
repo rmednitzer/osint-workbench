@@ -3,6 +3,7 @@
 import hashlib
 import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -40,7 +41,6 @@ def signer_fixture(tmp_path):
     # Producer gates own semantic checks; this isolated job checks identity/bytes.
     for runner, minor in [
         ("ubuntu-24.04", "3.12"),
-        ("ubuntu-24.04", "3.13"),
         ("ubuntu-26.04", "3.14"),
     ]:
         leg = tmp_path / "evidence" / f"build-evidence-{runner}-python{minor}-{SHA}"
@@ -95,6 +95,9 @@ def test_signer_accepts_complete_set_even_with_optimization_requested(signer_fix
 @pytest.mark.parametrize(
     "case",
     [
+        "missing-leg",
+        "extra-optional-leg",
+        "optional-runtime",
         "missing-report",
         "extra-file",
         "symlink",
@@ -115,7 +118,14 @@ def test_signer_accepts_complete_set_even_with_optimization_requested(signer_fix
 def test_signer_refuses_invalid_evidence_before_signing(signer_fixture, case):
     leg, document, run = signer_fixture
     report = leg / "assurance/native-review.json"
-    if case == "missing-report":
+    if case == "missing-leg":
+        other = next(p for p in leg.parent.iterdir() if p != leg)
+        shutil.rmtree(other)
+    elif case == "extra-optional-leg":
+        shutil.copytree(leg, leg.parent / f"build-evidence-ubuntu-24.04-python3.13-{SHA}")
+    elif case == "optional-runtime":
+        document["runtime"]["python"] = "3.13.0"
+    elif case == "missing-report":
         report.unlink()
     elif case == "extra-file":
         (leg / "unexpected.txt").write_bytes(b"unexpected")
@@ -152,3 +162,90 @@ def test_signer_refuses_invalid_evidence_before_signing(signer_fixture, case):
     result = run()
     assert result.returncode != 0
     assert b"EVIDENCE_SET_REFUSED" in result.stderr
+
+
+@pytest.mark.parametrize("outcome", ["success", "failure", "cancelled", "skipped"])
+def test_required_aggregate_rejects_incomplete_or_failed_profiles(outcome, tmp_path):
+    workflow = yaml.safe_load(
+        (Path(__file__).resolve().parents[1] / ".github/workflows/ci.yml").read_text()
+    )
+    script = workflow["jobs"]["installed-artifact"]["steps"][0]["run"]
+    result = subprocess.run(
+        ["bash", "-c", script],
+        cwd=tmp_path,
+        env={**os.environ, "MATRIX_RESULT": outcome},
+        capture_output=True,
+        timeout=10,
+    )
+    assert (result.returncode == 0) == (outcome == "success")
+
+
+@pytest.mark.parametrize(
+    "profile, accepted",
+    [
+        (("ubuntu-24.04", "24.04", "3.12", "build-evidence"), True),
+        (("ubuntu-26.04", "26.04", "3.14", "build-evidence"), True),
+        (("ubuntu-24.04", "24.04", "3.13", "compatibility-evidence"), True),
+        (("ubuntu-24.04", "24.04", "3.13", "build-evidence"), False),
+        (("ubuntu-26.04", "26.04", "3.15", "build-evidence"), False),
+        (("ubuntu-26.04", "26.04", "3.12", "build-evidence"), False),
+    ],
+)
+def test_reusable_profile_admission_keeps_optional_evidence_separate(profile, accepted, tmp_path):
+    workflow = yaml.safe_load(
+        (
+            Path(__file__).resolve().parents[1] / ".github/workflows/installed-profile.yml"
+        ).read_text()
+    )
+    script = workflow["jobs"]["verify"]["steps"][0]["run"]
+    env = {
+        **os.environ,
+        **dict(
+            zip(
+                ("PROFILE_RUNNER", "PROFILE_UBUNTU", "PROFILE_PYTHON", "ARTIFACT_PREFIX"),
+                profile,
+                strict=True,
+            )
+        ),
+    }
+    result = subprocess.run(
+        ["bash", "-c", script],
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        timeout=10,
+    )
+    assert (result.returncode == 0) == accepted
+    if not accepted:
+        assert b"VERIFICATION_PROFILE_REFUSED" in result.stderr
+
+
+def test_runtime_workflow_wiring_preserves_lts_qualification_and_optional_authority():
+    root = Path(__file__).resolve().parents[1] / ".github/workflows"
+    required = yaml.safe_load((root / "ci.yml").read_text())
+    optional = yaml.safe_load((root / "python-compatibility.yml").read_text())
+    shared = yaml.safe_load((root / "installed-profile.yml").read_text())
+    matrix = required["jobs"]["installed-artifact-matrix"]
+    profiles = matrix["strategy"]["matrix"]["include"]
+    assert {(p["runner"], p["ubuntu"], p["python"]) for p in profiles} == {
+        ("ubuntu-24.04", "24.04", "3.12"),
+        ("ubuntu-26.04", "26.04", "3.14"),
+    }
+    assert len(profiles) == 2
+    assert required["jobs"]["installed-artifact"]["needs"] == "installed-artifact-matrix"
+    assert set(required["jobs"]["attest-builds"]["needs"]) == {
+        "repository-policy",
+        "renovate-policy",
+        "installed-artifact",
+    }
+    # PyYAML's YAML 1.1 reader parses the unquoted Actions `on` key as True.
+    triggers = optional.get("on", optional.get(True))
+    assert set(triggers) == {"schedule", "workflow_dispatch"}
+    assert optional["permissions"] == shared["permissions"] == {"contents": "read"}
+    compatibility = optional["jobs"]["compatibility-3-13"]
+    assert matrix["uses"] == compatibility["uses"] == "./.github/workflows/installed-profile.yml"
+    assert compatibility["with"]["artifact-prefix"] == "compatibility-evidence"
+    assert "secrets" not in compatibility and "permissions" not in compatibility
+    for job in shared["jobs"].values():
+        assert "permissions" not in job
+        assert not any("actions/attest@" in step.get("uses", "") for step in job["steps"])
