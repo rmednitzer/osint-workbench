@@ -320,12 +320,12 @@
     },
     {
       "name": "filelock",
-      "version": "4.2.3",
+      "version": "4.2.4",
       "native_dependency_closure": "not-established-by-empty-ELF-set",
       "variants": [
         {
-          "wheel_filename": "filelock-4.2.3-py3-none-any.whl",
-          "wheel_sha256": "8a09a56992ac9c4eb58d17c6c723c1fe5209fbcd4d569b49d58c1a9103295061",
+          "wheel_filename": "filelock-4.2.4-py3-none-any.whl",
+          "wheel_sha256": "301241438c57936ef93f4243a94f2559022268bfcf9b375a9a72eb0f8db8358e",
           "files": []
         }
       ]
