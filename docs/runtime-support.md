@@ -5,6 +5,34 @@ The package supports standard, GIL-enabled CPython 3.12–3.14 on Linux. Python
 free-threaded builds, other interpreters, GPU stacks or additional architectures
 from a universal Python wheel or an available dependency wheel.
 
+## Native Ubuntu installation
+
+Python 3.14 is not the application's minimum and is not required on Ubuntu 24.04.
+Use each LTS release's distribution-maintained system interpreter: Python 3.12 on
+24.04 and Python 3.14 on 26.04. The Ubuntu `python3` package catalogues were
+rechecked on 2026-10-19. Supporting 3.14 is necessary to accept the default 26.04
+interpreter; requiring 3.14 everywhere would unnecessarily replace the 24.04
+runtime. Keep the package bound `>=3.12,<3.15` and the 3.12 language target.
+
+For the root-owned reference installation, provision the distribution's
+`python3` and `python3-venv` packages, then create the isolated environment with
+that interpreter:
+
+```sh
+sudo apt-get install python3 python3-venv
+sudo /usr/bin/python3 -m venv /opt/osint-workbench/venv
+/opt/osint-workbench/venv/bin/python -c 'import sys; print(sys.version); print(sys.base_prefix)'
+```
+
+Install the reviewed locked dependencies and application wheel into this venv
+under the [deployment procedure](deployment.md#scope-and-authority). Do not alter
+`/usr/bin/python3`, use interpreter alternatives to replace it, or install Python
+packages into the system environment. This is native Linux execution in a venv;
+no container or separate managed interpreter is required for the reference service.
+The three CI profiles below verify compatibility; they do not impose Python 3.14
+on 24.04. Optional native inference dependencies still need their declared
+artifacts and acceptance; creating a venv does not install the complete stack.
+
 ## Required verification profiles
 
 | Runner | Python | Purpose |

@@ -61,6 +61,18 @@ fail verification; no custom trust exception or TLS bypass is introduced. Existi
 notice/source obligations remain unresolved as stated below. This comparison
 establishes the selected bundle change, not independent certification of CA trust.
 
+The [2026-10-19 lock-maintenance review](../testing/lock-maintenance-2026-10-19.json)
+checks filelock 4.2.3, httpcore2/httpx2 2.14.0, jsonpointer 3.3 and
+platformdirs 4.13.5 against their exact locked universal wheels. Complete shipped
+licence texts are byte-identical to the preceding versions. Version-bearing
+METADATA and archive identities change. Only filelock, httpcore2 and httpx2
+belong to the 47-distribution runtime/retrieval policy; jsonpointer and platformdirs
+are development dependencies and have separate archive review records in the
+receipt. Jsonpointer has no declared expression; its shipped BSD-3-Clause text
+was inspected rather than inferred from that absence. Runtime archive counts,
+native variants and unresolved notice obligations remain unchanged. None of
+these updates requires Python newer than the application's 3.12 minimum.
+
 Historically, the initial review inspected 31 manylinux archives: 30 supported
 standard/ABI3 archives and one additional unsupported free-threaded CPython 3.13
 ONNX Runtime archive. The current review admits only the 30 supported native

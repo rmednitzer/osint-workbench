@@ -10,6 +10,9 @@ runbooks, target specifications, decisions and historical evidence.
 
 Core schema **11**, retrieval profile **4**, checkpoint format **2**.
 The programme contains 49 ADRs, 58 requirements and 51 full acceptance scenarios.
+Native Ubuntu installs use the distro Python in a venv: 24.04/3.12 and
+26.04/3.14. Python 3.14 is not the global minimum; see
+[runtime support](docs/runtime-support.md#native-ubuntu-installation).
 Earlier published SQL resources remain immutable. Legacy checkpoint format 1 is
 not silently adopted. The [requirements](docs/assurance/requirements.md) and
 [verification matrix](docs/testing/verification-plan.md) retain their full target
