@@ -230,7 +230,9 @@ def fixture_server(tmp_path, monkeypatch):
 
         server = UnixStreamServer(str(sock), Handler)
         sock.chmod(0o600)
-        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread = threading.Thread(
+            target=server.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True
+        )
         thread.start()
         monkeypatch.setenv("OW_INFERENCE_LOCK", str(root / "admission.lock"))
         manifest = GeneratorManifest(

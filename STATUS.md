@@ -64,6 +64,12 @@ data-loss prevention are not established. See [cloud routes](docs/cloud-routes.m
 
 ## Verified baseline and evidence scope
 
+Test counts describe a particular revision and its parameter expansion; they are
+not a minimum, completion metric or quality score. Use
+[proportional test design](CONTRIBUTING.md#proportional-test-design) when changing
+coverage. Required runtime profiles and semantic-quality gaps remain separate.
+
+
 The OAuth service candidate `a567d10a72d3830fde2cffb57e3e0745f1bc4c0a` passed
 both LTS service and credential-isolation profiles in run `39170561506`. Its
 [receipt](docs/testing/oauth-service-2026-10-19.json) binds source, wheel and

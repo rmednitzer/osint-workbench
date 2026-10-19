@@ -141,7 +141,9 @@ def api_peer(
 
     server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
     server.daemon_threads = True
-    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread = threading.Thread(
+        target=server.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True
+    )
     thread.start()
     try:
         yield "http:" + f"//127.0.0.1:{server.server_port}/v1/chat/completions", calls
@@ -459,7 +461,9 @@ def test_actual_tls_private_trust_and_peer_identity(lock, tmp_path):
     context.minimum_version = ssl.TLSVersion.TLSv1_2
     context.load_cert_chain(cert, key)
     server.socket = context.wrap_socket(server.socket, server_side=True)
-    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread = threading.Thread(
+        target=server.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True
+    )
     thread.start()
     token = tmp_path / "token"
     token.write_text("synthetic-tls-token")

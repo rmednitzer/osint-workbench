@@ -30,7 +30,6 @@ from .local_api import LocalApiGenerator, LocalApiManifest
 from .local_encoder import EncoderManifest, LocalEncoder
 from .local_generation import GeneratorManifest, LocalGenerator
 from .local_reranker import LocalReranker, RerankerManifest
-from .mcp_server import serve
 from .service import ReadService
 from .vector_index import VectorIndex, migrate_retrieval
 from .worker import enqueue_chunk, run_batch, run_once
@@ -588,6 +587,8 @@ def main():
                 print(json.dumps(value, ensure_ascii=False))
                 return
             if args.command == "mcp":
+                from .mcp_server import serve
+
                 asyncio.run(serve(service))
                 return
             if args.command == "health":

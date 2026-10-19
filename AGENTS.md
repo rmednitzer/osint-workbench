@@ -75,6 +75,12 @@ Use [CONTRIBUTING.md](CONTRIBUTING.md) for verification commands and
    receipts intact; add successors rather than relabeling old evidence. Report
    implemented, verified, blocked and outstanding scope separately.
 
+Choose tests by independent fault and consequence, not a count or per-change
+quota. Reuse discriminating existing coverage for low-impact changes; avoid
+unjustified parameter cross-products and tests that mirror implementation. Follow
+[proportional test design](CONTRIBUTING.md#proportional-test-design); no new ADR is
+needed for ordinary test maintenance. Preserve the required native acceptance.
+
 Use an existing interpreter directly during read-only or concurrent review.
 `uv run`, synchronization and installation can replace a shared environment.
 Installed-artifact verification uses a dedicated environment that no concurrent
