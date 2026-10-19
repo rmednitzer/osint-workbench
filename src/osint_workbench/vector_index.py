@@ -14,7 +14,7 @@ from .database import LIFECYCLE_LOCK, Database, migrate
 from .errors import WorkbenchError
 from .evidence import EvidenceStore
 from .lifecycle import assert_document_visible
-from .local_encoder import LocalEncoder
+from .local_encoder import EncoderManifest, LocalEncoder
 from .retrieval import reciprocal_rank_fusion
 from .text import digest
 
@@ -110,8 +110,15 @@ def _excluded(conn, generation_id):
 
 class VectorIndex:
     def __init__(self, db: Database, encoder: LocalEncoder):
-        self.db, self.encoder = db, encoder
-        self.space_id = encoder.manifest.identity()
+        if not isinstance(encoder, LocalEncoder):
+            raise WorkbenchError("RETRIEVAL_CONFIGURATION_INVALID")
+        try:
+            manifest = EncoderManifest.model_validate_json(encoder.manifest.model_dump_json())
+        except (ValueError, TypeError):
+            raise WorkbenchError("RETRIEVAL_CONFIGURATION_INVALID") from None
+        # Keep generation metadata and every native operation on one owned contract.
+        self.db, self.encoder = db, LocalEncoder(manifest)
+        self.space_id = manifest.identity()
 
     @staticmethod
     def _building(conn, generation):

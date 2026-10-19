@@ -695,13 +695,15 @@ def test_purge_between_builder_transactions_revokes_late_encoder_admission(
             ("vulnerability patch", "two", b"two"),
         )
     ]
+    from osint_workbench.local_encoder import LocalEncoder
+
     target = min(documents)
-    original_get, original_chunks = store.get, encoder_bundle.chunks
+    original_get, original_chunks = store.get, LocalEncoder.chunks
     reads, dispatched, invalidated = [], [], []
 
-    def observe_chunks(text):
+    def observe_chunks(self, text):
         dispatched.append(text)
-        return original_chunks(text)
+        return original_chunks(self, text)
 
     def interleave(sha):
         reads.append(sha)
@@ -717,7 +719,7 @@ def test_purge_between_builder_transactions_revokes_late_encoder_admission(
         return original_get(sha)
 
     monkeypatch.setattr(store, "get", interleave)
-    monkeypatch.setattr(encoder_bundle, "chunks", observe_chunks)
+    monkeypatch.setattr(LocalEncoder, "chunks", observe_chunks)
     with pytest.raises(WorkbenchError, match="^RETRIEVAL_GENERATION_INVALIDATED$"):
         VectorIndex(writer, encoder_bundle).build(store)
     assert len(dispatched) == 1 and len(invalidated) == 1 and invalidated[0]["status"] == "failed"

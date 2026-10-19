@@ -1,0 +1,21 @@
+{
+  "format": "osint-workbench-index-custody-wheel-review-v1",
+  "date": "2026-10-19",
+  "baseline_commit": "de4f3455911555af5aad2db157aaf6340579509e",
+  "previous_wheel_sha256": "fb706a7351fd50283f95d506e8d443f6511f320238db47998520b0999163f433",
+  "candidate_wheel_sha256": "ad9fb1ce9c12ce2b172eb0dca3e92cb92c8e0816fcfec9191b6137f559ec8a50",
+  "lock_sha256": "b5a4684da62a5a3457e445595fc4bbd867ad4db81f3da74adcde00f4d66c62c9",
+  "changed_members": [
+    "osint_workbench-0.1.0.dev1.dist-info/RECORD",
+    "osint_workbench/vector_index.py"
+  ],
+  "metadata_and_licence_bytes_unchanged": true,
+  "elf_members": 0,
+  "legal_approval": false,
+  "baseline_observation": "Actual ONNX chunks changed after caller-template mutation while the index space identity stayed fixed; no local SQL persistence claim.",
+  "limits": [
+    "Index-owned configuration does not requalify or relabel historical vectors.",
+    "New stored-vector and hybrid-ranking acceptance requires actual PostgreSQL/pgvector CI.",
+    "No schema/dependency/authority change or adopted model-quality claim."
+  ]
+}
