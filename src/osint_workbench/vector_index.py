@@ -132,6 +132,21 @@ class VectorIndex:
         if row is None or row["status"] != "building":
             raise WorkbenchError("RETRIEVAL_GENERATION_INVALIDATED")
 
+    def _space_matches(self, conn, dimensions):
+        expected = self.encoder.manifest.space.dimensions
+        if dimensions != expected:
+            return False
+        registered = conn.execute(
+            "SELECT manifest,dimensions FROM ow.embedding_spaces WHERE space_id=%s",
+            (self.space_id,),
+        ).fetchone()
+        return registered == {
+            "manifest": self.encoder.manifest.model_dump(
+                exclude={"model_path", "tokenizer_path", "threads"}
+            ),
+            "dimensions": expected,
+        }
+
     def build(self, store: EvidenceStore):
         with self.db.connect() as conn:
             conn.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
@@ -149,11 +164,7 @@ class VectorIndex:
                           VALUES (%s,%s,%s) ON CONFLICT DO NOTHING""",
                 (self.space_id, Jsonb(manifest), dimensions),
             )
-            registered = conn.execute(
-                "SELECT manifest,dimensions FROM ow.embedding_spaces WHERE space_id=%s",
-                (self.space_id,),
-            ).fetchone()
-            if registered != {"manifest": manifest, "dimensions": dimensions}:
+            if not self._space_matches(conn, dimensions):
                 raise WorkbenchError("INCOMPATIBLE_EMBEDDING_SPACE")
             conn.execute(
                 """INSERT INTO ow.retrieval_generations
@@ -290,6 +301,8 @@ class VectorIndex:
             ).fetchone()
             if not row or row["status"] != "ready" or row["space_id"] != self.space_id:
                 raise WorkbenchError("INCOMPATIBLE_GENERATION")
+            if not self._space_matches(conn, row["dimensions"]):
+                raise WorkbenchError("INCOMPATIBLE_EMBEDDING_SPACE")
             members, sha = corpus(conn)
             stored = conn.execute(
                 "SELECT document_id FROM ow.retrieval_members "
@@ -318,7 +331,7 @@ class VectorIndex:
                 return {"retrieval": "hybrid-exact", "retrieval_state": "unconfigured"}
             if not _profile_current(conn):
                 return {"retrieval": "hybrid-exact", "retrieval_state": "migration_required"}
-            row = conn.execute("""SELECT g.space_id,g.generation_id,g.status
+            row = conn.execute("""SELECT g.space_id,g.generation_id,g.status,g.dimensions
                 FROM ow.retrieval_active a JOIN ow.retrieval_generations g
                 USING(generation_id)""").fetchone()
             return {
@@ -327,7 +340,11 @@ class VectorIndex:
                 "retrieval_state": "unconfigured"
                 if not row
                 else "ready"
-                if row["space_id"] == self.space_id and row["status"] == "ready"
+                if (
+                    row["space_id"] == self.space_id
+                    and row["status"] == "ready"
+                    and self._space_matches(conn, row["dimensions"])
+                )
                 else "incompatible",
                 "generation_id": str(row["generation_id"]) if row else None,
             }
@@ -350,6 +367,8 @@ class VectorIndex:
                 raise WorkbenchError("RETRIEVAL_MIGRATION_REQUIRED")
             if active["space_id"] != self.space_id or active["status"] != "ready":
                 raise WorkbenchError("INCOMPATIBLE_GENERATION")
+            if not self._space_matches(conn, active["dimensions"]):
+                raise WorkbenchError("INCOMPATIBLE_EMBEDDING_SPACE")
             vector = self.encoder.query(query)
             try:
                 _, sha = corpus(conn)

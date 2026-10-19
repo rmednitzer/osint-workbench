@@ -904,6 +904,14 @@ prevents a safe rebuild command from silently inheriting inconsistent metadata;
 it does not authorize automatic repair of historical evidence.
 
 
+The ADR-0056 active-generation follow-up extends registry comparison to activation,
+status and hybrid search, including generation dimensions. Search refuses a known
+conflict before native query dispatch, activation retains the old pointer and
+status reports incompatible. A native PostgreSQL fault-injection case preserves
+conflicting metadata and vectors while proving refusal and continued explicit
+lexical access. A matching registry still cannot prove historical vector custody.
+
+
 ## Production read reranker custody: ADR-0057
 
 SC2/SC4 and C9/C12 also constrain the identity returned with ranked read results.
