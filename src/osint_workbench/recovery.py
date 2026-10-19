@@ -83,6 +83,7 @@ def _history(conn):
         "migrations/009_cloud_ledger.sql",
         "migrations/010_cloud_settlement.sql",
         "migrations/011_api_collection_state.sql",
+        "migrations/012_reviewer_authority.sql",
     ]
     expected = {
         str(i): digest(files("osint_workbench").joinpath(p).read_bytes())
@@ -103,6 +104,7 @@ def _history(conn):
             "migrations/retrieval_002_lifecycle.sql",
             "migrations/retrieval_003_purge_role.sql",
             "migrations/retrieval_004_member_exclusions.sql",
+            "migrations/retrieval_005_writer_updates.sql",
         ]
         hashes = {
             i: digest(files("osint_workbench").joinpath(p).read_bytes())
@@ -326,7 +328,7 @@ def _read(path, expected_sha):
 
 
 # Published core version -> the optional retrieval profiles it shipped with.
-PUBLISHED_PAIRS = {4: (2,), 5: (2,), 6: (2,), 7: (3,), 8: (3, 4), 9: (4,), 10: (4,)}
+PUBLISHED_PAIRS = {4: (2,), 5: (2,), 6: (2,), 7: (3,), 8: (3, 4), 9: (4,), 10: (4,), 11: (4,)}
 
 
 def _known_legacy_history(observed, current, version):
@@ -399,6 +401,17 @@ def restore(
             for version in PUBLISHED_PAIRS
         }
         adopted_v4 = adopted[4]
+        # Core 11 also shipped without the optional retrieval profile. Its exact
+        # core-only history is admissible only into a core-only target.
+        core_only_v11 = (
+            core == 11
+            and profile == 0
+            and "retrieval/1" not in history
+            and payload["migrations"]
+            == {k: v for k, v in history.items() if k.isdigit() and int(k) <= 11}
+            and set(tables) == set(CORE)
+        )
+        adopted[11] = adopted[11] or core_only_v11
         if any(adopted.values()):
             for name in absent & set(names):
                 tables[name] = []
@@ -411,7 +424,7 @@ def restore(
                     if set(SETTLEMENT_COLUMNS) & set(row):
                         raise WorkbenchError("RECOVERY_COLUMNS_MISMATCH")
                     row.update(dict.fromkeys(SETTLEMENT_COLUMNS))
-            if not adopted_v4:
+            if not adopted_v4 and core < 11:
                 state = tables["collection_state"]
                 if not isinstance(state, list) or not all(isinstance(r, dict) for r in state):
                     raise WorkbenchError("INVALID_RECOVERY_BUNDLE")
@@ -419,6 +432,13 @@ def restore(
                     if set(API_STATE_DEFAULTS) & set(row):
                         raise WorkbenchError("RECOVERY_COLUMNS_MISMATCH")
                     row.update({**API_STATE_DEFAULTS, "api_seen_cursors": []})
+            reviews = tables["assertion_reviews"]
+            if not isinstance(reviews, list) or not all(isinstance(row, dict) for row in reviews):
+                raise WorkbenchError("INVALID_RECOVERY_BUNDLE")
+            for row in reviews:
+                if "authority" in row or "database_principal" in row:
+                    raise WorkbenchError("RECOVERY_COLUMNS_MISMATCH")
+                row.update(authority="legacy_writer", database_principal=None)
         if adopted_v4:
             tables["collection_state"] = []
             if any("http_status" in row for row in tables["collection_runs"]):

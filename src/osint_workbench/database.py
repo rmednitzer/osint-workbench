@@ -10,7 +10,7 @@ from .contracts import DocumentInput
 from .errors import WorkbenchError
 from .evidence import EvidenceStore
 
-SCHEMA_VERSION = 11
+SCHEMA_VERSION = 12
 LIFECYCLE_LOCK = 418287408
 MIGRATIONS = (
     "schema.sql",
@@ -24,6 +24,7 @@ MIGRATIONS = (
     "migrations/009_cloud_ledger.sql",
     "migrations/010_cloud_settlement.sql",
     "migrations/011_api_collection_state.sql",
+    "migrations/012_reviewer_authority.sql",
 )
 
 

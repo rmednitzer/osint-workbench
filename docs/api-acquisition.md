@@ -2,7 +2,7 @@
 
 Acquisition supports the explicit `bounded-json-pages/1` contract and the
 [`cisa-kev/1` catalogue mapping](kev-acquisition.md), not a generic provider SDK
-or a Janes integration. Core schema **11**, optional retrieval profile **4**
+or a Janes integration. Core schema **12**, optional retrieval profile **5**
 and checkpoint format **2** apply. Run the packaged migration before acquisition.
 There are no bundled endpoints, credentials or enabled sources. An opt-in
 [single-source service/timer](deployment.md#scheduled-api-profile) is available.

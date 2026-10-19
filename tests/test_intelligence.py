@@ -5,6 +5,7 @@ import pytest
 
 from osint_workbench import intelligence as intel
 from osint_workbench.contracts import DocumentInput
+from osint_workbench.database import Database
 from osint_workbench.errors import WorkbenchError
 from osint_workbench.evidence import EvidenceStore
 from osint_workbench.service import ReadService
@@ -61,7 +62,7 @@ def setup(databases, tmp_path):
 
 
 def test_proposals_review_cited_product_rejection_and_source_updates(databases, tmp_path):
-    writer, reader, _, store, doc = setup(databases, tmp_path)
+    writer, reader, roles, store, doc = setup(databases, tmp_path)
     generator = FixtureGenerator([claim()])
     job = intel.enqueue(writer, generator, doc)
     assert intel.enqueue(writer, generator, doc) == job
@@ -77,7 +78,11 @@ def test_proposals_review_cited_product_rejection_and_source_updates(databases, 
     assert row["review_state"] == "pending" and row["quote"] == claim()["quote"]
     assert intel.create_briefing(writer, [doc])["degraded"]  # Never promote pending proposals.
     intel.review(
-        writer, row["assertion_id"], "accept", "fixture-reviewer", "Reviewed synthetic evidence"
+        Database(roles["reviewer"]),
+        row["assertion_id"],
+        "accept",
+        "fixture-reviewer",
+        "Reviewed synthetic evidence",
     )
     brief = intel.create_briefing(writer, [doc])
     service = ReadService(reader, EvidenceStore(store.root, read_only=True))
@@ -85,7 +90,13 @@ def test_proposals_review_cited_product_rejection_and_source_updates(databases, 
     assert product["items"][0]["quote"] == claim()["quote"]
     assert product["items"][0]["polarity"] == "negated"
     assert "actor" not in json.dumps(product)
-    intel.review(writer, row["assertion_id"], "reject", "fixture-reviewer", "Withdraw after review")
+    intel.review(
+        Database(roles["reviewer"]),
+        row["assertion_id"],
+        "reject",
+        "fixture-reviewer",
+        "Withdraw after review",
+    )
     with pytest.raises(WorkbenchError, match="BRIEFING_STALE"):
         service.briefing(brief["briefing_id"])
     writer.ingest(
@@ -97,7 +108,13 @@ def test_proposals_review_cited_product_rejection_and_source_updates(databases, 
     )
     assert intel.assertions(reader)["results"] == []
     with pytest.raises(WorkbenchError, match="NOT_CURRENT"):
-        intel.review(writer, row["assertion_id"], "accept", "fixture-reviewer", "Obsolete input")
+        intel.review(
+            Database(roles["reviewer"]),
+            row["assertion_id"],
+            "accept",
+            "fixture-reviewer",
+            "Obsolete input",
+        )
 
 
 @pytest.mark.parametrize(
@@ -127,7 +144,7 @@ def test_invalid_models_accept_no_partial_assertions(databases, tmp_path, claims
 
 
 def test_abstention_and_cancelled_completion_are_distinct(databases, tmp_path):
-    writer, reader, _, store, doc = setup(databases, tmp_path)
+    writer, reader, roles, store, doc = setup(databases, tmp_path)
     generator = FixtureGenerator([])
     intel.enqueue(writer, generator, doc)
     assert intel.enrich_once(writer, store, generator)["status"] == "abstained"
@@ -167,7 +184,11 @@ def test_cited_product_over_real_mcp_stdio(databases, tmp_path):
     intel.enrich_once(writer, store, generator)
     assertion = intel.assertions(writer)["results"][0]
     intel.review(
-        writer, assertion["assertion_id"], "accept", "fixture-reviewer", "Reviewed literal support"
+        Database(roles["reviewer"]),
+        assertion["assertion_id"],
+        "accept",
+        "fixture-reviewer",
+        "Reviewed literal support",
     )
     briefing = intel.create_briefing(writer, [doc])
 
@@ -240,7 +261,9 @@ def test_self_consistent_briefing_cannot_misstate_its_cited_assertion(
     intel.enqueue(writer, generator, doc)
     intel.enrich_once(writer, store, generator)
     row = intel.assertions(reader)["results"][0]
-    intel.review(writer, row["assertion_id"], "accept", "fixture-reviewer", "Reviewed")
+    intel.review(
+        Database(roles["reviewer"]), row["assertion_id"], "accept", "fixture-reviewer", "Reviewed"
+    )
     genuine = intel.create_briefing(writer, [doc])
     service = ReadService(reader, EvidenceStore(store.root, read_only=True))
     assert service.briefing(genuine["briefing_id"])["items"][0]["statement"] == row["statement"]

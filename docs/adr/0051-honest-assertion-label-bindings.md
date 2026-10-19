@@ -55,3 +55,9 @@ consumer version handling; do not rewrite records or describe v1 as validated
 mentions. A subsequent stronger span contract requires its own explicit version
 and historical-record policy. Test availability and exact source/artifact results
 remain separate from this design decision.
+
+## Authority successor
+
+[ADR-0053](0053-reviewer-database-authority.md) separates reviewer SQL credentials
+and requires requalification of historical writer reviews. Human independence
+and semantic support remain unresolved; this does not change the label bindings.

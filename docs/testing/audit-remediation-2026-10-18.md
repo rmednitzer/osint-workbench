@@ -94,3 +94,11 @@ resolution and exposes label-binding IDs. This closes the misleading naming
 contract only; it does not establish label-specific coordinates, entailment or
 independent reviewer authority. Historical test outcomes above are unchanged;
 current verification must name the successor revision.
+
+## Reviewer and retrieval authority successor
+
+[ADR-0053](../adr/0053-reviewer-database-authority.md) implements separate SQL review
+credentials, explicit historical requalification and retrieval profile 5 column
+UPDATE grants. Candidate installed verification belongs to its exact PR revision;
+earlier outcomes above do not validate the successor. Human independence, adopted
+semantic quality and broader producer separation remain open.

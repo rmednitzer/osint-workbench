@@ -174,16 +174,17 @@ checks; exact v4 normalization remains supported. Mixed, modified or incomplete
 histories are rejected. Restore does not provision an operational login or enable
 sources. Provision and validate the separate collector principal after recovery.
 
-The current supported layout is core v11 and, when enabled, retrieval-profile v4,
+The current supported layout is core v12 and, when enabled, retrieval-profile v5,
 using checkpoint format 2. Core v7 adds purge history and the separately scoped
 purger; core v8 adds collector item-reuse grants only; core v9 adds the remote
 attempt ledger; core v10 adds settlement columns and the accounting role;
 core v11 adds private API cursor/profile/page/history state;
-profile v4 adds explicit retrieval exclusions. Exact published legacy pairs
+core v12 adds authenticated review provenance;
+profile v4 adds explicit retrieval exclusions and v5 narrows writer UPDATE grants. Exact published legacy pairs
 are admitted only when every recorded migration digest and expected column/table
 set matches:
 
-| Checkpoint core | Optional retrieval profile | Normalization into core 11/profile 4 |
+| Checkpoint core | Optional retrieval profile | Normalization into core 12/profile 5 |
 | --- | --- | --- |
 | 4 | 2 | Empty collection schedule, unknown historical HTTP status, empty ledger/exclusions |
 | 5–6 | 2 | Empty ledger/exclusions |
@@ -191,9 +192,16 @@ set matches:
 | 8 | 3 or 4 | Empty ledger; empty exclusions only for profile 3 |
 | 9 | 4 | Preserve attempts; add unset settlement columns and empty API progress |
 | 10 | 4 | Preserve attempts/settlements; add empty API progress |
+| 11 | 4 | Preserve API layout; restore clears continuation as usual |
 
-Core-only historical checkpoints may also adopt into a core-only target with
-their exact published core history. These rules do not convert a core-only
+All admitted core 4–11 reviews gain `authority=legacy_writer` and a null database
+principal. Their historical labels/decisions remain intact, but they no longer
+qualify assertions for products. A fresh authenticated review is required. Current
+core-12 checkpoints preserve the original database principal as historical
+provenance; restore does not create that principal or authenticate it anew.
+
+Exact core-11 core-only checkpoints may also adopt into a core-only target with
+their exact published core history. Earlier core-only pairs remain unsupported. These rules do not convert a core-only
 checkpoint into a retrieval-profile checkpoint or admit arbitrary mixed histories.
 Current checkpoints take the exact-history path without legacy normalization.
 All restored collection schedules clear API continuation, profile hash, page count

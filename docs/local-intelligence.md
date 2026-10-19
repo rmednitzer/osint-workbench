@@ -99,11 +99,15 @@ or expired ownership prevents late acceptance. Errors retain bounded codes; malf
 is not silently repaired or stored as accepted fact.
 
 A matching quotation proves its location, not truth or semantic entailment. Model proposals stay
-pending until an operator appends an accept/reject review with rationale and an intentional
-actor label. This actor field is attribution, not a new authentication mechanism; the database
-writer credential supplies authority. The same writer can create a proposal and review it;
-independent reviewer identity and role separation remain unresolved, as recorded in the audit
-backlog. MCP cannot review or create assertions. Different labels or sources are not
+pending until an operator appends an accept/reject review using a separate
+`OW_REVIEWER_DSN`, rationale and intentional actor label. Database authentication
+supplies authority; the actor label is attribution. The producer's writer credential
+cannot review, including through overlapping reviewer membership or `SET ROLE`.
+The command refuses broadened effective grants and privileged identities on the
+actual review connection. Database owners and administrators remain trusted.
+Credential separation does not prove that a different human performed the review.
+See [reviewer provisioning and upgrade](reviewer-authority.md). MCP cannot review
+or create assertions. Different labels or sources are not
 automatically merged, and fuzzy names do not establish common identity. Assertion
 reads use `ontology_version=assertion-proposals/2` and
 `entity_resolution=not-performed`. The `subject_label_binding_id` and
@@ -133,7 +137,7 @@ a new creation records a new cutoff. No accepted assertions yields a degraded em
 as fallback. Reads verify the content digest, item fields and selection membership,
 compare every item with the live accepted assertion it cites and verify the quoted
 evidence. Assertions accepted after the recorded cutoff are not treated as omissions. Withdrawn reviews or obsolete
-source versions make a cited product stale. Private reviewer rationale and actor labels
+source versions make a cited product stale. Private reviewer rationale, database principals and actor labels
 are excluded from MCP/products. Old source evidence and review history remain retained.
 No outbound publication is enabled. Full topic selection, MMR/family independence,
 semantic entailment evaluation and context retention remain open.
@@ -165,7 +169,7 @@ responses, unknown outcomes, permissions and idle reconciliation. Actual ONNX pa
 scoring uses a separate synthetic numerical oracle. PostgreSQL/MCP tests cover proposal
 validation, abstention, review withdrawal, source changes and cited product reads.
 
-Core migration v3 originally added these tables and grants; the current core schema is v10.
+Core migration v3 originally added these tables and grants; the current core schema is v12.
 Published earlier SQL remains unchanged. Reader credentials cannot write
 proposals/reviews/products or read private review rationale. Preserve tables and history on
 rollback; disable optional manifests and workers to return to core reads. Do not downgrade

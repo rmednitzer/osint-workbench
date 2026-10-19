@@ -8,6 +8,7 @@ import pytest
 from mcp import Client
 
 from osint_workbench import mcp_server
+from osint_workbench.database import Database
 from osint_workbench.errors import WorkbenchError
 
 
@@ -309,7 +310,7 @@ def test_native_reader_pages_valid_large_evidence_and_rechecks_full_briefing(
     from osint_workbench.service import ReadService
     from tests.test_intelligence import FixtureGenerator
 
-    writer, reader, _ = databases
+    writer, reader, roles = databases
     store = EvidenceStore(tmp_path / "objects")
     quotes = ["\x01" * 3999 + letter for letter in "ABC"]
     body = "storage " + "".join(quotes)
@@ -338,7 +339,13 @@ def test_native_reader_pages_valid_large_evidence_and_rechecks_full_briefing(
     intelligence.enqueue(writer, generator, documents[0])
     assert intelligence.enrich_once(writer, store, generator)["proposals"] == 3
     for row in intelligence.assertions(reader)["results"]:
-        intelligence.review(writer, row["assertion_id"], "accept", "fixture", "synthetic review")
+        intelligence.review(
+            Database(roles["reviewer"]),
+            row["assertion_id"],
+            "accept",
+            "fixture",
+            "synthetic review",
+        )
     briefing = intelligence.create_briefing(writer, [documents[0]])
     service = ReadService(reader, EvidenceStore(store.root, read_only=True))
 
@@ -391,7 +398,11 @@ def test_native_reader_pages_valid_large_evidence_and_rechecks_full_briefing(
             assert 0 < len(first["items"]) < 3
             assert first["content_scope"] == "briefing_item_page"
             intelligence.review(
-                writer, first["items"][0]["assertion_id"], "reject", "fixture", "withdraw"
+                Database(roles["reviewer"]),
+                first["items"][0]["assertion_id"],
+                "reject",
+                "fixture",
+                "withdraw",
             )
             stale = await client.call_tool(
                 "get_briefing",

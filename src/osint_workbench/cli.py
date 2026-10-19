@@ -370,7 +370,7 @@ def main():
             value = {"schema_version": SCHEMA_VERSION}
         elif args.command == "migrate-retrieval":
             migrate_retrieval(_dsn("OW_MIGRATION_DSN"))
-            value = {"schema_version": SCHEMA_VERSION, "retrieval_schema_version": 4}
+            value = {"schema_version": SCHEMA_VERSION, "retrieval_schema_version": 5}
         elif args.command == "enrich":
             db = (
                 Database(_dsn("OW_WRITER_DSN"))
@@ -465,7 +465,7 @@ def main():
                 value = cloud.settle(db, settlement)
         elif args.command == "review":
             value = intelligence.review(
-                Database(_dsn("OW_WRITER_DSN")),
+                Database(_dsn("OW_REVIEWER_DSN")),
                 args.assertion_id,
                 args.decision,
                 args.actor,

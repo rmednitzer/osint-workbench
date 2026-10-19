@@ -83,7 +83,8 @@ COLUMNS = {
     "assertions": "assertion_id enrichment_id document_id subject predicate object "
     "statement polarity "
     "start_offset end_offset quote",
-    "assertion_reviews": "review_id assertion_id decision actor rationale reviewed_at",
+    "assertion_reviews": "review_id assertion_id decision actor rationale reviewed_at "
+    "authority database_principal",
     "briefings": "briefing_id content created_at",
     "remote_operations": "attempt_id operation_id route_id policy_sha256 task data_class "
     "decision reason packet_sha256 currency reserved status input_tokens output_tokens usage "
@@ -262,13 +263,15 @@ def _state(conn):
     history = recovery._history(conn)
     recovery._full_visibility(conn)
     # Unknown deletion side effects cannot be inferred from the reference schema.
-    # The single reviewed exception is the ledger state-machine trigger: it fires
-    # only BEFORE UPDATE per row (tgtype ROW|BEFORE|UPDATE = 19) on a table purge
-    # never modifies, so it cannot have a deletion side effect.
+    # Reviewed exceptions cannot run on this purge's DELETE operations: the
+    # ledger transition is BEFORE UPDATE (19), review authentication is BEFORE
+    # INSERT (7). Unexpected names or widened events remain refused.
     if conn.execute("""SELECT 1 FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid
         JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='ow'
-        AND NOT t.tgisinternal AND NOT (c.relname='remote_operations'
-          AND t.tgname='remote_operation_transition' AND t.tgtype=19) UNION ALL
+        AND NOT t.tgisinternal AND NOT ((c.relname='remote_operations'
+          AND t.tgname='remote_operation_transition' AND t.tgtype=19)
+          OR (c.relname='assertion_reviews' AND t.tgname='authenticate_review'
+            AND t.tgtype=7)) UNION ALL
         SELECT 1 FROM pg_rewrite w JOIN pg_class c ON c.oid=w.ev_class
         JOIN pg_namespace n ON n.oid=c.relnamespace
         WHERE n.nspname='ow' AND w.rulename<>'_RETURN' UNION ALL

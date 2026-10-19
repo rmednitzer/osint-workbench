@@ -284,7 +284,7 @@ receipt below did. Native unit parsing is a separate, narrower evidence level.
 The enabled-source extension passed at core schema 7 on source
 `064be8bb629a61e50ed9d4708a52a7b13675cb28`, as recorded in the collector receipt.
 That historical receipt preserves failed fixture attempts and their corrections.
-It does not establish service acceptance for the current core schema 11,
+It does not establish service acceptance for the current core schema 12,
 MCP/dependency closure, both LTS runners or this documentation revision. Repeat
 the manual workflow for the intended candidate and retain its observed reports.
 A successor [2026-10-18 service receipt](testing/documentation-service-2026-10-18.json)
@@ -478,3 +478,11 @@ newer schema/dependency changes require fresh manual service acceptance. The
 [core-10 successor receipt](testing/documentation-service-2026-10-18.json) supplies
 that bounded two-LTS evidence for its own named source and wheel, without
 relabeling earlier receipts or proving every subsequent revision.
+
+## Review authority
+
+The reference collection/chunk/health units do not receive reviewer credentials.
+Core 12 requires `OW_REVIEWER_DSN` for the explicit review command; never add that
+secret to a producing worker or reader merely to share configuration. Provision
+and upgrade according to [reviewer authority](reviewer-authority.md). Optional
+retrieval installations must apply profile 5 before current-profile recovery.

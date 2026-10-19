@@ -270,7 +270,9 @@ def assertions(db, *, document_id=None, subject=None, limit=20, offset=0):
 
 
 def review(db, assertion_id, decision, actor, rationale):
-    """Append writer-authorized review; actor is attribution, not authentication."""
+    """Append a database-authenticated review; actor is additional attribution."""
+    from .reviewer import validate_connection
+
     if (
         decision not in {"accept", "reject"}
         or not isinstance(actor, str)
@@ -280,6 +282,7 @@ def review(db, assertion_id, decision, actor, rationale):
     ):
         raise WorkbenchError("INVALID_REVIEW")
     with db.connect() as conn:
+        validate_connection(conn)
         row = conn.execute(
             "SELECT assertion_id FROM ow.current_assertions WHERE assertion_id=%s", (assertion_id,)
         ).fetchone()

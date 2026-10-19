@@ -12,7 +12,7 @@ existing interfaces.
 
 The current package uses a modular, mostly flat Python layout, PostgreSQL and a
 content-addressed evidence root. Its SQL groups separate collector, writer,
-reader, lifecycle, purger and accounting authority from the schema owner. The
+reader, reviewer, lifecycle, purger and accounting authority from the schema owner. The
 writer still combines normal ingest, enrichment, retrieval and selected cloud
 work; a separate credential-holding dispatcher and per-workspace authorization
 are not implemented. Local search can execute its configured encoder/reranker;

@@ -217,7 +217,8 @@ def roles(tmp_path_factory):
                 ).fetchone()
                 == prior_generation
             )
-    writer_password, reader_password, collector_password = (
+    writer_password, reader_password, collector_password, reviewer_password = (
+        secrets.token_urlsafe(32),
         secrets.token_urlsafe(32),
         secrets.token_urlsafe(32),
         secrets.token_urlsafe(32),
@@ -229,6 +230,7 @@ def roles(tmp_path_factory):
             ("ow_test_lifecycle", "ow_lifecycle", writer_password),
             ("ow_test_collector", "ow_collector", collector_password),
             ("ow_test_accounting", "ow_accounting", reader_password),
+            ("ow_test_reviewer", "ow_reviewer", reviewer_password),
         ]:
             exists = conn.execute("SELECT 1 FROM pg_roles WHERE rolname=%s", (role,)).fetchone()
             if not exists:
@@ -243,6 +245,7 @@ def roles(tmp_path_factory):
             )
     values = {
         "admin": dsn,
+        "reviewer": make_conninfo(dsn, user="ow_test_reviewer", password=reviewer_password),
         "writer": make_conninfo(dsn, user="ow_test_writer", password=writer_password),
         "reader": make_conninfo(dsn, user="ow_test_reader", password=reader_password),
         "lifecycle": make_conninfo(dsn, user="ow_test_lifecycle", password=writer_password),

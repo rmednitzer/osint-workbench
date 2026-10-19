@@ -12,7 +12,7 @@ this proves execution/numerical/provenance behavior, not language understanding.
 Install the `retrieval` Python extra. Provision pgvector binaries from a reviewed source in
 PostgreSQL 18, without already installing the extension in another schema. `osint-workbench
 migrate-retrieval` uses the migration-only credential to install the optional extension into a
-dedicated schema and applies retrieval-profile migrations through version 4 on the current core
+dedicated schema and applies retrieval-profile migrations through version 5 on the current core
 schema. The core migration never requires it. An existing extension elsewhere is refused instead
 of silently relocated. This is a new optional schema; do not remove it or downgrade after
 retaining derived records.
@@ -138,3 +138,12 @@ ANN scaling and automatic backfill/caches remain open in the full roadmap.
 API references: [ONNX Runtime](https://onnxruntime.ai/docs/api/python/api_summary.html),
 [Tokenizers](https://huggingface.co/docs/tokenizers/python/latest/api/reference.html),
 [pgvector](https://github.com/pgvector/pgvector).
+
+## Writer update authority
+
+Retrieval migration 5 retains writer INSERT/SELECT behavior but restricts UPDATE
+to `retrieval_generations.status,error_code` and `retrieval_active.generation_id`.
+Generation identity, embedding space, dimensions, corpus digest, creation time and
+the singleton key cannot be rewritten with writer UPDATE. This does not prevent a
+trusted producer from inserting a new generation. Purger authority is unchanged.
+Apply `migrate-retrieval` after a core upgrade; see [ADR-0053](adr/0053-reviewer-database-authority.md).

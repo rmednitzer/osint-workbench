@@ -62,13 +62,14 @@ individual implementation findings and severities. Priority follow-up includes:
 - The misleading mention contract is replaced by explicit proposal-label bindings
   in [ADR-0051](adr/0051-honest-assertion-label-bindings.md). Label-specific spans,
   entity resolution and independently verified semantic support remain future work.
-- Separate reviewer authority from the producing writer; actor strings do not
-  establish an independent reviewer.
+- Separate reviewer SQL authority is implemented in [ADR-0053](adr/0053-reviewer-database-authority.md).
+  Human independence, workspace authorization and operational adoption remain open.
 - Retain native acceptance for byte-budget MCP pagination, literal source-token
   isolation and exact reader-grant validation added by
   [ADR-0045](adr/0045-bounded-operational-profile.md); verify intended assistant
   clients and adopted tokenizer capabilities separately.
-- Narrow retrieval writer UPDATE authority. Enrichment enqueue now reports
+- Retrieval profile 5 narrows writer UPDATE to status/error and the active generation.
+  Enrichment enqueue now reports
   terminal preservation and atomic stored status; broader job producer retry/reset
   contracts remain to be reviewed.
 - Retain revision-bound service acceptance when feed identity or its harness
@@ -81,13 +82,12 @@ claimed failure and preserve existing lifecycle/permission boundaries.
 
 ## Next bounded changes after local API integration
 
-1. Separate reviewer SQL authority and record authenticated database provenance.
-   Preserve historical attribution without relabelling writer reviews as independent;
-   choose the acceptance/requalification policy explicitly. Add an immutable migration,
-   legacy/current checkpoint adoption, direct-writer denial, role-overlap/SET ROLE,
-   revoke, reader-disclosure and cited-product compatibility tests.
-2. Narrow retrieval writer UPDATE grants using actual installed catalog/negative
-   evidence; preserve generation activation, rollback, purge and recovery authority.
+1. Qualify reviewer credential custody and human review procedures in an adopted
+   deployment. [The SQL boundary](reviewer-authority.md) does not establish human
+   independence or per-workspace authorization. Apply core 12/profile 5 and
+   requalify legacy reviews before relying on their cited products.
+2. Preserve the exact retrieval writer column grants through future index,
+   activation, purge and recovery changes; broader producer separation remains open.
 3. Extend explicit enrichment enqueue dispositions to other job producers without replaying
    uncertain local/API/cloud work. Keep intentional new-operation identity separate
    from resuming a fenced attempt or clearing admission.
