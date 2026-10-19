@@ -905,7 +905,8 @@ it does not authorize automatic repair of historical evidence.
 
 
 The ADR-0056 active-generation follow-up extends registry comparison to activation,
-status and hybrid search, including generation dimensions. Search refuses a known
+status and hybrid search, including generation dimensions and canonical JSON identity so equal Python
+boolean/number values cannot hide a typed contract conflict. Search refuses a known
 conflict before native query dispatch, activation retains the old pointer and
 status reports incompatible. A native PostgreSQL fault-injection case preserves
 conflicting metadata and vectors while proving refusal and continued explicit

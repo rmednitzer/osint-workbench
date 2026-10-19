@@ -388,8 +388,9 @@ def test_conflicting_registered_space_refuses_build_without_relabelling(retrieva
         assert conn.execute("SELECT count(*) AS n FROM ow.retrieval_active").fetchone()["n"] == 0
 
 
+@pytest.mark.parametrize("conflict", ["template", "normalized_type"])
 def test_active_registry_conflict_refuses_reads_and_activation_without_repair(
-    retrieval, monkeypatch
+    retrieval, monkeypatch, conflict
 ):
     from psycopg.types.json import Jsonb
 
@@ -408,7 +409,11 @@ def test_active_registry_conflict_refuses_reads_and_activation_without_repair(
     # Reproduce a historical registry mismatch using fixture-admin authority.
     # The application writer cannot update registered manifests.
     manifest = encoder.manifest.model_dump(exclude={"model_path", "tokenizer_path", "threads"})
-    manifest["space"]["query_template"] = "patch {text}"
+    if conflict == "template":
+        manifest["space"]["query_template"] = "patch {text}"
+    else:
+        # Python dict equality accepts 1 == True; canonical model identity must not.
+        manifest["space"]["normalized"] = 1
     with Database(roles["admin"]).connect() as conn:
         conn.execute(
             "UPDATE ow.embedding_spaces SET manifest=%s WHERE space_id=%s",

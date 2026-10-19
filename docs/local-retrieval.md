@@ -123,7 +123,7 @@ PostgreSQL statement timeouts; no ANN performance claim is made.
 The build retains immutable document IDs and model identity. Activation requires ready state,
 compatible encoder identity and registered manifest/dimensions, matching current document set and exactly one disposition for every
 member: vectors or a recorded exclusion. Hybrid search checks the same registered
-manifest/dimensions before query inference; a conflict reports
+manifest's canonical identity and dimensions before query inference; a conflict reports
 `INCOMPATIBLE_EMBEDDING_SPACE` and status reports `incompatible`. The existing
 active pointer, registry and vectors stay retained; no automatic repair or fallback
 follows. A metadata match cannot establish historical vector-producer custody.

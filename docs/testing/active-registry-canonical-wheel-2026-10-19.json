@@ -1,0 +1,20 @@
+{
+  "format": "osint-workbench-active-registry-canonical-wheel-review-v1",
+  "date": "2026-10-19",
+  "baseline_commit": "9eba3aee344d1c5021d2483da52539db7832b051",
+  "previous_wheel_sha256": "364f23abde954e2b2366dcf34447309a4eb2a1e7669d0e850d4dd8912b029818",
+  "candidate_wheel_sha256": "a70a89ff06b5c2063314aea91db0e184312f51f7339fa7a22c7fc36f4786e47a",
+  "lock_sha256": "b5a4684da62a5a3457e445595fc4bbd867ad4db81f3da74adcde00f4d66c62c9",
+  "changed_members": [
+    "osint_workbench-0.1.0.dev1.dist-info/RECORD",
+    "osint_workbench/vector_index.py"
+  ],
+  "metadata_and_licence_bytes_unchanged": true,
+  "elf_members": 0,
+  "legal_approval": false,
+  "limits": [
+    "Canonical JSON digest uses the encoder identity rule and distinguishes booleans/numbers; no historical vector-producer qualification.",
+    "Exact required native PostgreSQL acceptance belongs to the current PR/main revision, not the superseded candidate.",
+    "No schema, dependency, authority or automatic repair change."
+  ]
+}

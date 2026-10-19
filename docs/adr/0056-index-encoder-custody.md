@@ -90,14 +90,18 @@ The initial registry guard covered new builds only. Activation and hybrid reads
 still trusted a matching space key and ready status, so a historical metadata
 conflict could remain usable. Reuse one comparison for build registration,
 activation, status and search: generation dimensions and the registered manifest
-and dimensions must match the owned encoder contract. Activation/search refuse a
+and dimensions must match the owned encoder contract. Compare the registered
+manifest's canonical JSON digest with the captured space identity, using the same
+serialization rule as EncoderManifest.identity; ordinary Python dictionary equality
+would conflate JSON booleans and numbers. Activation/search refuse a
 conflict with INCOMPATIBLE_EMBEDDING_SPACE before native query inference or pointer
 publication; status reports incompatible. No registry, vector or active pointer is
 rewritten by refusal. Existing reader/writer SELECT grants suffice; no migration
 or new authority is needed.
 
 A real PostgreSQL/ONNX case first establishes a working generation, then introduces
-a conflicting registry manifest with fixture-admin authority. It requires typed
+a conflicting registry manifest with fixture-admin authority, covering both a
+changed template and numeric substitution for the normalization boolean. It requires typed
 activation/search refusal, incompatible status, zero late query dispatch and
 unchanged metadata, vectors and active pointer; explicit lexical reads remain
 available. This detects known metadata conflicts only. Matching metadata cannot

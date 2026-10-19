@@ -140,12 +140,12 @@ class VectorIndex:
             "SELECT manifest,dimensions FROM ow.embedding_spaces WHERE space_id=%s",
             (self.space_id,),
         ).fetchone()
-        return registered == {
-            "manifest": self.encoder.manifest.model_dump(
-                exclude={"model_path", "tokenizer_path", "threads"}
-            ),
-            "dimensions": expected,
-        }
+        # Canonical identity distinguishes JSON booleans from equal Python ints.
+        return (
+            registered is not None
+            and registered["dimensions"] == expected
+            and digest(json.dumps(registered["manifest"], sort_keys=True).encode()) == self.space_id
+        )
 
     def build(self, store: EvidenceStore):
         with self.db.connect() as conn:

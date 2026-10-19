@@ -2234,7 +2234,7 @@
     {
       "name": "osint-workbench",
       "filename": "osint_workbench-0.1.0.dev1-py3-none-any.whl",
-      "sha256": "364f23abde954e2b2366dcf34447309a4eb2a1e7669d0e850d4dd8912b029818"
+      "sha256": "a70a89ff06b5c2063314aea91db0e184312f51f7339fa7a22c7fc36f4786e47a"
     },
     {
       "name": "packaging",
