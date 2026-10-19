@@ -52,9 +52,13 @@ class LocalReranker:
             for row in candidates
         ):
             raise WorkbenchError("INVALID_RERANK_INPUT")
+        try:
+            manifest = RerankerManifest.model_validate_json(self.manifest.model_dump_json())
+        except (ValueError, TypeError):
+            raise WorkbenchError("RERANK_CONFIGURATION_INVALID") from None
         packet = json.dumps(
             {
-                "manifest": self.manifest.model_dump(),
+                "manifest": manifest.model_dump(),
                 "query": query,
                 "texts": [r["excerpt"] for r in candidates],
             }
@@ -68,7 +72,7 @@ class LocalReranker:
                     stderr=subprocess.DEVNULL,
                     timeout=45,
                     env={
-                        "OMP_NUM_THREADS": str(self.manifest.threads),
+                        "OMP_NUM_THREADS": str(manifest.threads),
                         "OPENBLAS_NUM_THREADS": "1",
                         "TOKENIZERS_PARALLELISM": "false",
                         PARENT_ENV: str(os.getpid()),

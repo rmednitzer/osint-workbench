@@ -902,3 +902,21 @@ generation insertion/native work in the registration transaction. Native cases
 retain the original row and assert zero new generations/active pointers. This
 prevents a safe rebuild command from silently inheriting inconsistent metadata;
 it does not authorize automatic repair of historical evidence.
+
+
+## Production read reranker custody: ADR-0057
+
+SC2/SC4 and C9/C12 also constrain the identity returned with ranked read results.
+A caller-owned mutable reranker could change scoring configuration after service
+construction, and its reported identity could describe configuration different
+from the child packet. The read service now owns a validated built-in client and
+captured identity. Each rank call independently validates one manifest snapshot
+before admission and derives packet and thread environment from it.
+
+Installed native tests mutate configuration at admission while executing the real
+ONNX child, and refuse invalid configuration before admission. PostgreSQL search
+retains original identity and exact scores after caller mutation; existing MCP
+transport coverage also exercises the reranked search response. The seven-read
+surface, lifecycle fence and native admission/resource limits remain unchanged.
+Historical responses are not requalified, and privileged in-process mutation,
+pretrained relevance and workspace authorization remain outside this guarantee.

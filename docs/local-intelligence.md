@@ -150,7 +150,20 @@ input token budget and thread limit. The model must accept int64 IDs, optional m
 and token type IDs, and produce one score or a class-logit row. Template processing
 belongs to the supplied tokenizer JSON. The adapter disables truncation, verifies
 files and shapes, rejects nonfinite values and uses bounded CPU child execution with
-shared admission. It returns raw ordering scores, never confidence or probability.
+shared admission. Each call revalidates a complete manifest snapshot before admission
+and uses it for both the child packet and thread environment. Invalid configuration
+reports `RERANK_CONFIGURATION_INVALID` without starting native work. It returns raw
+ordering scores, never confidence or probability.
+
+The read service revalidates and owns a built-in reranker and its reported identity
+at construction, as specified in [ADR-0057](adr/0057-read-reranker-custody.md).
+Changing the caller's manifest or client later cannot reconfigure that service;
+construct a new service to adopt a reviewed configuration. Custom caller adapter
+and instance overrides are not carried into the owned client. Reader grant and
+read-only-store checks still precede this configuration setup. This does not freeze
+direct clients globally or sandbox privileged mutation of service internals.
+Artifact bytes are still checked in the child on every call; ownership does not
+lease files or qualify pretrained relevance.
 
 Search reranks up to 32 configured lexical/hybrid candidates, using each candidate's
 first 1000 original code points. The returned `rerank_input` makes that partial-text

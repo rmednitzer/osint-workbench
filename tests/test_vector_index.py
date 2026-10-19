@@ -119,13 +119,15 @@ def test_failed_generation_does_not_replace_active_and_reader_cannot_write(retri
             conn.execute("REVOKE UPDATE ON ow.retrieval_active FROM ow_test_reader")
 
 
-def test_hybrid_search_through_real_mcp_transport(retrieval, tmp_path):
+def test_hybrid_search_through_real_mcp_transport(retrieval, reranker_bundle, tmp_path):
     writer, _, roles, store, encoder = retrieval
     index = VectorIndex(writer, encoder)
     generation = index.build(store)
     index.activate(generation["generation_id"])
     manifest = tmp_path / "encoder.json"
     manifest.write_text(encoder.manifest.model_dump_json())
+    reranker_manifest = tmp_path / "reranker.json"
+    reranker_manifest.write_text(reranker_bundle.manifest.model_dump_json())
 
     async def run():
         env = {
@@ -133,6 +135,7 @@ def test_hybrid_search_through_real_mcp_transport(retrieval, tmp_path):
             "OW_READER_DSN": roles["reader"],
             "OW_EVIDENCE_ROOT": str(store.root),
             "OW_ENCODER_MANIFEST": str(manifest),
+            "OW_RERANKER_MANIFEST": str(reranker_manifest),
         }
         params = StdioServerParameters(
             command=sys.executable, args=["-m", "osint_workbench.cli", "mcp"], env=env
@@ -142,7 +145,9 @@ def test_hybrid_search_through_real_mcp_transport(retrieval, tmp_path):
             result = await session.call_tool("search_documents", {"query": "disk"})
             assert not result.is_error
             value = json.loads(result.content[0].text)
-            assert value["strategy"] == "hybrid-exact"
+            assert value["strategy"] == "hybrid-exact-reranked"
+            assert value["reranker_id"] == reranker_bundle.manifest.identity()
+            assert [row["rerank_score"] for row in value["results"]] == [2.0, -2.0]
             assert value["generation_id"] == generation["generation_id"]
             document = await session.call_tool(
                 "get_document", {"document_id": value["results"][0]["document_id"]}
@@ -160,7 +165,14 @@ def test_actual_hybrid_rerank_integration(retrieval, reranker_bundle):
     service = ReadService(
         reader, EvidenceStore(store.root, read_only=True), encoder=encoder, reranker=reranker_bundle
     )
+    original = reranker_bundle.manifest.identity()
+    reranker_bundle.manifest.output_name = "caller_changed_output"
+    reranker_bundle.manifest.threads = 0
     value = service.search("vulnerability")
+    assert value["reranker_id"] == original
+    assert reranker_bundle.manifest.identity() != original
+    with pytest.raises(WorkbenchError, match="^RERANK_CONFIGURATION_INVALID$"):
+        ReadService(reader, EvidenceStore(store.root, read_only=True), reranker=reranker_bundle)
     assert value["strategy"] == "hybrid-exact-reranked"
     assert value["results"][0]["rerank_score"] == 2.0
     assert value["results"][1]["rerank_score"] == -2.0

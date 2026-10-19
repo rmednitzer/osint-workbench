@@ -10,7 +10,20 @@ class ReadService:
         if not store.read_only:
             raise ValueError("reader requires a read-only store")
         self.db, self.store = db, store
-        self.reranker = reranker
+        self.reranker = None
+        self.reranker_id = None
+        if reranker is not None:
+            from .local_reranker import LocalReranker, RerankerManifest
+
+            if not isinstance(reranker, LocalReranker):
+                raise WorkbenchError("RERANK_CONFIGURATION_INVALID")
+            try:
+                manifest = RerankerManifest.model_validate_json(reranker.manifest.model_dump_json())
+            except (ValueError, TypeError):
+                raise WorkbenchError("RERANK_CONFIGURATION_INVALID") from None
+            # Search output and native scoring share an owned configuration.
+            self.reranker = LocalReranker(manifest)
+            self.reranker_id = manifest.identity()
         self.index = None
         if encoder is not None:
             from .vector_index import VectorIndex
@@ -44,7 +57,7 @@ class ReadService:
             return {
                 **result,
                 "strategy": result["strategy"] + "-reranked",
-                "reranker_id": self.reranker.manifest.identity(),
+                "reranker_id": self.reranker_id,
                 "rerank_input": "first_1000_codepoints",
                 "candidate_limit": 32,
                 "results": ranked[offset : offset + limit],
