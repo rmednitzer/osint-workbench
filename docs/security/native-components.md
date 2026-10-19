@@ -7,6 +7,12 @@ empty-set archive identity changes, while every third-party variant and all 147
 native proof entries remain unchanged relative to the named baseline. Empty sets
 do not establish external/native dependency closure.
 
+The [credential-output successor](../testing/readme-alignment-secret-successor-2026-10-19.json)
+advances the application archive after inspecting all members of the next wheel.
+Only `cloud.py` and RECORD differ from the first candidate, with no ELF objects.
+All third-party variants, 147 native proof entries and unresolved closure outcomes
+remain unchanged; the prior application receipt remains historical.
+
 This policy inventories ELF objects belonging to the 47 locked Python runtime
 plus retrieval distributions on supported Linux x86_64 profiles. It adds a binary
 evidence check alongside the distribution inventory, SBOM and licence-text review.

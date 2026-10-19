@@ -111,3 +111,14 @@ waiting for the advisory transaction lock. It also makes content-purge plan
 inventory work with retained attempt/settlement rows. The route's declared
 policy facts, conservative estimates and synthetic provider fixtures remain
 separate from independently verified sovereignty, provider usage or invoices.
+
+## Credential-output refinement (2026-10-19)
+
+The adapter refuses the active dispatch credential in decoded typed output
+before assertion acceptance, including literal and JSON-escaped echoes. A fixed
+`REMOTE_CREDENTIAL_REFLECTED` error terminates the application job while the
+remote attempt remains completed and retains reported usage or reserved exposure.
+This narrows unsafe output acceptance under the existing disclosure/accounting
+contract; it adds no route, authority or automatic replay. It is not general DLP
+or detection of arbitrary secret encodings. Candidate native fixture results
+must be revision-bound; prior receipts do not inherit this correction.

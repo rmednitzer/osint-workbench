@@ -623,6 +623,21 @@ def post_json(url, body: bytes, headers, deadline, max_bytes=MAX_RESPONSE_BYTES)
         raise WorkbenchError("REMOTE_OUTCOME_UNKNOWN") from None
 
 
+def _credential_reflected(output, secret):
+    """Inspect decoded typed output; not detection of arbitrary secret encodings."""
+    pending = [output]
+    while pending:
+        value = pending.pop()
+        if isinstance(value, str) and secret in value:
+            return True
+        if isinstance(value, dict):
+            pending.extend(value.keys())
+            pending.extend(value.values())
+        elif isinstance(value, list):
+            pending.extend(value)
+    return False
+
+
 class GovernedGenerator:
     """A remote route presented through the local generator interface."""
 
@@ -713,6 +728,10 @@ class GovernedGenerator:
             )
             raise WorkbenchError("REMOTE_OUTCOME_UNKNOWN") from None
         outcome, code, fields, output, text_sha = self._classify(status, content, schema, len(body))
+        if output is not None and _credential_reflected(output, credential.get_secret_value()):
+            # The remote operation completed and may be billed. Preserve its
+            # usage/exposure; refuse the application effect, never replay it.
+            code, output, text_sha = "REMOTE_CREDENTIAL_REFLECTED", None, None
         recorded = fields.pop("error_code", code)
         self.ledger.transition(attempt, "dispatched", outcome, error_code=recorded, **fields)
         if code is not None:

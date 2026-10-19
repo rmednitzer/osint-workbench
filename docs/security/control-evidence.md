@@ -56,6 +56,14 @@ inputs; growth and exact-byte/Unicode cases preserve the valid boundary.
 Regular-file I/O still has no physical deadline, and parent custody remains an
 operator assumption.
 
+A synthetic provider-echo probe also found that schema-valid output could return
+the active dispatch credential. The successor checks decoded typed strings/keys
+before accepting application effects, retaining the completed attempt's usage or
+reservation and fixed refusal diagnostic. [Credential tests](../../tests/test_cloud_credentials.py)
+cover all credential channels, literal/JSON-escaped echoes and actual native
+TLS/ledger/assertion/retry boundaries. This is an exact active-token backstop;
+arbitrary encodings, other secrets and general DLP remain outside the guarantee.
+
 ## Lifecycle, supply chain and unresolved assurance
 
 NIST SSDF SP 800-218 **v1.1** remains the adopted lifecycle reference [S2](../references.md#s2).

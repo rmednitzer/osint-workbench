@@ -760,3 +760,20 @@ These are discrete admission actions. The guards do not impose physical
 regular-file I/O deadlines, verify parent-directory custody or establish a
 filesystem sandbox. Supervision and the rest of the tick's deadlines remain
 separate controls. Full-scenario acceptance remains open.
+
+## Active cloud credential reflection refinement
+
+CA12/CA15 must not treat a schema-valid remote response as safe application data
+when it echoes the active dispatch secret. Under SC1/SC3/SC7 and existing C8/C96/
+C98, typed output strings and keys are checked after JSON decoding and before
+assertion acceptance. Refusal emits only `REMOTE_CREDENTIAL_REFLECTED`; the
+completed remote attempt preserves reported usage or reserved exposure and the
+failed job is not replayed. Native TLS, ledger and zero-assertion cases include
+literal/escaped echoes and reported/missing usage, alongside all credential
+channels. The process-model error is equating valid schema with safe disclosure,
+or treating refused application output as zero-cost remote non-execution.
+
+No operational leak is established by the synthetic counterexample. This
+backstop detects exact active-token occurrences, not arbitrary encodings, other
+secrets or all personal information. Source classification and independently
+accepted provider/data policies remain separate prerequisites.

@@ -95,6 +95,13 @@ format 2 and 50 ADRs are unchanged by this increment.
    `uv.lock`. That application-only field is removed; `reviewed_archives` retains
    the inspected local-wheel identity. Third-party locked/archive evidence is
    unchanged.
+7. **Cloud credential echo:** a synthetic complete provider response could return
+   the active API credential as schema-valid output. The successor refuses exact
+   active-token occurrences after output decoding, including JSON escapes, before
+   assertion acceptance. It preserves completed-attempt accounting and prevents
+   automatic replay. Native TLS/ledger cases require zero accepted assertions
+   and unchanged reported-cost or reserved exposure. No operational leak or
+   arbitrary-secret/DLP coverage is claimed.
 
 The input correction allocates to existing SC3/SC6 and C7/C45, with fixed sanitized
 feedback under SC1/SC2. No new authority, endpoint, automatic model selection or
@@ -117,11 +124,14 @@ refreshing the application's evidence hashes. Preserve third-party evidence,
 shipped licence bytes, dependency lock, SQL migration bytes, schema/profile bounds
 and unresolved legal outcomes. Only reviewed application bytes may be rebound.
 
-The [actual wheel comparison](readme-alignment-wheel-2026-10-19.json) records the
-baseline/candidate hashes and all changed members. Only `cli.py`, METADATA and
-RECORD change; licence text and metadata headers match, and every archive member
-was checked for ELF magic. This archive inspection does not establish full
-native closure or replace installed/native acceptance.
+The [initial wheel comparison](readme-alignment-wheel-2026-10-19.json) records
+the first candidate's hashes and changed members: only `cli.py`, METADATA and
+RECORD changed from the review baseline. The
+[credential-output successor](readme-alignment-secret-successor-2026-10-19.json)
+then changes only `cloud.py` and RECORD relative to that first candidate;
+METADATA and licence bytes match. Every member of both archives was checked for
+ELF magic. These inspections do not establish full native closure or replace
+installed/native acceptance. The initial published JSON receipt remains intact.
 
 Rollback is a protected source revert/rebuild of the input reader and current
 documentation, accompanied by matching application-wheel evidence. No data

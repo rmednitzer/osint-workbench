@@ -57,6 +57,11 @@ its explicitly selected local generator or cloud route identity. Other job kinds
 remain queued. Character chunks preserve offsets but are not the token-aware
 chunks used by the optional retrieval profile.
 
+Governed cloud output refuses exact active-credential reflection after JSON
+decoding and before assertion acceptance. The completed remote attempt preserves
+usage/exposure and a fixed error; arbitrary encoded-secret detection and general
+data-loss prevention are not established. See [cloud routes](docs/cloud-routes.md).
+
 ## Verified baseline and evidence scope
 
 The OAuth service candidate `a567d10a72d3830fde2cffb57e3e0745f1bc4c0a` passed

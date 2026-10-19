@@ -185,3 +185,10 @@ change; metadata headers and the shipped Apache-2.0 text match. The own-project
 metadata and reviewed archive identity are updated after inspection. Third-party
 evidence/dispositions and the lock remain unchanged relative to this successor's
 named baseline; this is not new legal or native-closure approval.
+
+The [credential-output successor](../testing/readme-alignment-secret-successor-2026-10-19.json)
+compares the next actual wheel with that first candidate: only `cloud.py` and
+RECORD change. METADATA and shipped licence bytes match exactly. The reviewed
+application archive identity advances; its metadata evidence and every
+third-party evidence/disposition remain unchanged. The earlier receipt retains
+its original wheel identity.
