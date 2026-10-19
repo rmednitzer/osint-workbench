@@ -1,0 +1,154 @@
+name: Verify installed profile
+on:
+  workflow_call:
+    inputs:
+      runner:
+        required: true
+        type: string
+      ubuntu:
+        required: true
+        type: string
+      python:
+        required: true
+        type: string
+      artifact-prefix:
+        type: string
+        default: build-evidence
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 20
+    env:
+      PROFILE_PYTHON: ${{ inputs.python }}
+      PROFILE_UBUNTU: ${{ inputs.ubuntu }}
+      PROFILE_RUNNER: ${{ inputs.runner }}
+      ARTIFACT_PREFIX: ${{ inputs.artifact-prefix }}
+    services:
+      postgres:
+        image: pgvector/pgvector:pg18@sha256:2358fcba361ed2233a5ed81b5fe4ca779ccb304120ce531a3bf51c0ed7e2bc11
+        env:
+          POSTGRES_DB: ow_test
+          POSTGRES_USER: postgres
+          # Ephemeral fixture only; never connect operational accounts or data.
+          POSTGRES_PASSWORD: ci-fixture-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d ow_test"
+          --health-interval 5s --health-timeout 3s --health-retries 12
+    steps:
+      - name: Validate the requested profile
+        run: |
+          python3 -I - <<'PYTHON'
+          import os
+          profile = tuple(os.environ[key] for key in
+                          ('PROFILE_RUNNER', 'PROFILE_UBUNTU', 'PROFILE_PYTHON', 'ARTIFACT_PREFIX'))
+          allowed = {
+              ('ubuntu-24.04', '24.04', '3.12', 'build-evidence'),
+              ('ubuntu-26.04', '26.04', '3.14', 'build-evidence'),
+              ('ubuntu-24.04', '24.04', '3.13', 'compatibility-evidence'),
+          }
+          if profile not in allowed:
+              raise SystemExit('VERIFICATION_PROFILE_REFUSED')
+          PYTHON
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: "0.13.1"
+          prune-cache: true
+      - run: uv sync --locked --extra retrieval --python "$PROFILE_PYTHON"
+      - name: Assert the selected OS and Python runtime
+        env:
+          EXPECTED_UBUNTU: ${{ inputs.ubuntu }}
+          EXPECTED_PYTHON: ${{ inputs.python }}
+        run: |
+          . /etc/os-release
+          test "$ID" = ubuntu && test "$VERSION_ID" = "$EXPECTED_UBUNTU"
+          .venv/bin/python -c 'import os,platform,sys; assert platform.python_implementation() == "CPython"; assert f"{sys.version_info.major}.{sys.version_info.minor}" == os.environ["EXPECTED_PYTHON"]; print(sys.version)'
+      - run: .venv/bin/ruff check . && .venv/bin/ruff format --check .
+      - run: .venv/bin/python scripts/check_static.py
+      - name: Identify native TLS prerequisites
+        run: |
+          openssl version
+          .venv/bin/python -c 'import ssl; print("PYTHON_TLS=" + ssl.OPENSSL_VERSION)'
+      - run: .venv/bin/python scripts/check_publication.py
+      - name: Build and identify artifacts
+        run: |
+          uv build --python "$PROFILE_PYTHON" --build-constraints build-constraints.txt --require-hashes
+          sha256sum uv.lock dist/*.whl dist/*.tar.gz
+      # This is a source-archive download, including upstream vocabulary fixtures.
+      # Acceptance generates synthetic weights; no pretrained inference weights.
+      - name: Prepare pinned native CPU test dependency
+        run: |
+          .venv/bin/python scripts/prepare_native.py --output /tmp/ow-native-source
+          .venv/bin/cmake -S /tmp/ow-native-source/llama.cpp-620d2225cc436ab0b001e3200e590e3b286ef9ab -B /tmp/ow-native-build -DGGML_NATIVE=OFF -DGGML_OPENMP=OFF -DLLAMA_CURL=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_OPENSSL=OFF -DLLAMA_BUILD_UI=OFF -DLLAMA_USE_PREBUILT_UI=OFF -DGGML_CCACHE=OFF -DCMAKE_BUILD_TYPE=Release
+          .venv/bin/cmake --build /tmp/ow-native-build --target llama-server -j 2
+      - name: Verify the core without optional inference dependencies
+        run: |
+          uv venv /tmp/ow-core --python "$PROFILE_PYTHON"
+          uv export --locked --no-dev --no-emit-project --output-file /tmp/ow-core-requirements.txt > /dev/null
+          uv pip sync --python /tmp/ow-core/bin/python --require-hashes /tmp/ow-core-requirements.txt
+          uv pip install --python /tmp/ow-core/bin/python --no-deps dist/*.whl
+          /tmp/ow-core/bin/python -c 'import importlib.util; assert importlib.util.find_spec("onnxruntime") is None; assert importlib.util.find_spec("tokenizers") is None'
+          /tmp/ow-core/bin/osint-workbench collect --config config/sources.example.json > /tmp/ow-empty.json
+          /tmp/ow-core/bin/python -c 'import json; assert json.load(open("/tmp/ow-empty.json")) == {"status": "unconfigured", "sources": 0}'
+      # Native SQL/model/HTTP tests run here; privileged systemd acceptance is manual.
+      - name: Install and test the built wheel
+        env:
+          OW_TEST_LLAMA_BIN: /tmp/ow-native-build/bin/llama-server
+          OW_TEST_RETRIEVAL: "1"
+          OW_TEST_ADMIN_DSN: postgresql://postgres:ci-fixture-only@127.0.0.1:5432/ow_test
+        run: |
+          uv venv /tmp/ow-installed --python "$PROFILE_PYTHON"
+          uv export --locked --extra retrieval --no-emit-project --output-file /tmp/ow-test-requirements.txt > /dev/null
+          uv pip sync --python /tmp/ow-installed/bin/python --require-hashes /tmp/ow-test-requirements.txt
+          uv pip install --python /tmp/ow-installed/bin/python --no-deps dist/*.whl
+          /tmp/ow-installed/bin/python -c 'import osint_workbench; assert "site-packages" in osint_workbench.__file__'
+          /tmp/ow-installed/bin/python -m pytest --require-integration --import-mode=importlib
+      - name: Verify packaged file selection
+        run: .venv/bin/python scripts/check_publication.py --artifacts dist
+      # Evidence is generated and retained only after installed tests and package scans pass.
+      - name: Prepare the runtime inventory environment
+        run: |
+          uv venv /tmp/ow-evidence --python "$PROFILE_PYTHON"
+          uv export --locked --extra retrieval --no-dev --no-emit-project --output-file /tmp/ow-evidence-requirements.txt > /dev/null
+          uv pip sync --python /tmp/ow-evidence/bin/python --require-hashes /tmp/ow-evidence-requirements.txt
+          uv pip install --python /tmp/ow-evidence/bin/python --no-deps dist/*.whl
+      - name: Generate and verify build evidence
+        env:
+          OW_EVIDENCE_COMMIT: ${{ github.sha }}
+          OW_EVIDENCE_OS: ubuntu-${{ inputs.ubuntu }}
+          OW_EVIDENCE_PYTHON: ${{ inputs.python }}
+          OW_EVIDENCE_RUN_ID: ${{ github.run_id }}
+          OW_EVIDENCE_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          export OW_EVIDENCE_TREE="$(git rev-parse HEAD^{tree})"
+          /tmp/ow-evidence/bin/python scripts/build_evidence.py generate --artifacts dist --output /tmp/ow-pre-evidence
+          .venv/bin/python scripts/check_sbom.py generate --python /tmp/ow-evidence/bin/python --manifest /tmp/ow-pre-evidence/manifest.json --output assurance/sbom.cdx.json
+          /tmp/ow-evidence/bin/python scripts/check_licences.py --policy docs/security/dependency-licences.json --output assurance/licence-review.json
+          .venv/bin/python scripts/check_native.py generate --python /tmp/ow-evidence/bin/python --manifest /tmp/ow-pre-evidence/manifest.json --policy docs/security/native-components.json --output assurance/native-review.json
+          /tmp/ow-evidence/bin/python scripts/build_notices.py generate --policy docs/security/dependency-licences.json --output assurance/missing-wheel-notices.txt
+          /tmp/ow-evidence/bin/python scripts/build_evidence.py generate --artifacts dist --supplements assurance --output build-evidence
+          /tmp/ow-evidence/bin/python scripts/build_evidence.py verify --artifacts dist --supplements assurance --output build-evidence
+          .venv/bin/python scripts/check_sbom.py verify --python /tmp/ow-evidence/bin/python --manifest build-evidence/manifest.json --output assurance/sbom.cdx.json
+          .venv/bin/python scripts/check_native.py verify --python /tmp/ow-evidence/bin/python --manifest build-evidence/manifest.json --policy docs/security/native-components.json --output assurance/native-review.json
+          /tmp/ow-evidence/bin/python scripts/build_notices.py verify --policy docs/security/dependency-licences.json --output assurance/missing-wheel-notices.txt
+          .venv/bin/python scripts/check_publication.py --evidence assurance --evidence build-evidence
+      - name: Retain the tested distributions and public evidence
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ inputs.artifact-prefix }}-${{ inputs.runner }}-python${{ inputs.python }}-${{ github.sha }}
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
+            build-evidence/*
+            assurance/sbom.cdx.json
+            assurance/licence-review.json
+            assurance/native-review.json
+            assurance/missing-wheel-notices.txt
+          if-no-files-found: error
+          retention-days: 30

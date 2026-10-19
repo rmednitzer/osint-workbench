@@ -1,6 +1,6 @@
 # ADR-0039: Adopt MCP SDK v2 with explicit read and telemetry boundaries
 
-Status: ACCEPTED. Date: 2026-10-18.
+Status: ACCEPTED; runtime qualification partly superseded by ADR-0050. Date: 2026-10-18.
 
 ## Context and decision criteria
 
@@ -85,3 +85,10 @@ Public provenance remains immutable historical evidence.
 Primary references: [SDK migration](https://py.sdk.modelcontextprotocol.io/whats-new/),
 [SDK release files](https://pypi.org/project/mcp/2.3.0/) and
 [upstream native releases](https://github.com/ggml-org/llama.cpp/releases).
+
+## Runtime qualification successor (2026-10-19)
+
+[ADR-0050](0050-required-lts-and-optional-python-profiles.md) supersedes the
+three-profile merge/signing requirement with two native LTS profiles and separate
+optional interpreter diagnostics. Earlier runtime fixes and source-bound evidence
+remain valid for their named revisions. Package bounds remain `>=3.12,<3.15`.

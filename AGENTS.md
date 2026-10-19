@@ -89,7 +89,9 @@ custody and recovery follow [the host-local protocol](docs/inference-marker-safe
 
 Dependency changes follow [the maintenance policy](docs/repository-maintenance.md).
 The [runtime policy](docs/runtime-support.md) requires full installed/native tests
-for both LTS defaults and intermediate 3.13, plus separate real-service acceptance.
+for both LTS defaults, plus separate real-service acceptance. Intermediate 3.13
+uses the optional workflow; 3.15 is a manual dependency-only probe, not declared
+application support. Optional results never replace required LTS evidence.
 Renovate proposes changes; it does not approve compatibility, rewrite supported
 Python bounds or regenerate the hashed build closure implicitly.
 
