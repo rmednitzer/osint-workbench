@@ -166,3 +166,11 @@ native obligations above. [Supplementary notices](supplementary-notices.md)
 retain the exact two upstream texts separately. Those files supplement this
 project's source and retained evidence; they do not modify the publisher wheels
 or establish that all applicable NOTICE/source material has been collected.
+
+The [runtime CI policy successor](../testing/runtime-ci-policy-2026-10-19.json)
+updates the reviewed application wheel identity after README changes. Comparison
+with the prior wheel finds only METADATA and RECORD changed; all application
+source and shipped licence bytes match. Every ZIP member was inspected for ELF
+magic; the application's explicit empty set and all 147 native proof entries
+remain unchanged. Dependency versions, lock identity and existing unresolved
+notice/native obligations are unchanged.

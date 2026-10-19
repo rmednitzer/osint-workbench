@@ -727,3 +727,17 @@ The AS and resource remain separate trust boundaries even when privately
 configured at one origin. Requested/returned scope is checked, but opaque-token
 issuer/audience validation and remote enforcement are not invented locally.
 Failure preserves prior accepted evidence and does not silently retry.
+
+## Required runtime evidence refinement (ADR-0050)
+
+SC5 and U12 apply to the declared required qualification set: 24.04/3.12 and
+26.04/3.14. The release controller must reject a missing, failed, cancelled or
+skipped required profile. Optional 3.13 evidence cannot replace either LTS set,
+and optional/experimental artifacts are excluded from the isolated signer's
+exact same-run set. Optional failures remain observable in their own workflow;
+they are not converted into successful qualification. A dependency-only 3.15
+probe cannot establish application support or widen installation bounds.
+Discriminating checks execute the aggregate/profile-admission/signer scripts
+against missing required, extra optional, substituted-runtime and corrupted-byte
+fixtures; actual GitHub runs separately exercise required and optional routing.
+See [ADR-0050](../adr/0050-required-lts-and-optional-python-profiles.md).

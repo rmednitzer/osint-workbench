@@ -1,6 +1,6 @@
 # ADR-0035: Test the native Python versions of both Ubuntu LTS targets
 
-Status: ACCEPTED. Date: 2026-10-17.
+Status: ACCEPTED; runtime qualification partly superseded by ADR-0050. Date: 2026-10-17.
 
 ## Context and decision drivers
 
@@ -61,3 +61,10 @@ preserving this three-profile runtime matrix. The unchanged-native-source
 statement above describes this runtime-support increment only; it is not a
 policy freezing all later candidates to that source. New candidates require
 their own installed/native and service receipts.
+
+## Runtime qualification successor (2026-10-19)
+
+[ADR-0050](0050-required-lts-and-optional-python-profiles.md) supersedes the
+three-profile merge/signing requirement with two native LTS profiles and separate
+optional interpreter diagnostics. Earlier runtime fixes and source-bound evidence
+remain valid for their named revisions. Package bounds remain `>=3.12,<3.15`.

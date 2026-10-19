@@ -100,7 +100,11 @@ Main/PR/manual foundation CI has bounded timeouts and cancels superseded runs fo
 the same PR/ref. Branch pushes without a PR do not run a duplicate native build.
 Required checks are `repository-policy`, `renovate-policy` and
 `installed-artifact`. The latter aggregates all required Ubuntu/Python native
-matrix jobs and fails on incomplete matrix work; see [runtime support](runtime-support.md).
+matrix jobs (24.04/3.12 and 26.04/3.14) and fails on incomplete required work;
+see [runtime support](runtime-support.md). Both call one same-commit reusable
+verifier. The separate weekly/manual 3.13 compatibility workflow has no signing
+permission or required-check dependency; its distinct artifacts are not admitted
+by the LTS signer. A manual 3.15 dependency-only probe does not extend support.
 Public diagnostics remain explicit manual activities;
 concurrency queues them rather than terminating a running supervised fixture.
 

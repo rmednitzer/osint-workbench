@@ -7,8 +7,10 @@ credentials, identifiers, prompts or operational/model/provider responses.
 
 ## Development checks
 
-The minimum is CPython 3.12. Required full native CI covers 24.04/3.12,
-24.04/3.13 and 26.04/3.14; see [runtime support](docs/runtime-support.md).
+The minimum is CPython 3.12. Required full native CI covers 24.04/3.12 and
+26.04/3.14. Optional weekly/manual 3.13 compatibility and manual 3.15 dependency
+probes are separate from merge/signing requirements; see
+[runtime support](docs/runtime-support.md).
 The commands below use 3.12; reproduce the relevant CI profile with its interpreter.
 PostgreSQL integration targets PostgreSQL 18 with pgvector. Use the uv version
 pinned in the workflow when reproducing CI.
