@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "review_date": "2026-10-18",
+  "review_date": "2026-10-19",
   "scope": "RECORD-listed ELF file-set identity; standard CPython3.12-3.14 manylinux x86_64 and compatible ABI3; no native dependency closure or legal approval",
-  "lock_sha256": "05adee02ff9c0b038171f2c1977acbf4e5f152bb296650914a96d6a09f112c42",
+  "lock_sha256": "61beb462fa524ab65d01cac2b3823edcb25b4dcd397726409c19902f28a14ece",
   "review_history": [
     {
       "source_commit": "331d597",
@@ -320,12 +320,12 @@
     },
     {
       "name": "filelock",
-      "version": "4.2.2",
+      "version": "4.2.3",
       "native_dependency_closure": "not-established-by-empty-ELF-set",
       "variants": [
         {
-          "wheel_filename": "filelock-4.2.2-py3-none-any.whl",
-          "wheel_sha256": "1851d2f14ca2901e98069d68333b33ad7409f56904e17b48cc0c32a0db8ed73a",
+          "wheel_filename": "filelock-4.2.3-py3-none-any.whl",
+          "wheel_sha256": "8a09a56992ac9c4eb58d17c6c723c1fe5209fbcd4d569b49d58c1a9103295061",
           "files": []
         }
       ]
@@ -413,24 +413,24 @@
     },
     {
       "name": "httpcore2",
-      "version": "2.13.1",
+      "version": "2.14.0",
       "native_dependency_closure": "not-established-by-empty-ELF-set",
       "variants": [
         {
-          "wheel_filename": "httpcore2-2.13.1-py3-none-any.whl",
-          "wheel_sha256": "e1e05d4f25f7d7d496bfb96748f6f4b67657b03da069b3a68c36069f3db73d0a",
+          "wheel_filename": "httpcore2-2.14.0-py3-none-any.whl",
+          "wheel_sha256": "4c4f64f4b544afeb778c42c0ffb5941b29e671157e90ed3f6dc787c4bca90cd1",
           "files": []
         }
       ]
     },
     {
       "name": "httpx2",
-      "version": "2.13.1",
+      "version": "2.14.0",
       "native_dependency_closure": "not-established-by-empty-ELF-set",
       "variants": [
         {
-          "wheel_filename": "httpx2-2.13.1-py3-none-any.whl",
-          "wheel_sha256": "6dff50fabc270ee5fd25d845d0b078ed20564579744d6d962850975996d2f9a4",
+          "wheel_filename": "httpx2-2.14.0-py3-none-any.whl",
+          "wheel_sha256": "9d20c13a10bae1773a0be3b0f1e5beeb4bdd549bc3a2ba18efa32897c65403e4",
           "files": []
         }
       ]

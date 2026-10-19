@@ -149,5 +149,33 @@
     "Runtime policy remains 47 distributions; development-only reviews do not add development tools to the runtime inventory.",
     "No legal approval, native-closure clearance, provider adoption or full operational acceptance.",
     "Compatibility and service acceptance require separate exact-revision CI evidence."
-  ]
+  ],
+  "archive_native_inspection": [
+    {
+      "name": "filelock",
+      "archive_members": 28,
+      "elf_members": 0
+    },
+    {
+      "name": "httpcore2",
+      "archive_members": 36,
+      "elf_members": 0
+    },
+    {
+      "name": "httpx2",
+      "archive_members": 36,
+      "elf_members": 0
+    },
+    {
+      "name": "jsonpointer",
+      "archive_members": 8,
+      "elf_members": 0
+    },
+    {
+      "name": "platformdirs",
+      "archive_members": 18,
+      "elf_members": 0
+    }
+  ],
+  "native_scope": "Every member of each changed universal wheel inspected for ELF magic after archive hash verification; no ELF members found. Runtime policy retains three explicit empty sets, the existing native variants and all 147 ELF proof entries."
 }
