@@ -110,6 +110,13 @@ the operator must protect parent directories and the environment throughout the
 check. The output uses exclusive creation but does not establish parent-directory
 custody or an atomic snapshot of every inspected file.
 
+
+The 2026-10-19 filelock 4.2.4 lock refresh verifies the selected universal wheel
+against its lock SHA-256, then inspects its complete METADATA and shipped MIT
+licence. The licence text is unchanged from 4.2.3; the version-bearing METADATA
+and archive identity change. Its Python minimum remains 3.11. Exact evidence is
+updated without closing any unresolved notice or native-closure disposition.
+
 ## Conditions requiring action
 
 | Evidence family | Engineering disposition before redistribution or modification |
