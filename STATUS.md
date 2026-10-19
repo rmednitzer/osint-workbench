@@ -105,6 +105,12 @@ Older evidence remains deliberately revision-bound:
 | [Dependency currency](docs/testing/dependency-currency-2026-10-18.json), [tool pins](docs/testing/dependency-tools-2026-10-18.json) and [security settings](docs/testing/security-settings-2026-10-18.json) | Dated reviewed selections and observed settings, not perpetual freshness or conformance |
 | [Audit dispositions](docs/testing/audit-remediation-2026-10-18.md) and [CodeQL triage](docs/testing/codeql-triage-2026-10-18.md) | Specific corrected findings and unresolved authority/quality issues; per-alert dispositions are not query exclusions |
 
+The [2026-10-19 lock-maintenance service successor](docs/testing/lock-maintenance-service-2026-10-19.json)
+records successful actual service and credential-isolation runs on both LTS distro
+interpreters at `237660c0`, with the exact updated dependency lock and unchanged
+application wheel. This remains core-service fixture evidence; foundation CI
+separately verifies the complete runtime/retrieval profiles.
+
 ## Open acceptance and release limits
 
 The [backlog](docs/implementation-backlog.md) is the canonical unfinished-work

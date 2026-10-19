@@ -118,3 +118,11 @@ acceptance on both LTS defaults at `d4a1e64be1e399eb052db13f35ddcf0fc5234b81`.
 It uses the protected system interpreters and core dependencies, with no pretrained
 model or provider dispatch. Its exact installed wheel is recorded; it does not
 replace the three-profile installed/native application suite.
+
+The [2026-10-19 dependency successor](testing/lock-maintenance-service-2026-10-19.json)
+records both actual service and independent credential-isolation passes in run
+`39218774672` at `237660c057a5512221f2216430e6b2bf6bd2650b`. The protected
+system interpreters report 3.12.3 on 24.04 and 3.14.4 on 26.04. Its wheel,
+updated dependency lock and harness hashes are bound separately from full
+foundation CI. These native service passes preserve the 3.12 minimum; they do
+not require replacing the interpreter on either LTS release.
