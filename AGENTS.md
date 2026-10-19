@@ -37,6 +37,9 @@ Use [CONTRIBUTING.md](CONTRIBUTING.md) for verification commands and
   SQL/path/URL/model selectors, host/fleet administration, generation, worker
   dispatch or policy mutation tools. Configured local embeddings and reranking
   may run within the bounded search profile; this grants no write authority.
+- Review acceptance requires the separate `ow_reviewer` credential; never reuse
+  producer credentials or treat actor strings as authentication. Preserve legacy
+  review provenance and requalification; see [reviewer authority](docs/reviewer-authority.md).
 - Preserve parameterized SQL, least-privilege role separation, immutable evidence,
   original-text coordinates, bounded work, generation IDs and attempt fencing.
 - No live collection, model downloads, cloud requests, spending, notifications or

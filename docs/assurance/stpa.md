@@ -122,7 +122,7 @@ not close the full-system STPA scenarios or semantic-quality requirements.
 | Unsafe control action | Implemented constraint | Executable evidence |
 | --- | --- | --- |
 | Release shared inference ownership on client timeout/crash while the daemon can still run | Fsync a private owner receipt before dispatch; retain on unknown outcome; reconcile owner/process/idle slot before release | `test_killed_generation_client_preserves_uncertain_reservation`, native wire reconciliation tests |
-| Promote a schema-valid model statement solely because some quoted text exists | Preserve typed proposals, exact source spans and polarity; require an explicit operator-attributed review before cited products; current writer credentials can self-review, so independence remains a target | `test_proposals_review_cited_product_rejection_and_source_updates`, invalid-result and abstention tests |
+| Promote a schema-valid model statement solely because some quoted text exists | Preserve typed proposals, exact source spans and polarity; require an authenticated review through a separate SQL principal before cited products; actor labels remain attribution and human independence remains unproved | `test_proposals_review_cited_product_rejection_and_source_updates`, invalid-result and abstention tests |
 | Accept late output after cancellation, lease loss or source replacement | Lock/recheck the fence and current source head in the transaction accepting proposals/completion | `test_abstention_and_cancelled_completion_are_distinct`, workflow fencing tests |
 | Present withdrawn/stale source-derived statements as current | Active-document views and latest append-only review state constrain reads; product reads revalidate evidence and dependencies | Product withdrawal/source update tests and real MCP cited-product test |
 | Disclose generator runtime paths, private actor/rationale or operational configuration through agent reads/errors | No generator/operator write tools in MCP; bounded error codes and product projections exclude those fields | Real MCP tool inventory/product assertions; source/package publication scans |
@@ -816,3 +816,17 @@ and checks the named directory entry before marker release. Replacement,
 truncation and same-size mutation on both new-write and existing-audit retry paths
 must leave the uncertain reservation intact. These failure-injection cases cover
 accidental substitution; the same-UID non-atomic custody limitation remains.
+
+## Review authority and retrieval updates: ADR-0053
+
+| Unsafe control action or nonexecution | Required constraint | Discriminating evidence |
+| --- | --- | --- |
+| A producer accepts its own proposal using a different actor string or assumed role | Separate reviewer credential; deny session/current writer membership; validate actual connection authority before append | Direct writer denial, accidental grants, non-inherited overlap and SET ROLE tests |
+| An upgrade or restore treats a legacy writer decision as independently authenticated | Preserve history with legacy authority; exclude it from effective decisions; require fresh review and invalidate affected cited products | Actual core-11 upgrade, exact legacy/current checkpoint and stale-product tests |
+| A reviewer rewrites evidence, proposals, jobs, earlier decisions or provenance | Explicit column INSERT only, database-stamped provenance/time, no producer or update authority; owner/recovery remain trusted | SQL permission negatives, broadened PUBLIC/login grants, revoked existing connection and private-reader tests |
+| Valid review is refused after revocation, bad provisioning or unavailable database | Refuse without a new accepted review; preserve proposals and history; report a bounded error; provision credentials explicitly | Missing reviewer configuration and revoke tests; no writer fallback |
+| A retrieval writer rewrites identity or corpus metadata while retaining a generation ID | Column-scoped UPDATE for status/error and active-generation pointer only | Actual catalog allowlist, denied identity UPDATE, existing activation/rollback/purge/recovery suites |
+
+Separate credentials do not prove different humans, citation entailment or an
+independent administrator. Promotion of learned workflows remains deferred; no
+new autonomous policy mutation or experiment framework is introduced.

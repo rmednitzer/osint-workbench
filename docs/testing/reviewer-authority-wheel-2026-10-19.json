@@ -1,0 +1,33 @@
+{
+  "format": "osint-workbench-reviewer-authority-wheel-review-v1",
+  "date": "2026-10-19",
+  "baseline_commit": "0d440beb436d59ff0618b4e7b8dc9ebf84ac8f5a",
+  "previous_wheel_sha256": "a3770b8257e1f9fcd86e91f7fc567716fd27761de80d2de3694889af49e52447",
+  "candidate_wheel_sha256": "f65cbe6867c5f006514a901dbb27996da2f3018b5b2eaf8f43f1a53d033b6078",
+  "lock_sha256": "b5a4684da62a5a3457e445595fc4bbd867ad4db81f3da74adcde00f4d66c62c9",
+  "archive_members": 63,
+  "changed_members": [
+    "osint_workbench-0.1.0.dev1.dist-info/METADATA",
+    "osint_workbench-0.1.0.dev1.dist-info/RECORD",
+    "osint_workbench/cli.py",
+    "osint_workbench/database.py",
+    "osint_workbench/intelligence.py",
+    "osint_workbench/migrations/012_reviewer_authority.sql",
+    "osint_workbench/migrations/retrieval_005_writer_updates.sql",
+    "osint_workbench/recovery.py",
+    "osint_workbench/reviewer.py",
+    "osint_workbench/vector_index.py"
+  ],
+  "metadata_headers_unchanged": true,
+  "metadata_sha256": "a30f28b09f266fae240281e5bac8de8cfcceab453112d4b566f0206dea3dc7bc",
+  "metadata_bytes": 10970,
+  "licence_bytes_unchanged": true,
+  "elf_members": 0,
+  "uv_version": "uv 0.12.23 (x86_64-unknown-linux-gnu)",
+  "legal_approval": false,
+  "limits": [
+    "Only application code and README-bearing metadata change; no dependency or published migration bytes change.",
+    "SQL authority and recovery acceptance require the exact installed CI revision.",
+    "Separate database credentials do not prove independent humans or semantic quality."
+  ]
+}

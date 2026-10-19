@@ -28,6 +28,7 @@ def migrate_retrieval(dsn):
             "migrations/retrieval_002_lifecycle.sql",
             "migrations/retrieval_003_purge_role.sql",
             "migrations/retrieval_004_member_exclusions.sql",
+            "migrations/retrieval_005_writer_updates.sql",
         )
     ]
     with psycopg.connect(dsn) as conn:

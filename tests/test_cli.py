@@ -217,3 +217,29 @@ def test_empty_example_policy_reports_no_routes_without_a_database_write(tmp_pat
         env={"OW_WRITER_DSN": "postgresql:///never-used"},
     )
     assert code == 0 and json.loads(out)["routes"] == []
+
+
+def test_review_never_falls_back_to_writer_configuration():
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "osint_workbench.cli",
+            "review",
+            "a" * 64,
+            "--decision",
+            "accept",
+            "--actor",
+            "fixture",
+            "--rationale",
+            "Reviewed",
+        ],
+        capture_output=True,
+        text=True,
+        env={
+            **{k: v for k, v in os.environ.items() if not k.startswith("OW_")},
+            "OW_WRITER_DSN": "not-a-reviewer-connection",
+        },
+    )
+    assert result.returncode == 1 and result.stdout == ""
+    assert json.loads(result.stderr) == {"error": "DATABASE_CONFIGURATION_REQUIRED"}

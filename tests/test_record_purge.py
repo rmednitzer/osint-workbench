@@ -220,7 +220,9 @@ def test_purge_with_populated_remote_ledger_preserves_attempts_and_settlements(c
 def test_all_versions_and_sql_derivatives_purged_with_permanent_policy_and_real_mcp(context):
     writer, reader, store = context["writer"], context["reader"], context["store"]
     previous = writer.ingest(_input("Previous synthetic storage evidence."), b"previous", store)
-    document, assertion, brief, unrelated_pending, unrelated_running, _ = _fixture(writer, store)
+    document, assertion, brief, unrelated_pending, unrelated_running, _ = _fixture(
+        writer, store, context["roles"]
+    )
     neighbour = writer.ingest(
         _input("Independent policy evidence.", "neighbour"), b"neighbour", store
     )
@@ -357,7 +359,7 @@ def test_visibility_loss_or_hold_is_not_retirement_authority(context, condition)
 
 
 def test_held_neighbour_in_shared_immutable_briefing_vetoes_purge(context):
-    document, *_ = _fixture(context["writer"], context["store"])
+    document, *_ = _fixture(context["writer"], context["store"], context["roles"])
     neighbour = context["writer"].ingest(
         _input("Independent held evidence.", "held-neighbour"), b"held", context["store"]
     )
@@ -562,7 +564,7 @@ def test_purger_rejects_reachable_ownership_extra_delete_or_delegation(context, 
 def test_mid_delete_failure_rolls_back_actual_rows_and_policy_then_retry_succeeds(
     context, monkeypatch
 ):
-    document, *_ = _fixture(context["writer"], context["store"])
+    document, *_ = _fixture(context["writer"], context["store"], context["roles"])
     change(context, document, "retire")
     path, receipt = plan(context, document)
     before = state(context)
@@ -629,7 +631,7 @@ def test_unknown_or_malformed_products_fail_closed_without_partial_purge(context
 
 
 def test_cross_item_enrichment_job_reference_is_not_deleted_by_inference(context):
-    document, *_ = _fixture(context["writer"], context["store"])
+    document, *_ = _fixture(context["writer"], context["store"], context["roles"])
     neighbour = context["writer"].ingest(
         _input("Independent evidence.", "neighbour"), b"other", context["store"]
     )
@@ -732,7 +734,7 @@ def test_purge_between_builder_transactions_revokes_late_encoder_admission(
 
 
 def test_post_purge_checkpoint_restores_but_older_data_cannot_be_reintroduced(context, destination):
-    document, *_ = _fixture(context["writer"], context["store"])
+    document, *_ = _fixture(context["writer"], context["store"], context["roles"])
     old_path = context["tmp"] / "before.owcp"
     old_receipt = recovery.checkpoint(context["admin"], context["store"], old_path)
     change(context, document, "retire")
@@ -772,13 +774,17 @@ def test_post_purge_checkpoint_restores_but_older_data_cannot_be_reintroduced(co
         )
 
 
-@pytest.mark.parametrize("version,profile", [(6, 2), (7, 3), (8, 3), (8, 4), (9, 4), (10, 4)])
+@pytest.mark.parametrize(
+    "version,profile", [(6, 2), (7, 3), (8, 3), (8, 4), (9, 4), (10, 4), (11, 4)]
+)
 def test_known_core_checkpoint_adopts_into_current_schema(
     context, destination, encoder_bundle, version, profile
 ):
     if os.environ.get("OW_TEST_RETRIEVAL") != "1":
         pytest.skip("native optional retrieval profile unavailable")
-    document, assertion, _, _, _, _ = _fixture(context["writer"], context["store"])
+    document, assertion, _, _, _, _ = _fixture(
+        context["writer"], context["store"], context["roles"]
+    )
     neighbour = context["writer"].ingest(
         _input("vulnerability patch", "neighbour"), b"other", context["store"]
     )
@@ -808,11 +814,11 @@ def test_known_core_checkpoint_adopts_into_current_schema(
     with pytest.raises(WorkbenchError, match="DOCUMENT_NOT_FOUND"):
         service.document(document)
     with Database(destination["admin"]).connect() as conn:
-        assert conn.execute("SELECT max(version) AS v FROM ow.migrations").fetchone()["v"] == 11
+        assert conn.execute("SELECT max(version) AS v FROM ow.migrations").fetchone()["v"] == 12
         assert conn.execute("SELECT count(*) AS n FROM ow.remote_operations").fetchone()["n"] == 0
         assert (
             conn.execute("SELECT max(version) AS v FROM ow.retrieval_migrations").fetchone()["v"]
-            == 4
+            == 5
         )
         # No profile before 4 recorded exclusions; adoption must not invent any.
         assert (

@@ -91,14 +91,16 @@ class Generator:
         }
 
 
-def _fixture(writer, store):
+def _fixture(writer, store, roles):
     doc = writer.ingest(_input(), b"synthetic raw feed", store)
     run_once(writer, store)
     generator = Generator()
     intelligence.enqueue(writer, generator, doc)
     intelligence.enrich_once(writer, store, generator)
     assertion = intelligence.assertions(writer)["results"][0]["assertion_id"]
-    intelligence.review(writer, assertion, "accept", "fixture-reviewer", "Synthetic review")
+    intelligence.review(
+        Database(roles["reviewer"]), assertion, "accept", "fixture-reviewer", "Synthetic review"
+    )
     brief = intelligence.create_briefing(writer, [doc])["briefing_id"]
     pending = writer.enqueue("fixture", "pending", {})
     leased = writer.enqueue("fixture-running", "leased", {})
@@ -110,7 +112,7 @@ def _fixture(writer, store):
 def test_checkpoint_fresh_restore_citations_history_and_real_mcp(databases, destination, tmp_path):
     writer, _, roles = databases
     store = EvidenceStore(tmp_path / "objects")
-    doc, assertion, brief, pending, leased, old_fence = _fixture(writer, store)
+    doc, assertion, brief, pending, leased, old_fence = _fixture(writer, store, roles)
     orphan = store.put(b"unreferenced private fixture must not be bundled")
     path = tmp_path / "checkpoint.owcp"
     receipt = recovery.checkpoint(Database(roles["admin"]), store, path)
@@ -135,7 +137,9 @@ def test_checkpoint_fresh_restore_citations_history_and_real_mcp(databases, dest
     with pytest.raises(WorkbenchError, match="STALE_JOB_LEASE"):
         Jobs(restored_writer).finish(leased, old_fence, {})
     # Restored identity sequences must advance beyond preserved review/event IDs.
-    intelligence.review(restored_writer, assertion, "reject", "fixture-reviewer", "Withdrawal")
+    intelligence.review(
+        Database(destination["reviewer"]), assertion, "reject", "fixture-reviewer", "Withdrawal"
+    )
     with pytest.raises(WorkbenchError, match="BRIEFING_STALE"):
         service.briefing(brief)
 
@@ -217,6 +221,10 @@ def published_pair(payload, core, profile=None):
             del payload["migrations"][key]
     if profile < 4:
         payload["tables"].pop("retrieval_exclusions", None)
+    if core < 12:
+        for row in payload["tables"].get("assertion_reviews", []):
+            row.pop("authority")
+            row.pop("database_principal")
     if core < 11:
         for row in payload["tables"].get("collection_state", []):
             for column in recovery.API_STATE_DEFAULTS:
@@ -433,8 +441,8 @@ def test_non_regular_objects_and_oversize_bundles_fail_without_blocking(tmp_path
     ],
 )
 def test_legacy_checkpoint_history_requires_complete_exact_known_pair(version, profile):
-    current = {str(i): digest(f"published migration {i}".encode()) for i in range(1, 12)}
-    current.update({f"retrieval/{i}": str(i) * 64 for i in range(1, 5)})
+    current = {str(i): digest(f"published migration {i}".encode()) for i in range(1, 13)}
+    current.update({f"retrieval/{i}": str(i) * 64 for i in range(1, 6)})
     known = {
         key: value
         for key, value in current.items()
@@ -447,7 +455,7 @@ def test_legacy_checkpoint_history_requires_complete_exact_known_pair(version, p
     assert not recovery._known_legacy_history(missing_profile, current, version)
     # A profile newer than any that shipped with this core is a mixed history.
     newest = max(recovery.PUBLISHED_PAIRS[version])
-    if newest < 4:
+    if newest < 5:
         newer = f"retrieval/{newest + 1}"
         assert not recovery._known_legacy_history(
             {**known, newer: current[newer]}, current, version
@@ -457,7 +465,7 @@ def test_legacy_checkpoint_history_requires_complete_exact_known_pair(version, p
     )
     assert not recovery._known_legacy_history(known, current, 3)
     # The current pair itself is not legacy; it takes the ordinary exact path.
-    assert not recovery._known_legacy_history(current, current, 11)
+    assert not recovery._known_legacy_history(current, current, 12)
 
 
 @pytest.mark.integration
@@ -466,7 +474,7 @@ def test_known_v5_checkpoint_restores_retained_data_with_current_policy(
 ):
     writer, _, roles = databases
     store = EvidenceStore(tmp_path / "objects")
-    doc, assertion, brief, pending, leased, _ = _fixture(writer, store)
+    doc, assertion, brief, pending, leased, _ = _fixture(writer, store, roles)
     second = writer.ingest(_input("Retained separate storage report.", "two"), b"second raw", store)
     path = tmp_path / "known-v5.owcp"
     recovery.checkpoint(Database(roles["admin"]), store, path)
@@ -521,7 +529,7 @@ def test_known_v5_checkpoint_restores_retained_data_with_current_policy(
             conn.execute("SELECT hold_id FROM ow.lifecycle_holds").fetchone()["hold_id"]
             == "hold-v5"
         )
-        assert conn.execute("SELECT max(version) AS v FROM ow.migrations").fetchone()["v"] == 11
+        assert conn.execute("SELECT max(version) AS v FROM ow.migrations").fetchone()["v"] == 12
         jobs = conn.execute(
             "SELECT status FROM ow.jobs WHERE job_id=ANY(%s::uuid[])", ([pending, leased],)
         ).fetchall()

@@ -99,7 +99,7 @@ def test_retirement_revokes_reader_and_fences_all_versions(databases, tmp_path):
     operator = Database(roles["lifecycle"])
     store = EvidenceStore(tmp_path / "objects")
     old = writer.ingest(_input("Previous storage evidence."), b"old", store)
-    doc, assertion, brief, unrelated_pending, unrelated_running, _ = _fixture(writer, store)
+    doc, assertion, brief, unrelated_pending, unrelated_running, _ = _fixture(writer, store, roles)
     pending = writer.enqueue("fixture-document", "pending", {"document_id": doc})
     leased = writer.enqueue("fixture-doc-running", "leased", {"document_id": old})
     fence = Jobs(writer).claim(kinds=["fixture-doc-running"])["fence"]
@@ -118,7 +118,9 @@ def test_retirement_revokes_reader_and_fences_all_versions(databases, tmp_path):
         service.briefing(brief)
     assert service.assertions()["results"] == []
     with pytest.raises(WorkbenchError, match="ASSERTION_NOT_CURRENT"):
-        intelligence.review(writer, assertion, "accept", "fixture-reviewer", "Retired")
+        intelligence.review(
+            Database(roles["reviewer"]), assertion, "accept", "fixture-reviewer", "Retired"
+        )
     for job in (pending, leased):
         assert Jobs(writer).inspect(job)["status"] == "cancelled"
     assert Jobs(writer).inspect(unrelated_pending)["status"] == "ready"
@@ -220,7 +222,7 @@ def test_old_checkpoint_reconciles_new_tombstones_before_reads(databases, destin
     writer, reader, roles = databases
     operator = Database(roles["lifecycle"])
     store = EvidenceStore(tmp_path / "objects")
-    doc, _, brief, _, _, _ = _fixture(writer, store)
+    doc, _, brief, _, _, _ = _fixture(writer, store, roles)
     held = writer.ingest(_input("vulnerability patch", external="held"), b"held", store)
     path = tmp_path / "old.owcp"
     receipt = recovery.checkpoint(Database(roles["admin"]), store, path)

@@ -1060,8 +1060,8 @@
       "evidence": [
         {
           "path": "osint_workbench-0.1.0.dev1.dist-info/METADATA",
-          "sha256": "833a26239815f117a24280357054784a38b76b821b1b6959e0c789d5e7bb1ad6",
-          "bytes": 10945,
+          "sha256": "a30f28b09f266fae240281e5bac8de8cfcceab453112d4b566f0206dea3dc7bc",
+          "bytes": 10970,
           "kind": "metadata"
         },
         {
@@ -2234,7 +2234,7 @@
     {
       "name": "osint-workbench",
       "filename": "osint_workbench-0.1.0.dev1-py3-none-any.whl",
-      "sha256": "a3770b8257e1f9fcd86e91f7fc567716fd27761de80d2de3694889af49e52447"
+      "sha256": "f65cbe6867c5f006514a901dbb27996da2f3018b5b2eaf8f43f1a53d033b6078"
     },
     {
       "name": "packaging",
