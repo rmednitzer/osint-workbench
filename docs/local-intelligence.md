@@ -92,13 +92,16 @@ pending until an operator appends an accept/reject review with rationale and an 
 actor label. This actor field is attribution, not a new authentication mechanism; the database
 writer credential supplies authority. The same writer can create a proposal and review it;
 independent reviewer identity and role separation remain unresolved, as recorded in the audit
-backlog. MCP cannot review or create assertions. Different document/source mentions are not
-automatically merged, and fuzzy names do not establish common identity. Read results include
-distinct subject/object IDs hashed from the label, role, document and supporting quotation span.
-The implementation does not require those labels to occur inside that span; these IDs are not
-validated entity-mention coordinates or resolved entities. The `source-mentions-only` response
-label remains an unresolved contract issue in [the audit
-record](testing/audit-remediation-2026-10-18.md). Alias, merge and contradiction workflows
+backlog. MCP cannot review or create assertions. Different labels or sources are not
+automatically merged, and fuzzy names do not establish common identity. Assertion
+reads use `ontology_version=assertion-proposals/2` and
+`entity_resolution=not-performed`. The `subject_label_binding_id` and
+`object_label_binding_id` hashes bind the proposal label and its role to the
+source document and supporting quotation span. Labels need not occur in that
+span: these are neither label-specific coordinates nor resolved entity IDs.
+The v2 contract replaces misleading v1 mention fields; see
+[client migration](mcp-read-contract.md#assertion-label-bindings) and
+[ADR-0051](adr/0051-honest-assertion-label-bindings.md). Alias, merge and contradiction workflows
 remain required future work. Negated and uncertain assertions are not collapsed into positive
 facts.
 

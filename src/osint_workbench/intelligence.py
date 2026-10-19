@@ -248,17 +248,17 @@ def assertions(db, *, document_id=None, subject=None, limit=20, offset=0):
             (document_id, document_id, subject, subject, limit, offset),
         ).fetchall()
     for row in rows:
-        # These hashes bind a label/role to the supporting quotation span. The
-        # labels are not validated as occurring there; they are not entity IDs.
+        # Bind proposal labels to quotation context, not to label-specific spans.
+        # Keep the published hash inputs stable; the v2 names correct their meaning.
         for role in ("subject", "object"):
-            row[role + "_mention_id"] = digest(
+            row[role + "_label_binding_id"] = digest(
                 json.dumps(
                     [row["document_id"], row["start_offset"], row["end_offset"], role, row[role]]
                 ).encode()
             )
     return {
-        "ontology_version": "assertion-proposals/1",
-        "entity_resolution": "source-mentions-only",
+        "ontology_version": "assertion-proposals/2",
+        "entity_resolution": "not-performed",
         "results": rows,
     }
 

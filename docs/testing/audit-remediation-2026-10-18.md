@@ -84,3 +84,13 @@ successor's installed/native regressions and service results must be tied to
 their tested revision in STATUS; their existence alone is not a pass.
 Independent reviewer authority, label/quote semantics, retrieval writer grants,
 terminal-job retry behavior and other listed findings remain separate work.
+
+## Label-contract successor (2026-10-19)
+
+The historical label/quote finding above is addressed by the explicit read-API
+rename in [ADR-0051](../adr/0051-honest-assertion-label-bindings.md), rather than
+requiring literal normalized labels in quotations. V2 reports no entity
+resolution and exposes label-binding IDs. This closes the misleading naming
+contract only; it does not establish label-specific coordinates, entailment or
+independent reviewer authority. Historical test outcomes above are unchanged;
+current verification must name the successor revision.

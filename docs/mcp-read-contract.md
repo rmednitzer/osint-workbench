@@ -51,6 +51,29 @@ the original full `briefing_id`; the page's serialized bytes do not hash to that
 full product identity. Consumers must follow continuation to reconstruct items.
 These are explicit client-visible changes; old clients must adapt.
 
+## Assertion label bindings
+
+`list_assertions` returns `ontology_version=assertion-proposals/2` and
+`entity_resolution=not-performed`, including on empty pages. Each row contains
+`subject_label_binding_id` and `object_label_binding_id`, replacing v1's
+`subject_mention_id` and `object_mention_id`. Consumers must explicitly accept
+v2 and use the new field names; there is no v1 alias or negotiation mode.
+The seven tools, selectors and pagination contract are unchanged.
+
+The identifiers still hash the same ordered JSON array of document ID,
+quotation start/end codepoint offsets, role and proposal label. Renaming does not
+change the hash value for unchanged inputs. It identifies a label in quotation
+context, not a label-specific occurrence, resolved entity or verified statement.
+Labels may be normalized or absent from the quotation. Shared quotation context
+does not make the two roles identical; different documents, spans or labels have
+different hash inputs. An identical label/role/document/span can be shared by
+several assertions, so the binding ID is not a unique assertion ID either.
+
+Existing stored assertions, reviews, briefing IDs and checkpoint formats are
+unchanged. Both existing and new records use the v2 read projection. Review
+state is still independent of label binding and does not authenticate a separate
+reviewer. See [ADR-0051](adr/0051-honest-assertion-label-bindings.md).
+
 ## Document text and evidence
 
 `get_document` keeps the document response shape and original integrity/identity

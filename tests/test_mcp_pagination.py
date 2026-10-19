@@ -87,8 +87,8 @@ class Records:
 
     def assertions(self, document_id=None, subject=None, limit=20, offset=0):
         return {
-            "ontology_version": "assertion-proposals/1",
-            "entity_resolution": "source-mentions-only",
+            "ontology_version": "assertion-proposals/2",
+            "entity_resolution": "not-performed",
             "results": self.rows[offset - self.origin : offset - self.origin + limit],
         }
 
