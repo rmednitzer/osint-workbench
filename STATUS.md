@@ -58,8 +58,9 @@ remain queued. Character chunks preserve offsets but are not the token-aware
 chunks used by the optional retrieval profile.
 
 [Frozen local ranking diagnostics](docs/local-quality.md) can compare lexical,
-encoder and explicit stand-alone ONNX reranker profiles. Reranker observations
-bind a manifest snapshot and ranking policy, preserve partial failures and retain
+encoder and explicit stand-alone ONNX reranker profiles. Both native profiles own
+validated manifest snapshots; observations bind model identity and ranking policy,
+preserve partial failures and retain
 the unsupported-query abstention failure. This does not adopt useful models or
 qualify the production retrieval cascade or independent semantic quality.
 

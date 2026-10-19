@@ -1,0 +1,24 @@
+{
+  "format": "osint-workbench-encoder-custody-wheel-review-v1",
+  "date": "2026-10-19",
+  "baseline_commit": "7500143c6caf8f3cf59b4613e5f802beb4e0bca3",
+  "previous_wheel_sha256": "01232818638d438692e5e9fed0fe987d544e73428085c6128fb53dee0e495470",
+  "candidate_wheel_sha256": "fb706a7351fd50283f95d506e8d443f6511f320238db47998520b0999163f433",
+  "lock_sha256": "b5a4684da62a5a3457e445595fc4bbd867ad4db81f3da74adcde00f4d66c62c9",
+  "changed_members": [
+    "osint_workbench-0.1.0.dev1.dist-info/RECORD",
+    "osint_workbench/quality.py"
+  ],
+  "metadata_and_licence_bytes_unchanged": true,
+  "elf_members": 0,
+  "legal_approval": false,
+  "counterexamples": [
+    "Installed baseline completed with encoder identities changing after caller nested-template mutation.",
+    "Installed baseline created output rather than refusing an invalid nested embedding-space configuration before execution."
+  ],
+  "limits": [
+    "Fix applies to the bounded offline diagnostic runner, not every mutable encoder user.",
+    "No protocol/dependency/migration/CLI change or adopted model-quality claim.",
+    "Exact candidate acceptance belongs to its PR/main native checks."
+  ]
+}

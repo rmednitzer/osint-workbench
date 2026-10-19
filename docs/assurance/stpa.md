@@ -865,3 +865,15 @@ per-query observations constrain these paths. Native CLI, model-tamper, identity
 mismatch and caller-mutation cases discriminate the constraints. Unresolved
 inference admission remains blocking; no automatic download, dispatch or learned
 workflow promotion is introduced. Independent labels and adoption remain open.
+
+
+### Encoder manifest custody correction: 2026-10-19
+
+The same frozen-identity constraint applies to the ADR-0025 encoder path. A valid
+caller mutation of a nested query template could previously change later native
+calls while the initial protocol retained the old identity. The runner now owns a
+deeply revalidated encoder configuration before output creation and records its
+prediction identity from the frozen protocol. Native nested-mutation and invalid
+nested-configuration counterexamples discriminate this correction. This does not
+freeze files on disk: per-call byte-integrity checks still refuse later artifact
+tampering and preserve partial observations. It does not establish model quality.

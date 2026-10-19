@@ -102,6 +102,13 @@ osint-workbench evaluate local \
 identity. It is an operator-supplied provenance assertion. Keep output outside Git
 and use a new directory for every run. Its parent must already exist.
 
+The runner revalidates and owns a deep encoder-manifest snapshot, including the
+embedding space and templates, before creating output. Caller-side configuration
+changes cannot rebind later native calls or the recorded prediction identity.
+Each run uses its own built-in adapter rather than the caller's active query
+flights or subclass overrides; native artifact checks and shared admission remain
+in force. Invalid nested configuration is refused before output is created.
+
 The encoder embeds each complete passage using its document template and each
 query using its query template. No text is truncated. Exhaustive normalized dot
 products determine order, with document ID breaking ties. This isolated diagnostic

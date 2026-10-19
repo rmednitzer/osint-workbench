@@ -13,7 +13,7 @@ from pathlib import Path
 
 from .errors import WorkbenchError
 from .evaluation import Suite, digest, evaluate, parse_predictions
-from .local_encoder import LocalEncoder
+from .local_encoder import EncoderManifest, LocalEncoder
 from .local_reranker import LocalReranker, RerankerManifest
 
 MAX_DOCUMENTS = 32
@@ -180,14 +180,18 @@ def run(
     from .evaluation import parse_suite
 
     suite = parse_suite(suite.model_dump_json().encode())
-    if reranker is not None:
-        try:
-            # Own a validated snapshot: caller mutation cannot rebind a frozen run.
+    try:
+        # Own validated deep snapshots, including nested embedding-space settings.
+        if encoder is not None:
+            encoder = LocalEncoder(
+                EncoderManifest.model_validate_json(encoder.manifest.model_dump_json())
+            )
+        if reranker is not None:
             reranker = LocalReranker(
                 RerankerManifest.model_validate_json(reranker.manifest.model_dump_json())
             )
-        except (ValueError, TypeError):
-            raise WorkbenchError("QUALITY_CONFIGURATION_INVALID") from None
+    except (ValueError, TypeError):
+        raise WorkbenchError("QUALITY_CONFIGURATION_INVALID") from None
     if reranker is not None and (
         any(len(d.text) > RERANKER_POLICY["max_document_characters"] for d in suite.corpus)
         or any(
@@ -377,7 +381,7 @@ def run(
                 )
                 persist(
                     "encoder",
-                    encoder.manifest.identity(),
+                    protocol["encoder_identity"],
                     rankings,
                     scores,
                     time.monotonic() - model_started,

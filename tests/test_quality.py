@@ -414,3 +414,44 @@ def test_reranker_protocol_owns_a_snapshot_of_the_caller_manifest(
     assert observed == [original] * 4
     assert read(output, "protocol.json")["payload"]["reranker_identity"] == original
     assert reranker_bundle.manifest.identity() != original
+
+
+def test_encoder_protocol_owns_nested_manifest_during_native_calls(
+    encoder_bundle, tmp_path, monkeypatch
+):
+    from osint_workbench.local_encoder import LocalEncoder
+
+    value = suite().model_dump(mode="json")
+    value["queries"][1]["text"] = "patch"
+    value["queries"][3]["text"] = "vulnerability"
+    frozen = parse_suite(json.dumps(value).encode())
+    original = encoder_bundle.manifest.identity()
+    invoke = LocalEncoder._invoke_packet
+    observed = []
+
+    def change_caller(self, manifest, packet):
+        observed.append(manifest.identity())
+        result = invoke(self, manifest, packet)
+        # Mutate a shared nested object, not just the top-level manifest reference.
+        encoder_bundle.manifest.space.query_template = "patch {text}"
+        return result
+
+    monkeypatch.setattr(LocalEncoder, "_invoke_packet", change_caller)
+    monkeypatch.setenv("OW_INFERENCE_LOCK", str(tmp_path / "admission.lock"))
+    output = tmp_path / "bound-encoder"
+    outcome = run(frozen, output, encoder_bundle)
+    assert outcome["status"] == "completed"
+    assert observed == [original] * 6
+    assert read(output, "protocol.json")["payload"]["encoder_identity"] == original
+    assert read(output, "encoder-predictions.json")["system_manifest_sha256"] == original
+    assert encoder_bundle.manifest.identity() != original
+
+
+def test_invalid_nested_encoder_manifest_is_refused_before_output(encoder_bundle, tmp_path):
+    encoder_bundle.manifest = encoder_bundle.manifest.model_copy(
+        update={"space": encoder_bundle.manifest.space.model_copy(update={"dimensions": 0})}
+    )
+    output = tmp_path / "invalid-encoder"
+    with pytest.raises(WorkbenchError, match="QUALITY_CONFIGURATION_INVALID"):
+        run(suite(), output, encoder_bundle)
+    assert not output.exists()
