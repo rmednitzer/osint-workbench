@@ -1,0 +1,19 @@
+{
+  "format": "osint-workbench-reviewer-recovery-wheel-review-v1",
+  "date": "2026-10-19",
+  "baseline_commit": "6c26603a9d03a8cec8eec896cd7e385909427868",
+  "previous_wheel_sha256": "f65cbe6867c5f006514a901dbb27996da2f3018b5b2eaf8f43f1a53d033b6078",
+  "candidate_wheel_sha256": "107e70eba27868cfb463622089fe1a257584ad320fbbae8c7339698672091a5f",
+  "lock_sha256": "b5a4684da62a5a3457e445595fc4bbd867ad4db81f3da74adcde00f4d66c62c9",
+  "changed_members": [
+    "osint_workbench-0.1.0.dev1.dist-info/RECORD",
+    "osint_workbench/recovery.py"
+  ],
+  "metadata_and_licence_bytes_unchanged": true,
+  "elf_members": 0,
+  "legal_approval": false,
+  "limits": [
+    "Adds explicit rejection of malformed legacy review containers before normalization.",
+    "No external source configuration, dependencies, or published migration bytes change."
+  ]
+}

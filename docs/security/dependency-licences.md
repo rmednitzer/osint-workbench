@@ -210,3 +210,11 @@ The [bounded audit-name successor](../testing/local-api-resolution-name-wheel-20
 changes only inference-state custody and RECORD again; metadata, licence and all
 third-party/native evidence remain unchanged. It binds the current archive after
 UUID audit-name validation and retains both earlier comparison receipts.
+
+The [reviewer-authority archive successor](../testing/reviewer-authority-wheel-2026-10-19.json)
+compares the actual core-12/profile-5 application wheel with the exact rebuilt
+core-11 baseline. It inspects unchanged metadata headers and complete unchanged
+Apache-2.0 licence bytes; the README-bearing metadata body changes. Three new
+packaged files add two migrations and the reviewer connection validator. The
+archive contains no ELF members. Registry and native dependency dispositions
+remain unchanged, with no legal approval implied.

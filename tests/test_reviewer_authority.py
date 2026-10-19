@@ -111,6 +111,31 @@ def test_writer_cannot_insert_review_even_after_accidental_grant(databases, tmp_
             )
 
 
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("database_principal", "'someone-else'"),
+        ("authority", "'authenticated_reviewer'"),
+        ("reviewed_at", "'2040-01-01'::timestamptz"),
+    ],
+)
+def test_reviewer_cannot_supply_authenticated_provenance(databases, tmp_path, field, value):
+    from psycopg import sql
+
+    _, _, roles, _, _, assertion = proposal(databases, tmp_path)
+    # Parameterized assertion; field/value expressions are fixed test cases.
+    query = sql.SQL(
+        "INSERT INTO ow.assertion_reviews "
+        "(assertion_id,decision,actor,rationale,{}) "
+        "VALUES (%s,'accept','label','Reviewed',{})"
+    ).format(sql.Identifier(field), sql.SQL(value))
+    with (
+        pytest.raises(psycopg.errors.InsufficientPrivilege),
+        Database(roles["reviewer"]).connect() as conn,
+    ):
+        conn.execute(query, (assertion,))
+
+
 @pytest.mark.parametrize("set_role", [None, "ow_reviewer", "ow_writer"])
 def test_overlapping_reviewer_writer_denied_through_set_role(databases, tmp_path, set_role):
     _, _, roles, _, _, assertion = proposal(databases, tmp_path)

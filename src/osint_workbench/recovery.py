@@ -432,7 +432,10 @@ def restore(
                     if set(API_STATE_DEFAULTS) & set(row):
                         raise WorkbenchError("RECOVERY_COLUMNS_MISMATCH")
                     row.update({**API_STATE_DEFAULTS, "api_seen_cursors": []})
-            for row in tables["assertion_reviews"]:
+            reviews = tables["assertion_reviews"]
+            if not isinstance(reviews, list) or not all(isinstance(row, dict) for row in reviews):
+                raise WorkbenchError("INVALID_RECOVERY_BUNDLE")
+            for row in reviews:
                 if "authority" in row or "database_principal" in row:
                     raise WorkbenchError("RECOVERY_COLUMNS_MISMATCH")
                 row.update(authority="legacy_writer", database_principal=None)
