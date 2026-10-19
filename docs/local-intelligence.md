@@ -6,6 +6,12 @@ deterministic cited assertion digests. It does not establish pretrained semantic
 autonomous fact acceptance, general entity resolution or a deep-analysis briefing service. No
 model, feed list, cloud account or private runtime is bundled.
 
+A separately selected [local chat API profile](local-inference-api.md) integrates
+operator-controlled compatible services. It has explicit destination, secret,
+classification and uncertainty contracts; the native identity and tokenization
+guarantees below apply only to the Unix-socket adapter. Neither profile starts a
+server or downloads a model. Governed cloud routing remains a separate selection.
+
 ## Local generation authority
 
 A private `GeneratorManifest` declares the Unix socket path, peer UID, runtime binary
@@ -83,7 +89,12 @@ inter-token whitespace differences, then stores the actual original slice; it se
 matching occurrence, not an independently disambiguated mention. An empty claims list is visible
 abstention. A failed/cancelled job is not silently restarted: an operator can enqueue a new
 intentional `--operation-id`, preserving the prior operation and its outcome. Reusing an
-operation ID is idempotent. Proposals and fenced job completion commit atomically. Cancellation
+operation ID is idempotent. Enqueue reports the atomic stored `job_status`,
+`enqueue_effect` and `requeued=false`; `terminal_preserved` explicitly means no
+reset of a succeeded, failed or cancelled job. `pending_or_running` is not a
+new-dispatch promise. These additive CLI fields retain `job_id`; direct Python
+enqueue callers retain the string result unless they request `describe=True`.
+Proposals and fenced job completion commit atomically. Cancellation
 or expired ownership prevents late acceptance. Errors retain bounded codes; malformed model text
 is not silently repaired or stored as accepted fact.
 

@@ -1,0 +1,21 @@
+{
+  "format": "osint-workbench-local-api-custody-wheel-review-v1",
+  "date": "2026-10-19",
+  "baseline_commit": "b110d24987b79de9edbe4fc291a60abbb0f4a2d3",
+  "previous_wheel_sha256": "68f245a2a7778b993548291b42536f777ae70bad21a51e1432c456a95958bc62",
+  "candidate_wheel_sha256": "b153208170fb3565d711e41950e6771f67ff23707fb3c84f49e46b53de9472a0",
+  "lock_sha256": "b5a4684da62a5a3457e445595fc4bbd867ad4db81f3da74adcde00f4d66c62c9",
+  "archive_members": 60,
+  "changed_members": [
+    "osint_workbench/inference_state.py",
+    "osint_workbench-0.1.0.dev1.dist-info/RECORD"
+  ],
+  "metadata_and_licence_bytes_unchanged": true,
+  "elf_members": 0,
+  "uv_version": "0.13.1",
+  "limits": [
+    "Audits detect accidental replacement/mutation under the cooperating-account custody model, not malicious same-UID races.",
+    "Operator termination evidence remains an assertion, not independently verified server termination.",
+    "This receipt compares archive bytes; native and signed main acceptance need exact-revision evidence."
+  ]
+}

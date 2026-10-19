@@ -60,6 +60,8 @@ def enqueue(
     document_id: str,
     operation_id="initial",
     data_class=None,
+    *,
+    describe=False,
 ):
     doc = db.document(document_id)
     payload = EnrichmentInput(
@@ -72,6 +74,8 @@ def enqueue(
     # Unclassified payloads keep their published shape and deduplication key.
     value = payload.model_dump(exclude_none=True)
     key = digest(json.dumps(value, sort_keys=True).encode())
+    if describe:
+        return db.enqueue_state(_kind(generator), key, value)
     return db.enqueue(_kind(generator), key, value)
 
 
@@ -106,9 +110,11 @@ def enrich_once(db: Database, store: EvidenceStore, generator: LocalGenerator):
         )
         with db.connect() as authority:
             assert_document_visible(authority, payload.document_id)
-            if getattr(generator, "governed", False):
-                # One logical remote operation per job: a retried job can never
-                # replay an attempt the ledger has not resolved.
+            if getattr(generator, "governed", False) or getattr(
+                generator, "operation_bound", False
+            ):
+                # Bind governed dispatch or local API uncertainty to the job UUID.
+                # Both profiles retain their own durable replay/admission guard.
                 result = generator.generate(
                     prompt,
                     Proposals.model_json_schema(),

@@ -60,6 +60,8 @@ DOCUMENTATION_HOSTS = {
     "genai.owasp.org",
     "www.apache.org",
     "onnxruntime.ai",
+    "docs.ollama.com",
+    "docs.vllm.ai",
     "huggingface.co",
     "apache.org",
     "man7.org",
@@ -283,6 +285,10 @@ def inspect_text(name: str, content: str, private_values=(), *, verified_notice=
                 name == "scripts/prepare_native.py"
                 and host == "codeload.github.com"
                 and parts.path == "/ggml-org/llama.cpp/tar.gz/"
+            )
+            or (
+                name == "docs/local-inference-api.md"
+                and url == "http:" + "//127.0.0.1:11434/v1/chat/completions"
             )
             or host.endswith(".invalid")
             or (name == "uv.lock" and host in REGISTRY_HOSTS)

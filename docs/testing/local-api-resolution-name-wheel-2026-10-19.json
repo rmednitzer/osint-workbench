@@ -1,0 +1,21 @@
+{
+  "format": "osint-workbench-local-api-resolution-name-wheel-review-v1",
+  "date": "2026-10-19",
+  "baseline_commit": "99c1482092d9951df1adf6d960003d3248a95abe",
+  "previous_wheel_sha256": "b153208170fb3565d711e41950e6771f67ff23707fb3c84f49e46b53de9472a0",
+  "candidate_wheel_sha256": "a3770b8257e1f9fcd86e91f7fc567716fd27761de80d2de3694889af49e52447",
+  "lock_sha256": "b5a4684da62a5a3457e445595fc4bbd867ad4db81f3da74adcde00f4d66c62c9",
+  "archive_members": 60,
+  "changed_members": [
+    "osint_workbench/inference_state.py",
+    "osint_workbench-0.1.0.dev1.dist-info/RECORD"
+  ],
+  "metadata_and_licence_bytes_unchanged": true,
+  "elf_members": 0,
+  "uv_version": "0.13.1",
+  "limits": [
+    "Bounded UUID audit names preserve directory-descriptor custody; this is not a same-UID security sandbox.",
+    "Older lock-basename audit records are retained, not automatically adopted or removed.",
+    "Exact native, scanner and signed main outcomes require current revision evidence."
+  ]
+}

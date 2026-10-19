@@ -26,6 +26,7 @@ from .database import SCHEMA_VERSION, Database, migrate
 from .errors import WorkbenchError
 from .evidence import EvidenceStore
 from .jobs import Jobs
+from .local_api import LocalApiGenerator, LocalApiManifest
 from .local_encoder import EncoderManifest, LocalEncoder
 from .local_generation import GeneratorManifest, LocalGenerator
 from .local_reranker import LocalReranker, RerankerManifest
@@ -108,10 +109,14 @@ def _operator_bytes(path, *, profile="model"):
 
 
 def _generator(args, db=None):
-    # Exactly one of a local manifest or an explicit remote route; never both,
-    # and a local configuration never implies a remote fallback.
-    if (args.manifest is None) == (args.route is None):
+    # Explicit native, local API or governed cloud selection; no fallback.
+    api_manifest = getattr(args, "local_api_manifest", None)
+    if sum(value is not None for value in (args.manifest, api_manifest, args.route)) != 1:
         raise WorkbenchError("GENERATOR_SELECTION_REQUIRED")
+    if api_manifest is not None:
+        if args.cloud_policy is not None:
+            raise WorkbenchError("GENERATOR_SELECTION_REQUIRED")
+        return LocalApiGenerator(_manifest(api_manifest, LocalApiManifest))
     if args.manifest is not None:
         return LocalGenerator(_manifest(args.manifest, GeneratorManifest))
     if args.cloud_policy is None or db is None:
@@ -191,6 +196,10 @@ def main():
     enrich = sub.add_parser("enrich")
     enrich.add_argument("action", choices=["enqueue", "work-once", "reconcile"])
     enrich.add_argument("--manifest", type=Path)
+    enrich.add_argument("--local-api-manifest", type=Path)
+    enrich.add_argument("--confirm-terminated", action="store_true")
+    enrich.add_argument("--termination-evidence-sha256")
+    enrich.add_argument("--request-operation-id")
     enrich.add_argument("--route")
     enrich.add_argument("--cloud-policy", type=Path)
     enrich.add_argument("--data-class", choices=["public", "internal", "personal", "special"])
@@ -363,22 +372,46 @@ def main():
             migrate_retrieval(_dsn("OW_MIGRATION_DSN"))
             value = {"schema_version": SCHEMA_VERSION, "retrieval_schema_version": 4}
         elif args.command == "enrich":
-            db = Database(_dsn("OW_WRITER_DSN")) if args.route is not None else None
+            db = (
+                Database(_dsn("OW_WRITER_DSN"))
+                if args.route is not None
+                and args.manifest is None
+                and args.local_api_manifest is None
+                else None
+            )
             generator = _generator(args, db)
+            resolution = (
+                args.confirm_terminated
+                or args.termination_evidence_sha256 is not None
+                or args.request_operation_id is not None
+            )
+            if resolution and (args.action != "reconcile" or args.local_api_manifest is None):
+                raise WorkbenchError("INVALID_LOCAL_API_RECONCILIATION")
             if args.action == "reconcile":
                 if args.route is not None:
                     raise WorkbenchError("REMOTE_RECONCILE_UNSUPPORTED")
-                value = generator.reconcile()
+                value = (
+                    generator.reconcile(
+                        operation_id=args.request_operation_id,
+                        evidence_sha256=args.termination_evidence_sha256,
+                        confirmed=args.confirm_terminated,
+                    )
+                    if args.local_api_manifest is not None
+                    else generator.reconcile()
+                )
             else:
                 db = db or Database(_dsn("OW_WRITER_DSN"))
                 if args.action == "enqueue":
                     if not args.document_id:
                         raise WorkbenchError("DOCUMENT_ID_REQUIRED")
-                    value = {
-                        "job_id": intelligence.enqueue(
-                            db, generator, args.document_id, args.operation_id, args.data_class
-                        )
-                    }
+                    value = intelligence.enqueue(
+                        db,
+                        generator,
+                        args.document_id,
+                        args.operation_id,
+                        args.data_class,
+                        describe=True,
+                    )
                 else:
                     value = intelligence.enrich_once(
                         db,

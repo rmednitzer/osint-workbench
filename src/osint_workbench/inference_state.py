@@ -104,12 +104,15 @@ def _receipt(data):
         if not isinstance(data, bytes) or not 1 <= len(data) <= MAX_RECEIPT_BYTES:
             raise ValueError
         value = json.loads(data.decode("utf-8"), object_pairs_hook=_pairs)
-        if not isinstance(value, dict) or set(value) != {
-            "operation_id",
-            "generator_id",
-            "pid",
-            "start",
-        }:
+        if not isinstance(value, dict):
+            raise ValueError
+        api = value.get("format") == "local-api-operation/1"
+        expected = (
+            {"format", "operation_id", "generator_id", "request_sha256"}
+            if api
+            else {"operation_id", "generator_id", "pid", "start"}
+        )
+        if set(value) != expected:
             raise ValueError
         operation = value["operation_id"]
         if not isinstance(operation, str) or str(uuid.UUID(operation)) != operation:
@@ -118,10 +121,18 @@ def _receipt(data):
             "[0-9a-f]{64}", value["generator_id"]
         ):
             raise ValueError
-        if type(value["pid"]) is not int or not 1 <= value["pid"] <= 2**31 - 1:
-            raise ValueError
-        if not isinstance(value["start"], str) or not re.fullmatch("[0-9]{1,32}", value["start"]):
-            raise ValueError
+        if api:
+            if not isinstance(value["request_sha256"], str) or not re.fullmatch(
+                "[0-9a-f]{64}", value["request_sha256"]
+            ):
+                raise ValueError
+        else:
+            if type(value["pid"]) is not int or not 1 <= value["pid"] <= 2**31 - 1:
+                raise ValueError
+            if not isinstance(value["start"], str) or not re.fullmatch(
+                "[0-9]{1,32}", value["start"]
+            ):
+                raise ValueError
         return value
     except (ValueError, TypeError, UnicodeError, RecursionError):
         raise _unsafe() from None
@@ -201,6 +212,19 @@ class Admission:
     def create_marker(self, generator_id, peer):
         # No prompt, model path, socket path or credentials enter the receipt.
         value = {"operation_id": str(uuid.uuid4()), "generator_id": generator_id, **peer}
+        return self._create_marker(value)
+
+    def create_api_marker(self, generator_id, operation_id, request_sha256):
+        return self._create_marker(
+            {
+                "format": "local-api-operation/1",
+                "generator_id": generator_id,
+                "operation_id": operation_id,
+                "request_sha256": request_sha256,
+            }
+        )
+
+    def _create_marker(self, value):
         data = json.dumps(value, separators=(",", ":")).encode()
         _receipt(data)
         try:
@@ -224,6 +248,89 @@ class Admission:
         except OSError:
             # A partially written receipt remains a fail-closed reservation.
             raise _unsafe() from None
+
+    def resolve_api_marker(self, expected, evidence_sha256):
+        """Retain an operator termination attestation before releasing admission.
+
+        This records an operator assertion, not a server termination proof. Exact
+        bytes make retry after write-before-unlink failure idempotent.
+        """
+        if (
+            expected.value.get("format") != "local-api-operation/1"
+            or not isinstance(evidence_sha256, str)
+            or re.fullmatch("[0-9a-f]{64}", evidence_sha256) is None
+        ):
+            raise _unsafe()
+        value = {
+            "format": "local-api-resolution/1",
+            "receipt": expected.value,
+            "disposition": "operator-confirmed-terminated",
+            "evidence_sha256": evidence_sha256,
+        }
+        data = json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
+        # A bounded UUID basename is independent of operator-selected lock paths.
+        operation_id = expected.value.get("operation_id")
+        if (
+            not isinstance(operation_id, str)
+            or re.fullmatch(
+                r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", operation_id
+            )
+            is None
+        ):
+            raise _unsafe()
+        name = "ow-inference-resolution-" + operation_id + ".json"
+        fd = None
+        try:
+            self._current()
+            if self.read_marker() != expected:
+                raise _unsafe()
+            try:
+                fd = os.open(
+                    name,
+                    os.O_WRONLY | os.O_CREAT | os.O_EXCL | _FILE_FLAGS,
+                    0o600,
+                    dir_fd=self.directory,
+                )
+            except FileExistsError:
+                fd = os.open(name, os.O_RDONLY | _FILE_FLAGS, dir_fd=self.directory)
+                before = os.fstat(fd)
+                _file(before)
+                if before.st_size != len(data) or os.read(fd, MAX_RECEIPT_BYTES + 1) != data:
+                    raise _unsafe() from None
+                named = os.stat(name, dir_fd=self.directory, follow_symlinks=False)
+                if _identity(before) != _identity(os.fstat(fd)) or _identity(before) != _identity(
+                    named
+                ):
+                    raise _unsafe() from None
+                audit_identity = _identity(before)
+                os.fsync(fd)
+                if _identity(os.fstat(fd)) != audit_identity:
+                    raise _unsafe() from None
+            else:
+                with os.fdopen(fd, "wb") as stream:
+                    fd = None
+                    _file(os.fstat(stream.fileno()))
+                    stream.write(data)
+                    stream.flush()
+                    info = os.fstat(stream.fileno())
+                    _file(info)
+                    if info.st_size != len(data):
+                        raise _unsafe()
+                    audit_identity = _identity(info)
+                    os.fsync(stream.fileno())
+                    if _identity(os.fstat(stream.fileno())) != audit_identity:
+                        raise _unsafe()
+            named = os.stat(name, dir_fd=self.directory, follow_symlinks=False)
+            _file(named)
+            if _identity(named) != audit_identity:
+                raise _unsafe()
+            os.fsync(self.directory)
+            self.remove_marker(expected)
+        except OSError:
+            raise _unsafe() from None
+        finally:
+            if fd is not None:
+                os.close(fd)
 
     def remove_marker(self, expected):
         try:

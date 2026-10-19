@@ -17,7 +17,7 @@ caller before editing; do not invent a path.
 | SQL, evidence and jobs | `database.py`, `evidence.py`, job modules, `migrations/`; [workflows](docs/workflows.md), [lifecycle](docs/lifecycle.md) |
 | Acquisition | Collection, transport, parser/resolver workers; [scheduled acquisition](docs/scheduled-acquisition.md) |
 | Build/SBOM/licences | `scripts/build_evidence.py`, `scripts/check_sbom.py`, `scripts/check_licences.py`, `scripts/check_native.py`, `scripts/build_notices.py`; [build evidence](docs/build-evidence.md), [licence review](docs/security/dependency-licences.md), [native policy](docs/security/native-components.md) |
-| Local ML/retrieval | `local_encoder.py`, `encoder_process.py`, `vector_index.py`, local generation/reranker modules; [retrieval](docs/local-retrieval.md), [intelligence](docs/local-intelligence.md) |
+| Local ML/retrieval | `local_encoder.py`, `encoder_process.py`, `vector_index.py`, local generation/API/reranker modules; [retrieval](docs/local-retrieval.md), [intelligence](docs/local-intelligence.md), [local API](docs/local-inference-api.md) |
 | Optional remote inference/accounting | `cloud.py`, CLI and intelligence modules; [cloud routes](docs/cloud-routes.md) |
 | Recovery/deletion | Recovery, GC and purge modules; [recovery](docs/recovery.md), [GC](docs/garbage-collection.md), [SQL purge](docs/retired-record-purge.md) |
 | Supervision/storage sharing/health | Worker, health and evidence modules, `config/systemd/` and guarded deployment harness; [operational profile](docs/operational-profile.md), [deployment](docs/deployment.md) |

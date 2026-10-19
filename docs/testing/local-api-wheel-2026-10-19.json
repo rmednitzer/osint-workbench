@@ -1,0 +1,34 @@
+{
+  "format": "osint-workbench-local-api-wheel-review-v1",
+  "date": "2026-10-19",
+  "baseline_commit": "a84cfae3cd17d07f79eb45979e7fc6dbf47272c4",
+  "previous_wheel_sha256": "e31f4506d20e4118b8b6258ad109cc0e1aa12247e38b30e1cd4373606d67f23b",
+  "candidate_wheel_sha256": "68f245a2a7778b993548291b42536f777ae70bad21a51e1432c456a95958bc62",
+  "lock_sha256": "b5a4684da62a5a3457e445595fc4bbd867ad4db81f3da74adcde00f4d66c62c9",
+  "archive_members": 60,
+  "changed_members": [
+    "osint_workbench-0.1.0.dev1.dist-info/METADATA",
+    "osint_workbench-0.1.0.dev1.dist-info/RECORD",
+    "osint_workbench/cli.py",
+    "osint_workbench/database.py",
+    "osint_workbench/inference_state.py",
+    "osint_workbench/intelligence.py",
+    "osint_workbench/local_generation.py"
+  ],
+  "added_members": [
+    "osint_workbench/local_api.py"
+  ],
+  "removed_members": [],
+  "metadata_headers_unchanged": true,
+  "metadata_sha256": "833a26239815f117a24280357054784a38b76b821b1b6959e0c789d5e7bb1ad6",
+  "metadata_bytes": 10945,
+  "licence_bytes_unchanged": true,
+  "elf_members": 0,
+  "uv_version": "0.13.1",
+  "limits": [
+    "Local API qualification/model revisions and no-forwarding/unmetered facts are operator declarations.",
+    "Synthetic wire/SQL/native tests do not qualify actual Ollama/vLLM deployments or pretrained quality.",
+    "No independent reviewer authority, generic remote embedding API or full scenario acceptance established.",
+    "Native and signed main acceptance must bind exact source/run identity."
+  ]
+}

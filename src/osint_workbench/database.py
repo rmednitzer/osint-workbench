@@ -515,6 +515,10 @@ class Database:
         }
 
     def enqueue(self, kind: str, dedup: str, payload: dict) -> str:
+        return self.enqueue_state(kind, dedup, payload)["job_id"]
+
+    def enqueue_state(self, kind: str, dedup: str, payload: dict) -> dict:
+        """Report the atomic stored state; a dedup hit never resets terminal work."""
         from .jobs import bounded_json
 
         if not kind or len(kind) > 100 or not dedup or len(dedup) > 4096:
@@ -525,14 +529,19 @@ class Database:
                 from .lifecycle import assert_document_visible
 
                 assert_document_visible(conn, payload["document_id"])
-            return str(
-                conn.execute(
-                    """INSERT INTO ow.jobs(job_id,kind,dedup_key,payload)
+            row = conn.execute(
+                """INSERT INTO ow.jobs(job_id,kind,dedup_key,payload)
               VALUES (%s,%s,%s,%s) ON CONFLICT(kind,dedup_key)
-              DO UPDATE SET dedup_key=excluded.dedup_key RETURNING job_id""",
-                    (uuid.uuid4(), kind, dedup, bounded),
-                ).fetchone()["job_id"]
-            )
+              DO UPDATE SET dedup_key=excluded.dedup_key RETURNING job_id,status""",
+                (uuid.uuid4(), kind, dedup, bounded),
+            ).fetchone()
+            terminal = row["status"] in {"succeeded", "failed", "cancelled"}
+            return {
+                "job_id": str(row["job_id"]),
+                "job_status": row["status"],
+                "enqueue_effect": "terminal_preserved" if terminal else "pending_or_running",
+                "requeued": False,
+            }
 
     def claim(self, lease_seconds: int = 30) -> dict | None:
         from .jobs import Jobs
