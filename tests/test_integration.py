@@ -56,7 +56,12 @@ def test_installed_text_import_preserves_utf8_evidence_and_reader_contract(datab
     )
     assert result.returncode == 0 and result.stderr == ""
     service = ReadService(reader, EvidenceStore(root, read_only=True))
-    observed = service.document(json.loads(result.stdout)["document_id"])
+    receipt = json.loads(result.stdout)
+    assert receipt["document_effect"] == "inserted"
+    assert receipt["processing"]["enqueue_effect"] == "inserted"
+    assert receipt["processing"]["job_status"] == "ready"
+    assert not receipt["processing"]["requeued"]
+    observed = service.document(receipt["document_id"])
     assert observed["text"] == text and observed["integrity"] == "verified"
     snapshot = reader.snapshot(observed["snapshot_id"])
     assert service.store.get(snapshot["raw_sha256"]) == raw

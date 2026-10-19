@@ -43,6 +43,10 @@ queue. A claim can reap its limit of exhausted attempts before reaching an
 eligible job; a later tick must poll again. The failed count covers jobs attempted
 by this tick, not exhausted jobs reaped during claim admission.
 
+Explicit [chunk operations and receipts](workflows.md#explicit-chunk-recovery-and-receipts)
+allow writer-requested recovery without resetting earlier jobs. `work-once`
+reports the downstream disposition; bounded `work` retains aggregate tick counts.
+
 `document.chunked` events remain queued for future consumers. Do not delete
 them or count them as processed merely to make a queue chart green. Health's
 pending threshold counts ready and running jobs of **all** kinds; this growing

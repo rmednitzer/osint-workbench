@@ -2,11 +2,12 @@
 
 import hashlib
 import json
+from typing import Literal
 
 from psycopg.types.json import Jsonb
-from pydantic import Field, ValidationError
+from pydantic import Field, ValidationError, model_validator
 
-from .contracts import StrictModel
+from .contracts import Digest, Identifier, StrictModel
 from .database import Database
 from .errors import WorkbenchError
 from .evidence import EvidenceStore
@@ -14,10 +15,50 @@ from .jobs import Jobs
 from .lifecycle import assert_document_visible
 from .text import chunks, digest
 
+CHUNKER = "characters/1:size=1800:overlap=150"
+
 
 class AcceptedDocument(StrictModel):
     document_id: str = Field(pattern=r"^[0-9a-f]{64}$")
     snapshot_id: str = Field(pattern=r"^[0-9a-f]{64}$")
+    operation_id: Identifier | None = None
+    chunker: Literal["characters/1:size=1800:overlap=150"] | None = None
+
+    @model_validator(mode="after")
+    def explicit_operation_pair(self):
+        if (self.operation_id is None) != (self.chunker is None):
+            raise ValueError("explicit chunk operations require a version and operation ID")
+        return self
+
+
+class ChunkRequest(StrictModel):
+    document_id: Digest
+    operation_id: Identifier
+
+
+def enqueue_chunk(db: Database, document_id, operation_id):
+    """Create a distinct operator-requested chunk operation; never reset a job.
+
+    A retained historical version may be chunked without rewinding its source
+    head. Snapshot and algorithm are bound under lifecycle admission.
+    """
+    request = ChunkRequest(document_id=document_id, operation_id=operation_id)
+    with db.connect() as conn:
+        assert_document_visible(conn, request.document_id)
+        row = conn.execute(
+            "SELECT snapshot_id FROM ow.visible_documents WHERE document_id=%s",
+            (request.document_id,),
+        ).fetchone()
+        if not row:
+            raise WorkbenchError("DOCUMENT_NOT_FOUND")
+        payload = AcceptedDocument(
+            document_id=request.document_id,
+            snapshot_id=row["snapshot_id"],
+            operation_id=request.operation_id,
+            chunker=CHUNKER,
+        ).model_dump(exclude_none=True)
+        key = "chunk-operation/1:" + digest(json.dumps(payload, sort_keys=True).encode())
+        return Database.enqueue_stored(conn, "document.accepted", key, payload)
 
 
 def run_batch(db: Database, store: EvidenceStore, *, max_jobs: int = 32) -> dict:
@@ -62,7 +103,7 @@ def run_once(db: Database, store: EvidenceStore) -> dict:
             raise WorkbenchError("DOCUMENT_INTEGRITY_MISMATCH")
         parts = chunks(text)
         # Version includes every split parameter; never mix settings under one identity.
-        chunker = "characters/1:size=1800:overlap=150"
+        chunker = CHUNKER
         with db.connect() as conn:
             locked = jobs.locked(conn, job["job_id"], job["fence"])
             assert_document_visible(conn, payload.document_id)
@@ -85,23 +126,30 @@ def run_once(db: Database, store: EvidenceStore) -> dict:
                         part["text"],
                     ),
                 )
-            conn.execute(
-                """INSERT INTO ow.jobs(job_id,kind,dedup_key,payload)
-                VALUES (gen_random_uuid(),'document.chunked',%s,%s) ON CONFLICT DO NOTHING""",
-                (
-                    payload.document_id + ":" + chunker,
-                    Jsonb(
-                        {
-                            "document_id": payload.document_id,
-                            "chunker": chunker,
-                            "chunks": len(parts),
-                        }
-                    ),
-                ),
+            downstream = Database.enqueue_stored(
+                conn,
+                "document.chunked",
+                payload.document_id + ":" + chunker,
+                {"document_id": payload.document_id, "chunker": chunker, "chunks": len(parts)},
             )
             assert_document_visible(conn, payload.document_id)
-            jobs.finish_locked(conn, locked, Jsonb({"chunks": len(parts), "chunker": chunker}))
-        return {"status": "succeeded", "job_id": str(job["job_id"]), "chunks": len(parts)}
+            jobs.finish_locked(
+                conn,
+                locked,
+                Jsonb(
+                    {
+                        "chunks": len(parts),
+                        "chunker": chunker,
+                        "downstream_enqueue": downstream,
+                    }
+                ),
+            )
+        return {
+            "status": "succeeded",
+            "job_id": str(job["job_id"]),
+            "chunks": len(parts),
+            "downstream_enqueue": downstream,
+        }
     except (WorkbenchError, ValidationError) as exc:
         code = exc.code if isinstance(exc, WorkbenchError) else "INVALID_JOB_PAYLOAD"
         if code == "STALE_JOB_LEASE":

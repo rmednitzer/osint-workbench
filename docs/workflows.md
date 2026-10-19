@@ -34,6 +34,44 @@ defines cap/idle/failure semantics, supervision and the unsupported downstream
 backlog; the [deployment procedure](deployment.md) covers explicit shared read
 custody. Neither command initiates model downloads, inference or cloud work.
 
+## Explicit chunk recovery and receipts
+
+After inspecting the original job and correcting its cause, a writer can request
+chunking of a retained visible document with an intentional operation ID:
+
+```sh
+osint-workbench chunk enqueue --document-id <document-digest> --operation-id repair-1
+```
+
+Use `job inspect <job-id>` to inspect the returned job, then run the
+normal chunk worker. Reusing `repair-1` for that document/algorithm preserves the
+same job even when failed, cancelled or succeeded. A different ID creates a new
+operation with its own retry budget; it never resets the original. Neither enqueue
+nor chunking runs enrichment, inference, cloud work or downstream consumers.
+Historical versions can be chunked without changing the current source head.
+Retired/expired documents remain refused. IDs are bounded nonsecret labels;
+see [ADR-0054](adr/0054-explicit-chunk-operations.md) for algorithm binding and rollback.
+
+The enqueue result contains `job_id`, `job_status`, `enqueue_effect` and
+`requeued: false`. `pending_or_running` describes current stored nonterminal
+state; it does not assert that this call inserted a new row. `terminal_preserved`
+means the same terminal job is retained and no new work was scheduled.
+`work-once` success adds `downstream_enqueue`; the same receipt is stored in the
+job result. A terminal downstream receipt does not turn chunk success into
+end-to-end pipeline completion. `document.chunked` has no generic consumer.
+Receipts describe committed transaction-time observations; a later worker may
+change nonterminal status.
+
+`import-text` retains `document_id` and adds `document_effect` (`inserted` or
+`version_replayed`) and a `processing` receipt. A newly inserted job reports
+`inserted`/`ready`. A preserved conflicting job reports `existing_preserved` with
+unknown ID/status. Immutable replay reports `not_enqueued`, also with unknown
+ID/status; it does not inspect or repair earlier jobs. The Python ingestion API
+keeps its default document-ID return; `describe=True` opts into this envelope.
+Internal current-item reconciliation can report `current_item_reused` without
+an enqueue. Collectors need no downstream read/update grants, and their aggregate
+accepted-document counts are not processing-success counts.
+
 Each collector holds a PostgreSQL session advisory lock for one source. Hash collisions
 may serialize unrelated sources but cannot grant extra authority. All acceptance uses
 that same connection. Lost connections stop acceptance and release the lock. Another
@@ -54,7 +92,7 @@ untrusted. A parser failure does not overwrite last success or erase partial evi
 
 Published migrations are immutable. The runner verifies applied digests, refuses
 unknown/gapped histories and applies additive versions under its transaction and
-advisory lock. The current supported pair is core v10/retrieval v4. Roll forward;
+advisory lock. The current supported pair is core v12/retrieval v5. Roll forward;
 do not run an older worker against newer state or silently delete workflow history.
 Before deployment, preserve the database/object pair and verify isolated restore.
 Bounded [recovery](recovery.md), [lifecycle](lifecycle.md), [GC](garbage-collection.md)

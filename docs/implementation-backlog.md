@@ -88,9 +88,10 @@ claimed failure and preserve existing lifecycle/permission boundaries.
    requalify legacy reviews before relying on their cited products.
 2. Preserve the exact retrieval writer column grants through future index,
    activation, purge and recovery changes; broader producer separation remains open.
-3. Extend explicit enrichment enqueue dispositions to other job producers without replaying
-   uncertain local/API/cloud work. Keep intentional new-operation identity separate
-   from resuming a fenced attempt or clearing admission.
+3. Explicit enrichment and [chunk operation receipts](workflows.md#explicit-chunk-recovery-and-receipts)
+   cover their bounded producers. Broader workflow/DAG scheduling and automatic
+   backfill remain open. Preserve intentional operation identity, terminal history
+   and uncertain local/API/cloud admission; acquisition counts never prove downstream completion.
 4. Qualify selected useful local models and actual API server deployments, including
    disabled forwarding, licence/provenance, chat templates, context/resource limits,
    controlled held-out support/abstention/relevance and acceleration evidence.

@@ -331,8 +331,14 @@ class Database:
                 raise WorkbenchError("UNSAFE_COLLECTOR_IDENTITY")
 
     def ingest(
-        self, doc: DocumentInput, raw: bytes, store: EvidenceStore, extractor: str = "text/1"
-    ) -> str:
+        self,
+        doc: DocumentInput,
+        raw: bytes,
+        store: EvidenceStore,
+        extractor: str = "text/1",
+        *,
+        describe=False,
+    ) -> str | dict:
         # Objects are durable before accepted metadata. DB failure may leave an
         # orphan; it must not create accepted records pointing at missing bytes.
         with store.transaction(self) as conn:
@@ -342,7 +348,9 @@ class Database:
                 conn, doc.source_id, hashlib.sha256(doc.external_id.encode()).hexdigest()
             )
             raw_sha, text_sha = store.put(raw), store.put(doc.text.encode())
-            return self.ingest_stored(conn, doc, raw_sha, text_sha, extractor, store=store)
+            return self.ingest_stored(
+                conn, doc, raw_sha, text_sha, extractor, store=store, describe=describe
+            )
 
     @staticmethod
     def _version_ids(doc, external, raw_sha, text_sha, extractor):
@@ -363,7 +371,9 @@ class Database:
         return snapshot, document
 
     @staticmethod
-    def ingest_stored(conn, doc, raw_sha, text_sha, extractor, *, store, observed_current=False):
+    def ingest_stored(
+        conn, doc, raw_sha, text_sha, extractor, *, store, observed_current=False, describe=False
+    ):
         """Internal transaction boundary; caller has durably verified both objects."""
         store.require_transaction(conn)
         external = hashlib.sha256(doc.external_id.encode()).hexdigest()
@@ -397,7 +407,9 @@ class Database:
                     doc, external, head["raw_sha256"], text_sha, extractor
                 )
                 if prior[1] == head["document_id"]:
-                    return head["document_id"]
+                    return Database._ingest_disposition(
+                        head["document_id"], "current_item_reused", describe=describe
+                    )
         conn.execute(
             """INSERT INTO ow.snapshots
             (snapshot_id,source_id,raw_sha256,text_sha256,extractor)
@@ -427,17 +439,49 @@ class Database:
               DO UPDATE SET document_id=excluded.document_id""",
                 (doc.source_id, external, document),
             )
+        processing = None
         if inserted:
-            conn.execute(
+            job_id = uuid.uuid4()
+            job = conn.execute(
                 """INSERT INTO ow.jobs(job_id,dedup_key,payload)
               VALUES (%s,%s,%s) ON CONFLICT DO NOTHING""",
                 (
-                    uuid.uuid4(),
+                    job_id,
                     document,
                     psycopg.types.json.Jsonb({"document_id": document, "snapshot_id": snapshot}),
                 ),
             )
-        return document
+            # Row count requires no job SELECT grant. A collector must not read
+            # or update downstream state merely to explain immutable replay.
+            created = job.rowcount == 1
+            processing = {
+                "job_id": str(job_id) if created else None,
+                "job_status": "ready" if created else None,
+                "enqueue_effect": "inserted" if created else "existing_preserved",
+                "requeued": False,
+            }
+        return Database._ingest_disposition(
+            document,
+            "inserted" if inserted else "version_replayed",
+            processing=processing,
+            describe=describe,
+        )
+
+    @staticmethod
+    def _ingest_disposition(document, effect, *, processing=None, describe=False):
+        if not describe:
+            return document
+        return {
+            "document_id": document,
+            "document_effect": effect,
+            "processing": processing
+            or {
+                "job_id": None,
+                "job_status": None,
+                "enqueue_effect": "not_enqueued",
+                "requeued": False,
+            },
+        }
 
     def search(self, query: str, limit: int = 20, offset: int = 0) -> list[dict]:
         if not isinstance(query, str) or not 1 <= len(query.strip()) <= 2000:
@@ -520,29 +564,52 @@ class Database:
 
     def enqueue_state(self, kind: str, dedup: str, payload: dict) -> dict:
         """Report the atomic stored state; a dedup hit never resets terminal work."""
+        bounded = self._enqueue_input(kind, dedup, payload)
+        with self.connect() as conn:
+            return self._enqueue_prepared(conn, kind, dedup, payload, bounded)
+
+    @staticmethod
+    def _enqueue_input(kind, dedup, payload):
         from .jobs import bounded_json
 
-        if not kind or len(kind) > 100 or not dedup or len(dedup) > 4096:
+        if (
+            not isinstance(kind, str)
+            or not 1 <= len(kind) <= 100
+            or not isinstance(dedup, str)
+            or not 1 <= len(dedup) <= 4096
+        ):
             raise WorkbenchError("INVALID_JOB")
-        bounded = bounded_json(payload)
-        with self.connect() as conn:
-            if "document_id" in payload:
-                from .lifecycle import assert_document_visible
+        return bounded_json(payload)
 
-                assert_document_visible(conn, payload["document_id"])
-            row = conn.execute(
-                """INSERT INTO ow.jobs(job_id,kind,dedup_key,payload)
+    @staticmethod
+    def enqueue_stored(conn, kind: str, dedup: str, payload: dict) -> dict:
+        """Writer-only enqueue inside the caller's transaction and lifecycle lock.
+
+        Callers own fencing and commit. No separate connection or accepted effect
+        escapes a rolled-back worker transaction. Not a collector capability.
+        """
+        bounded = Database._enqueue_input(kind, dedup, payload)
+        return Database._enqueue_prepared(conn, kind, dedup, payload, bounded)
+
+    @staticmethod
+    def _enqueue_prepared(conn, kind, dedup, payload, bounded):
+        if "document_id" in payload:
+            from .lifecycle import assert_document_visible
+
+            assert_document_visible(conn, payload["document_id"])
+        row = conn.execute(
+            """INSERT INTO ow.jobs(job_id,kind,dedup_key,payload)
               VALUES (%s,%s,%s,%s) ON CONFLICT(kind,dedup_key)
               DO UPDATE SET dedup_key=excluded.dedup_key RETURNING job_id,status""",
-                (uuid.uuid4(), kind, dedup, bounded),
-            ).fetchone()
-            terminal = row["status"] in {"succeeded", "failed", "cancelled"}
-            return {
-                "job_id": str(row["job_id"]),
-                "job_status": row["status"],
-                "enqueue_effect": "terminal_preserved" if terminal else "pending_or_running",
-                "requeued": False,
-            }
+            (uuid.uuid4(), kind, dedup, bounded),
+        ).fetchone()
+        terminal = row["status"] in {"succeeded", "failed", "cancelled"}
+        return {
+            "job_id": str(row["job_id"]),
+            "job_status": row["status"],
+            "enqueue_effect": "terminal_preserved" if terminal else "pending_or_running",
+            "requeued": False,
+        }
 
     def claim(self, lease_seconds: int = 30) -> dict | None:
         from .jobs import Jobs

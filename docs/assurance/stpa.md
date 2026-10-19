@@ -830,3 +830,21 @@ accidental substitution; the same-UID non-atomic custody limitation remains.
 Separate credentials do not prove different humans, citation entailment or an
 independent administrator. Promotion of learned workflows remains deferred; no
 new autonomous policy mutation or experiment framework is introduced.
+
+## Explicit chunk operations: ADR-0054
+
+Under SC2/SC4/SC7 and C6/C9/C10/C12, CA4 job acceptance must distinguish immutable
+replay from scheduling and chunk success from downstream completion. A faulty
+process model treats re-import or cancellation as clearing terminal state, or
+interprets an outbox row as completed enrichment. Explicit version-bound operation
+identity preserves prior jobs; collectors do not gain downstream read/update
+permissions merely to report acquisition. Transactional receipts must roll back
+with chunk acceptance when the lease or commit guard fails.
+
+Discriminating tests cover preserved failed/cancelled/succeeded originals,
+concurrent same-operation identity, terminal downstream feedback, actual collector
+permissions, final lease expiry and injected pre-commit failure. Historical-head
+and retirement tests preserve lifecycle constraints. A different chunk operation
+ID authorizes character computation only; it cannot resolve or replay uncertain
+model/API/cloud execution. Full workflow scheduling, semantic quality and human
+review acceptance remain outside this refinement.
