@@ -1,0 +1,21 @@
+{
+  "format": "osint-workbench-read-reranker-wheel-review-v1",
+  "date": "2026-10-19",
+  "baseline_commit": "35a4db60c822fb95ededf4f22193e84675c0b74f",
+  "previous_wheel_sha256": "6d8dc7feb8f81bdcfb706da41d9341dd79a9beaff9c7d5347e46abbb44a1dbfd",
+  "candidate_wheel_sha256": "9dcafeb6deec179d3a9643ac80b3623c5db2a8baeb9d7f0cce5053c8d1c74640",
+  "lock_sha256": "b5a4684da62a5a3457e445595fc4bbd867ad4db81f3da74adcde00f4d66c62c9",
+  "changed_members": [
+    "osint_workbench-0.1.0.dev1.dist-info/RECORD",
+    "osint_workbench/local_reranker.py",
+    "osint_workbench/service.py"
+  ],
+  "metadata_and_licence_bytes_unchanged": true,
+  "elf_members": 0,
+  "legal_approval": false,
+  "limits": [
+    "Service ownership and per-call configuration custody; no historical response or pretrained-model qualification.",
+    "Exact PostgreSQL/MCP and parent-death acceptance belongs to required native CI; local parent-death checks fail before the kill step in this container.",
+    "No schema, dependency or authority change."
+  ]
+}
