@@ -344,3 +344,33 @@ def test_caller_query_template_mutation_cannot_rebind_hybrid_search(retrieval):
     # Both exact native and lexical rankings put storage first under the captured
     # contract; the changed template would put security first semantically.
     assert found["results"][0]["rrf_score"] == pytest.approx(2 / 61)
+
+
+@pytest.mark.parametrize("field", ["manifest", "dimensions"])
+def test_conflicting_registered_space_refuses_build_without_relabelling(retrieval, field):
+    from psycopg.types.json import Jsonb
+
+    writer, reader, roles, store, encoder = retrieval
+    index = VectorIndex(writer, encoder)
+    manifest = encoder.manifest.model_dump(exclude={"model_path", "tokenizer_path", "threads"})
+    dimensions = 3
+    if field == "manifest":
+        manifest["space"]["document_template"] = "patch {text}"
+    else:
+        dimensions = 4
+    with writer.connect() as conn:
+        conn.execute(
+            "INSERT INTO ow.embedding_spaces(space_id,manifest,dimensions) VALUES (%s,%s,%s)",
+            (index.space_id, Jsonb(manifest), dimensions),
+        )
+    with pytest.raises(WorkbenchError, match="^INCOMPATIBLE_EMBEDDING_SPACE$"):
+        index.build(store)
+    with writer.connect() as conn:
+        assert conn.execute(
+            "SELECT manifest,dimensions FROM ow.embedding_spaces WHERE space_id=%s",
+            (index.space_id,),
+        ).fetchone() == {"manifest": manifest, "dimensions": dimensions}
+        assert (
+            conn.execute("SELECT count(*) AS n FROM ow.retrieval_generations").fetchone()["n"] == 0
+        )
+        assert conn.execute("SELECT count(*) AS n FROM ow.retrieval_active").fetchone()["n"] == 0

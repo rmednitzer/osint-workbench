@@ -44,7 +44,12 @@ Invalid manifest configuration fails before database work. See
 This correction does not establish the provenance of existing vectors. Old records
 cannot reveal whether their producer changed configuration between calls. If
 producer custody is uncertain, rebuild from reviewed unchanged artifacts and
-activate the new generation after its normal checks. Retain the old records;
+activate the new generation after its normal checks. A build also verifies that
+an existing embedding-space registry row exactly matches the captured manifest
+and dimensions before creating any generation. A conflict fails with
+`INCOMPATIBLE_EMBEDDING_SPACE`; neither the registry nor old vectors are rewritten.
+Such a conflict needs a separately reviewed reconstruction or migration plan;
+an ordinary rebuild in that conflicting registry is refused. Retain the old records;
 do not relabel vectors or rewrite their manifest. Keep unqualified hybrid results
 out of operational reliance until that requalification is complete. Model-file
 tampering after construction still fails per-call byte checks; a snapshot is not
