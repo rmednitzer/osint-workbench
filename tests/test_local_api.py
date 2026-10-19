@@ -607,3 +607,50 @@ def test_installed_cli_rejects_conflicting_selection_or_resolution_without_effec
     )
     assert result.returncode == 1 and result.stdout == ""
     assert json.loads(result.stderr) == {"error": expected}
+
+
+@pytest.mark.parametrize("mutation", ["rename", "truncate", "same-size"])
+@pytest.mark.parametrize("existing", [False, True])
+def test_resolution_audit_replacement_after_write_keeps_marker(
+    lock, monkeypatch, mutation, existing
+):
+    import os
+    import stat
+
+    with admission() as held:
+        held.create_api_marker(manifest().identity(), OPERATION["operation_id"], "d" * 64)
+    audit = Path(str(lock) + ".resolved-" + OPERATION["operation_id"])
+    if existing:
+        with admission(allow_uncertain=True) as held:
+            value = {
+                "format": "local-api-resolution/1",
+                "receipt": held.read_marker().value,
+                "disposition": "operator-confirmed-terminated",
+                "evidence_sha256": "c" * 64,
+            }
+        audit.write_text(json.dumps(value, sort_keys=True, separators=(",", ":")))
+        audit.chmod(0o600)
+    original = os.fsync
+    changed = False
+
+    def substitute_after_fsync(fd):
+        nonlocal changed
+        original(fd)
+        info = os.fstat(fd)
+        if stat.S_ISREG(info.st_mode) and audit.exists() and not changed:
+            changed = True
+            if mutation == "rename":
+                audit.rename(audit.with_suffix(".retained"))
+                audit.write_bytes(b"substituted-audit")
+                audit.chmod(0o600)
+            elif mutation == "same-size":
+                audit.write_bytes(b"x" * audit.stat().st_size)
+            else:
+                audit.write_bytes(b"truncated-audit")
+
+    monkeypatch.setattr(os, "fsync", substitute_after_fsync)
+    with pytest.raises(WorkbenchError, match="INFERENCE_LOCK_UNSAFE"):
+        LocalApiGenerator(manifest()).reconcile(
+            operation_id=OPERATION["operation_id"], evidence_sha256="c" * 64, confirmed=True
+        )
+    assert changed and Path(str(lock) + ".unknown").exists()

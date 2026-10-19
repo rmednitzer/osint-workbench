@@ -810,3 +810,9 @@ formats cannot clear each other's ownership. Normal completion, non-execution,
 secret refusal, malformed/oversized/delayed responses, concurrent admission and
 write-before-unlink recovery require discriminating tests. Full E34–E38/E41/E44
 acceptance, operational deployment and independent reviewer authority remain open.
+
+API resolution audit custody additionally checks file identity/size across fsync
+and checks the named directory entry before marker release. Replacement,
+truncation and same-size mutation on both new-write and existing-audit retry paths
+must leave the uncertain reservation intact. These failure-injection cases cover
+accidental substitution; the same-UID non-atomic custody limitation remains.

@@ -292,14 +292,28 @@ class Admission:
                     named
                 ):
                     raise _unsafe() from None
+                audit_identity = _identity(before)
                 os.fsync(fd)
+                if _identity(os.fstat(fd)) != audit_identity:
+                    raise _unsafe() from None
             else:
                 with os.fdopen(fd, "wb") as stream:
                     fd = None
                     _file(os.fstat(stream.fileno()))
                     stream.write(data)
                     stream.flush()
+                    info = os.fstat(stream.fileno())
+                    _file(info)
+                    if info.st_size != len(data):
+                        raise _unsafe()
+                    audit_identity = _identity(info)
                     os.fsync(stream.fileno())
+                    if _identity(os.fstat(stream.fileno())) != audit_identity:
+                        raise _unsafe()
+            named = os.stat(name, dir_fd=self.directory, follow_symlinks=False)
+            _file(named)
+            if _identity(named) != audit_identity:
+                raise _unsafe()
             os.fsync(self.directory)
             self.remove_marker(expected)
         except OSError:

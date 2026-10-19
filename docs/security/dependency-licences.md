@@ -200,3 +200,8 @@ bytes match, and the application still has no ELF members. Only the inspected
 application metadata/archive identities change; third-party policy and recorded
 native variants retain their prior dispositions. This adds no legal or native
 closure approval.
+
+The [local API custody successor](../testing/local-api-custody-wheel-2026-10-19.json)
+compares the next candidate with that initial API wheel. Only inference-state
+custody and RECORD change; metadata, licence and every third-party entry remain
+unchanged. The initial comparison remains historical evidence for its own bytes.
