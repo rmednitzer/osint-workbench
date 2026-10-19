@@ -1,0 +1,21 @@
+{
+  "format": "osint-workbench-reviewer-purge-wheel-review-v1",
+  "date": "2026-10-19",
+  "baseline_commit": "3c8a6ff21f5bceac5dea2af30dba45b5c47d255c",
+  "previous_wheel_sha256": "107e70eba27868cfb463622089fe1a257584ad320fbbae8c7339698672091a5f",
+  "candidate_wheel_sha256": "1d35d3181a7ac0aade38f955e31243a2c2a30def1071e15cb90ce4dc260f1ad6",
+  "lock_sha256": "b5a4684da62a5a3457e445595fc4bbd867ad4db81f3da74adcde00f4d66c62c9",
+  "changed_members": [
+    "osint_workbench-0.1.0.dev1.dist-info/RECORD",
+    "osint_workbench/record_purge.py",
+    "osint_workbench/reviewer.py"
+  ],
+  "metadata_and_licence_bytes_unchanged": true,
+  "elf_members": 0,
+  "legal_approval": false,
+  "limits": [
+    "Core-12 purge inventory adds review provenance columns and permits only the named INSERT-only review trigger.",
+    "Revocation checks use catalog identity without resolving a protected schema regclass.",
+    "Native acceptance requires the current revision; failed run 39284930928 does not establish a pass."
+  ]
+}

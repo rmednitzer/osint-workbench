@@ -47,7 +47,7 @@ def validate_connection(conn):
         WHERE n.nspname IN ('ow','ow_vector') AND c.relkind='S' AND
           (has_sequence_privilege(current_user,c.oid,'SELECT,UPDATE') OR
            has_sequence_privilege(current_user,c.oid,'USAGE WITH GRANT OPTION') OR
-           (c.oid<>'ow.assertion_reviews_review_id_seq'::regclass AND
+           ((n.nspname,c.relname)<>('ow','assertion_reviews_review_id_seq') AND
              has_sequence_privilege(current_user,c.oid,'USAGE')))) AS sequence_authority
     """).fetchone()
     if any(unsafe.values()):

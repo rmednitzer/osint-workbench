@@ -95,10 +95,10 @@ items, holds, tombstones and decision events remain.
 Remote-attempt ledger rows (core v9, settlements from v10) are retained: they hold route, policy and
 packet digests with accounting, not document identifiers or content, and their
 exposure must survive purge. The purger may only read them for its exact
-authority checks. Purge still refuses any non-internal trigger or rule in the
-`ow` schema, with one reviewed exception: the ledger's `remote_operation_transition`
-trigger, accepted only while it fires per row before UPDATE on
-`ow.remote_operations`, which purge never modifies.
+authority checks. Purge refuses non-internal triggers and rules except the named
+ledger transition (per-row BEFORE UPDATE on `ow.remote_operations`) and review
+authentication (per-row BEFORE INSERT on `ow.assertion_reviews`). Neither fires
+on purge DELETE. Unexpected names, extra triggers and widened events remain refused.
 
 For optional retrieval, only target vectors, exclusions and members are deleted.
 Purge events recorded under profile 4 carry a `retrieval_exclusions` count;

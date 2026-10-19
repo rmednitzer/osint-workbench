@@ -87,3 +87,13 @@ The STPA successor records unsafe self-acceptance, retrospective authority claim
 broadened grants, refused legitimate reviews and mutable retrieval identity.
 No held-out quality, human independence, workspace authorization, operational
 deployment or full standard-conformance claim follows from these tests.
+
+## Native integration correction
+
+The first installed run found that the purge catalog still expected pre-12 review
+columns and rejected the new trigger. The successor includes both provenance
+columns in the exact inventory and allows only the named BEFORE INSERT review
+trigger; widened events or extra triggers remain refused by negative tests.
+Revocation now checks the sequence's catalog namespace/name without resolving a
+protected-schema regclass, so a revoked connection reaches the fixed refusal.
+No migration bytes or permission grants are relaxed by these corrections.

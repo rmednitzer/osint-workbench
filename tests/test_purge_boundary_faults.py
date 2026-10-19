@@ -14,7 +14,15 @@ pytestmark = pytest.mark.integration
 
 
 @pytest.mark.parametrize(
-    "customization", ["column", "rule", "widened-ledger-trigger", "extra-ledger-trigger"]
+    "customization",
+    [
+        "column",
+        "rule",
+        "widened-ledger-trigger",
+        "extra-ledger-trigger",
+        "widened-review-trigger",
+        "extra-review-trigger",
+    ],
 )
 def test_unreviewed_column_or_rewrite_rule_refused_before_mutation(context, customization):
     document = retired_document(context)
@@ -34,6 +42,17 @@ def test_unreviewed_column_or_rewrite_rule_refused_before_mutation(context, cust
             conn.execute(
                 "CREATE TRIGGER synthetic_extra BEFORE UPDATE ON ow.remote_operations "
                 "FOR EACH ROW EXECUTE FUNCTION ow.remote_operation_transition()"
+            )
+        elif customization == "widened-review-trigger":
+            conn.execute(
+                "DROP TRIGGER authenticate_review ON ow.assertion_reviews;"
+                "CREATE TRIGGER authenticate_review BEFORE INSERT OR DELETE "
+                "ON ow.assertion_reviews FOR EACH ROW EXECUTE FUNCTION ow.authenticate_review()"
+            )
+        elif customization == "extra-review-trigger":
+            conn.execute(
+                "CREATE TRIGGER synthetic_extra BEFORE INSERT ON ow.assertion_reviews "
+                "FOR EACH ROW EXECUTE FUNCTION ow.authenticate_review()"
             )
         else:
             conn.execute(
@@ -60,6 +79,14 @@ def test_unreviewed_column_or_rewrite_rule_refused_before_mutation(context, cust
                 )
             elif customization == "extra-ledger-trigger":
                 conn.execute("DROP TRIGGER synthetic_extra ON ow.remote_operations")
+            elif customization == "widened-review-trigger":
+                conn.execute(
+                    "DROP TRIGGER authenticate_review ON ow.assertion_reviews;"
+                    "CREATE TRIGGER authenticate_review BEFORE INSERT "
+                    "ON ow.assertion_reviews FOR EACH ROW EXECUTE FUNCTION ow.authenticate_review()"
+                )
+            elif customization == "extra-review-trigger":
+                conn.execute("DROP TRIGGER synthetic_extra ON ow.assertion_reviews")
             else:
                 conn.execute("DROP RULE synthetic_extra_write ON ow.chunks")
 
