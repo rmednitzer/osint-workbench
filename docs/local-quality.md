@@ -1,7 +1,7 @@
 # Frozen local retrieval diagnostics
 
 This profile executes an offline lexical baseline and, when explicitly supplied,
-a local ONNX encoder against a frozen ranking suite. It supplies execution evidence
+a local ONNX encoder or stand-alone reranker against a frozen ranking suite. It supplies execution evidence
 and narrow diagnostic measurements. It does not accept a model, activate an index,
 select a production route, or close the semantic-quality programme.
 
@@ -105,8 +105,8 @@ and use a new directory for every run. Its parent must already exist.
 The encoder embeds each complete passage using its document template and each
 query using its query template. No text is truncated. Exhaustive normalized dot
 products determine order, with document ID breaking ties. This isolated diagnostic
-does not execute PostgreSQL full-text search, hybrid RRF, reranking or MCP. It
-also does not exercise profile-v4 exclusion/activation behavior: a failed complete
+does not execute PostgreSQL full-text search, hybrid RRF or MCP. It
+also does not exercise profile-v5 exclusion/activation behavior: a failed complete
 passage embedding stops this diagnostic instead of becoming an index exclusion.
 
 The encoder has no validated abstention policy. It always returns the top-k corpus
@@ -114,6 +114,42 @@ documents, even for unsupported questions. Consequently, its unsupported-questio
 gate is expected to fail. Do not remove those questions or introduce a score
 threshold fitted to their outcomes. An abstention policy needs separate development
 and independent evaluation before it can support acceptance.
+
+## Stand-alone reranker diagnostics
+
+With a reviewed local ONNX pair-scoring manifest:
+
+```sh
+osint-workbench evaluate local \
+  --suite config/evaluation.example.json \
+  --output /tmp/ow-reranker-diagnostic \
+  --reranker-manifest /tmp/ow-public-model/reranker.json \
+  --budget-seconds 240
+```
+
+The encoder and reranker options are independent; supplying both compares three
+systems. The reranker scores the **complete corpus**, not an encoder or lexical
+candidate shortlist. This isolates pair scoring; it does not qualify the production
+retrieval cascade, candidate recall or filters. Its character bounds are 1,000 per
+complete passage and 2,000 per nonblank query, checked before creating output.
+Long input is refused, never shortened. Model-token limits can still refuse a call.
+
+The runner owns a validated manifest snapshot. Protocol format 2 binds the
+reranker identity, threads and versioned complete-corpus/descending-score policy.
+Its prediction identity hashes both model identity and ranking policy; paths are
+excluded. Results must contain exactly the submitted corpus IDs and finite scores.
+Each query durably writes `reranker-query-NNN.json`; a complete run also writes
+`reranker-predictions.json`, `reranker-scores.json` and `reranker-evaluation.json`.
+Earlier lexical/encoder receipts and completed query observations survive a later
+reranker failure. An incomplete reranker receives no aggregate evaluation.
+
+Reranker scores do not establish confidence or answerability. This rank-only
+profile also returns documents for unsupported questions and fails their abstention
+gate. Keep those questions and negative results; model adoption still requires
+independently controlled labels, calibration and actual deployment acceptance.
+No model is selected/downloaded and no API/cloud route is called. Existing local
+inference admission remains in force. See [ADR-0055](adr/0055-frozen-reranker-diagnostics.md).
+Lexical/encoder-only calls retain their existing protocol format 1.
 
 The CLI exits 0 when execution completes and all numerical targets pass, 2 when
 execution completes with unmet targets, and 1 on recorded execution failure. Schema
@@ -162,7 +198,7 @@ diagnostic completed with receipts, not that its quality targets passed.
 The Python APIs are `evaluation.parse_suite(bytes)`,
 `evaluation.parse_predictions(bytes)`, `evaluation.digest(model)`,
 `evaluation.evaluate(suite, predictions)`, and
-`quality.run(suite, output, encoder=None, budget_seconds=120, source_revision=None)`.
+`quality.run(suite, output, encoder=None, budget_seconds=120, source_revision=None, *, reranker=None)`.
 The evaluator accepts at most 8 MiB per input, 200 corpus documents, 500 queries,
 20000 judgments and 100 returned IDs per query. The execution runner imposes a
 smaller limit of 32 documents and 32 queries. Input text is bounded and rejected
@@ -177,12 +213,13 @@ existing 45-second timeout. Timings describe the measured execution only and are
 not service-level or representative performance claims.
 
 Each successful native document/query call durably writes
-`encoder-document-NNN.json` or `encoder-query-NNN.json` before the next call.
+`encoder-document-NNN.json`, `encoder-query-NNN.json` or
+`reranker-query-NNN.json` before the next call.
 Observations contain IDs, protocol hash, elapsed time and query scores, without
 vectors or model paths. Complete systems also write prediction, score and
 evaluation files. `completed.json` or `failed.json` records phase and completed
 counts. Failure preserves completed observations; it does not invent aggregate
-metrics for an unfinished encoder run. Errors use bounded codes, without raw
+metrics for an unfinished model run. Errors use bounded codes, without raw
 exception strings. A process killed before its terminal receipt leaves an
 incomplete journal requiring operator inspection.
 

@@ -1,0 +1,21 @@
+{
+  "format": "osint-workbench-reranker-diagnostic-wheel-review-v1",
+  "date": "2026-10-19",
+  "baseline_commit": "2c9c2f683e5f9a6bdf62f715d2ca1de6b4afa4b7",
+  "previous_wheel_sha256": "32d32d203d5d20f0fc4b6011a37fbb82740d5684f543648f216d8ea835174ca2",
+  "candidate_wheel_sha256": "01232818638d438692e5e9fed0fe987d544e73428085c6128fb53dee0e495470",
+  "lock_sha256": "b5a4684da62a5a3457e445595fc4bbd867ad4db81f3da74adcde00f4d66c62c9",
+  "changed_members": [
+    "osint_workbench-0.1.0.dev1.dist-info/RECORD",
+    "osint_workbench/cli.py",
+    "osint_workbench/quality.py"
+  ],
+  "metadata_and_licence_bytes_unchanged": true,
+  "elf_members": 0,
+  "legal_approval": false,
+  "limits": [
+    "Opt-in offline stand-alone reranker diagnostics; no adopted model, cascade qualification or remote dispatch.",
+    "Dependencies, native ELF payload, metadata and licence bytes are unchanged.",
+    "Current candidate native acceptance belongs to its exact PR/main checks."
+  ]
+}

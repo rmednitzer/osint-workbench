@@ -75,6 +75,8 @@ def test_lexical_protocol_receipts_permissions_nooverwrite(tmp_path):
     assert protocol["payload"]["suite_sha256"] == digest(suite())
     assert protocol["payload"]["source_revision"] == "a" * 40
     assert protocol["payload"]["encoder_identity"] is None
+    assert protocol["payload"]["format"] == 1
+    assert "reranker_identity" not in protocol["payload"]
     assert digest(parse_suite((output / "suite.json").read_bytes())) == digest(suite())
     assert (
         read(output, "lexical-evaluation.json")["sha256"]
@@ -257,3 +259,158 @@ def test_later_native_query_failure_preserves_completed_observations(encoder_bun
     assert not (output / "completed.json").exists()
     assert "encoder" not in outcome["systems"]
     assert "lexical" in outcome["systems"]
+
+
+def test_installed_reranker_diagnostic_preserves_negative_abstention_gate(
+    reranker_bundle, tmp_path
+):
+    import subprocess
+    import sys
+
+    frozen = tmp_path / "suite.json"
+    frozen.write_text(suite().model_dump_json())
+    manifest = tmp_path / "reranker.json"
+    manifest.write_text(reranker_bundle.manifest.model_dump_json())
+    output = tmp_path / "rank-only"
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-I",
+            "-m",
+            "osint_workbench.cli",
+            "evaluate",
+            "local",
+            "--suite",
+            str(frozen),
+            "--output",
+            str(output),
+            "--reranker-manifest",
+            str(manifest),
+        ],
+        env={
+            **{k: v for k, v in os.environ.items() if not k.startswith("OW_")},
+            "OW_INFERENCE_LOCK": str(tmp_path / "admission.lock"),
+        },
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert result.returncode == 2 and result.stderr == ""
+    outcome = json.loads(result.stdout)
+    assert outcome["status"] == "completed" and not outcome["all_targets_met"]
+    assert set(outcome["systems"]) == {"lexical", "reranker"}
+    assert outcome["progress"]["completed_reranker_queries"] == 4
+    protocol = read(output, "protocol.json")["payload"]
+    assert protocol["format"] == 2
+    assert protocol["reranker_identity"] == reranker_bundle.manifest.identity()
+    assert protocol["reranker_threads"] == reranker_bundle.manifest.threads
+    assert protocol["reranker_policy"]["candidates"] == "complete-corpus"
+    predictions = read(output, "reranker-predictions.json")
+    assert all(
+        not r["abstained"] and r["document_ids"] == ["storage"] for r in predictions["rankings"]
+    )
+    assert read(output, "reranker-query-000.json")["scores"] == [
+        ["storage", 2.0],
+        ["security", -2.0],
+    ]
+    assert (
+        read(output, "reranker-evaluation.json")["sha256"]
+        == outcome["systems"]["reranker"]["receipt_sha256"]
+    )
+    assert str(tmp_path) not in (output / "protocol.json").read_text()
+    assert output.stat().st_mode & 0o777 == 0o700
+    assert all(p.stat().st_mode & 0o777 == 0o600 for p in output.iterdir())
+
+
+@pytest.mark.parametrize("field,text", [("corpus", "x" * 1001), ("queries", "x" * 2001)])
+def test_reranker_complete_text_limits_precede_outputs(reranker_bundle, tmp_path, field, text):
+    value = suite().model_dump(mode="json")
+    value[field][0]["text"] = text
+    output = tmp_path / "refused"
+    with pytest.raises(WorkbenchError, match="QUALITY_RERANK_INPUT_INVALID"):
+        run(parse_suite(json.dumps(value).encode()), output, reranker=reranker_bundle)
+    assert not output.exists()
+
+
+def test_late_reranker_integrity_failure_preserves_other_systems_and_query_journal(
+    encoder_bundle, reranker_bundle, tmp_path, monkeypatch
+):
+    from osint_workbench.local_reranker import LocalReranker
+
+    value = suite().model_dump(mode="json")
+    value["queries"][1]["text"] = "patch"
+    value["queries"][3]["text"] = "vulnerability"
+    frozen = parse_suite(json.dumps(value).encode())
+    rank = LocalReranker.rank
+    calls = []
+
+    def corrupt_after_first(self, query, candidates):
+        result = rank(self, query, candidates)
+        calls.append(True)
+        Path(self.manifest.model_path).write_bytes(b"synthetic changed model")
+        return result
+
+    monkeypatch.setattr(LocalReranker, "rank", corrupt_after_first)
+    monkeypatch.setenv("OW_INFERENCE_LOCK", str(tmp_path / "admission.lock"))
+    output = tmp_path / "partial-rerank"
+    outcome = run(frozen, output, encoder_bundle, reranker=reranker_bundle)
+    assert outcome["status"] == "failed" and outcome["error"] == "MODEL_INTEGRITY_MISMATCH"
+    assert calls == [True]
+    assert set(outcome["systems"]) == {"lexical", "encoder"}
+    assert outcome["progress"]["phase"] == "reranker_queries"
+    assert outcome["progress"]["completed_reranker_queries"] == 1
+    observation = read(output, "reranker-query-000.json")
+    assert observation["protocol_sha256"] == outcome["protocol_sha256"]
+    assert observation["scores"] == [["storage", 2.0], ["security", -2.0]]
+    assert not (output / "reranker-query-001.json").exists()
+    assert not (output / "reranker-evaluation.json").exists()
+    assert not (output / "completed.json").exists()
+    assert str(tmp_path) not in (output / "failed.json").read_text()
+
+
+def test_reranker_observations_reject_an_unsubmitted_corpus_identity(
+    reranker_bundle, tmp_path, monkeypatch
+):
+    from osint_workbench.local_reranker import LocalReranker
+
+    monkeypatch.setattr(
+        LocalReranker,
+        "rank",
+        lambda *_: [
+            {"document_id": "storage", "rerank_score": 1.0},
+            {"document_id": "unknown", "rerank_score": 2.0},
+        ],
+    )
+    output = tmp_path / "invalid-correspondence"
+    outcome = run(suite(), output, reranker=reranker_bundle)
+    assert outcome["error"] == "QUALITY_RERANK_RESULT_INVALID"
+    assert outcome["progress"]["completed_reranker_queries"] == 0
+    assert not (output / "reranker-query-000.json").exists()
+    assert not (output / "reranker-predictions.json").exists()
+
+
+def test_reranker_protocol_owns_a_snapshot_of_the_caller_manifest(
+    reranker_bundle, tmp_path, monkeypatch
+):
+    from osint_workbench.local_reranker import LocalReranker
+
+    original = reranker_bundle.manifest.identity()
+    rank = LocalReranker.rank
+    observed = []
+
+    def change_caller(self, query, candidates):
+        observed.append(self.manifest.identity())
+        result = rank(self, query, candidates)
+        reranker_bundle.manifest = reranker_bundle.manifest.model_copy(
+            update={"model_sha256": "0" * 64}
+        )
+        return result
+
+    monkeypatch.setattr(LocalReranker, "rank", change_caller)
+    monkeypatch.setenv("OW_INFERENCE_LOCK", str(tmp_path / "admission.lock"))
+    output = tmp_path / "bound-manifest"
+    outcome = run(suite(), output, reranker=reranker_bundle)
+    assert outcome["status"] == "completed"
+    assert observed == [original] * 4
+    assert read(output, "protocol.json")["payload"]["reranker_identity"] == original
+    assert reranker_bundle.manifest.identity() != original

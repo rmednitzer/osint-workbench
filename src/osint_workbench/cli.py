@@ -153,6 +153,7 @@ def main():
     local.add_argument("--suite", type=Path, required=True)
     local.add_argument("--output", type=Path, required=True)
     local.add_argument("--encoder-manifest", type=Path)
+    local.add_argument("--reranker-manifest", type=Path)
     local.add_argument("--budget-seconds", type=float, default=120)
     local.add_argument("--source-revision")
     sub.add_parser("migrate")
@@ -289,6 +290,9 @@ def main():
                 suite,
                 args.output,
                 encoder=_encoder(args.encoder_manifest) if args.encoder_manifest else None,
+                reranker=LocalReranker(_manifest(args.reranker_manifest, RerankerManifest))
+                if args.reranker_manifest
+                else None,
                 budget_seconds=args.budget_seconds,
                 source_revision=args.source_revision,
             )

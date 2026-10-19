@@ -98,7 +98,8 @@ Application byte bounds are not a server memory quota or context-fit proof.
 Complete output must have one matching-model choice and a recognized terminal
 reason. Truncation, refusal, tool calls and invalid schema accept no proposals.
 Typed output still passes original-text quotation validation and fenced SQL
-acceptance as pending review. This does not fix independent reviewer authority.
+acceptance as pending review. This does not establish independent human review or workspace authorization;
+use the [separate reviewer credential](reviewer-authority.md).
 
 ## Ambiguous outcome and explicit resolution
 
