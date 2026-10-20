@@ -1,0 +1,707 @@
+{
+  "name": "${PROFILE_PROJECT}",
+  "services": {
+    "writer": {
+      "read_only": true,
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "pids_limit": 128,
+      "mem_limit": "512m",
+      "cpus": 1.0,
+      "tmpfs": [
+        "/tmp:rw,noexec,nosuid,size=67108864,mode=1777"
+      ],
+      "networks": [
+        "private"
+      ],
+      "image": "${PROFILE_IMAGE}",
+      "user": "10001:10100",
+      "environment": {
+        "PROFILE_ROLE": "writer",
+        "OW_EVIDENCE_ROOT": "/evidence",
+        "OW_EVIDENCE_READ_GID": "10100"
+      },
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "${PROFILE_STAGE}/credentials/writer",
+          "target": "/run/credential",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "volume",
+          "source": "state",
+          "target": "/evidence",
+          "read_only": false,
+          "volume": {
+            "nocopy": true,
+            "subpath": "cas"
+          }
+        }
+      ],
+      "profiles": [
+        "acceptance"
+      ],
+      "labels": {
+        "org.osint-workbench.synthetic-run": "${PROFILE_RUN_ID}"
+      },
+      "cgroup": "private",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-size": "1m",
+          "max-file": "2"
+        }
+      }
+    },
+    "worker": {
+      "read_only": true,
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "pids_limit": 128,
+      "mem_limit": "512m",
+      "cpus": 1.0,
+      "tmpfs": [
+        "/tmp:rw,noexec,nosuid,size=67108864,mode=1777"
+      ],
+      "networks": [
+        "private"
+      ],
+      "image": "${PROFILE_IMAGE}",
+      "user": "10002:10100",
+      "environment": {
+        "PROFILE_ROLE": "worker",
+        "OW_EVIDENCE_ROOT": "/evidence"
+      },
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "${PROFILE_STAGE}/credentials/worker",
+          "target": "/run/credential",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "volume",
+          "source": "state",
+          "target": "/evidence",
+          "read_only": true,
+          "volume": {
+            "nocopy": true,
+            "subpath": "cas"
+          }
+        }
+      ],
+      "profiles": [
+        "acceptance"
+      ],
+      "labels": {
+        "org.osint-workbench.synthetic-run": "${PROFILE_RUN_ID}"
+      },
+      "cgroup": "private",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-size": "1m",
+          "max-file": "2"
+        }
+      }
+    },
+    "reader": {
+      "read_only": true,
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "pids_limit": 128,
+      "mem_limit": "512m",
+      "cpus": 1.0,
+      "tmpfs": [
+        "/tmp:rw,noexec,nosuid,size=67108864,mode=1777"
+      ],
+      "networks": [
+        "private"
+      ],
+      "image": "${PROFILE_IMAGE}",
+      "user": "10003:10100",
+      "environment": {
+        "PROFILE_ROLE": "reader",
+        "OW_EVIDENCE_ROOT": "/evidence"
+      },
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "${PROFILE_STAGE}/credentials/reader",
+          "target": "/run/credential",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "volume",
+          "source": "state",
+          "target": "/evidence",
+          "read_only": true,
+          "volume": {
+            "nocopy": true,
+            "subpath": "cas"
+          }
+        }
+      ],
+      "profiles": [
+        "acceptance"
+      ],
+      "labels": {
+        "org.osint-workbench.synthetic-run": "${PROFILE_RUN_ID}"
+      },
+      "cgroup": "private",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-size": "1m",
+          "max-file": "2"
+        }
+      }
+    },
+    "lifecycle": {
+      "read_only": true,
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "pids_limit": 128,
+      "mem_limit": "512m",
+      "cpus": 1.0,
+      "tmpfs": [
+        "/tmp:rw,noexec,nosuid,size=67108864,mode=1777"
+      ],
+      "networks": [
+        "private"
+      ],
+      "image": "${PROFILE_IMAGE}",
+      "user": "10004:10100",
+      "environment": {
+        "PROFILE_ROLE": "lifecycle",
+        "OW_EVIDENCE_ROOT": "/evidence"
+      },
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "${PROFILE_STAGE}/credentials/lifecycle",
+          "target": "/run/credential",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "volume",
+          "source": "state",
+          "target": "/policy",
+          "read_only": false,
+          "volume": {
+            "nocopy": true,
+            "subpath": "policy"
+          }
+        }
+      ],
+      "profiles": [
+        "acceptance"
+      ],
+      "labels": {
+        "org.osint-workbench.synthetic-run": "${PROFILE_RUN_ID}"
+      },
+      "cgroup": "private",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-size": "1m",
+          "max-file": "2"
+        }
+      }
+    },
+    "recovery": {
+      "read_only": true,
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "pids_limit": 128,
+      "mem_limit": "512m",
+      "cpus": 1.0,
+      "tmpfs": [
+        "/tmp:rw,noexec,nosuid,size=67108864,mode=1777"
+      ],
+      "networks": [
+        "private"
+      ],
+      "image": "${PROFILE_IMAGE}",
+      "user": "10005:10100",
+      "environment": {
+        "PROFILE_ROLE": "recovery",
+        "OW_EVIDENCE_ROOT": "/evidence"
+      },
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "${PROFILE_STAGE}/credentials/recovery",
+          "target": "/run/credential",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "volume",
+          "source": "state",
+          "target": "/evidence",
+          "read_only": true,
+          "volume": {
+            "nocopy": true,
+            "subpath": "cas"
+          }
+        },
+        {
+          "type": "volume",
+          "source": "state",
+          "target": "/backup",
+          "read_only": false,
+          "volume": {
+            "nocopy": true,
+            "subpath": "backup"
+          }
+        },
+        {
+          "type": "volume",
+          "source": "state",
+          "target": "/restore",
+          "read_only": false,
+          "volume": {
+            "nocopy": true,
+            "subpath": "restore"
+          }
+        }
+      ],
+      "profiles": [
+        "acceptance"
+      ],
+      "labels": {
+        "org.osint-workbench.synthetic-run": "${PROFILE_RUN_ID}"
+      },
+      "cgroup": "private",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-size": "1m",
+          "max-file": "2"
+        }
+      }
+    },
+    "migration": {
+      "read_only": true,
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "pids_limit": 128,
+      "mem_limit": "512m",
+      "cpus": 1.0,
+      "tmpfs": [
+        "/tmp:rw,noexec,nosuid,size=67108864,mode=1777"
+      ],
+      "networks": [
+        "private"
+      ],
+      "image": "${PROFILE_IMAGE}",
+      "user": "10006:10100",
+      "environment": {
+        "PROFILE_ROLE": "migration",
+        "OW_EVIDENCE_ROOT": "/evidence"
+      },
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "${PROFILE_STAGE}/credentials/migration",
+          "target": "/run/credential",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "bind",
+          "source": "${PROFILE_STAGE}/credentials/writer",
+          "target": "/provision/writer",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "bind",
+          "source": "${PROFILE_STAGE}/credentials/worker",
+          "target": "/provision/worker",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "bind",
+          "source": "${PROFILE_STAGE}/credentials/reader",
+          "target": "/provision/reader",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "bind",
+          "source": "${PROFILE_STAGE}/credentials/lifecycle",
+          "target": "/provision/lifecycle",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "bind",
+          "source": "${PROFILE_STAGE}/credentials/recovery",
+          "target": "/provision/recovery",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        }
+      ],
+      "profiles": [
+        "acceptance"
+      ],
+      "labels": {
+        "org.osint-workbench.synthetic-run": "${PROFILE_RUN_ID}"
+      },
+      "cgroup": "private",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-size": "1m",
+          "max-file": "2"
+        }
+      }
+    },
+    "restore": {
+      "read_only": true,
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "pids_limit": 128,
+      "mem_limit": "512m",
+      "cpus": 1.0,
+      "tmpfs": [
+        "/tmp:rw,noexec,nosuid,size=67108864,mode=1777"
+      ],
+      "networks": [
+        "private"
+      ],
+      "image": "${PROFILE_IMAGE}",
+      "user": "10005:10100",
+      "environment": {
+        "PROFILE_ROLE": "recovery",
+        "PROFILE_DATABASE": "restored",
+        "OW_EVIDENCE_ROOT": "/restore/objects"
+      },
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "${PROFILE_STAGE}/credentials/recovery",
+          "target": "/run/credential",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "volume",
+          "source": "state",
+          "target": "/evidence",
+          "read_only": true,
+          "volume": {
+            "nocopy": true,
+            "subpath": "cas"
+          }
+        },
+        {
+          "type": "volume",
+          "source": "state",
+          "target": "/backup",
+          "read_only": false,
+          "volume": {
+            "nocopy": true,
+            "subpath": "backup"
+          }
+        },
+        {
+          "type": "volume",
+          "source": "state",
+          "target": "/restore",
+          "read_only": false,
+          "volume": {
+            "nocopy": true,
+            "subpath": "restore"
+          }
+        }
+      ],
+      "profiles": [
+        "acceptance"
+      ],
+      "labels": {
+        "org.osint-workbench.synthetic-run": "${PROFILE_RUN_ID}"
+      },
+      "cgroup": "private",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-size": "1m",
+          "max-file": "2"
+        }
+      }
+    },
+    "restored-reader": {
+      "read_only": true,
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "pids_limit": 128,
+      "mem_limit": "512m",
+      "cpus": 1.0,
+      "tmpfs": [
+        "/tmp:rw,noexec,nosuid,size=67108864,mode=1777"
+      ],
+      "networks": [
+        "private"
+      ],
+      "image": "${PROFILE_IMAGE}",
+      "user": "10003:10100",
+      "environment": {
+        "PROFILE_ROLE": "reader",
+        "PROFILE_DATABASE": "restored",
+        "OW_EVIDENCE_ROOT": "/evidence"
+      },
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "${PROFILE_STAGE}/credentials/reader",
+          "target": "/run/credential",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "volume",
+          "source": "state",
+          "target": "/evidence",
+          "read_only": true,
+          "volume": {
+            "nocopy": true,
+            "subpath": "shared"
+          }
+        }
+      ],
+      "profiles": [
+        "acceptance"
+      ],
+      "labels": {
+        "org.osint-workbench.synthetic-run": "${PROFILE_RUN_ID}"
+      },
+      "cgroup": "private",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-size": "1m",
+          "max-file": "2"
+        }
+      }
+    },
+    "bootstrap": {
+      "read_only": true,
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "pids_limit": 128,
+      "mem_limit": "512m",
+      "cpus": 1.0,
+      "tmpfs": [
+        "/tmp:rw,noexec,nosuid,size=67108864,mode=1777"
+      ],
+      "image": "${PROFILE_IMAGE}",
+      "user": "0:0",
+      "network_mode": "none",
+      "cap_add": [
+        "CHOWN",
+        "DAC_OVERRIDE",
+        "FOWNER"
+      ],
+      "entrypoint": [
+        "/opt/venv/bin/python",
+        "-I",
+        "/opt/profile/bootstrap.py"
+      ],
+      "environment": {
+        "PROFILE_RUN_ID": "${PROFILE_RUN_ID}"
+      },
+      "volumes": [
+        {
+          "type": "volume",
+          "source": "state",
+          "target": "/state",
+          "volume": {
+            "nocopy": true
+          }
+        },
+        {
+          "type": "volume",
+          "source": "pgdata",
+          "target": "/pgdata",
+          "volume": {
+            "nocopy": true
+          }
+        }
+      ],
+      "profiles": [
+        "acceptance"
+      ],
+      "labels": {
+        "org.osint-workbench.synthetic-run": "${PROFILE_RUN_ID}"
+      },
+      "cgroup": "private",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-size": "1m",
+          "max-file": "2"
+        }
+      }
+    },
+    "db": {
+      "read_only": true,
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "pids_limit": 128,
+      "mem_limit": "512m",
+      "cpus": 1.0,
+      "tmpfs": [
+        "/tmp:rw,noexec,nosuid,size=67108864,mode=1777",
+        "/var/run/postgresql:rw,nosuid,size=8388608,uid=999,gid=999,mode=0770"
+      ],
+      "networks": [
+        "private"
+      ],
+      "image": "pgvector/pgvector:pg18@sha256:2358fcba361ed2233a5ed81b5fe4ca779ccb304120ce531a3bf51c0ed7e2bc11",
+      "user": "999:999",
+      "environment": {
+        "POSTGRES_USER": "profile_migration",
+        "POSTGRES_DB": "workbench",
+        "POSTGRES_PASSWORD_FILE": "/run/credential",
+        "PGDATA": "/var/lib/postgresql/18/docker"
+      },
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "${PROFILE_STAGE}/credentials/migration",
+          "target": "/run/credential",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "volume",
+          "source": "pgdata",
+          "target": "/var/lib/postgresql",
+          "volume": {
+            "nocopy": true
+          }
+        }
+      ],
+      "shm_size": "64m",
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "pg_isready",
+          "-U",
+          "profile_migration",
+          "-d",
+          "workbench"
+        ],
+        "interval": "2s",
+        "timeout": "3s",
+        "retries": 30
+      },
+      "labels": {
+        "org.osint-workbench.synthetic-run": "${PROFILE_RUN_ID}"
+      },
+      "cgroup": "private",
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-size": "1m",
+          "max-file": "2"
+        }
+      }
+    }
+  },
+  "networks": {
+    "private": {
+      "internal": true,
+      "labels": {
+        "org.osint-workbench.synthetic-run": "${PROFILE_RUN_ID}"
+      }
+    }
+  },
+  "volumes": {
+    "state": {
+      "external": true,
+      "name": "${PROFILE_PROJECT}_state"
+    },
+    "pgdata": {
+      "external": true,
+      "name": "${PROFILE_PROJECT}_pgdata"
+    }
+  }
+}

@@ -42,6 +42,12 @@ ALLOWED_FILES = {
     "SECURITY.md",
     "CONTRIBUTING.md",
     "renovate.json",
+    # Reviewed opt-in container profile; private build inputs remain external.
+    "containers/core/Dockerfile",
+    "containers/core/compose.json",
+    "containers/core/entrypoint.py",
+    "containers/core/bootstrap.py",
+    "containers/core/acceptance.py",
 }
 DOCUMENTATION_HOSTS = {
     "github.com",
@@ -66,6 +72,7 @@ DOCUMENTATION_HOSTS = {
     "apache.org",
     "man7.org",
     "docs.github.com",
+    "docs.docker.com",
     "docs.renovatebot.com",
     "code.claude.com",
     "developers.openai.com",
@@ -291,6 +298,10 @@ def inspect_text(name: str, content: str, private_values=(), *, verified_notice=
                 and url == "http:" + "//127.0.0.1:11434/v1/chat/completions"
             )
             or host.endswith(".invalid")
+            or (
+                name == ".github/workflows/compose-core.yml"
+                and url == "https:" + "//pypi.org/simple"
+            )
             or (name == "uv.lock" and host in REGISTRY_HOSTS)
             or (name == "pyproject.toml" and host == "pypi.org" and parts.path == "/simple")
             or (
