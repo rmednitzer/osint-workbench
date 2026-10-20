@@ -14,6 +14,7 @@ from . import (
     garbage_collection,
     health,
     intelligence,
+    kev_projection,
     lifecycle,
     quality,
     record_purge,
@@ -254,6 +255,9 @@ def main():
     probe.add_argument("--require-retrieval", action="store_true")
     search = sub.add_parser("search")
     search.add_argument("query")
+    advisory = sub.add_parser("advisory")
+    advisory.add_argument("document_id")
+    advisory.add_argument("--publisher-id", required=True)
     sub.add_parser("mcp")
     sub.add_parser("work-once")
     chunk = sub.add_parser("chunk")
@@ -302,6 +306,13 @@ def main():
             if not value["all_targets_met"]:
                 raise SystemExit(2)
             return
+        elif args.command == "advisory":
+            value = kev_projection.project(
+                Database(_dsn("OW_READER_DSN")),
+                EvidenceStore(Path(os.environ["OW_EVIDENCE_ROOT"]), read_only=True),
+                args.document_id,
+                args.publisher_id,
+            )
         elif args.command == "purge":
             db = Database(_dsn("OW_PURGE_DSN"))
             if args.action == "plan":

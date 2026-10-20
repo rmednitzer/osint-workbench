@@ -305,6 +305,12 @@ Oracle / pass condition: Version/date/source fields and conflict state preserved
 
 Evidence: revision/profile/fixture/tool identity, assertions, bounded sanitized logs and relevant request/job/model/artifact digests. Status: NOT RUN.
 
+The [KEV projection](../kev-advisory-projection.md) adds bounded synthetic
+regressions in `tests/test_kev_projection.py` and the existing native TLS acquisition
+case: verified stored evidence, exact raw mapping, Unicode byte spans, explicit
+attribution and reader/lifecycle refusal. These do not complete the multi-format,
+retraction/conflict or downstream re-evaluation scenario above.
+
 ### E32: Applicability and policy-based priority
 
 Action: Evaluate package/SBOM fixtures with ecosystem versions, ambiguous CPE/product names, absent inventory and distinct exposure/prerequisite states.

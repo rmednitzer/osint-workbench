@@ -929,3 +929,27 @@ transport coverage also exercises the reranked search response. The seven-read
 surface, lifecycle fence and native admission/resource limits remain unchanged.
 Historical responses are not requalified, and privileged in-process mutation,
 pretrained relevance and workspace authorization remain outside this guarantee.
+
+
+## KEV observation projection refinement (ADR-0058)
+
+SC1/SC2/SC3/SC4/SC5/SC6 and H1/H2/H3/H4/H5/H6/H8 constrain the operator-only
+KEV projection. Existing U19/C19 and U20/C20 apply to attributed source inference
+and stale/current evidence distinctions. A format label
+and valid envelope cannot establish publisher authenticity, raw-to-normalized
+correspondence, current membership or exposure. The controller requires exact
+reader grants, visible source-bound document/snapshot identity, verified CAS and
+body bytes, and an isolated reparse matching external key/title/text before
+returning a typed observation. Whole normalized-record UTF-8 byte coordinates are
+explicitly distinct from raw offsets and application code-point spans.
+
+The caller's publisher label remains declared attribution. Advisory status stays
+unknown; catalogue dates do not become exploitation/publication instants or local
+deadlines. Missing scores remain absent; incompatible descriptions fail rather
+than truncate. Historical reads explicitly withhold current-membership/freshness
+claims. Lifecycle/store admission spans execution, and a final statement checks
+time-based expiry; holds cannot widen serving authority. Tests discriminate raw
+record/identity mismatch, corruption, unsafe reader/write-store authority, Unicode
+coordinates, incompatible descriptions, retirement and held/mid-read expiry.
+No new MCP surface, persistence, network effect or inferred local applicability is
+introduced. Full domain semantics and operational adoption remain unqualified.

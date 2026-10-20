@@ -6,7 +6,7 @@ import time
 import psycopg
 import pytest
 
-from osint_workbench import api_acquisition
+from osint_workbench import api_acquisition, kev_projection
 from osint_workbench.api_acquisition import ApiAuth, collect_api
 from osint_workbench.api_parser import parse
 from osint_workbench.credentials import CredentialRef
@@ -254,6 +254,19 @@ def test_actual_kev_tls_replay_revision_absence_and_atomic_rejection(
             RECORD["shortDescription"],
         }
         assert all(row["published_at"] is None and row["extractor"] == "cisa-kev/1" for row in rows)
+    reader = Database(roles["reader"])
+    readonly = EvidenceStore(store.root, read_only=True)
+    projected = [
+        kev_projection.project(reader, readonly, row["document_id"], "declared-source")
+        for row in reader.search("synthetic")
+    ]
+    assert len(projected) == 2
+    assert {p["payload"]["record"]["description"] for p in projected} == {
+        "Revised synthetic evidence",
+        RECORD["shortDescription"],
+    }
+    # The later empty catalogue does not withdraw previous immutable observations.
+    assert all(p["payload"]["current_catalogue_membership"] == "not_established" for p in projected)
     before = {p.name for p in store.root.rglob("*") if p.is_file()}
     bad = kev_raw(catalogue([dict(RECORD, shortDescription="Must not be admitted")], count=2))
     with tls_peer(monkeypatch, collection_certificates, wire=response(bad)):
