@@ -190,3 +190,36 @@ jobs:
           path: ${{ steps.attest.outputs.bundle-path }}
           if-no-files-found: error
           retention-days: 30
+
+  verify-download:
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'rmednitzer/osint-workbench' }}
+    needs: attest-builds
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: build-evidence-*
+          path: downloaded/evidence
+          digest-mismatch: error
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: build-attestation-${{ github.sha }}
+          path: downloaded/signature
+          digest-mismatch: error
+      - name: Verify the consumer signature, source, run and artifact contract
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_SOURCE: ${{ github.sha }}
+          EXPECTED_RUN: ${{ github.run_id }}
+          EXPECTED_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          python3 scripts/verify_download.py --evidence downloaded/evidence \
+            --bundle-directory downloaded/signature --source-sha "$EXPECTED_SOURCE" \
+            --run-id "$EXPECTED_RUN" --run-attempt "$EXPECTED_ATTEMPT"

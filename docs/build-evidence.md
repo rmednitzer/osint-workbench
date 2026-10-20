@@ -137,3 +137,35 @@ A valid signature binds the artifact digest to the identified workflow; it does
 not prove that code is vulnerability-free, that every dependency has a reviewed
 licence, or that the inventory is a complete SBOM. Preserve the artifacts and
 bundle elsewhere if a release needs retention longer than this CI policy.
+
+
+## Verify a downloaded complete build
+
+Use a trusted reviewed main commit and workflow run identity obtained independently
+of the downloaded manifest. Download the two `build-evidence-` artifacts into one
+private directory and the `build-attestation-` artifact into a separate directory.
+Do not extract arbitrary archives into an operational directory.
+
+```sh
+python3 scripts/verify_download.py --evidence downloaded/evidence \
+  --bundle-directory downloaded/signature --source-sha "$EXPECTED_MAIN_SHA" \
+  --run-id "$EXPECTED_RUN_ID" --run-attempt "$EXPECTED_RUN_ATTEMPT"
+```
+
+The standard-library consumer requires GitHub CLI with attestation verification
+support. It checks both exact LTS profiles, the v3 set, source/run identity and
+all distribution/supplementary bytes. It invokes the cryptographic verifier with
+an exact repository, workflow, main ref, source digest, signer digest and hosted
+runner requirement. It verifies private snapshots of manifests and the bundle;
+input files must remain under the consumer's custody through later installation.
+No downloaded file is imported or executed. Extra files, nonregular/symlink inputs,
+wrong identities, verifier failures and changed bytes refuse acceptance.
+
+The downstream `verify-download` job exercises this same command on each signed
+main build. It has read permissions only and executes separately from the signer;
+the signer continues to execute no repository code. PRs run synthetic refusal
+cases; they have no signing authority. A successful command verifies integrity
+and provenance under the selected trust roots, not application safety, licence
+clearance or complete programme acceptance. This adds no package release or live
+deployment. Missing or failed verification must be investigated before consuming
+an artifact. Roll back through a protected PR while preserving signer isolation.
