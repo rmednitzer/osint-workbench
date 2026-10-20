@@ -194,3 +194,17 @@ Update current runbooks and STATUS for behavior changes. Preserve historical ADR
 scope and receipts, adding explicit successor notes. Requirements and full target
 acceptance scenarios remain open until their complete evidence exists. Follow
 the branch lifecycle in AGENTS.md and verify remote merge/post-merge outcomes.
+
+
+## CI run ownership
+
+The PR-validation workflows updated here cancel superseded runs only for the
+same pull request. Their push, scheduled and manual invocations use their own run
+IDs so a newer revision cannot cancel verification or replace pending evidence.
+Explicit diagnostic/publication serialization in other workflows remains separate. Reusable
+workflows have distinct file prefixes to avoid cancelling a caller or sibling.
+Cancelling an obsolete PR run is not a successful check; the current head still
+needs all required results. Revision identity and signing gates remain separate.
+Publication workflows retain their existing serialization and cache isolation.
+Revert this repository's workflow change to restore the earlier scheduling;
+no service deployment or application-data migration is involved.

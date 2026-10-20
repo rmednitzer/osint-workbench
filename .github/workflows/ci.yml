@@ -6,9 +6,11 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+# Superseded PR work may stop; every non-PR run keeps its own evidence.
 concurrency:
-  group: foundation-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   repository-policy:
     runs-on: ubuntu-24.04

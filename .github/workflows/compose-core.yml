@@ -15,9 +15,11 @@ on:
         default: false
 permissions:
   contents: read
+# Superseded PR work may stop; every non-PR run keeps its own evidence.
 concurrency:
-  group: compose-core-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: false
+  group: compose-core-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   synthetic-core:
     runs-on: ubuntu-24.04
