@@ -9,6 +9,11 @@
       "distributions": 49,
       "archive_variants": 69,
       "note": "Prior exact review retained in Git; successor MCP2 closure has47 distributions."
+    },
+    {
+      "source_commit": "8827f5fa42c983aeeedbf69738bbd03d49ec0b3c",
+      "receipt": "docs/testing/compose-core-wheel-2026-10-20.json",
+      "note": "Application README metadata/archive identity successor after complete wheel comparison; third-party entries and unresolved outcomes unchanged."
     }
   ],
   "distributions": [
@@ -1740,7 +1745,7 @@
       "variants": [
         {
           "wheel_filename": "osint_workbench-0.1.0.dev1-py3-none-any.whl",
-          "wheel_sha256": "a70a89ff06b5c2063314aea91db0e184312f51f7339fa7a22c7fc36f4786e47a",
+          "wheel_sha256": "0f1bb374fbab28b77b56c5ad12964be010ed70ea185f9188ca853af78020c708",
           "files": []
         }
       ]

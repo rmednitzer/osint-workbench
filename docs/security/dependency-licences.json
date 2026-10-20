@@ -1060,8 +1060,8 @@
       "evidence": [
         {
           "path": "osint_workbench-0.1.0.dev1.dist-info/METADATA",
-          "sha256": "a30f28b09f266fae240281e5bac8de8cfcceab453112d4b566f0206dea3dc7bc",
-          "bytes": 10970,
+          "sha256": "a8264de82167168822858a2f91565154068100ed1c4c0fdecff91794137714f0",
+          "bytes": 11031,
           "kind": "metadata"
         },
         {
@@ -2043,6 +2043,11 @@
       "source_commit": "331d597",
       "distributions": 49,
       "note": "Prior licence/native evidence retained in Git; successor MCP2 closure has47 distributions."
+    },
+    {
+      "source_commit": "8827f5fa42c983aeeedbf69738bbd03d49ec0b3c",
+      "receipt": "docs/testing/compose-core-wheel-2026-10-20.json",
+      "note": "Application README metadata/archive identity successor after complete wheel comparison; third-party entries and unresolved outcomes unchanged."
     }
   ],
   "reviewed_archives": [
@@ -2234,7 +2239,7 @@
     {
       "name": "osint-workbench",
       "filename": "osint_workbench-0.1.0.dev1-py3-none-any.whl",
-      "sha256": "a70a89ff06b5c2063314aea91db0e184312f51f7339fa7a22c7fc36f4786e47a"
+      "sha256": "0f1bb374fbab28b77b56c5ad12964be010ed70ea185f9188ca853af78020c708"
     },
     {
       "name": "packaging",

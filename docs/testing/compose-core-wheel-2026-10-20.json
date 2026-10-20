@@ -1,0 +1,32 @@
+{
+  "format": "osint-workbench-compose-core-wheel-review-v1",
+  "date": "2026-10-20",
+  "baseline_commit": "daa88de3c86ca70987fed9a13742355318a7694c",
+  "reviewed_candidate_commit": "8827f5fa42c983aeeedbf69738bbd03d49ec0b3c",
+  "previous_wheel_sha256": "2ee3d2b7cf6f50373debdf47065b311fb9102968622a0b5f398cf638e879c821",
+  "candidate_wheel_sha256": "0f1bb374fbab28b77b56c5ad12964be010ed70ea185f9188ca853af78020c708",
+  "lock_sha256": "4ff11370cf733dc0395a54cb8c281bf83fd2e3fb20d18fcb60992566e8c5d072",
+  "archive_members": 64,
+  "added_members": [],
+  "removed_members": [],
+  "changed_members": [
+    "osint_workbench-0.1.0.dev1.dist-info/METADATA",
+    "osint_workbench-0.1.0.dev1.dist-info/RECORD"
+  ],
+  "metadata_headers_unchanged": true,
+  "metadata_body_change": "README Services and health row adds the opt-in disposable Compose core test link.",
+  "metadata_bytes": 11031,
+  "metadata_sha256": "a8264de82167168822858a2f91565154068100ed1c4c0fdecff91794137714f0",
+  "licence_bytes_unchanged": true,
+  "licence_bytes": 11357,
+  "licence_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+  "application_source_bytes_unchanged": true,
+  "elf_members": 0,
+  "independent_archive_review": true,
+  "legal_approval": false,
+  "limits": [
+    "The baseline and candidate actual wheels were compared member-by-member; complete shipped licence and metadata were reviewed.",
+    "Only application metadata, reviewed archive and empty-ELF-set archive identities are updated. All third-party policy rows, lock identity and unresolved native/notice dispositions remain unchanged.",
+    "This is not complete OS/native redistribution clearance or upstream container reproducibility evidence. Exact-main installed acceptance and attestations remain separate evidence."
+  ]
+}

@@ -228,3 +228,11 @@ Apache-2.0 licence bytes; the README-bearing metadata body changes. Three new
 packaged files add two migrations and the reviewer connection validator. The
 archive contains no ELF members. Registry and native dependency dispositions
 remain unchanged, with no legal approval implied.
+
+The [Compose core metadata successor](../testing/compose-core-wheel-2026-10-20.json)
+compares both actual application wheels member by member. Only METADATA and RECORD
+change; headers, dependency/Python bounds, application source and the complete
+shipped Apache-2.0 text match. The README adds the bounded Compose test link.
+The own-project metadata and reviewed archive identities advance; the empty ELF
+set, all third-party policy rows and existing unresolved obligations remain
+unchanged. This adds no legal or native-closure approval.
