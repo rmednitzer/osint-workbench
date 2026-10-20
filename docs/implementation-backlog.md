@@ -64,11 +64,11 @@ individual implementation findings and severities. Priority follow-up includes:
   entity resolution and independently verified semantic support remain future work.
 - Separate reviewer SQL authority is implemented in [ADR-0053](adr/0053-reviewer-database-authority.md).
   Human independence, workspace authorization and operational adoption remain open.
-- Hybrid search currently selects candidate IDs and hydrates them in separate
-  statements. A candidate expiring between those statements can produce a missing
-  row and fail the whole query. Add an explicit omitted-candidate/page contract
-  and a native expiry-between-selection/hydration regression before closing it.
-  This is a source-reviewed correctness finding, not a reproduced runtime result.
+- Hybrid candidate hydration now uses one filtered statement before pagination,
+  with explicit omission/degradation feedback; see
+  [ADR-0060](adr/0060-expiry-safe-hybrid-pagination.md). Preserve its native
+  selection-to-hydration expiry cases. Cross-call snapshot pagination, broader
+  workspace authorization and response-time revocation remain separate scope.
 - Retain native acceptance for byte-budget MCP pagination, literal source-token
   isolation and exact reader-grant validation added by
   [ADR-0045](adr/0045-bounded-operational-profile.md); verify intended assistant
