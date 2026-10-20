@@ -35,7 +35,7 @@ Paths in the implementation column are under `src/osint_workbench/`.
 | V1.3.6 | Constrain outbound acquisition | `fetch.py`, `api_http.py`, `oauth.py`; [DNS limits](../../tests/test_dns_policy.py), [address fallback](../../tests/test_address_fallback.py), [TLS](../../tests/test_tls_transport.py), [API transport](../../tests/test_api_transport.py), [OAuth](../../tests/test_oauth.py) | Partial. Actual configured paths enforce public-address pinning, TLS identity and redirect policy. Representative Internet/public-PKI/provider behavior and future browser/proxy paths remain unaccepted. |
 | V1.5.1 | Reject unsafe XML feed parsing | `feed_parser.py`; [entity and malformed-feed cases](../../tests/test_core.py), [native acquisition](../../tests/test_acquisition_audit.py) | Partial. Applicable to the bounded RSS/Atom parser; generic legal XML, archives and PDF are unimplemented and require separate controls. Resource limits do not establish hostile native-parser containment. |
 | V1.5.2 | Decode data into bounded declared types | `api_parser.py`, `contracts.py`, `recovery.py`; [strict API envelopes](../../tests/test_api_parser.py), [core contracts](../../tests/test_core.py), [recovery refusal](../../tests/test_recovery.py) | Partial. Source/wire/checkpoint data cannot select executable object constructors. This is not assurance of all native model formats or third-party transitive deserializers. |
-| V2.2.2 | Enforce validation inside trusted application paths | `mcp_server.py`, `api_acquisition.py`, `cli.py`; [actual MCP protocol errors](../../tests/test_mcp_protocol.py), [API admission](../../tests/test_api_acquisition.py), [operator file admission](../../tests/test_operator_input.py) | Partial. Unknown tools/fields and unsafe bounded inputs are refused before effects in tested paths. Remote authentication, principal/workspace isolation and independent review identity remain unimplemented. |
+| V2.2.2 | Enforce validation inside trusted application paths | `mcp_server.py`, `api_acquisition.py`, `cli.py`; [actual MCP protocol errors](../../tests/test_mcp_protocol.py), [API admission](../../tests/test_api_acquisition.py), [operator file admission](../../tests/test_operator_input.py) | Partial. Unknown tools/fields and unsafe bounded inputs are refused before effects in tested paths. Remote authentication and principal/workspace isolation remain unimplemented. Separate reviewer SQL authority is implemented; human independence and deployment custody remain unqualified. |
 
 ## Project coding rules and STPA allocation
 
@@ -82,9 +82,24 @@ composition and unresolved redistribution outcomes.
 
 Before a broader profile or release claim, the maintainer must select its
 applicable controls, identify evidence and residuals, and perform the missing
-verification. In particular: independent review authority, quote-label support,
-narrower retrieval-writer grants, complete static/type coverage, restricted
+verification. In particular: human reviewer independence and credential custody,
+label-specific semantic support, broader producer authority separation, complete
+static/type coverage, restricted
 content and query-disclosure controls, remote MCP authorization, representative
 model/provider behavior, deployment isolation and full recovery remain open.
 No certification, regulatory applicability or legal redistribution clearance is
 established here.
+
+## Retained-output acceptance review — 2026-10-20
+
+At baseline `b31ae468bbdc22ea3a8d14b326f00dd0dbf402c1`, the character worker's
+uniqueness-conflict handling did not verify retained output before success.
+[ADR-0059](../adr/0059-chunk-output-integrity.md) adds bounded SQL set comparison
+before downstream acceptance. This applies coding rules 3, 9 and 11: parameterized
+values, explicit integrity refusal and transactional fenced completion. It keeps
+immutable conflicting rows and records a fixed error instead of repairing history.
+
+Verification remains revision-bound to installed native tests and independent
+review. This targeted correction and the existing static gates do not establish
+complete coding-standard or ASVS conformance. Broader writer authority, historical
+output qualification and the backlog's hybrid-search expiry race remain open.

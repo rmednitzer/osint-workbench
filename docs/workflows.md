@@ -20,6 +20,14 @@ outcome and separate accounting-settlement rules are described in
 
 `work-once` claims only `document.accepted`. It verifies raw/text objects and document
 provenance, derives deterministic character chunks, then locks/rechecks the live job.
+Before completion, the worker compares the complete retained document/algorithm
+chunk set with deterministic IDs, coordinates, hashes and bodies. Conflicting or
+extra rows cause terminal `CHUNK_INTEGRITY_MISMATCH`; the worker preserves them
+for investigation and rolls back its new rows. It does not overwrite evidence or
+create downstream work to conceal a conflict. Compatible partial sets can complete.
+A conflicting preserved downstream payload causes `CHUNK_DOWNSTREAM_MISMATCH`
+under the same transaction; its prior job, payload and history stay unchanged.
+See [ADR-0059](adr/0059-chunk-output-integrity.md) for concurrency and rollback limits.
 Chunks, `document.chunked` outbox work, success and the attempt event commit together.
 A failed transaction accepts none of those effects. Unknown kinds remain queued.
 The worker does not claim exactly-once execution: retries can repeat computation.
