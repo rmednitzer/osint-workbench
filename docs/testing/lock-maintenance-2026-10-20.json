@@ -1,0 +1,142 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-10-20",
+  "pull_request": 42,
+  "reviewed_bot_head": "81aeadc9ff8326ce243ad1dd886c5a8f63e5c5a5",
+  "base_commit": "0764025e3494c780d122edee99080a4ed472303c",
+  "previous_lock_sha256": "b5a4684da62a5a3457e445595fc4bbd867ad4db81f3da74adcde00f4d66c62c9",
+  "lock_sha256": "4ff11370cf733dc0395a54cb8c281bf83fd2e3fb20d18fcb60992566e8c5d072",
+  "verification": "Six old/new universal wheels obtained from their exact locked public registry URLs and SHA-256 checked before complete METADATA/licence/attribution comparison and inspection. Every member of each new archive inspected for ELF magic; none found.",
+  "reviews": [
+    {
+      "name": "httpcore2",
+      "old_version": "2.14.0",
+      "version": "2.15.1",
+      "filename": "httpcore2-2.15.1-py3-none-any.whl",
+      "sha256": "730f603058c260a3288378217b464713350c23e3b8fe8bba753701054032d98a",
+      "expression": "BSD-3-Clause",
+      "python": ">=3.11",
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "httpcore2-2.15.1.dist-info/METADATA",
+          "bytes": 27442,
+          "sha256": "823448057a5ff0fb8648f04f95183e2fefc67b35b3c7df6a8084c978c17a24c5",
+          "kind": "metadata"
+        },
+        {
+          "path": "httpcore2-2.15.1.dist-info/licenses/LICENSE.md",
+          "bytes": 1599,
+          "sha256": "c4df125c807b0613501e943a5c92496dd11d2c16604ce396097a8dde396304d9",
+          "kind": "licence-text"
+        }
+      ],
+      "scope": "runtime-plus-retrieval",
+      "reviewed_text_summary": "BSD-3-Clause",
+      "archive_members": 36,
+      "elf_members": 0
+    },
+    {
+      "name": "httpx2",
+      "old_version": "2.14.0",
+      "version": "2.15.1",
+      "filename": "httpx2-2.15.1-py3-none-any.whl",
+      "sha256": "75841cd83d16b417f7d6da8f2089ce8120806efdbf96af37d46c5129c49015be",
+      "expression": "BSD-3-Clause",
+      "python": ">=3.11",
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "httpx2-2.15.1.dist-info/METADATA",
+          "bytes": 9633,
+          "sha256": "60f0e796561828482476cd15b7c3a1a38e991affe28e75ef1f20bc4e6a0d59d0",
+          "kind": "metadata"
+        },
+        {
+          "path": "httpx2-2.15.1.dist-info/licenses/LICENSE.md",
+          "bytes": 1589,
+          "sha256": "7e7d6dbaf7fe160d39fd6e84fd02c33cab96bcbea34d36998d545bceb4a19c30",
+          "kind": "licence-text"
+        }
+      ],
+      "scope": "runtime-plus-retrieval",
+      "reviewed_text_summary": "BSD-3-Clause",
+      "archive_members": 36,
+      "elf_members": 0
+    },
+    {
+      "name": "jsonpointer",
+      "old_version": "3.3",
+      "version": "3.4",
+      "filename": "jsonpointer-3.4-py3-none-any.whl",
+      "sha256": "136e2e3273fd82a1502274f56ec172f331b6a1703d86a1824d503af4d9a96142",
+      "expression": null,
+      "python": ">=3.10",
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "jsonpointer-3.4.dist-info/licenses/AUTHORS",
+          "bytes": 113,
+          "sha256": "4d58319d0f59c87bef5b07b3fe4db0f19c2d7d5545b034c6bf7b57c89bbef57f",
+          "kind": "attribution"
+        },
+        {
+          "path": "jsonpointer-3.4.dist-info/licenses/LICENSE.txt",
+          "bytes": 1413,
+          "sha256": "d8b24f15d472885f788a2d6e985850f264627b86012a17bb242c83f310d907e5",
+          "kind": "licence-text"
+        },
+        {
+          "path": "jsonpointer-3.4.dist-info/METADATA",
+          "bytes": 2638,
+          "sha256": "6d5adb24226adc27673e41b8d0b6fd22f013b858cec6a7a281845407257dedd5",
+          "kind": "metadata"
+        }
+      ],
+      "scope": "development-only; outside runtime licence-policy inventory",
+      "reviewed_text_summary": "BSD-3-Clause",
+      "archive_members": 8,
+      "elf_members": 0
+    }
+  ],
+  "upstream": [
+    {
+      "repository": "pydantic/httpx2",
+      "tag": "v2.15.1",
+      "commit": "6dd59b947a1eaab33040805eda3d7a5b18b5b7d8",
+      "release": "https://github.com/pydantic/httpx2/releases/tag/v2.15.1",
+      "preceding_release": "https://github.com/pydantic/httpx2/releases/tag/v2.15.0",
+      "review": "Full wheel code delta is httpcore2/_ssl.py and httpx2/_config.py. Python minimum rises from 3.10 to 3.11; project support remains >=3.12,<3.15. HTTPX keeps its exact matching HTTPCore2 dependency; other dependency declarations are unchanged. Linux default trust initialization uses one native SSLContext with system paths/fallbacks instead of per-handshake truststore initialization. CERT_REQUIRED and hostname checking remain enabled by PROTOCOL_TLS_CLIENT; explicit SSL_CERT_FILE/DIR use remains conditional on trust_env. Windows/macOS retain truststore. Supplied SSLContext behavior is unchanged. System trust changes require context recreation; live operating-system trust acceptance remains separate.",
+      "source_matches": [
+        {
+          "path": "src/httpcore2/httpcore2/_ssl.py",
+          "sha256": "18eca5cf26071034d638d4a77eee9e2eb82c39ffc767ff868ff0930e72a66e79"
+        },
+        {
+          "path": "src/httpx2/httpx2/_config.py",
+          "sha256": "0c02410f19895f81a6942aad344d4bd5d804af9b019a8f2dbcb727e3c476a130"
+        }
+      ]
+    },
+    {
+      "repository": "stefankoegl/python-json-pointer",
+      "tag": "v3.4",
+      "commit": "fb771073c8b1b05f0e1d82a8c0608968a65b0a90",
+      "release": "https://github.com/stefankoegl/python-json-pointer/releases/tag/v3.4",
+      "review": "Adds optional create=False to set_pointer/JsonPointer.set. Explicit opt-in builds missing dict paths before attachment and permits array-end append. Default resolution is unchanged; immutable-sequence append now raises JsonPointerException. CLI script is byte-identical after version-directory normalization. Python minimum remains 3.10; no dependencies. Development-only in this project.",
+      "source_matches": [
+        {
+          "path": "jsonpointer.py",
+          "sha256": "1d18beab2b54aac64c0833940dd74c402e2aa230f393be57d0f51965fcf6d14e"
+        }
+      ]
+    }
+  ],
+  "provenance_limit": "Changed source members match SHA-256 of the upstream release commit contents retrieved through GitHub. Archive lock hashes and source matches do not establish reproducible builds or publisher identity attestation.",
+  "limits": [
+    "Runtime inventory remains 47 distributions and 67 archive variants; all 147 native ELF proof entries and unresolved notice/native outcomes remain unchanged.",
+    "No legal approval, complete transitive native clearance, independent trust-store qualification or operational/provider adoption.",
+    "Installed native compatibility, build evidence and main attestations require separate exact-revision verification."
+  ],
+  "rollback": "Revert the dependency lock and coupled licence/native policies together through a protected PR; no schema or stored-data changes."
+}
