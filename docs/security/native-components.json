@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "review_date": "2026-10-19",
+  "review_date": "2026-10-20",
   "scope": "RECORD-listed ELF file-set identity; standard CPython3.12-3.14 manylinux x86_64 and compatible ABI3; no native dependency closure or legal approval",
-  "lock_sha256": "b5a4684da62a5a3457e445595fc4bbd867ad4db81f3da74adcde00f4d66c62c9",
+  "lock_sha256": "4ff11370cf733dc0395a54cb8c281bf83fd2e3fb20d18fcb60992566e8c5d072",
   "review_history": [
     {
       "source_commit": "331d597",
@@ -413,24 +413,24 @@
     },
     {
       "name": "httpcore2",
-      "version": "2.14.0",
+      "version": "2.15.1",
       "native_dependency_closure": "not-established-by-empty-ELF-set",
       "variants": [
         {
-          "wheel_filename": "httpcore2-2.14.0-py3-none-any.whl",
-          "wheel_sha256": "4c4f64f4b544afeb778c42c0ffb5941b29e671157e90ed3f6dc787c4bca90cd1",
+          "wheel_filename": "httpcore2-2.15.1-py3-none-any.whl",
+          "wheel_sha256": "730f603058c260a3288378217b464713350c23e3b8fe8bba753701054032d98a",
           "files": []
         }
       ]
     },
     {
       "name": "httpx2",
-      "version": "2.14.0",
+      "version": "2.15.1",
       "native_dependency_closure": "not-established-by-empty-ELF-set",
       "variants": [
         {
-          "wheel_filename": "httpx2-2.14.0-py3-none-any.whl",
-          "wheel_sha256": "9d20c13a10bae1773a0be3b0f1e5beeb4bdd549bc3a2ba18efa32897c65403e4",
+          "wheel_filename": "httpx2-2.15.1-py3-none-any.whl",
+          "wheel_sha256": "75841cd83d16b417f7d6da8f2089ce8120806efdbf96af37d46c5129c49015be",
           "files": []
         }
       ]
