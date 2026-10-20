@@ -1,6 +1,7 @@
 # First supervised profile and adoption gates
 
-The bounded profile is RSS/Atom or explicitly configured single-source API collection,
+The bounded profile is RSS/Atom, explicitly configured [static HTML](static-html-acquisition.md),
+or single-source API collection,
 durable character-chunk processing,
 lexical reads and seven stdio MCP tools. Optional local retrieval can be selected
 explicitly. It requires separate model-quality and resource acceptance; installing

@@ -1010,3 +1010,26 @@ The host Docker administrator remains trusted. This profile does not qualify
 Docker Desktop, rootless/user-namespace variants, other architectures, native
 inference admission, sustained workloads or full operational recovery. Private
 host evidence stays external; public receipts bind only reviewed synthetic scope.
+
+## Static HTML acquisition: ADR-0062
+
+SC1/SC2/SC3/SC4/SC6 and C1/C4/C5/C6/C7/C8/C9/C10 apply to explicitly
+selected static HTML sources. A returned page must not choose another destination,
+rewrite identity using canonical/base metadata, invent a publication date, execute
+script content or silently change the extraction contract of a cached feed.
+
+Allocate admission to explicit adapter/rights/unmetered declarations revalidated
+before dispatch; network effects to the existing bounded public-destination path;
+and extraction to a fresh bounded credential-free parser child. The parent binds
+the configured URL and extractor. Structural/UTF-8/output refusal preserves old
+accepted state and qualified failure feedback. Successful raw containers, normalized
+text, current-head reuse and outbox work retain the existing CAS/lifecycle
+transaction boundaries. An acquisition count never establishes processing success.
+
+Exact legacy RSS identity, adapter-switch cache invalidation, real child refusals,
+inert HTML URLs/dates, excluded-region canaries, raw-only change reuse, changed
+content, 304/failure/recovery and retired logical-key cases discriminate the
+boundary. Native SQL/TLS/worker/MCP and explicitly disposable installed-service
+acceptance complement pure parsing tests. Parsing limits are not a sandbox, rights
+are operator declarations, and syntactic extraction does not establish browser
+visibility, prompt safety, source truth or operational Internet acceptance.

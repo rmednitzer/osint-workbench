@@ -143,6 +143,26 @@ def test_native_fixture_conditional_refresh_and_failure_phases(network_helper):
     assert status == 503 and records[0]["phase"] == "fail" and records[0]["status"] == 503
 
 
+def test_native_html_fixture_keeps_raw_only_change_and_bad_encoding_distinct(network_helper):
+    status, headers, first, records = exchange(network_helper, "html-v1", request())
+    assert status == 200 and first == network_helper.HTML_V1
+    assert headers["content-type"] == "text/html; charset=utf-8"
+    assert records[0]["phase"] == "html-v1"
+    status, _, body, records = exchange(
+        network_helper, "html-v1", request('If-None-Match: "html-v1"')
+    )
+    assert status == 304 and body == b"" and records[0]["status"] == 304
+    status, headers, same, _ = exchange(
+        network_helper, "html-same", request('If-None-Match: "html-v1"')
+    )
+    assert status == 200 and same == network_helper.HTML_SAME and same != first
+    assert headers["etag"] == '"html-same"'
+    status, _, changed, _ = exchange(network_helper, "html-v2", request())
+    assert status == 200 and changed == network_helper.HTML_V2 and changed != first
+    status, _, invalid, _ = exchange(network_helper, "html-invalid", request())
+    assert status == 200 and invalid == b"\xff" + changed
+
+
 @pytest.mark.parametrize(
     "invalid",
     [

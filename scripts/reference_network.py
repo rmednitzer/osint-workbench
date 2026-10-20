@@ -81,6 +81,19 @@ FEED_V1 = b"""<rss version="2.0"><channel><title>Fixture</title>
 <item><guid>2</guid><title>Two</title><description>Second evidence</description></item>
 </channel></rss>"""
 FEED_V2 = FEED_V1.replace(b"Second evidence", b"Changed evidence")
+HTML_V1 = b"""<!DOCTYPE html><html><head><title>Synthetic HTML</title>
+<script>ignored-head</script></head><body><h1>Static HTML evidence</h1>
+<p>First HTML text.</p><script>hidden-body</script><template>hidden-template</template>
+</body></html>"""
+HTML_SAME = HTML_V1.replace(b"ignored-head", b"changed-head")
+HTML_V2 = HTML_V1.replace(b"First HTML text.", b"Changed HTML text.")
+HTML_PAGES = {
+    "html-v1": HTML_V1,
+    "html-same": HTML_SAME,
+    "html-v2": HTML_V2,
+    "html-invalid": b"\xff" + HTML_V2,
+}
+HTTP_PHASES = ("v1", "v2", "fail", *HTML_PAGES)
 ENVIRONMENT = {"PATH": "/usr/sbin:/usr/bin:/sbin:/bin", "LC_ALL": "C"}
 
 
@@ -173,7 +186,7 @@ def _response(connection, status, body=b"", *, etag=None, media_type=None):
 
 def handle_connection(connection, phase, record, *, deadline=None):
     """Bounded protocol implementation on an already connected stream; never binds."""
-    if phase not in ("v1", "v2", "fail"):
+    if phase not in HTTP_PHASES:
         raise ValueError("INVALID_FIXTURE_PHASE")
     deadline = min(time.monotonic() + 3, deadline or float("inf"))
     connection.settimeout(3)
@@ -222,7 +235,11 @@ def handle_connection(connection, phase, record, *, deadline=None):
             raise ValueError
         etag = f'"{phase}"'
         status = 503 if phase == "fail" else (304 if headers.get("if-none-match") == etag else 200)
-        body = feed_bytes(phase) if status == 200 else b""
+        body = (
+            (HTML_PAGES[phase] if phase in HTML_PAGES else feed_bytes(phase))
+            if status == 200
+            else b""
+        )
         record(
             {
                 "phase": phase,
@@ -235,7 +252,13 @@ def handle_connection(connection, phase, record, *, deadline=None):
         if remaining <= 0:
             raise ValueError
         connection.settimeout(remaining)
-        _response(connection, status, body, etag=etag if phase != "fail" else None)
+        _response(
+            connection,
+            status,
+            body,
+            etag=etag if phase != "fail" else None,
+            media_type="text/html; charset=utf-8" if phase in HTML_PAGES else None,
+        )
     except (ValueError, UnicodeError, OSError):
         try:
             connection.settimeout(0.1)
@@ -398,7 +421,7 @@ def serve(expected_inode, host_inode, *, api=False):
                 continue
             count += 1
             phase = CONTROL.read_text().strip()
-            if phase not in ((*API_PAGES, "fail") if api else ("v1", "v2", "fail")):
+            if phase not in ((*API_PAGES, "fail") if api else HTTP_PHASES):
                 raise RuntimeError("INVALID_FIXTURE_PHASE")
 
             def record(row):
@@ -535,7 +558,7 @@ class ReferenceNetwork:
             raise
 
     def set_phase(self, phase):
-        if phase not in (*API_PAGES, "fail"):
+        if phase not in (*API_PAGES, *HTTP_PHASES):
             raise ValueError("INVALID_FIXTURE_PHASE")
         if self._process is None or self._process.poll() is not None:
             raise RuntimeError("FIXTURE_NOT_RUNNING")

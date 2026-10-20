@@ -1,13 +1,16 @@
-# Scheduled RSS/Atom acquisition
+# Scheduled feed and static HTML acquisition
 
 `collect --config` accepts a regular file of at most 8 MiB and refuses final
 symlinks, FIFOs, devices and directories before reading. It also bounds a file
 that grows after its initial size check. Parent-directory custody remains an
 operator responsibility; ordinary regular-file I/O has no physical deadline.
 
+RSS/Atom is the default. The opt-in [static HTML adapter](static-html-acquisition.md)
+uses the same scheduling path with an explicitly versioned extraction contract.
+
 Core schema v5 introduced the private durable schedule. Core v11 adds private
 API progress alongside this feed state; see [API acquisition](api-acquisition.md). The current supported
-layout is core v11 and, when enabled, retrieval-profile v4. Run the explicit
+layout is core v12 and, when enabled, retrieval-profile v5. Run the explicit
 migrations before using the current code. No sources, URLs, network
 calls, host timers or model downloads are supplied or enabled by package import.
 
@@ -144,7 +147,7 @@ and all policy/hash/target checks in [recovery](recovery.md).
 Core-v3/format-1 adoption remains unavailable.
 
 Remaining acquisition work includes redirect-response retry advice, shared-host rate limits,
-jitter, durable cursors, conditional article fetches and additional formats. Real
+jitter, durable cursors, article selection beyond [bounded static HTML](static-html-acquisition.md) and additional formats. Real
 public-DNS/public-PKI interoperability, production timer cadence and larger-corpus operation
 need separate evidence. Synthetic installed-service/timer results are recorded
 separately in the collector deployment receipt. See ADR-0023 and the implementation backlog.

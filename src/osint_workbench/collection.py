@@ -74,6 +74,73 @@ def feed_documents(raw: bytes, source_id: str) -> list[DocumentInput]:
         raise WorkbenchError("FEED_PARSE_FAILED") from None
 
 
+def _validated_source(source):
+    try:
+        return Source.model_validate_json(source.model_dump_json())
+    except (ValueError, TypeError, AttributeError):
+        raise WorkbenchError("SOURCE_CONFIGURATION_INVALID") from None
+
+
+def extractor(source):
+    return "feedparser-html/2" if source.adapter == "rss-atom/1" else "static-html/1"
+
+
+def resource_identity(source):
+    # Preserve the published RSS resource tuple and its JSON encoding exactly.
+    return digest(
+        json.dumps([source.url, extractor(source), "identity", "osint-workbench/0.1"]).encode()
+    )
+
+
+def html_documents(raw, source):
+    if len(raw) > MAX_FEED:
+        raise WorkbenchError("SOURCE_TOO_LARGE")
+    with tempfile.TemporaryFile() as output:
+        try:
+            result = subprocess.run(
+                [sys.executable, "-I", "-m", "osint_workbench.html_parser"],
+                input=raw,
+                stdout=output,
+                stderr=subprocess.DEVNULL,
+                env={"PYTHONIOENCODING": "utf-8"},
+                timeout=8,
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            raise WorkbenchError("HTML_PARSE_TIMEOUT") from None
+        output.seek(0)
+        data = output.read(MAX_RESULT + 1)
+    if len(data) > MAX_RESULT:
+        raise WorkbenchError("HTML_RESULT_LIMIT")
+    try:
+        decoded = json.loads(data)
+        if result.returncode != 0:
+            if isinstance(decoded, dict) and decoded.get("error") in {
+                "HTML_PARSE_FAILED",
+                "HTML_STRUCTURE_UNSUPPORTED",
+                "HTML_ENCODING_UNSUPPORTED",
+                "HTML_EMPTY_DOCUMENT",
+                "HTML_TEXT_LIMIT",
+                "HTML_RESULT_LIMIT",
+                "SOURCE_TOO_LARGE",
+            }:
+                raise WorkbenchError(decoded["error"])
+            raise WorkbenchError("HTML_PARSER_UNAVAILABLE")
+        if not isinstance(decoded, dict) or set(decoded) != {"title", "text"}:
+            raise ValueError
+        return [
+            DocumentInput(
+                source_id=source.source_id,
+                external_id=source.url,
+                title=decoded["title"],
+                text=decoded["text"],
+                published_at=None,
+            )
+        ]
+    except (ValueError, TypeError):
+        raise WorkbenchError("HTML_PARSE_FAILED") from None
+
+
 @contextmanager
 def _collection_connection(db, store=None):
     """Normalize failures before run admission as well as inside acquisition."""
@@ -96,6 +163,7 @@ def _collection_connection(db, store=None):
 
 
 def collect(source: Source, db: Database, store: EvidenceStore, *, due_only=False) -> dict:
+    source = _validated_source(source)
     # Hold the session lock on the same connection that accepts records. If it
     # disconnects, acceptance fails rather than continuing after lock loss.
     with _collection_connection(db, store) as conn:
@@ -121,11 +189,7 @@ def collect(source: Source, db: Database, store: EvidenceStore, *, due_only=Fals
         if not source.enabled:
             conn.commit()
             return {"status": "disabled", "documents": 0}
-        resource = digest(
-            json.dumps(
-                [source.url, "feedparser-html/2", "identity", "osint-workbench/0.1"]
-            ).encode()
-        )
+        resource = resource_identity(source)
         previous = conn.execute(
             "SELECT resource_sha256 FROM ow.collection_state WHERE source_id=%s",
             (source.source_id,),
@@ -208,7 +272,11 @@ def collect(source: Source, db: Database, store: EvidenceStore, *, due_only=Fals
                     else state["last_modified"]
                 )
             else:
-                documents = feed_documents(response.body, source.source_id)
+                documents = (
+                    feed_documents(response.body, source.source_id)
+                    if source.adapter == "rss-atom/1"
+                    else html_documents(response.body, source)
+                )
                 raw_sha = store.put(response.body)  # Once per feed, not once per item.
                 if lost_cache is not None:
                     # A different new representation does not repair the known gap
@@ -226,7 +294,7 @@ def collect(source: Source, db: Database, store: EvidenceStore, *, due_only=Fals
                         document,
                         raw_sha,
                         text_sha,
-                        "feedparser-html/2",
+                        extractor(source),
                         store=store,
                         observed_current=True,
                     )
@@ -325,6 +393,7 @@ def collect_due(sources, db, store, *, limit=32):
     """
     if type(limit) is not int or not 1 <= limit <= 128 or len(sources) > 1000:
         raise WorkbenchError("INVALID_COLLECTION_LIMIT")
+    sources = [_validated_source(source) for source in sources]
     if len({s.source_id for s in sources}) != len(sources):
         raise WorkbenchError("DUPLICATE_SOURCE_ID")
     with _collection_connection(db) as conn:
@@ -340,13 +409,9 @@ def collect_due(sources, db, store, *, limit=32):
     for source in sources:
         if not source.enabled:
             disabled.append(source)
-        elif source.source_id not in states or states[source.source_id]["resource_sha256"] != (
-            digest(
-                json.dumps(
-                    [source.url, "feedparser-html/2", "identity", "osint-workbench/0.1"]
-                ).encode()
-            )
-        ):
+        elif source.source_id not in states or states[source.source_id][
+            "resource_sha256"
+        ] != resource_identity(source):
             unknown.append(source)
     for row in rows:
         source = sources_by_id[row["source_id"]]

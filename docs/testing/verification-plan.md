@@ -64,6 +64,19 @@ cleanup. Static Compose shape and database health are insufficient. Its exact
 image/wheel/source receipt does not replace required native LTS foundation checks
 or establish production, collection, inference or full scenario acceptance.
 
+## Static HTML acquisition refinement
+
+[ADR-0062](../adr/0062-bounded-static-html-acquisition.md) allocates bounded
+R01/R02/R03/R04/R09/R11/R12/R15/R19/R20 behavior across E01/E02/E03/E05/E09/E10/E12.
+Tests must preserve the exact RSS resource identity, require static declarations
+before dispatch, exercise the real child parser, retain raw/text/extractor lineage
+and unknown publication dates, and prove cache invalidation when switching adapter.
+Native HTTP/TLS/SQL cases cover raw-only reuse, changed versions, 304, failure and
+lifecycle suppression, then actual chunk and stdio evidence reads. The guarded
+installed service fixture separately exercises static source configuration under
+the collector account. These bounded refinements do not close whole-format,
+rendering, restricted-rights, semantic or deployment scenarios.
+
 ## Test strata and proof limits
 
 Unit/property/parser tests establish narrow functional boundaries. Integration tests use real disposable PostgreSQL, evidence stores, job workers, actual installed adapters and HTTP fixtures. Full E2E installs built wheel/container artifacts, uses a real MCP client, real local generation/embedding/rerank models and the complete data-to-product path. Provider fixture E2E runs actual client code against a fake server; live-provider verification is separate and pending. GPU-specific claims need actual declared hardware; CPU evidence cannot prove GPU behaviour. Static/source assertions and schema success do not establish semantic quality.

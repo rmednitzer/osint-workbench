@@ -25,6 +25,7 @@ cannot substitute for runtime, semantic, provider or recovery evidence.
 | Task | Runbook |
 | --- | --- |
 | Collect due RSS/Atom sources and handle validators/backoff | [Scheduled acquisition](scheduled-acquisition.md) |
+| Acquire declared static HTML with bounded syntactic extraction | [Static HTML acquisition](static-html-acquisition.md) |
 | Acquire explicitly permitted unmetered JSON APIs and resolve credential references | [API acquisition](api-acquisition.md) |
 | Obtain a bounded machine-to-machine grant without token retention | [OAuth acquisition](oauth-acquisition.md) |
 | Acquire a qualified KEV-format catalogue without exposure inference | [KEV acquisition](kev-acquisition.md) |

@@ -25,7 +25,7 @@ profiles and counts; this policy change is not a new runtime acceptance result.
 ## Current contracts
 
 Core schema **12**, retrieval profile **5**, checkpoint format **2**.
-The programme contains 61 ADRs, 58 requirements and 51 full acceptance scenarios.
+The programme contains 62 ADRs, 58 requirements and 51 full acceptance scenarios.
 Native Ubuntu installs use the distro Python in a venv: 24.04/3.12 and
 26.04/3.14. Python 3.14 is not the global minimum; see
 [runtime support](docs/runtime-support.md#native-ubuntu-installation).
@@ -37,7 +37,7 @@ scope; passing foundation regressions does not close every scenario.
 | Area | Implemented behavior | Material limits and remaining acceptance |
 | --- | --- | --- |
 | Configuration and storage | Typed external configuration, empty bundled source list, packaged additive migrations, immutable versions/current heads and hashed evidence objects | Single-operator reference; no complete tenancy, physical media integrity or full-host recovery claim |
-| Collection | RSS/Atom extraction, public-destination HTTP with DNS pinning/TLS, per-hop redirect checks, framing/byte/deadline limits, due ticks, conditional validators, backoff and bounded Retry-After | No article crawling or ZIP/PDF; specialist formats are limited to the explicit KEV adapter; compressed responses rejected; shared-host quotas and representative Internet/deployment acceptance remain open |
+| Collection | RSS/Atom and opt-in [static HTML extraction](docs/static-html-acquisition.md), public-destination HTTP with DNS pinning/TLS, per-hop redirect checks, framing/byte/deadline limits, due ticks, conditional validators, backoff and bounded Retry-After | No JavaScript rendering, crawling or ZIP/PDF; specialist formats are limited to the explicit KEV adapter; compressed responses rejected; shared-host quotas and representative Internet/deployment acceptance remain open |
 | API acquisition | Opt-in HTTPS GET `bounded-json-pages/1` and [KEV-format catalogue acquisition](docs/kev-acquisition.md), checked systemd/file credential references, fixed bearer/API-key headers and [bounded OAuth client credentials](docs/oauth-acquisition.md), per-page atomic continuation, partial freshness and bounded cross-tick loop detection; [runbook](docs/api-acquisition.md) | Explicit all-existing-uses-permitted/unmetered declarations only; opt-in single-source systemd service/timer; no restricted licensed content, other provider adapters, other OAuth flows/asymmetric client authentication, paid queries or actual provider acceptance |
 | Item identity | Changed feed containers retain raw run evidence; unchanged items reuse their current heads and enqueue no new work | No feed-absence deletion or whole-feed atomic replacement; exact old-container replay follows ADR-0040 |
 | Jobs | Leases, fencing, bounded retries, renewal/cancellation, explicit operation-bound chunk enqueue, ingestion dispositions and verified retained character-chunk output and atomic downstream receipts | Cancellation revokes result acceptance, not physical computation or incurred remote effects; terminal-job deduplication is not a reset command |

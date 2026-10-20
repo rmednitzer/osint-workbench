@@ -386,6 +386,13 @@ observations, PostgreSQL run state, exact raw/text CAS bytes, current heads,
 fixed-kind outbox events and the journal's service UID. Neither a process exit
 nor a timer's presence alone establishes these outcomes.
 
+The enabled fixture also exercises the opt-in static HTML adapter under the real
+collector account: initial acceptance, conditional reuse, raw-only reuse, changed
+text, parser refusal and unconditional recovery. With the operational fixture,
+the worker processes its two versions and the reader checks document, lexical
+and evidence reads. These are synthetic acceptance checks; current-revision
+results must be recorded before claiming this path verified.
+
 The script prints a sanitized `PUBLIC_DEPLOYMENT_REPORT`. Failure diagnostics
 contain only allowlisted command/state/exception categories, bounded counts and
 known harness basenames/line numbers; raw arguments, exception messages and
