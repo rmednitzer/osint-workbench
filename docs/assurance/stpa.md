@@ -953,3 +953,20 @@ record/identity mismatch, corruption, unsafe reader/write-store authority, Unico
 coordinates, incompatible descriptions, retirement and held/mid-read expiry.
 No new MCP surface, persistence, network effect or inferred local applicability is
 introduced. Full domain semantics and operational adoption remain unqualified.
+
+## Retained chunk output integrity: ADR-0059
+
+Under SC2/SC4 and existing C6/C9/C10/C12, CA4 must not accept a successful
+character-chunk receipt merely because uniqueness conflicts were ignored. A prior
+producer can leave a valid-shaped but incompatible ordinal or extra row. The
+worker must compare the complete bounded retained set with its evidence-derived
+expected output before downstream enqueue and final fenced completion. The
+preserved downstream payload must also match exactly under the job-row lock;
+its deduplication key alone does not establish work identity.
+
+Native conflict cases distinguish identity, body/hash, coordinates and extra-row
+faults from compatible replay, partial completion and concurrent deterministic
+writers. A mismatch preserves prior evidence, rolls back new output and leaves a
+fixed terminal failure without downstream publication. Existing lease/lifecycle
+refusals remain required. This is statement-time output validation, not prevention
+of arbitrary later writes or retroactive qualification of historical receipts.

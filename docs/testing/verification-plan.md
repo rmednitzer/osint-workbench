@@ -37,6 +37,14 @@ service-only checks on both LTS defaults at `ebdbf666e0f4001dca59ce8760386aae804
 Neither receipt is foundation CI or full operational deployment acceptance.
 See [deployment](../deployment.md) for the fixture boundary.
 
+## Retained chunk acceptance refinement
+
+[ADR-0059](../adr/0059-chunk-output-integrity.md) refines R03/R04/R11 and the bounded
+workflow portions of E02/E03/E06: retained deterministic output must match before
+completion and downstream enqueue. Native conflict, rollback, compatible partial
+set and concurrent-operation cases complement existing attempt-fencing tests.
+They do not close full workflow scheduling or all historical-data qualification.
+
 ## Test strata and proof limits
 
 Unit/property/parser tests establish narrow functional boundaries. Integration tests use real disposable PostgreSQL, evidence stores, job workers, actual installed adapters and HTTP fixtures. Full E2E installs built wheel/container artifacts, uses a real MCP client, real local generation/embedding/rerank models and the complete data-to-product path. Provider fixture E2E runs actual client code against a fake server; live-provider verification is separate and pending. GPU-specific claims need actual declared hardware; CPU evidence cannot prove GPU behaviour. Static/source assertions and schema success do not establish semantic quality.

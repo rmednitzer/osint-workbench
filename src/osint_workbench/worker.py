@@ -86,6 +86,41 @@ def run_batch(db: Database, store: EvidenceStore, *, max_jobs: int = 32) -> dict
     }
 
 
+def _verify_chunks(conn, document_id, chunker, expected):
+    """Check the complete retained set, returning no stored text to the worker.
+
+    A conflict is not evidence of equality. The extra row makes surplus ordinals
+    visible without an unbounded result set. SQL compares bodies in place;
+    malformed retained bodies cannot expand the Python result. The source's
+    one-million-character bound also bounds the deterministic expected set.
+    """
+    # C comparisons require exact bytes even with a nondeterministic database
+    # collation. Keep the ordinary identity predicates as an index prefilter.
+    row = conn.execute(
+        """WITH retained AS MATERIALIZED (
+          SELECT chunk_id,ordinal,start_offset,end_offset,text_sha256,body
+          FROM ow.chunks WHERE document_id=%s AND chunker=%s
+            AND document_id COLLATE "C"=%s AND chunker COLLATE "C"=%s
+          ORDER BY ordinal LIMIT %s
+        ), expected AS (
+          SELECT * FROM jsonb_to_recordset(%s::jsonb) AS e(
+            chunk_id text,ordinal integer,start_offset integer,end_offset integer,
+            text_sha256 text,body text)
+        )
+        SELECT NOT EXISTS (
+          SELECT 1 FROM retained r FULL OUTER JOIN expected e USING(ordinal)
+          WHERE r.ordinal IS NULL OR e.ordinal IS NULL
+            OR ROW(r.chunk_id COLLATE "C",r.start_offset,r.end_offset,r.text_sha256 COLLATE "C")
+              IS DISTINCT FROM ROW(e.chunk_id,e.start_offset,e.end_offset,e.text_sha256)
+            OR NOT CASE WHEN octet_length(r.body)=octet_length(e.body)
+                 THEN r.body COLLATE "C"=e.body ELSE false END
+        ) AS matches""",
+        (document_id, chunker, document_id, chunker, len(expected) + 1, Jsonb(expected)),
+    ).fetchone()
+    if not row["matches"]:
+        raise WorkbenchError("CHUNK_INTEGRITY_MISMATCH")
+
+
 def run_once(db: Database, store: EvidenceStore) -> dict:
     jobs = Jobs(db)
     job = jobs.claim(kinds=["document.accepted"], lease_seconds=60)
@@ -107,10 +142,21 @@ def run_once(db: Database, store: EvidenceStore) -> dict:
         with db.connect() as conn:
             locked = jobs.locked(conn, job["job_id"], job["fence"])
             assert_document_visible(conn, payload.document_id)
+            expected = []
             for ordinal, part in enumerate(parts):
                 chunk_id = hashlib.sha256(
                     json.dumps([payload.document_id, chunker, ordinal, part["sha256"]]).encode()
                 ).hexdigest()
+                expected.append(
+                    {
+                        "chunk_id": chunk_id,
+                        "ordinal": ordinal,
+                        "start_offset": part["start"],
+                        "end_offset": part["end"],
+                        "text_sha256": part["sha256"],
+                        "body": part["text"],
+                    }
+                )
                 conn.execute(
                     """INSERT INTO ow.chunks(chunk_id,document_id,chunker,ordinal,
                     start_offset,end_offset,text_sha256,body) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
@@ -126,12 +172,26 @@ def run_once(db: Database, store: EvidenceStore) -> dict:
                         part["text"],
                     ),
                 )
+            _verify_chunks(conn, payload.document_id, chunker, expected)
+            downstream_payload = {
+                "document_id": payload.document_id,
+                "chunker": chunker,
+                "chunks": len(parts),
+            }
             downstream = Database.enqueue_stored(
-                conn,
-                "document.chunked",
-                payload.document_id + ":" + chunker,
-                {"document_id": payload.document_id, "chunker": chunker, "chunks": len(parts)},
+                conn, "document.chunked", payload.document_id + ":" + chunker, downstream_payload
             )
+            # Generic dedup preserves the first payload. Its row lock is retained
+            # through this check and completion; an ID alone proves no contract.
+            # jsonb equality distinguishes booleans but equates numeric 1 and 1.0,
+            # so also require the exact integer JSON spelling of the count.
+            matching = conn.execute(
+                """SELECT payload=%s::jsonb AND (payload->>'chunks') COLLATE "C"=%s AS matches
+                FROM ow.jobs WHERE job_id=%s FOR UPDATE""",
+                (Jsonb(downstream_payload), str(len(parts)), downstream["job_id"]),
+            ).fetchone()
+            if not matching or not matching["matches"]:
+                raise WorkbenchError("CHUNK_DOWNSTREAM_MISMATCH")
             assert_document_visible(conn, payload.document_id)
             jobs.finish_locked(
                 conn,
