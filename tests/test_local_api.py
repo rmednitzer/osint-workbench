@@ -785,7 +785,10 @@ def test_local_api_batch_stops_after_uncertain_outcome_without_redispatch(
         result = intelligence.enrich_batch(writer, store, generator, max_jobs=4)
         assert result["attempted"] == result["failed"] == 1
         assert len(calls) == before
-        with admission() as held:
+        with pytest.raises(WorkbenchError, match="^INFERENCE_OUTCOME_UNKNOWN$"):
+            with admission():
+                pass
+        with admission(allow_uncertain=True) as held:
             assert held.read_marker() is not None
 
 
