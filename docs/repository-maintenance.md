@@ -28,6 +28,8 @@ dependency dashboard is distinct from a mergeable update PR.
 
 - Enable PEP621/uv.lock, GitHub Actions and Dockerfile management. These cover
   action/service images and the separately pinned validation-tool Dockerfile.
+  The custom regex manager also extracts Compose image tags and digests from
+  workflow environment variables; extraction validation must find both images.
 - Group routine non-major Python updates and non-major CI action/image updates.
   Use a three-day release-age gate for manifest-level routine Python updates.
   The weekly uv lock maintenance is a separate complete resolution and must be
@@ -48,9 +50,10 @@ dependency dashboard is distinct from a mergeable update PR.
   Distinguish separate distribution names such as `httpcore` and `httpcore2`.
   Record supported-version exceptions and dated primary-source observations;
   lock-file success alone does not establish currency or compatibility.
-- Retain GitHub dependency alerts and Dependabot security fixes. Security PRs may
-  arrive outside routine Renovate scheduling. Do not automatically suppress
-  duplicate advisories; inspect and reconcile equivalent update branches.
+- Renovate owns dependency PRs, including vulnerability remediation. Retain GitHub
+  dependency alerts as detection input; disable Dependabot security-update PRs to
+  avoid competing remediation branches. Security updates may run outside routine
+  scheduling; findings still require review and successful acceptance checks.
 - No private registry credentials, external source catalog, model inventory or
   custom post-upgrade execution is included in bot configuration.
 
@@ -99,7 +102,8 @@ not update one identity without the other. No runtime auto-download is authorize
 Main/PR/manual foundation CI has bounded timeouts and cancels superseded runs for
 the same PR/ref. Branch pushes without a PR do not run a duplicate native build.
 Required checks are `repository-policy`, `renovate-policy` and
-`installed-artifact`. The latter aggregates all required Ubuntu/Python native
+`installed-artifact`, plus the `acceptance` aggregate for advisory auditing and
+disposable Compose execution. The installed-artifact check aggregates all required Ubuntu/Python native
 matrix jobs (24.04/3.12 and 26.04/3.14) and fails on incomplete required work;
 see [runtime support](runtime-support.md). Both call one same-commit reusable
 verifier. The separate weekly/manual 3.13 compatibility workflow has no signing
@@ -108,13 +112,14 @@ by the LTS signer. A manual 3.15 dependency-only probe does not extend support.
 Public diagnostics remain explicit manual activities;
 concurrency queues them rather than terminating a running supervised fixture.
 
-The weekly/manual dependency audit exports locked core and optional ML runtime
+The PR/main and weekly/manual dependency audit exports locked core and optional ML runtime
 packages and queries advisory data without resolving or fixing versions. It uses
 no private inventories or credentials. Findings and advisory-service/collection
 failure fail the audit; network failure is not a clean result. Reports are retained
 as public CI artifacts for 30 days. Development/build tooling and native/model
 components require separate review; this audit does not cover all supply chains
-or establish absence of vulnerabilities. It is not a required per-PR network gate.
+or establish absence of vulnerabilities. The `acceptance` gate fails when advisory data cannot be collected; a network
+failure must be retried or investigated rather than reported as clean.
 
 Do not attach untrusted public PR jobs to private/self-hosted fleet runners.
 Build, test, diagnostic and advisory jobs use read-only workflow tokens and no
@@ -212,8 +217,8 @@ existing required CI checks; GitHub documents limitations for diff coverage,
 merge queues and Dependabot PRs under default setup. Inspect actual PR results;
 this is not an all-history or universal dependency-PR guarantee.
 
-Secret scanning, push protection, dependency alerts/security fixes and private
-reporting remain enabled. Generic secret patterns are not available to this
+Secret scanning, push protection, dependency alerts and private reporting remain enabled. Dependabot security-update
+PRs are disabled; Renovate owns remediation PRs. Generic secret patterns are not available to this
 personal public repository: a successful PATCH response still read back disabled.
 Validity checks remain disabled because they contact issuing providers. Public
 partner secret scanning can notify providers independently of that switch; no
@@ -261,3 +266,24 @@ statements for the merged code; dated receipts and earlier tool inventories
 retain their original revision and scope. Neither successful job status alone
 nor this prose proves zero open alerts, current mutable settings, an operational
 deployment or complete programme acceptance.
+
+
+## Reproducible Copilot development setup
+
+The checked-in setup workflow prepares the locked Python 3.12 retrieval/development
+profile and a disposable PostgreSQL 18/pgvector service. It runs repository, lint
+and static checks without downloading models or contacting inference providers.
+The database credential is a public synthetic fixture, never an operational secret.
+The agent receives its fixture DSN through GITHUB_ENV; this grants no fleet access.
+
+This is an editable development environment. Full installed-wheel/native acceptance
+still runs in the existing two-LTS verifier; native test-source preparation remains
+explicit. Setup failure must be reported, because Copilot can continue after a
+failed setup. A setup pass is not installed-artifact or semantic-quality evidence.
+
+Foundation CI calls the same disposable Compose workflow on PRs and main. The
+manual entry still requires its acknowledgement; automatic execution is restricted
+to fresh GitHub-hosted runners. No private runners or operational volumes are used.
+The stable acceptance aggregate rejects missing, skipped, cancelled or failed jobs.
+Main signing waits for this acceptance as well as existing foundation checks.
+Revert through a reviewed PR; preserve required-check names during recovery.
