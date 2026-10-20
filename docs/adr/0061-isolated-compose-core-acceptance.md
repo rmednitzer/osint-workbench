@@ -41,7 +41,7 @@ preparation explicitly obtains public images and locked dependency wheels. The
 application build installs its separately hash-verified wheel and core-only,
 hash-locked dependencies without package-network access. No apt upgrade, mutable
 image tag, editable source installation or runtime dependency download is required.
-A receipt binds the source, artifact, requirement export, input wheels, image ID
+A receipt binds the source, artifact, requirement export and its permitted dependency hashes, image ID
 and profile scripts. Capturing inputs is not proof of byte-reproducible upstream
 images or complete OS/native/model SBOM coverage.
 

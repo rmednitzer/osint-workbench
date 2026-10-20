@@ -36,3 +36,22 @@ def test_compose_copy_refuses_linked_or_oversized_private_objects(tmp_path):
         regular(source, 100)
     link.unlink()
     assert regular(source, 100) == b"synthetic"
+
+
+def test_compose_cleanup_failure_preserves_primary_error():
+    module = runpy.run_path(str(ROOT / "scripts/test_compose_core.py"))
+    error = module["Rejected"]
+    primary = error("PROFILE_PRIMARY_FAILURE")
+
+    def cleanup():
+        raise error("PROFILE_COMMAND_FAILED_DOCKER_VOLUME_RM")
+
+    with pytest.raises(error) as raised, module["cleanup_guard"](cleanup):
+        raise primary
+    assert raised.value is primary
+    assert primary.__notes__ == ["PROFILE_CLEANUP_FAILED:PROFILE_COMMAND_FAILED_DOCKER_VOLUME_RM"]
+    name = module["command_name"]
+    assert (
+        name(["docker", "compose", "--file", "/private/location", "down"]) == "DOCKER_COMPOSE_DOWN"
+    )
+    assert name(["docker", "volume", "rm", "private-volume"]) == "DOCKER_VOLUME_RM"

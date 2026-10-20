@@ -14,6 +14,8 @@ import secrets
 import shutil
 import stat
 import subprocess
+import sys
+from contextlib import contextmanager
 from pathlib import Path
 
 LABEL = "org.osint-workbench.synthetic-run"
@@ -41,17 +43,68 @@ def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def command_name(argv):
+    """Only fixed command categories; never paths, identifiers or arguments."""
+    if argv[:2] == ["docker", "compose"]:
+        for verb in ("version", "run", "up", "create", "ps", "restart", "down"):
+            if verb in argv[2:]:
+                return "DOCKER_COMPOSE_" + verb.upper()
+        return "DOCKER_COMPOSE"
+    if (
+        len(argv) >= 3
+        and argv[0] == "docker"
+        and argv[1] in {"context", "image", "volume", "container", "network"}
+        and argv[2] in {"inspect", "ls", "create", "rm"}
+    ):
+        return "DOCKER_" + argv[1].upper() + "_" + argv[2].upper()
+    if argv[:2] == ["docker", "build"]:
+        return "DOCKER_BUILD"
+    if argv and argv[0] == "git":
+        return "GIT_PREFLIGHT"
+    return "OTHER"
+
+
+def safe_failure(exc):
+    if isinstance(exc, Rejected):
+        return str(exc)
+    if isinstance(exc, subprocess.TimeoutExpired):
+        return "PROFILE_COMMAND_TIMEOUT"
+    return "PROFILE_UNEXPECTED_FAILURE"
+
+
+@contextmanager
+def cleanup_guard(cleanup):
+    primary = None
+    try:
+        yield
+    except BaseException as exc:
+        primary = exc
+        raise
+    finally:
+        try:
+            cleanup()
+        except Exception as exc:
+            if primary is None:
+                raise
+            primary.add_note("PROFILE_CLEANUP_FAILED:" + safe_failure(exc))
+
+
 def command(argv, *, env=None, timeout=180, failure=False, expected_error=None):
-    result = subprocess.run(
-        argv, env=env, capture_output=True, text=True, timeout=timeout, check=False
-    )
+    try:
+        result = subprocess.run(
+            argv, env=env, capture_output=True, text=True, timeout=timeout, check=False
+        )
+    except subprocess.TimeoutExpired:
+        raise Rejected("PROFILE_COMMAND_TIMEOUT_" + command_name(argv)) from None
     if (result.returncode != 0) != failure:
         codes = [
             line
             for line in result.stderr.splitlines()
             if re.fullmatch("PROFILE_[A-Z_]{1,110}", line)
         ]
-        raise Rejected(codes[-1] if codes else "PROFILE_COMMAND_FAILED")
+        raise Rejected(
+            "PROFILE_COMMAND_FAILED_" + command_name(argv) + (":" + codes[-1] if codes else "")
+        )
     if expected_error is not None:
         require(expected_error in result.stderr.splitlines(), "PROFILE_WRONG_REFUSAL")
     return result.stdout
@@ -162,7 +215,16 @@ def main():
     image = project + ":local"
     # Refuse collisions before any resource creation, including stopped objects.
     for kind in ("container", "network", "volume"):
-        listed = command(["docker", kind, "ls", "-q", "--filter", "name=" + project])
+        listed = command(
+            [
+                "docker",
+                kind,
+                "ls",
+                "-aq" if kind == "container" else "-q",
+                "--filter",
+                "name=" + project,
+            ]
+        )
         require(not listed.strip(), "PROFILE_RESOURCE_COLLISION")
     work.mkdir(mode=0o700, parents=True)
     work.chmod(0o700)
@@ -208,6 +270,8 @@ def main():
     compose = [
         "docker",
         "compose",
+        "--profile",
+        "acceptance",
         "--project-name",
         project,
         "--file",
@@ -222,7 +286,45 @@ def main():
         "postgres_image": POSTGRES,
         "profile": "synthetic-compose-core/1",
     }
-    try:
+
+    def cleanup():
+        marker = json.loads((work / "owner.json").read_text())
+        require(marker == {"run_id": nonce, "project": project}, "PROFILE_CLEANUP_MARKER")
+        ids = command(
+            [
+                "docker",
+                "container",
+                "ls",
+                "-aq",
+                "--filter",
+                "label=com.docker.compose.project=" + project,
+            ]
+        ).split()
+        for identifier in ids:
+            ownership(json.loads(command(["docker", "container", "inspect", identifier]))[0], nonce)
+        networks = command(
+            [
+                "docker",
+                "network",
+                "ls",
+                "-q",
+                "--filter",
+                "label=com.docker.compose.project=" + project,
+            ]
+        ).split()
+        for identifier in networks:
+            ownership(json.loads(command(["docker", "network", "inspect", identifier]))[0], nonce)
+        for volume in created:
+            ownership(json.loads(command(["docker", "volume", "inspect", volume]))[0], nonce)
+        command(compose + ["down", "--remove-orphans", "--timeout", "15"], env=env)
+        for volume in created:
+            command(["docker", "volume", "rm", volume])
+        image_info = command(["docker", "image", "ls", "-q", image]).strip()
+        if image_info:
+            ownership(json.loads(command(["docker", "image", "inspect", image]))[0], nonce)
+            command(["docker", "image", "rm", image])
+
+    with cleanup_guard(cleanup):
         command(
             [
                 "docker",
@@ -312,45 +414,16 @@ def main():
             "current-policy-restore",
         ]
         receipt["result"] = "passed"
-    finally:
-        marker = json.loads((work / "owner.json").read_text())
-        require(marker == {"run_id": nonce, "project": project}, "PROFILE_CLEANUP_MARKER")
-        ids = command(
-            [
-                "docker",
-                "container",
-                "ls",
-                "-aq",
-                "--filter",
-                "label=com.docker.compose.project=" + project,
-            ]
-        ).split()
-        for identifier in ids:
-            ownership(json.loads(command(["docker", "container", "inspect", identifier]))[0], nonce)
-        networks = command(
-            [
-                "docker",
-                "network",
-                "ls",
-                "-q",
-                "--filter",
-                "label=com.docker.compose.project=" + project,
-            ]
-        ).split()
-        for identifier in networks:
-            ownership(json.loads(command(["docker", "network", "inspect", identifier]))[0], nonce)
-        for volume in created:
-            ownership(json.loads(command(["docker", "volume", "inspect", volume]))[0], nonce)
-        command(compose + ["down", "--remove-orphans", "--timeout", "15"], env=env)
-        for volume in created:
-            command(["docker", "volume", "rm", volume])
-        image_info = command(["docker", "image", "ls", "-q", image]).strip()
-        if image_info:
-            ownership(json.loads(command(["docker", "image", "inspect", image]))[0], nonce)
-            command(["docker", "image", "rm", image])
     for kind in ("container", "network", "volume"):
         remaining = command(
-            ["docker", kind, "ls", "-q", "--filter", "label=" + LABEL + "=" + nonce]
+            [
+                "docker",
+                kind,
+                "ls",
+                "-aq" if kind == "container" else "-q",
+                "--filter",
+                "label=" + LABEL + "=" + nonce,
+            ]
         )
         require(not remaining.strip(), "PROFILE_CLEANUP_INCOMPLETE")
     receipt["cleanup_verified"] = True
@@ -373,6 +446,10 @@ if __name__ == "__main__":
     try:
         main()
     except Rejected as exc:
+        for note in getattr(exc, "__notes__", ()):
+            print(note, file=sys.stderr)
         raise SystemExit(str(exc)) from None
-    except subprocess.TimeoutExpired:
+    except subprocess.TimeoutExpired as exc:
+        for note in getattr(exc, "__notes__", ()):
+            print(note, file=sys.stderr)
         raise SystemExit("SYNTHETIC_COMPOSE_ACCEPTANCE_TIMEOUT") from None
