@@ -898,8 +898,12 @@ def enabled_http_service_acceptance(account, *, shared_gid=None, operational_acc
                 if operational_accounts is not None
                 else {}
             )
+            html_result = html_service_acceptance(
+                account, network, operational_accounts=operational_accounts
+            )
             return {
                 **operational_result,
+                **html_result,
                 "enabled_http_tick": True,
                 "conditional_304_no_duplicates": True,
                 "http_failure_backoff": True,
@@ -934,6 +938,278 @@ def enabled_http_service_acceptance(account, *, shared_gid=None, operational_acc
                     }
                 )
             )
+
+
+def html_service_acceptance(account, network, *, operational_accounts=None):
+    """Installed collector/worker/reader HTML checks inside the already owned fixture."""
+    import psycopg
+    from psycopg.rows import dict_row
+    from reference_network import HTML_PAGES, HTML_SAME, HTML_V1, HTML_V2
+
+    from osint_workbench.errors import WorkbenchError
+    from osint_workbench.evidence import EvidenceStore
+    from osint_workbench.text import digest
+
+    source_id = "reference-html"
+    text_one = "Static HTML evidence\nFirst HTML text."
+    text_two = "Static HTML evidence\nChanged HTML text."
+    store = EvidenceStore(STATE / "evidence", read_only=True)
+    (CONFIG / "sources.json").write_text(
+        json.dumps(
+            {
+                "sources": [
+                    {
+                        "source_id": source_id,
+                        "url": network.url,
+                        "enabled": True,
+                        "poll_seconds": 60,
+                        "adapter": "static-html/1",
+                        "rights": "all-existing-uses-permitted",
+                        "request_billing": "unmetered",
+                    }
+                ]
+            }
+        )
+    )
+
+    def state():
+        with psycopg.connect(FIXTURE_ADMIN_DSN, row_factory=dict_row) as conn:
+            policy = conn.execute(
+                "SELECT * FROM ow.collection_state WHERE source_id=%s", (source_id,)
+            ).fetchone()
+            runs = conn.execute(
+                "SELECT * FROM ow.collection_runs WHERE source_id=%s ORDER BY started_at,run_id",
+                (source_id,),
+            ).fetchall()
+            docs = conn.execute(
+                "SELECT * FROM ow.documents WHERE source_id=%s ORDER BY document_id", (source_id,)
+            ).fetchall()
+            snapshots = conn.execute(
+                "SELECT * FROM ow.snapshots WHERE source_id=%s ORDER BY snapshot_id", (source_id,)
+            ).fetchall()
+            heads = conn.execute(
+                "SELECT document_id FROM ow.document_heads WHERE source_id=%s", (source_id,)
+            ).fetchall()
+            source = conn.execute(
+                "SELECT last_error,last_success FROM ow.sources WHERE source_id=%s", (source_id,)
+            ).fetchone()
+            jobs = conn.execute(
+                "SELECT kind,status,payload FROM ow.jobs WHERE kind='document.accepted' "
+                "AND payload->>'document_id'=ANY(%s::text[]) ORDER BY job_id",
+                ([d["document_id"] for d in docs],),
+            ).fetchall()
+        return policy, runs, docs, snapshots, heads, source, jobs
+
+    def journal(unit, since, principal, predicate):
+        command(["journalctl", "--sync"])
+        raw = command(
+            ["journalctl", "--unit", unit, f"--since=@{since}", "--output=json", "--no-pager"]
+        )
+        for line in raw.splitlines():
+            row = json.loads(line)
+            try:
+                value = json.loads(row.get("MESSAGE", ""))
+            except (ValueError, TypeError):
+                continue
+            if isinstance(value, dict) and predicate(value):
+                require(row.get("_UID") == str(principal.pw_uid), "HTML_SERVICE_UID_MISMATCH")
+                return value
+        raise Rejected("HTML_SERVICE_RESULT_NOT_OBSERVED")
+
+    def tick(phase, expected, *, documents=None, failed=False, force=True):
+        network.set_phase(phase)
+        if force:
+            with psycopg.connect(FIXTURE_ADMIN_DSN) as conn:
+                conn.execute(
+                    "UPDATE ow.collection_state SET next_attempt=clock_timestamp()-interval '1 s' "
+                    "WHERE source_id=%s",
+                    (source_id,),
+                )
+        command(["systemctl", "reset-failed", SERVICE], allowed=(0, 1, 5))
+        started = str(time.time())
+        command(["systemctl", "start", SERVICE], allowed=(1,) if failed else (0,), timeout=30)
+        result = journal(
+            SERVICE,
+            started,
+            account,
+            lambda value: (
+                value.get("status") == ("failed" if failed else "complete")
+                and isinstance(value.get("results"), list)
+                and len(value["results"]) == 1
+                and value["results"][0].get("source_id") == source_id
+            ),
+        )["results"][0]
+        require(result.get("error" if failed else "status") == expected, "HTML_RESULT_MISMATCH")
+        if documents is not None:
+            require(result.get("documents") == documents, "HTML_ACCEPTED_COUNT_MISMATCH")
+        return state()
+
+    def evidence(current, bodies, raws):
+        _, _, docs, snapshots, heads, _, jobs = current
+        require(len(docs) == len(jobs) == len(bodies) and len(heads) == 1, "HTML_IDENTITY_COUNT")
+        require({d["body"] for d in docs} == set(bodies), "HTML_NORMALIZED_TEXT_MISMATCH")
+        by_id = {r["snapshot_id"]: r for r in snapshots}
+        require(len(by_id) == len(docs), "HTML_SNAPSHOT_COUNT")
+        for doc in docs:
+            snapshot = by_id[doc["snapshot_id"]]
+            expected_raw = HTML_V1 if doc["body"] == text_one else HTML_V2
+            expected_text = digest(doc["body"].encode())
+            expected_snapshot = digest(
+                json.dumps(
+                    [source_id, digest(expected_raw), expected_text, "static-html/1"]
+                ).encode()
+            )
+            expected_document = digest(
+                json.dumps(
+                    [
+                        source_id,
+                        digest(network.url.encode()),
+                        expected_snapshot,
+                        "Synthetic HTML",
+                        None,
+                    ]
+                ).encode()
+            )
+            require(
+                doc["external_key"] == digest(network.url.encode())
+                and doc["title"] == "Synthetic HTML"
+                and doc["published_at"] is None
+                and snapshot["extractor"] == "static-html/1"
+                and snapshot["snapshot_id"] == expected_snapshot
+                and doc["document_id"] == expected_document
+                and snapshot["text_sha256"] == expected_text
+                and snapshot["raw_sha256"] == digest(expected_raw)
+                and store.get(snapshot["text_sha256"]) == doc["body"].encode()
+                and store.get(snapshot["raw_sha256"]) == expected_raw,
+                "HTML_PROVENANCE_MISMATCH",
+            )
+        for raw in raws:
+            require(store.get(digest(raw)) == raw, "HTML_RAW_EVIDENCE_MISMATCH")
+
+    first = tick("html-v1", "success", documents=1)
+    evidence(first, {text_one}, {HTML_V1})
+    first_id = first[2][0]["document_id"]
+    second = tick("html-v1", "not_modified", documents=0)
+    require(second[2:5] == first[2:5] and second[6] == first[6], "HTML_304_DUPLICATED_WORK")
+    require(second[1][-1]["http_status"] == 304, "HTML_304_RUN_MISMATCH")
+    same = tick("html-same", "success", documents=1)
+    evidence(same, {text_one}, {HTML_V1, HTML_SAME})
+    require(same[4] == [{"document_id": first_id}], "HTML_RAW_ONLY_CHANGE_REPLACED_HEAD")
+    require(same[1][-1]["raw_sha256"] == digest(HTML_SAME), "HTML_RAW_ONLY_RUN_MISMATCH")
+    changed = tick("html-v2", "success", documents=1)
+    evidence(changed, {text_one, text_two}, {HTML_V1, HTML_SAME, HTML_V2})
+    require(changed[4] != first[4], "HTML_CHANGED_TEXT_REUSED_HEAD")
+    failed = tick("html-invalid", "HTML_ENCODING_UNSUPPORTED", failed=True)
+    require(failed[2:5] == changed[2:5] and failed[6] == changed[6], "HTML_FAILURE_MUTATED_WORK")
+    require(
+        all(failed[0][k] == changed[0][k] for k in ("etag", "last_modified", "raw_sha256"))
+        and failed[5]["last_success"] == changed[5]["last_success"]
+        and failed[5]["last_error"] == "HTML_ENCODING_UNSUPPORTED"
+        and failed[1][-1]["status"] == "failed",
+        "HTML_FAILURE_ADVANCED_ACCEPTANCE",
+    )
+    try:
+        store.get(digest(HTML_PAGES["html-invalid"]))
+    except WorkbenchError as exc:
+        require(exc.code == "EVIDENCE_UNAVAILABLE", "HTML_INVALID_RAW_CHECK_FAILED")
+    else:
+        raise Rejected("HTML_INVALID_RAW_ADMITTED")
+    recovered = tick("html-v2", "success", documents=1)
+    evidence(recovered, {text_one, text_two}, {HTML_V1, HTML_SAME, HTML_V2})
+    require(
+        recovered[2:5] == changed[2:5] and recovered[6] == changed[6],
+        "HTML_RECOVERY_DUPLICATED_WORK",
+    )
+    requests = network.observations()[-6:]
+    require(
+        [r["status"] for r in requests] == [200, 304, 200, 200, 200, 200]
+        and requests[1]["if_none_match"] == '"html-v1"'
+        and requests[-1]["if_none_match"] is None
+        and requests[-1]["if_modified_since"] is None,
+        "HTML_CONDITIONAL_RECOVERY_MISMATCH",
+    )
+    if operational_accounts is not None:
+        worker, observer, _ = operational_accounts
+        started = str(time.time())
+        command(["systemctl", "reset-failed", WORK_SERVICE], allowed=(0, 1, 5))
+        command(["systemctl", "start", WORK_SERVICE], timeout=30)
+        journal(
+            WORK_SERVICE,
+            started,
+            worker,
+            lambda value: (
+                value.get("kind") == "chunk_worker_tick"
+                and value.get("attempted") == value.get("succeeded") == 2
+                and value.get("failed") == value.get("superseded") == 0
+            ),
+        )
+        with psycopg.connect(FIXTURE_ADMIN_DSN, row_factory=dict_row) as conn:
+            chunks = conn.execute(
+                "SELECT c.*,d.body AS document_body FROM ow.chunks c JOIN ow.documents d "
+                "USING(document_id) WHERE d.source_id=%s",
+                (source_id,),
+            ).fetchall()
+        require(
+            len(chunks) == 2
+            and all(
+                c["body"] == c["document_body"][c["start_offset"] : c["end_offset"]]
+                and digest(c["body"].encode()) == c["text_sha256"]
+                for c in chunks
+            )
+            and all(j["status"] == "succeeded" for j in state()[6]),
+            "HTML_CHUNK_PROVENANCE_MISMATCH",
+        )
+        probe = APP / "html-read.py"
+        write_private(probe, HTML_READ_PROBE, mode=0o644)
+        directory = UNIT_ROOT / f"{HEALTH_SERVICE}.d"
+        require(directory.is_dir(), "HTML_READER_OVERRIDE_DIRECTORY_MISSING")
+        override = directory / "html-read.conf"
+        require(not override.exists(), "HTML_READER_OVERRIDE_EXISTS")
+        try:
+            write_private(
+                override,
+                f"[Service]\nExecStart=\nExecStart={APP}/venv/bin/python {probe}\n",
+                mode=0o644,
+            )
+            command(["systemctl", "daemon-reload"])
+            started = str(time.time())
+            command(["systemctl", "start", HEALTH_SERVICE], timeout=30)
+            journal(
+                HEALTH_SERVICE,
+                started,
+                observer,
+                lambda value: value == {"kind": "html_reader_probe", "verified": True},
+            )
+        finally:
+            command(["systemctl", "stop", HEALTH_SERVICE], allowed=(0, 5), timeout=20)
+            override.unlink(missing_ok=True)
+            command(["systemctl", "daemon-reload"])
+    return {
+        "html_service_collector_uid_tested": True,
+        "html_conditional_reuse_versions_tested": True,
+        "html_parser_failure_recovery_tested": True,
+        "html_raw_text_extractor_identity_tested": True,
+        "html_worker_reader_tested": operational_accounts is not None,
+    }
+
+
+HTML_READ_PROBE = r"""
+import json,os
+from pathlib import Path
+from osint_workbench.database import Database
+from osint_workbench.evidence import EvidenceStore
+from osint_workbench.service import ReadService
+service = ReadService(Database(os.environ['OW_READER_DSN']),
+                      EvidenceStore(Path(os.environ['OW_EVIDENCE_ROOT']), read_only=True))
+rows = [r for r in service.search('HTML')['results'] if r['source_id'] == 'reference-html']
+assert len(rows) == 1 and rows[0]['title'] == 'Synthetic HTML'
+document = service.document(rows[0]['document_id'])
+assert document['text'] == 'Static HTML evidence\nChanged HTML text.'
+assert document['integrity'] == 'verified'
+proof = service.evidence(document['snapshot_id'])
+assert proof['extractor'] == 'static-html/1' and proof['integrity'] == 'verified'
+print(json.dumps({'kind': 'html_reader_probe', 'verified': True}))
+"""
 
 
 def api_service_acceptance(account, units, shared_gid, owned):

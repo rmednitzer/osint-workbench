@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 Identifier = Annotated[str, Field(pattern=r"^[a-zA-Z0-9][a-zA-Z0-9_-]{0,95}$")]
 Digest = Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]
@@ -12,11 +12,22 @@ class StrictModel(BaseModel):
 
 
 class Source(StrictModel):
+    adapter: Literal["rss-atom/1", "static-html/1"] = "rss-atom/1"
+    rights: Literal["all-existing-uses-permitted"] | None = None
+    request_billing: Literal["unmetered"] | None = None
     source_id: Identifier
     url: str = Field(min_length=1, max_length=4096, repr=False)
     enabled: bool = True
     poll_seconds: int = Field(default=900, ge=60, le=86400)
     freshness_seconds: int = Field(default=86400, ge=60, le=31536000)
+
+    @model_validator(mode="after")
+    def static_html_authorization(self):
+        if self.adapter == "static-html/1" and (
+            self.rights != "all-existing-uses-permitted" or self.request_billing != "unmetered"
+        ):
+            raise ValueError("static HTML requires explicit rights and billing declarations")
+        return self
 
 
 class SourceConfig(StrictModel):
