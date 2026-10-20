@@ -123,6 +123,16 @@ updated without closing any unresolved notice or native-closure disposition.
 
 ## Conditions requiring action
 
+The [2026-10-20 lock-maintenance review](../testing/lock-maintenance-2026-10-20.json)
+inspects httpcore2/httpx2 2.15.1 and development-only jsonpointer 3.4 against
+their exact old/new locked wheels. Complete shipped BSD licence/attribution
+texts are unchanged. HTTP package Python minima rise to 3.11, below the project's
+unchanged 3.12 minimum; their only dependency change is the matching httpcore2
+version. The reviewed HTTP code initializes Linux system trust once per SSL
+context; jsonpointer adds opt-in missing-path creation. Changed source members
+match their upstream release commits. Runtime metadata/archive evidence is
+updated without closing existing notice, native or legal dispositions.
+
 | Evidence family | Engineering disposition before redistribution or modification |
 | --- | --- |
 | MIT, MIT-0, BSD variants, ISC-like or zlib notices within included texts | Preserve the applicable notices and disclaimers; inspect each actual text for endorsement, attribution and modification conditions. Do not replace them with the application's Apache licence. |

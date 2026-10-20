@@ -116,6 +116,13 @@ corresponding sources and the actual deployment's library resolution.
 
 ## Updating and interpreting the gate
 
+The [2026-10-20 lock-maintenance review](../testing/lock-maintenance-2026-10-20.json)
+checks every member of the new httpcore2/httpx2 2.15.1 and jsonpointer 3.4
+universal wheels after lock-hash verification. None contains ELF objects.
+Only the two runtime packages' explicit empty-set archive identities and the
+lock binding change; jsonpointer remains development-only. All 147 native proof
+entries and existing incomplete-closure dispositions remain unchanged.
+
 Run the native verifier in the same isolated no-development runtime used for the
 build inventory; its tooling interpreter may separately supply the maintained ELF
 parser. Consult the verifier's CLI and [build evidence](../build-evidence.md) for
