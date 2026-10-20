@@ -24,3 +24,5 @@ models/
 *.owpurge
 CLAUDE.local.md
 .claude/settings.local.json
+
+/downloaded/

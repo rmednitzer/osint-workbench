@@ -88,3 +88,17 @@ findings have been cleared.
 three-profile merge/signing requirement with two native LTS profiles and separate
 optional interpreter diagnostics. Earlier runtime fixes and source-bound evidence
 remain valid for their named revisions. Package bounds remain `>=3.12,<3.15`.
+
+
+## Consumer verification successor (2026-10-20)
+
+Add a standard-library consumer for the existing v3 signed build set and run it
+in a separate read-only job after signing. The no-change alternative leaves the
+manual consumer procedure unexercised; checking only job status does not establish
+consumer-side identity validation. The chosen command binds caller-supplied source
+and run identities to verified manifests and artifact bytes, with bounded input
+reads and exact set admission. It never executes artifact code. This extends the
+existing publication boundary without granting signing, deployment or MCP authority.
+Synthetic source/run/file/signature refusals and actual signed-main consumption
+provide scoped evidence. Reverting the consumer must not merge signing and code
+execution into one privileged job. Operational safety acceptance remains separate.
