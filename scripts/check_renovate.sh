@@ -45,10 +45,10 @@ extractions = [r for r in records if r.get("msg") == "Dependency extraction comp
 if len(extractions) != 1:
     raise SystemExit("Expected one completed repository dependency extraction")
 managers = extractions[0]["stats"]["managers"]
-for name in ("pep621", "github-actions", "dockerfile", "custom.regex"):
+for name in ("pep621", "github-actions", "dockerfile", "regex"):
     if managers.get(name, {}).get("depCount", 0) < 1:
         raise SystemExit("Expected dependency extraction from manager: " + name)
-if managers["custom.regex"]["depCount"] != 2:
+if managers["regex"]["depCount"] != 2:
     raise SystemExit("Expected both pinned disposable Compose images")
 print("All four configured dependency managers extracted real dependencies")
 PY
