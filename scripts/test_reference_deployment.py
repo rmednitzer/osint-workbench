@@ -1794,7 +1794,11 @@ def local_api_service_acceptance(owned):
 
         def tick(*, failed=False):
             since = str(time.time())
-            command(["systemctl", "reset-failed", ENRICH_SERVICE])
+            state = command(
+                ["systemctl", "show", ENRICH_SERVICE, "--property=ActiveState", "--value"]
+            ).strip()
+            if state == "failed":
+                command(["systemctl", "reset-failed", ENRICH_SERVICE])
             command(
                 ["systemctl", "start", ENRICH_SERVICE], allowed=(1,) if failed else (0,), timeout=30
             )
