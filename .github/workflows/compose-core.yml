@@ -34,31 +34,32 @@ jobs:
           version: "0.13.1"
       - name: Build reviewed inputs and acquire pinned prerequisites
         run: |
-          mkdir -m 700 "$RUNNER_TEMP/ow-compose-inputs"
-          mkdir -m 700 "$RUNNER_TEMP/ow-compose-inputs/wheels"
+          mkdir -m 700 "/tmp/ow-compose-inputs"
+          mkdir -m 700 "/tmp/ow-compose-inputs/wheels"
           uv build --python 3.12 --build-constraints build-constraints.txt --require-hashes
-          uv export --locked --no-dev --no-emit-project --output-file "$RUNNER_TEMP/ow-compose-inputs/requirements.txt" > /dev/null
+          uv export --locked --no-dev --no-emit-project --output-file "/tmp/ow-compose-inputs/requirements.txt" > /dev/null
           docker pull --platform linux/amd64 "$OW_COMPOSE_BASE"
           docker pull --platform linux/amd64 "$OW_COMPOSE_POSTGRES"
           docker run --rm --network bridge --read-only --cap-drop ALL \
             --security-opt no-new-privileges:true --user "$(id -u):$(id -g)" \
             --memory 256m --cpus 1 --pids-limit 64 \
             --tmpfs /tmp:rw,nosuid,noexec,size=67108864 \
-            --mount "type=bind,source=$RUNNER_TEMP/ow-compose-inputs/requirements.txt,target=/requirements.txt,readonly" \
-            --mount "type=bind,source=$RUNNER_TEMP/ow-compose-inputs/wheels,target=/wheels" \
+            --mount "type=bind,source=/tmp/ow-compose-inputs/requirements.txt,target=/requirements.txt,readonly" \
+            --mount "type=bind,source=/tmp/ow-compose-inputs/wheels,target=/wheels" \
             "$OW_COMPOSE_BASE" python -m pip --isolated download \
             --disable-pip-version-check --no-cache-dir --index-url https://pypi.org/simple \
             --only-binary=:all: --require-hashes -r /requirements.txt --dest /wheels
       - name: Exercise installed containers and guarded teardown
         run: |
-          ow_compose_wheel=dist/osint_workbench-0.1.0.dev1-py3-none-any.whl
+          ow_compose_wheel=/tmp/ow-compose-inputs/osint_workbench-0.1.0.dev1-py3-none-any.whl
+          cp dist/osint_workbench-0.1.0.dev1-py3-none-any.whl "$ow_compose_wheel"
           ow_compose_sha=$(sha256sum "$ow_compose_wheel" | cut -d ' ' -f 1)
           python3 scripts/test_compose_core.py \
             --acknowledge-disposable-containers \
             --workdir "$RUNNER_TEMP/ow-compose-run" \
             --wheel "$ow_compose_wheel" --wheel-sha256 "$ow_compose_sha" \
-            --core-lock "$RUNNER_TEMP/ow-compose-inputs/requirements.txt" \
-            --wheelhouse "$RUNNER_TEMP/ow-compose-inputs/wheels" \
+            --core-lock "/tmp/ow-compose-inputs/requirements.txt" \
+            --wheelhouse "/tmp/ow-compose-inputs/wheels" \
             --source-revision "$GITHUB_SHA"
           cp "$RUNNER_TEMP/ow-compose-run/receipt.json" "$RUNNER_TEMP/compose-core-receipt.json"
       - name: Retain only the bounded synthetic receipt

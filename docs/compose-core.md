@@ -21,7 +21,11 @@ user-namespace remapping, Docker Desktop, remote daemons, other architectures an
 Swarm are unqualified. The runner refuses ambient Docker/Compose override variables
 and requires a local Unix-socket context; inspect that context before running.
 
-Stage these reviewed public inputs outside the checkout:
+Stage these reviewed public inputs outside the checkout, in a private directory
+under `/tmp` or `/var/tmp`. The runner requires canonical paths without symlink
+components and single-link regular files, bounds each read, and stages exactly the
+captured bytes it verifies. Home directories and operational trees are not input
+staging roots:
 
 - A built `osint_workbench-0.1.0.dev1-py3-none-any.whl` and its independently reviewed
   SHA-256, preferably from the exact-main signed evidence.
@@ -32,7 +36,7 @@ Stage these reviewed public inputs outside the checkout:
 ```sh
 docker pull --platform linux/amd64 python:3.12.14-slim-trixie@sha256:44ff437bba879d4941b710a369a8f19266aea34b29002807f0c487fabc9eec9b
 docker pull --platform linux/amd64 pgvector/pgvector:pg18@sha256:2358fcba361ed2233a5ed81b5fe4ca779ccb304120ce531a3bf51c0ed7e2bc11
-uv export --locked --no-dev --no-emit-project --output-file /private/test-inputs/core-requirements.txt > /dev/null
+uv export --locked --no-dev --no-emit-project --output-file /var/tmp/ow-test-inputs/core-requirements.txt > /dev/null
 ```
 
 Dependency acquisition is an explicit preparation step. Use the pinned Python base

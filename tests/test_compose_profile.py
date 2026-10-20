@@ -69,7 +69,7 @@ def test_compose_public_inputs_refuse_links_fifos_and_oversize(tmp_path):
         read(source, 2)
     linked = tmp_path / "linked.whl"
     linked.symlink_to(source)
-    with pytest.raises(OSError):
+    with pytest.raises(error):
         read(linked, 100)
     linked.unlink()
     os.link(source, linked)
@@ -79,3 +79,9 @@ def test_compose_public_inputs_refuse_links_fifos_and_oversize(tmp_path):
     os.mkfifo(fifo)
     with pytest.raises(error):
         read(fifo, 100)
+
+
+def test_compose_inputs_require_temporary_staging():
+    module = runpy.run_path(str(ROOT / "scripts/test_compose_core.py"))
+    with pytest.raises(module["Rejected"], match="PROFILE_INPUT_STAGING_REQUIRED"):
+        module["input_bytes"](Path("/etc/ow-not-a-profile-input.whl"), 100)

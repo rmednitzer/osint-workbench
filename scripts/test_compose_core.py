@@ -45,7 +45,11 @@ def sha(path):
 
 def input_bytes(path, maximum):
     """Capture one bounded regular public input; never follow links or wait on a FIFO."""
-    descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    resolved = path.resolve()
+    if not resolved.is_relative_to("/tmp") and not resolved.is_relative_to("/var/tmp"):
+        raise Rejected("PROFILE_INPUT_STAGING_REQUIRED")
+    require(resolved == path.absolute(), "PROFILE_INPUT_SYMLINK")
+    descriptor = os.open(resolved, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
     with os.fdopen(descriptor, "rb") as source:
         before = os.fstat(source.fileno())
         require(
