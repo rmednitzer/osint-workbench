@@ -1,0 +1,56 @@
+# Requires the explicit shared-evidence profile and a separately scoped writer login.
+[Unit]
+Description=OSINT Workbench bounded local API enrichment worker
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=osint-workbench-enrich
+Group=osint-workbench-enrich
+SupplementaryGroups=osint-workbench-evidence
+EnvironmentFile=/etc/osint-workbench-enrich/runtime.env
+Environment=OW_EVIDENCE_ROOT=/var/lib/osint-workbench/evidence
+Environment=PYTHONDONTWRITEBYTECODE=1
+StateDirectory=osint-workbench-enrich
+StateDirectoryMode=0700
+Environment=OW_INFERENCE_LOCK=/var/lib/osint-workbench-enrich/inference.lock
+LoadCredential=local-api-token:/etc/osint-workbench-enrich/local-api-token
+ExecStart=/opt/osint-workbench/venv/bin/osint-workbench enrich work --local-api-manifest /etc/osint-workbench-enrich/local-api.json --max-jobs 4
+WorkingDirectory=/
+ReadOnlyPaths=/var/lib/osint-workbench/evidence
+InaccessiblePaths=-/etc/osint-workbench -/etc/osint-workbench-worker -/etc/osint-workbench-health
+UMask=0077
+TimeoutStartSec=10min
+TimeoutStopSec=15s
+KillMode=control-group
+SendSIGKILL=yes
+Restart=no
+MemoryMax=512M
+TasksMax=16
+CPUQuota=100%
+LimitNOFILE=128
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+IPAddressDeny=any
+IPAddressAllow=127.0.0.0/8
+IPAddressAllow=::1/128
+StandardOutput=journal
+StandardError=journal

@@ -501,3 +501,14 @@ Core 12 requires `OW_REVIEWER_DSN` for the explicit review command; never add th
 secret to a producing worker or reader merely to share configuration. Provision
 and upgrade according to [reviewer authority](reviewer-authority.md). Optional
 retrieval installations must apply profile 5 before current-profile recovery.
+
+
+## Optional local API enrichment supervision
+
+After qualifying an actual local backend and explicitly enqueueing approved work,
+use the [local API supervised-worker procedure](local-inference-api.md#optional-bounded-supervised-worker).
+The two `osint-workbench-enrich-local-api` templates are opt-in and require a
+separate account/login, read-only shared evidence, persistent private inference
+state and a systemd-loaded bearer credential. They never provision a model,
+select a provider, enqueue work, accept reviews or resolve uncertain inference.
+The core chunk worker continues to claim only `document.accepted`.

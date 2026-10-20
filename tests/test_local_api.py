@@ -687,3 +687,126 @@ def test_resolution_rejects_unqualified_basename_input_before_file_effects(lock,
             held.resolve_api_marker(forged, "c" * 64)
         assert held.read_marker() == receipt
     assert not list(lock.parent.glob("ow-inference-resolution-*"))
+
+
+@pytest.mark.integration
+def test_local_api_batch_cap_identity_and_installed_cli(databases, tmp_path, lock):
+    import os
+    import subprocess
+    import sys
+
+    from osint_workbench import intelligence
+    from osint_workbench.contracts import DocumentInput
+    from osint_workbench.evidence import EvidenceStore
+
+    writer, _, roles = databases
+    store = EvidenceStore(tmp_path / "evidence")
+    document = writer.ingest(
+        DocumentInput(source_id="fixture", external_id="batch", title="Synthetic", text="Bounded."),
+        b"Bounded.",
+        store,
+    )
+    response = completion(
+        choices=[
+            {"finish_reason": "stop", "message": {"role": "assistant", "content": '{"claims":[]}'}}
+        ]
+    )
+    with api_peer(result=response) as (url, calls):
+        selected = manifest(url)
+        generator = LocalApiGenerator(selected)
+        for operation in ("one", "two", "three"):
+            intelligence.enqueue(writer, generator, document, operation, "public")
+        other = LocalApiGenerator(manifest(url, qualification_sha256="c" * 64))
+        intelligence.enqueue(writer, other, document, "other", "public")
+        config = tmp_path / "api.json"
+        config.write_text(selected.model_dump_json())
+        environment = {
+            **os.environ,
+            "OW_WRITER_DSN": roles["writer"],
+            "OW_EVIDENCE_ROOT": str(store.root),
+        }
+        command = [
+            sys.executable,
+            "-m",
+            "osint_workbench.cli",
+            "enrich",
+            "work",
+            "--local-api-manifest",
+            str(config),
+            "--max-jobs",
+            "2",
+        ]
+        first = subprocess.run(command, env=environment, capture_output=True, text=True, timeout=30)
+        assert first.returncode == 0, first.stderr
+        value = json.loads(first.stdout)
+        assert value["attempted"] == value["abstained"] == 2 and value["limit_reached"]
+        second = subprocess.run(
+            command, env=environment, capture_output=True, text=True, timeout=30
+        )
+        assert second.returncode == 0, second.stderr
+        value = json.loads(second.stdout)
+        assert value["attempted"] == value["abstained"] == 1 and value["idle_observed"]
+        assert len([call for call in calls if call["method"] == "POST"]) == 3
+        with writer.connect() as conn:
+            assert (
+                conn.execute(
+                    "SELECT count(*) AS n FROM ow.jobs WHERE kind=%s AND status='ready'",
+                    (intelligence._kind(other),),
+                ).fetchone()["n"]
+                == 1
+            )
+
+
+@pytest.mark.integration
+def test_local_api_batch_stops_after_uncertain_outcome_without_redispatch(
+    databases, tmp_path, lock
+):
+    from osint_workbench import intelligence
+    from osint_workbench.contracts import DocumentInput
+    from osint_workbench.evidence import EvidenceStore
+
+    writer, _, _ = databases
+    store = EvidenceStore(tmp_path / "evidence")
+    document = writer.ingest(
+        DocumentInput(
+            source_id="fixture", external_id="uncertain-batch", title="Synthetic", text="Bounded."
+        ),
+        b"Bounded.",
+        store,
+    )
+    with api_peer(disconnect=True) as (url, calls):
+        generator = LocalApiGenerator(manifest(url))
+        for operation in ("one", "two"):
+            intelligence.enqueue(writer, generator, document, operation, "public")
+        result = intelligence.enrich_batch(writer, store, generator, max_jobs=4)
+        assert result["attempted"] == result["failed"] == 1 and result["stopped_on_failure"]
+        assert not result["limit_reached"] and not result["idle_observed"]
+        before = len(calls)
+        result = intelligence.enrich_batch(writer, store, generator, max_jobs=4)
+        assert result["attempted"] == result["failed"] == 1
+        assert len(calls) == before
+        with admission() as held:
+            assert held.read_marker() is not None
+
+
+@pytest.mark.parametrize(
+    "flags,code",
+    [
+        (["--route", "fixture"], "LOCAL_API_BATCH_REQUIRED"),
+        (["--manifest", "/absent"], "LOCAL_API_BATCH_REQUIRED"),
+        (["--local-api-manifest", "/absent", "--max-jobs", "33"], "INVALID_WORK_LIMIT"),
+    ],
+)
+def test_local_api_batch_cli_refuses_wrong_profile_before_configuration(
+    monkeypatch, capsys, flags, code
+):
+    import sys
+
+    from osint_workbench import cli
+
+    monkeypatch.setattr(sys, "argv", ["osint-workbench", "enrich", "work", *flags])
+    with pytest.raises(SystemExit) as failed:
+        cli.main()
+    assert failed.value.code == 1
+    captured = capsys.readouterr()
+    assert json.loads(captured.err) == {"error": code} and not captured.out

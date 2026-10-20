@@ -195,7 +195,8 @@ def main():
     life.add_argument("--hold-id")
     life.add_argument("--file", type=Path)
     enrich = sub.add_parser("enrich")
-    enrich.add_argument("action", choices=["enqueue", "work-once", "reconcile"])
+    enrich.add_argument("action", choices=["enqueue", "work-once", "work", "reconcile"])
+    enrich.add_argument("--max-jobs", type=int)
     enrich.add_argument("--manifest", type=Path)
     enrich.add_argument("--local-api-manifest", type=Path)
     enrich.add_argument("--confirm-terminated", action="store_true")
@@ -390,6 +391,16 @@ def main():
             migrate_retrieval(_dsn("OW_MIGRATION_DSN"))
             value = {"schema_version": SCHEMA_VERSION, "retrieval_schema_version": 5}
         elif args.command == "enrich":
+            if args.action == "work" and (
+                args.local_api_manifest is None
+                or args.manifest is not None
+                or args.route is not None
+            ):
+                raise WorkbenchError("LOCAL_API_BATCH_REQUIRED")
+            if args.max_jobs is not None and (
+                args.action != "work" or not 1 <= args.max_jobs <= 32
+            ):
+                raise WorkbenchError("INVALID_WORK_LIMIT")
             db = (
                 Database(_dsn("OW_WRITER_DSN"))
                 if args.route is not None
@@ -430,6 +441,17 @@ def main():
                         args.data_class,
                         describe=True,
                     )
+                elif args.action == "work":
+                    value = intelligence.enrich_batch(
+                        db,
+                        EvidenceStore(Path(os.environ["OW_EVIDENCE_ROOT"]), read_only=True),
+                        generator,
+                        max_jobs=args.max_jobs if args.max_jobs is not None else 4,
+                    )
+                    print(json.dumps(value))
+                    if value["failed"]:
+                        raise SystemExit(1)
+                    return
                 else:
                     value = intelligence.enrich_once(
                         db,

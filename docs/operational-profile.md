@@ -106,3 +106,13 @@ This tests logical recovery mechanics across processes. Automation with least
 backup authority, scheduling, remote storage, retention/expiry, custody failure,
 large-corpus limits and target-host recovery timing still need implementation and
 operator acceptance. No RPO/RTO or operational go-live is inferred from the fixture.
+
+
+## Optional local API enrichment service
+
+The separate [bounded local-API worker](local-inference-api.md#optional-bounded-supervised-worker)
+can process explicitly enqueued extraction jobs under a selected manifest. It does
+not expand the core chunk worker, approve proposals, qualify a useful model or
+close the full enrichment/domain roadmap. Its persistent uncertainty and loaded
+credential custody require separate provisioning; the timer is never enabled by
+installation. Current revision-bound service evidence belongs in STATUS.
