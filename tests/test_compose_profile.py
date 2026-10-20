@@ -1,5 +1,6 @@
 """Pure custody guards; actual container acceptance is explicitly opt-in."""
 
+import os
 import runpy
 from pathlib import Path
 
@@ -55,3 +56,26 @@ def test_compose_cleanup_failure_preserves_primary_error():
         name(["docker", "compose", "--file", "/private/location", "down"]) == "DOCKER_COMPOSE_DOWN"
     )
     assert name(["docker", "volume", "rm", "private-volume"]) == "DOCKER_VOLUME_RM"
+
+
+def test_compose_public_inputs_refuse_links_fifos_and_oversize(tmp_path):
+    module = runpy.run_path(str(ROOT / "scripts/test_compose_core.py"))
+    read = module["input_bytes"]
+    error = module["Rejected"]
+    source = tmp_path / "input.whl"
+    source.write_bytes(b"synthetic")
+    assert read(source, 100) == b"synthetic"
+    with pytest.raises(error):
+        read(source, 2)
+    linked = tmp_path / "linked.whl"
+    linked.symlink_to(source)
+    with pytest.raises(OSError):
+        read(linked, 100)
+    linked.unlink()
+    os.link(source, linked)
+    with pytest.raises(error):
+        read(linked, 100)
+    fifo = tmp_path / "fifo"
+    os.mkfifo(fifo)
+    with pytest.raises(error):
+        read(fifo, 100)

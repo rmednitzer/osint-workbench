@@ -43,6 +43,27 @@ def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def input_bytes(path, maximum):
+    """Capture one bounded regular public input; never follow links or wait on a FIFO."""
+    descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    with os.fdopen(descriptor, "rb") as source:
+        before = os.fstat(source.fileno())
+        require(
+            stat.S_ISREG(before.st_mode) and before.st_nlink == 1 and before.st_size <= maximum,
+            "PROFILE_INPUT_INVALID",
+        )
+        data = source.read(maximum + 1)
+        after = os.fstat(source.fileno())
+        require(
+            (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns)
+            == (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns)
+            and len(data) == before.st_size
+            and len(data) <= maximum,
+            "PROFILE_INPUT_CHANGED",
+        )
+    return data
+
+
 def command_name(argv):
     """Only fixed command categories; never paths, identifiers or arguments."""
     if argv[:2] == ["docker", "compose"]:
@@ -90,9 +111,21 @@ def cleanup_guard(cleanup):
 
 
 def command(argv, *, env=None, timeout=180, failure=False, expected_error=None):
+    # The caller selects arguments, never a command executable or a shell.
+    if argv[0] == "docker":
+        executable = "docker"
+    elif argv[0] == "git":
+        executable = "git"
+    else:
+        raise Rejected("PROFILE_EXECUTABLE_REFUSED")
     try:
         result = subprocess.run(
-            argv, env=env, capture_output=True, text=True, timeout=timeout, check=False
+            [executable, *argv[1:]],
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
         )
     except subprocess.TimeoutExpired:
         raise Rejected("PROFILE_COMMAND_TIMEOUT_" + command_name(argv)) from None
@@ -181,9 +214,14 @@ def main():
     )
     require(re.fullmatch("[0-9a-f]{40}", args.source_revision), "PROFILE_REVISION_INVALID")
     require(re.fullmatch("[0-9a-f]{64}", args.wheel_sha256), "PROFILE_DIGEST_INVALID")
+    wheel_data = input_bytes(args.wheel, 32 * 1024 * 1024)
     require(
-        args.wheel.name == WHEEL and sha(args.wheel) == args.wheel_sha256, "PROFILE_WHEEL_INVALID"
+        args.wheel.name == WHEEL and hashlib.sha256(wheel_data).hexdigest() == args.wheel_sha256,
+        "PROFILE_WHEEL_INVALID",
     )
+    lock_data = input_bytes(args.core_lock, 2 * 1024 * 1024)
+    lock = lock_data.decode("utf-8")
+    require("--hash=sha256:" in lock and "-e " not in lock, "PROFILE_HASH_LOCK_REQUIRED")
     root = Path(__file__).resolve().parents[1]
     observed_revision = command(["git", "-C", str(root), "rev-parse", "HEAD"]).strip()
     require(observed_revision == args.source_revision, "PROFILE_REVISION_MISMATCH")
@@ -242,11 +280,8 @@ def main():
     context.mkdir(mode=0o700)
     for name in ("Dockerfile", "entrypoint.py", "bootstrap.py", "acceptance.py"):
         shutil.copyfile(root / "containers/core" / name, context / name)
-    shutil.copyfile(args.wheel, context / WHEEL)
-    shutil.copyfile(args.core_lock, context / "requirements.txt")
-    require(args.core_lock.stat().st_size <= 2 * 1024 * 1024, "PROFILE_LOCK_TOO_LARGE")
-    lock = args.core_lock.read_text()
-    require("--hash=sha256:" in lock and "-e " not in lock, "PROFILE_HASH_LOCK_REQUIRED")
+    (context / WHEEL).write_bytes(wheel_data)
+    (context / "requirements.txt").write_bytes(lock_data)
     wheels = context / "wheels"
     wheels.mkdir()
     total_wheels = 0
@@ -257,8 +292,12 @@ def main():
             source.suffix == ".whl" and stat.S_ISREG(source.lstat().st_mode),
             "PROFILE_WHEELHOUSE_INVALID",
         )
-        require("--hash=sha256:" + sha(source) in lock, "PROFILE_DEPENDENCY_NOT_LOCKED")
-        shutil.copyfile(source, wheels / source.name)
+        data = input_bytes(source, 32 * 1024 * 1024)
+        require(
+            "--hash=sha256:" + hashlib.sha256(data).hexdigest() in lock,
+            "PROFILE_DEPENDENCY_NOT_LOCKED",
+        )
+        (wheels / source.name).write_bytes(data)
     require(any(wheels.iterdir()), "PROFILE_WHEELHOUSE_EMPTY")
     env = {
         **os.environ,
@@ -281,7 +320,7 @@ def main():
     receipt = {
         "source_revision": args.source_revision,
         "wheel_sha256": args.wheel_sha256,
-        "core_lock_sha256": sha(args.core_lock),
+        "core_lock_sha256": hashlib.sha256(lock_data).hexdigest(),
         "base_image": BASE,
         "postgres_image": POSTGRES,
         "profile": "synthetic-compose-core/1",

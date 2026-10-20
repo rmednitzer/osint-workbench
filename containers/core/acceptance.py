@@ -180,15 +180,13 @@ def main():
         require(status["documents"] == status["chunks"] == 2, "PROFILE_COUNTS")
         found = cli("search", "synthetic")["results"]
         require(len(found) == (1 if payload.get("retired") else 2), "PROFILE_VISIBLE_COUNT")
-        service = ReadService(
-            db(), EvidenceStore(Path(os.environ["OW_EVIDENCE_ROOT"]), read_only=True)
-        )
+        service = ReadService(db(), EvidenceStore(Path("/evidence"), read_only=True))
         document = service.document(found[0]["document_id"])
         require(document["integrity"] == "verified", "PROFILE_EVIDENCE")
         asyncio.run(mcp_checks(document, payload["briefing"], payload.get("retired")))
         result = {"documents": found, "status": status}
     elif phase == "negative":
-        root = Path(os.environ["OW_EVIDENCE_ROOT"])
+        root = Path("/evidence")
         try:
             (root / "forbidden").write_text("no")
         except OSError:
@@ -267,7 +265,7 @@ def main():
                 conn.execute("SELECT count(*) AS n FROM ow.documents").fetchone()["n"] == 0,
                 "PROFILE_FAILED_RESTORE_ROWS",
             )
-        require(not Path(os.environ["OW_EVIDENCE_ROOT"]).exists(), "PROFILE_FAILED_RESTORE_STORE")
+        require(not Path("/restore/objects").exists(), "PROFILE_FAILED_RESTORE_STORE")
         result = cli(*args)
         require(
             result["status"] == "restored_requires_operator_reconciliation",
