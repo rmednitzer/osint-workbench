@@ -92,3 +92,12 @@ not substitute acceptance targets. Current evidence remains revision-bound in
 STATUS; these refinements do not close the complete E01–E51 programme.
 
 Every new adapter impacts R02/R09/R25/R26/R52; model changes R27-R35/R40-R45/R53; provider changes R43-R47/R55; domain changes R36-R39; lifecycle changes R14/R29/R49/R54. Reconcile hazards, ADRs, data contracts, privacy policy and tests before activation. Missing required evidence blocks the corresponding claim/profile acceptance; it is not represented as a pass.
+
+
+R36/R37's [KEV projection refinement](../adr/0058-kev-advisory-projection.md)
+connects one stored KEV-format revision to a typed source-attributed envelope with
+verified normalized-record UTF-8 evidence. It refuses provenance/integrity mismatch
+and lifecycle exclusion, preserves unknown advisory status and absent scores/dates,
+and does not derive exposure or a local deadline. `tests/test_kev_projection.py`
+and the native TLS acquisition successor cover that bounded path; full E31/E32
+acceptance remains open and requires revision-bound evidence.

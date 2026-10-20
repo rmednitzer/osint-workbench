@@ -2,8 +2,10 @@
 
 `cisa-kev/1` is an explicitly selected format adapter through
 [API acquisition](api-acquisition.md) and its opt-in service. It preserves source
-assertions as evidence-backed documents; it does not populate the offline
-advisory envelope, match local assets or establish legal obligations.
+assertions as evidence-backed documents. The separate explicit
+[operator projection](kev-advisory-projection.md) can derive an evidence-verified
+advisory envelope from a stored visible revision. Collection does not create domain
+records, match local assets or establish legal obligations.
 
 ## Qualification and contract baseline
 

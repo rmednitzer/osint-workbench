@@ -34,7 +34,7 @@ cannot substitute for runtime, semantic, provider or recovery evidence.
 | Diagnose model quality without claiming adoption | [Local quality](local-quality.md) |
 | Reconcile uncertain host-local inference ownership | [Inference marker safety](inference-marker-safety.md) |
 | Route explicit cloud work and settle retained exposure | [Cloud routes](cloud-routes.md) |
-| Validate an offline advisory observation | [Advisory records](advisory-records.md) |
+| Validate an offline advisory observation or project stored KEV evidence | [Advisory records](advisory-records.md) and [KEV operator projection](kev-advisory-projection.md) |
 | Apply retention, holds and logical retirement | [Lifecycle](lifecycle.md) |
 | Capture a private checkpoint and restore an isolated target | [Recovery](recovery.md) |
 | Remove unreferenced evidence objects or retired SQL derivatives | [Orphan GC](garbage-collection.md) and [SQL purge](retired-record-purge.md) |

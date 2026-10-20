@@ -12,8 +12,10 @@ Module: `osint_workbench.advisory`. Public API:
 - `parse_advisory_record(payload: bytes) -> AdvisoryRecord`
 - `serialize_advisory_record(record: AdvisoryRecord) -> bytes`
 
-The module has no CLI, MCP or database integration and requires no module-specific
-migration. Its Pydantic dependency is shared with the application.
+The envelope module remains independent of CLI/database access. The separate
+[KEV operator projection](kev-advisory-projection.md) verifies stored evidence and
+produces this envelope through a reader-only CLI; it adds no domain persistence or
+MCP tool and requires no migration. Pydantic is shared with the application.
 
 ## What is implemented
 
@@ -24,9 +26,9 @@ exploitation observations. All models are frozen Pydantic v2 models with
 
 It is **not** a CVE JSON 5, OSV, CSAF or vendor parser, an inventory/SBOM matcher,
 an exposure or applicability detector, a prioritizer, a CVSS calculator or a STIX
-implementation. Producing this observation envelope from an upstream format remains future work.
-The separate [KEV acquisition adapter](kev-acquisition.md) stores source records
-as ordinary evidence-backed documents, without populating this envelope.
+implementation. The [KEV acquisition adapter](kev-acquisition.md) stores ordinary evidence-backed
+documents. The explicit [KEV projection](kev-advisory-projection.md) can produce
+this envelope from an admitted stored revision. Other upstream mappings remain open.
 
 ### Record fields
 
@@ -200,12 +202,14 @@ mode) and enforces the same type, range, count and cross-field rules.
 
 ## Remaining work (not implemented here)
 
-- Upstream observation adapters (CVE records, vendor/OS advisories, KEV, EPSS, OSV) with
-  configured, external endpoint lists; acquisition, snapshot preservation and
-  schema-version tracking for those sources.
+- Wider upstream observation adapters (CVE records, vendor/OS advisories, EPSS,
+  OSV), with configured external endpoints, acquisition and snapshot/version
+  tracking; KEV domain persistence beyond its bounded acquisition and projection.
 - Database storage, migrations, revision/version heads, retraction and
-  rejected-record lifecycle, feed-delay handling and CLI/MCP read surfaces.
-- Verification that evidence spans exist in preserved snapshots and decode correctly.
+  rejected-record lifecycle, feed-delay handling and broader CLI/MCP reads beyond
+  the bounded KEV operator projection.
+- Broader verification that imported evidence spans exist and decode correctly;
+  the KEV projection verifies its complete normalized-record UTF-8 byte span.
 - Affected product/range/configuration expressions, ecosystem-specific version
   ordering, operator inventory/SBOM matching with uncertainty, and the separation of
   presence, applicability, exposure, exploitation evidence and remediation policy.
@@ -216,5 +220,5 @@ mode) and enforces the same type, range, count and cross-field rules.
 `tests/test_advisory.py` exercises the envelope and its hostile-input boundaries
 offline. These cases do not exercise acquisition, record storage or a domain
 query pipeline. Advisory evidence uses UTF-8 byte spans; application document
-chunks and quoted assertions use original-text code-point offsets. A future
-adapter must convert and verify those coordinates explicitly.
+chunks and quoted assertions use original-text code-point offsets. Other
+adapters must convert and verify their coordinate spaces explicitly.
