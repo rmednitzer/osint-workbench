@@ -40,7 +40,11 @@ Source enumeration covers the first 1,000 ordered sources; `complete` means that
 bounded scope is exhausted, not that no further configured source exists.
 
 Whole records are retained; no assertion, quote or result row is silently truncated
-or skipped. A single record that cannot fit yields `RESULT_ITEM_TOO_LARGE`.
+or skipped by byte budgeting. Hybrid eligibility filtering occurs before backend
+pagination: `omitted_candidates` explicitly counts fused IDs absent at the shared
+hydration statement. Offsets apply to survivors; omission marks the response
+degraded. No extra candidates beyond the bounded pools are fetched.
+A single record that cannot fit yields `RESULT_ITEM_TOO_LARGE`.
 Other oversized non-page envelopes yield `RESULT_TOO_LARGE`. These fixed errors
 do not include source text or exception traces.
 

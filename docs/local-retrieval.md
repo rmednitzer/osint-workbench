@@ -75,6 +75,21 @@ There is no direct model-execution, indexing, generation switching or cancellati
 Hybrid search accepts offsets 0–200 over two bounded candidate pools of at most 100 documents
 each. Scores are reciprocal-rank fusion values, not confidence.
 
+After fusion, one lifecycle-filtered statement hydrates the complete bounded union.
+SQL deduplication bounds fetched rows even if retained head mappings repeat an ID.
+Candidates absent at hydration are omitted before offset/limit; surviving rows keep
+their original fused order and scores. `omitted_candidates` counts omissions across
+that union, not just the page. Omissions make `degraded` true with primary reason
+`CANDIDATE_VISIBILITY_CHANGED`, unless existing corpus drift takes precedence as
+`CORPUS_CHANGED`. An empty degraded result is valid. No outside-pool backfill occurs.
+Reranking still receives at most the first 32 surviving candidates and retains the
+omission metadata. This differs from `excluded_documents`, which counts recorded
+encoder exclusions. See [ADR-0060](adr/0060-expiry-safe-hybrid-pagination.md).
+
+Visibility is evaluated at hydration statement start; already admitted results may
+complete after expiry, including during reranking. Pages remain live positional
+queries, not a cross-call snapshot or response-time revocation guarantee.
+
 ## Admission and failure contracts
 
 Encoder operations acquire a nonblocking OS file lock before spawning a child. Default lock is
@@ -110,7 +125,7 @@ kept as a member with a recorded reason in `ow.retrieval_exclusions` instead of 
 build. Integrity, compatibility, timeout and availability failures still fail it, and a build in
 which more than half the members would be excluded fails with `RETRIEVAL_EXCLUSION_LIMIT`.
 Builds, index status and hybrid search report `excluded_documents`; excluded documents remain
-lexically searchable and readable as evidence. `degraded` currently reports corpus drift, not
+lexically searchable and readable as evidence. `degraded` reports corpus drift or candidate hydration omissions, not
 every semantic coverage gap: it can be false while `excluded_documents` is nonzero. Inspect both
 fields; no automatic coverage alarm is implemented. Non-finite model output and a manifest
 without chunk budget are runtime/compatibility failures, not exclusions. Before

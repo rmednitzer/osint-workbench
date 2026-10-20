@@ -45,6 +45,15 @@ completion and downstream enqueue. Native conflict, rollback, compatible partial
 set and concurrent-operation cases complement existing attempt-fencing tests.
 They do not close full workflow scheduling or all historical-data qualification.
 
+## Hybrid visibility refinement
+
+[ADR-0060](../adr/0060-expiry-safe-hybrid-pagination.md) refines R10/R11/R31/R54
+and bounded E04/E22/E39 behavior: actual clock-driven expiry between candidate
+selection and hydration must produce qualified surviving pages or empty success,
+not a backend exception or suppressed content. Native tests retain original fusion
+scores, offset semantics and corpus-drift precedence. Reranker/MCP limits remain
+required; full semantic, authorization and lifecycle acceptance stay open.
+
 ## Test strata and proof limits
 
 Unit/property/parser tests establish narrow functional boundaries. Integration tests use real disposable PostgreSQL, evidence stores, job workers, actual installed adapters and HTTP fixtures. Full E2E installs built wheel/container artifacts, uses a real MCP client, real local generation/embedding/rerank models and the complete data-to-product path. Provider fixture E2E runs actual client code against a fake server; live-provider verification is separate and pending. GPU-specific claims need actual declared hardware; CPU evidence cannot prove GPU behaviour. Static/source assertions and schema success do not establish semantic quality.

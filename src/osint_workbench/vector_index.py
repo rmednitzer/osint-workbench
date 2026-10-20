@@ -396,22 +396,40 @@ class VectorIndex:
             ).fetchall()
             fused = reciprocal_rank_fusion(
                 [[r["document_id"] for r in lexical], [r["document_id"] for r in semantic]]
-            )[offset : offset + limit]
-            results = []
-            for rank in fused:
-                doc = conn.execute(
-                    "SELECT document_id,snapshot_id,source_id,title,left(body,1000) "
-                    "AS excerpt FROM ow.active_documents WHERE document_id=%s",
-                    (rank["id"],),
-                ).fetchone()
-                results.append({**doc, "rrf_score": rank["rrf_score"]})
+            )
+            # Repeatable Read preserves row versions, not statement-time expiry.
+            # Hydrate the complete bounded union once; filter before pagination
+            # while retaining the original RRF scores/order. No pool backfill.
+            # Multiple heads may reference one document; DISTINCT also bounds
+            # fetched rows by the candidate IDs, before Python materialization.
+            hydrated = conn.execute(
+                """SELECT DISTINCT document_id,snapshot_id,source_id,title,
+                left(body,1000) AS excerpt
+                FROM ow.active_documents WHERE document_id=ANY(%s::text[])""",
+                ([rank["id"] for rank in fused],),
+            ).fetchall()
+            by_id = {document["document_id"]: document for document in hydrated}
+            visible = [
+                {**by_id[rank["id"]], "rrf_score": rank["rrf_score"]}
+                for rank in fused
+                if rank["id"] in by_id
+            ]
+            omitted = len(fused) - len(visible)
+            results = visible[offset : offset + limit]
             return {
                 "strategy": "hybrid-exact",
                 "generation_id": str(active["generation_id"]),
                 "space_id": self.space_id,
                 # Excluded documents are reachable lexically, never semantically.
                 "excluded_documents": _excluded(conn, active["generation_id"]),
-                "degraded": drifted,
-                "degradation_reason": "CORPUS_CHANGED" if drifted else None,
+                "omitted_candidates": omitted,
+                "degraded": drifted or omitted > 0,
+                "degradation_reason": (
+                    "CORPUS_CHANGED"
+                    if drifted
+                    else "CANDIDATE_VISIBILITY_CHANGED"
+                    if omitted
+                    else None
+                ),
                 "results": results,
             }

@@ -2,14 +2,16 @@ import asyncio
 import json
 import os
 import sys
+import time
 import uuid
+from contextlib import contextmanager
 
 import psycopg
 import pytest
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-from osint_workbench import lifecycle
+from osint_workbench import lifecycle, vector_index
 from osint_workbench.contracts import DocumentInput
 from osint_workbench.database import Database
 from osint_workbench.errors import WorkbenchError
@@ -46,6 +48,7 @@ def test_real_pgvector_ranking_generation_switch_and_rollback(retrieval):
     # 'disk' and 'storage' have equal fixture embeddings; this is a numerical oracle.
     found = service.search("disk")
     assert found["strategy"] == "hybrid-exact" and not found["degraded"]
+    assert found["omitted_candidates"] == 0
     assert service.document(found["results"][0]["document_id"])["text"] == "storage disk"
     second = index.build(store)
     index.activate(second["generation_id"])
@@ -174,6 +177,7 @@ def test_actual_hybrid_rerank_integration(retrieval, reranker_bundle):
     with pytest.raises(WorkbenchError, match="^RERANK_CONFIGURATION_INVALID$"):
         ReadService(reader, EvidenceStore(store.root, read_only=True), reranker=reranker_bundle)
     assert value["strategy"] == "hybrid-exact-reranked"
+    assert value["omitted_candidates"] == 0
     assert value["results"][0]["rerank_score"] == 2.0
     assert value["results"][1]["rerank_score"] == -2.0
     with pytest.raises(WorkbenchError, match="INVALID_RERANK_PAGE"):
@@ -456,3 +460,127 @@ def test_active_registry_conflict_refuses_reads_and_activation_without_repair(
             ).fetchall()
             == before
         )
+
+
+@pytest.mark.parametrize(
+    "all_expire", [False, True], ids=["filter-before-offset", "all-expire-with-drift"]
+)
+def test_hybrid_hydration_filters_statement_time_expiry(retrieval, monkeypatch, all_expire):
+    writer, reader, roles, store, encoder = retrieval
+    if not all_expire:
+        _ingest(writer, store, "third", "disk storage disk")
+    builder = VectorIndex(writer, encoder)
+    built = builder.build(store)
+    builder.activate(built["generation_id"])
+    if all_expire:
+        # This document is a lexical candidate but absent from the active index:
+        # corpus drift already exists before any clock-based visibility change.
+        _ingest(writer, store, "third", "disk storage disk")
+    index = VectorIndex(reader, encoder)
+    vector = index.encoder.query("disk")
+    # Isolate the SQL lifecycle boundary from variable native inference latency.
+    # The vector is real; existing native search tests retain unstubbed inference.
+    monkeypatch.setattr(index.encoder, "query", lambda query: vector)
+    baseline = index.search("disk", limit=100)
+    expected = baseline["results"]
+    assert len(expected) == 3 and baseline.get("omitted_candidates", 0) == 0
+    assert baseline["degraded"] is all_expire
+    selected_ids = [row["document_id"] for row in expected]
+    expiring = selected_ids if all_expire else selected_ids[:1]
+    # Commit retention BEFORE the search's Repeatable Read snapshot. Updating it
+    # during that snapshot would test MVCC visibility rather than time expiry.
+    with psycopg.connect(roles["admin"]) as setup:
+        until = setup.execute("SELECT clock_timestamp()+interval '5 seconds'").fetchone()[0]
+        changed = setup.execute(
+            """UPDATE ow.lifecycle_items l SET retain_until=%s WHERE EXISTS (
+              SELECT 1 FROM ow.documents d WHERE d.document_id=ANY(%s::text[])
+              AND d.source_id=l.source_id AND d.external_key=l.external_key)""",
+            (until, expiring),
+        )
+        assert changed.rowcount == len(expiring)
+    original = vector_index.reciprocal_rank_fusion
+    calls = []
+    with psycopg.connect(
+        roles["reader"], autocommit=True, options="-c statement_timeout=1000"
+    ) as clock:
+
+        def after_selection(rankings):
+            fused = original(rankings)
+            assert [row["id"] for row in fused] == selected_ids
+            calls.append(True)
+            deadline = time.monotonic() + 10
+            while not clock.execute("SELECT clock_timestamp()>=%s", (until,)).fetchone()[0]:
+                if time.monotonic() >= deadline:
+                    pytest.fail("database clock did not reach the configured expiry")
+                time.sleep(0.1)
+            return fused
+
+        monkeypatch.setattr(vector_index, "reciprocal_rank_fusion", after_selection)
+        result = index.search("disk", limit=1, offset=0 if all_expire else 1)
+    assert calls == [True]
+    assert result["omitted_candidates"] == len(expiring)
+    assert result["degraded"] is True
+    assert result["generation_id"] == built["generation_id"]
+    if all_expire:
+        assert result["results"] == []
+        assert result["degradation_reason"] == "CORPUS_CHANGED"
+    else:
+        # Expired rank zero is outside the requested page but must be removed
+        # BEFORE offset. Surviving rank two retains its original numeric score.
+        assert result["results"] == expected[2:3]
+        assert result["degradation_reason"] == "CANDIDATE_VISIBILITY_CHANGED"
+
+
+def test_hybrid_hydration_bounds_duplicate_heads_before_materialization(retrieval, monkeypatch):
+    writer, reader, roles, store, encoder = retrieval
+    builder = VectorIndex(writer, encoder)
+    built = builder.build(store)
+    builder.activate(built["generation_id"])
+    index = VectorIndex(reader, encoder)
+    baseline = index.search("disk")
+    assert len(baseline["results"]) == 2
+    with writer.connect() as conn:
+        document = conn.execute(
+            "SELECT document_id FROM ow.documents WHERE title='two'"
+        ).fetchone()["document_id"]
+        # Writer authority can insert alternate heads. This document does not
+        # match the lexical query, and semantic selection already groups by ID.
+        conn.execute(
+            """INSERT INTO ow.document_heads(source_id,external_key,document_id)
+            VALUES ('fixture','alternate-one',%s),('fixture','alternate-two',%s)""",
+            (document, document),
+        )
+    fetched_counts = []
+    connect = reader.connect
+
+    class ObservedCursor:
+        def __init__(self, cursor):
+            self.cursor = cursor
+
+        def fetchall(self):
+            rows = self.cursor.fetchall()
+            fetched_counts.append(len(rows))
+            return rows
+
+    class ObservedConnection:
+        def __init__(self, conn):
+            self.conn = conn
+
+        def execute(self, query, *args, **kwargs):
+            cursor = self.conn.execute(query, *args, **kwargs)
+            if "left(body,1000) AS excerpt" in query:
+                return ObservedCursor(cursor)
+            return cursor
+
+    @contextmanager
+    def observed_connect():
+        with connect() as conn:
+            yield ObservedConnection(conn)
+
+    monkeypatch.setattr(reader, "connect", observed_connect)
+    result = index.search("disk")
+    # Observe rows from actual PostgreSQL BEFORE by_id can hide duplicates.
+    assert fetched_counts == [2]
+    assert result["results"] == baseline["results"]
+    assert result["omitted_candidates"] == 0
+    assert result["degradation_reason"] == "CORPUS_CHANGED"

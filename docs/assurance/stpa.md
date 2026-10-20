@@ -970,3 +970,22 @@ writers. A mismatch preserves prior evidence, rolls back new output and leaves a
 fixed terminal failure without downstream publication. Existing lease/lifecycle
 refusals remain required. This is statement-time output validation, not prevention
 of arbitrary later writes or retroactive qualification of historical receipts.
+
+## Hybrid candidate expiry and pagination: ADR-0060
+
+Under SC2/SC4/SC6 and existing C9/C10/C12, CA6 must not fail a whole read or bypass
+lifecycle visibility when a selected candidate expires before hydration. A shared
+lifecycle lock excludes cooperative policy mutations, but it does not freeze time.
+The reader must hydrate the complete bounded fused union at one statement-time
+visibility boundary, retain original ranks/scores and paginate eligible survivors.
+
+The hydration projection must deduplicate joined rows in SQL before fetch; a bounded
+ID list alone does not bound rows when retained head mappings repeat an ID. A
+native duplicate-head case observes actual fetched cardinality.
+
+Native database-clock tests distinguish partial expiry before offset, all-candidate
+expiry and corpus-drift precedence. Omission count and degradation are explicit;
+no unfiltered hydration, silent fallback, new candidate backfill or hidden authority
+is introduced. Reranking and byte pagination retain their bounds. Already admitted
+reads may complete after expiry; this does not create response-time revocation or
+stable cross-call snapshots, and index exclusions retain their separate meaning.
