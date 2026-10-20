@@ -90,7 +90,7 @@
     },
     {
       "name": "certifi",
-      "version": "2026.10.18",
+      "version": "2026.10.19",
       "declared_expression": null,
       "reviewed_text_summary": "MPL-2.0",
       "outcome": "reviewed-shipped-text",
@@ -100,20 +100,20 @@
       ],
       "evidence": [
         {
-          "path": "certifi-2026.10.18.dist-info/METADATA",
-          "sha256": "5f23b0cfb71be0a44970eb5d3ad49ba3db52616d7a583d594697bd9ee1bf2065",
+          "path": "certifi-2026.10.19.dist-info/METADATA",
+          "sha256": "a5c0be3a42daeef0edfaf58e6ea5b7550f3e4e8eb35420f72e902df9bcf00f5c",
           "bytes": 2526,
           "kind": "metadata"
         },
         {
-          "path": "certifi-2026.10.18.dist-info/licenses/LICENSE",
+          "path": "certifi-2026.10.19.dist-info/licenses/LICENSE",
           "sha256": "e93716da6b9c0d5a4a1df60fe695b370f0695603d21f6f83f053e42cfc10caf7",
           "bytes": 989,
           "kind": "licence-text"
         }
       ],
       "locked_wheel_sha256": [
-        "73191c47aaa79da394e8fee2dbc2ec827432cab56311122c9e47abf79e390f62"
+        "42d35340cc5b9ba78e818ddbff0c5b1c2b779de448a340fd1b989f5fa8670e1b"
       ]
     },
     {
