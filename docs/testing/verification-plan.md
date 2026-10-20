@@ -54,6 +54,16 @@ not a backend exception or suppressed content. Native tests retain original fusi
 scores, offset semantics and corpus-drift precedence. Reranker/MCP limits remain
 required; full semantic, authorization and lifecycle acceptance stay open.
 
+## Disposable Compose core refinement
+
+[ADR-0061](../adr/0061-isolated-compose-core-acceptance.md) allocates bounded
+R01/R04/R05/R07/R13/R14/R17/R19/R21/R24/R49 behavior across E01/E03/E08/E13/E14.
+The opt-in profile needs actual installed containers, SQL and filesystem denial,
+seven-tool stdio, restart durability, current-policy restore and ownership-checked
+cleanup. Static Compose shape and database health are insufficient. Its exact
+image/wheel/source receipt does not replace required native LTS foundation checks
+or establish production, collection, inference or full scenario acceptance.
+
 ## Test strata and proof limits
 
 Unit/property/parser tests establish narrow functional boundaries. Integration tests use real disposable PostgreSQL, evidence stores, job workers, actual installed adapters and HTTP fixtures. Full E2E installs built wheel/container artifacts, uses a real MCP client, real local generation/embedding/rerank models and the complete data-to-product path. Provider fixture E2E runs actual client code against a fake server; live-provider verification is separate and pending. GPU-specific claims need actual declared hardware; CPU evidence cannot prove GPU behaviour. Static/source assertions and schema success do not establish semantic quality.

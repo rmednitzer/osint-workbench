@@ -989,3 +989,24 @@ no unfiltered hydration, silent fallback, new candidate backfill or hidden autho
 is introduced. Reranking and byte pagination retain their bounds. Already admitted
 reads may complete after expiry; this does not create response-time revocation or
 stable cross-call snapshots, and index exclusions retain their separate meaning.
+
+## Disposable container core profile: ADR-0061
+
+SC1/SC2/SC3/SC4/SC5/SC6 and existing C1/C6/C8/C11/C12 apply across host-to-Docker,
+container-to-database, shared-evidence and recovery custody boundaries. A container
+healthcheck cannot authorize deployment, prove read-only behavior or establish
+an isolated recovery target. A bounded fixture must not adopt an operational
+volume, leak another role's credential, publish ports, or clean up another project.
+
+Allocate enforcement to exact project/run labels and collision refusal, pinned
+images and hashed offline install inputs, non-root runtime identities, read-only
+consumer mounts, role-only credentials and internal-only networking. Bootstrap
+is limited to fresh empty project-owned volumes. Native restore stays private
+until an explicit verified fresh-copy custody transition. Real CLI/MCP consumers,
+permission negatives, restart durability and later-policy restore cases test the
+boundaries; actual inspected runtime settings complement source declarations.
+
+The host Docker administrator remains trusted. This profile does not qualify
+Docker Desktop, rootless/user-namespace variants, other architectures, native
+inference admission, sustained workloads or full operational recovery. Private
+host evidence stays external; public receipts bind only reviewed synthetic scope.

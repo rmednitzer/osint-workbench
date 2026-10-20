@@ -1,0 +1,71 @@
+name: Disposable Compose core acceptance
+on:
+  workflow_dispatch:
+    inputs:
+      disposable:
+        description: Acknowledge fresh synthetic containers and guarded teardown
+        required: true
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: compose-core-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  synthetic-core:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      OW_COMPOSE_BASE: python:3.12.14-slim-trixie@sha256:44ff437bba879d4941b710a369a8f19266aea34b29002807f0c487fabc9eec9b
+      OW_COMPOSE_POSTGRES: pgvector/pgvector:pg18@sha256:2358fcba361ed2233a5ed81b5fe4ca779ccb304120ce531a3bf51c0ed7e2bc11
+    steps:
+      - name: Require explicit disposable hosted execution
+        env:
+          ACKNOWLEDGED: ${{ inputs.disposable }}
+        run: |
+          test "$ACKNOWLEDGED" = true
+          test "$RUNNER_ENVIRONMENT" = github-hosted
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: "0.13.1"
+      - name: Build reviewed inputs and acquire pinned prerequisites
+        run: |
+          mkdir -m 700 "/tmp/ow-compose-inputs"
+          mkdir -m 700 "/tmp/ow-compose-inputs/wheels"
+          uv build --python 3.12 --build-constraints build-constraints.txt --require-hashes
+          uv export --locked --no-dev --no-emit-project --output-file "/tmp/ow-compose-inputs/requirements.txt" > /dev/null
+          docker pull --platform linux/amd64 "$OW_COMPOSE_BASE"
+          docker pull --platform linux/amd64 "$OW_COMPOSE_POSTGRES"
+          docker run --rm --network bridge --read-only --cap-drop ALL \
+            --security-opt no-new-privileges:true --user "$(id -u):$(id -g)" \
+            --memory 256m --cpus 1 --pids-limit 64 \
+            --tmpfs /tmp:rw,nosuid,noexec,size=67108864 \
+            --mount "type=bind,source=/tmp/ow-compose-inputs/requirements.txt,target=/requirements.txt,readonly" \
+            --mount "type=bind,source=/tmp/ow-compose-inputs/wheels,target=/wheels" \
+            "$OW_COMPOSE_BASE" python -m pip --isolated download \
+            --disable-pip-version-check --no-cache-dir --index-url https://pypi.org/simple \
+            --only-binary=:all: --require-hashes -r /requirements.txt --dest /wheels
+      - name: Exercise installed containers and guarded teardown
+        run: |
+          ow_compose_wheel=/tmp/ow-compose-inputs/osint_workbench-0.1.0.dev1-py3-none-any.whl
+          cp dist/osint_workbench-0.1.0.dev1-py3-none-any.whl "$ow_compose_wheel"
+          ow_compose_sha=$(sha256sum "$ow_compose_wheel" | cut -d ' ' -f 1)
+          python3 scripts/test_compose_core.py \
+            --acknowledge-disposable-containers \
+            --workdir "$RUNNER_TEMP/ow-compose-run" \
+            --wheel "$ow_compose_wheel" --wheel-sha256 "$ow_compose_sha" \
+            --core-lock "/tmp/ow-compose-inputs/requirements.txt" \
+            --wheelhouse "/tmp/ow-compose-inputs/wheels" \
+            --source-revision "$GITHUB_SHA"
+          cp "$RUNNER_TEMP/ow-compose-run/receipt.json" "$RUNNER_TEMP/compose-core-receipt.json"
+      - name: Retain only the bounded synthetic receipt
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: compose-core-receipt
+          path: ${{ runner.temp }}/compose-core-receipt.json
+          retention-days: 30
+          if-no-files-found: error

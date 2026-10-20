@@ -38,6 +38,7 @@ cannot substitute for runtime, semantic, provider or recovery evidence.
 | Apply retention, holds and logical retirement | [Lifecycle](lifecycle.md) |
 | Capture a private checkpoint and restore an isolated target | [Recovery](recovery.md) |
 | Remove unreferenced evidence objects or retired SQL derivatives | [Orphan GC](garbage-collection.md) and [SQL purge](retired-record-purge.md) |
+| Run disposable core containers with isolated recovery | [Compose core acceptance](compose-core.md) |
 | Install/test the bounded collector reference | [Deployment](deployment.md) and [runtime support](runtime-support.md) |
 | Supervise bounded processing and assess adoption gates | [Operational profile](operational-profile.md) |
 | Consume seven reads with byte-budget pagination | [MCP read contract](mcp-read-contract.md) |

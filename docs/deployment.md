@@ -14,6 +14,14 @@ The [operational profile](operational-profile.md) defines its goal, health
 semantics and remaining adoption gates. The procedure below first describes
 private collector storage; the shared profile is a separate explicit choice.
 
+## Opt-in container test profile
+
+The [disposable Compose core acceptance](compose-core.md) tests installed core
+containers with isolated SQL/evidence, stdio MCP, authority negatives, restart and
+current-policy recovery. It is separate from these systemd services and does not
+provision a production stack or qualify collection/inference. Never run the
+privileged reference-service fixture inside a normal application container.
+
 ## Optional shared worker and health profile
 
 Provision separate non-login accounts `osint-workbench-worker` and
