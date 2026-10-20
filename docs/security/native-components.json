@@ -14,6 +14,11 @@
       "source_commit": "8827f5fa42c983aeeedbf69738bbd03d49ec0b3c",
       "receipt": "docs/testing/compose-core-wheel-2026-10-20.json",
       "note": "Application README metadata/archive identity successor after complete wheel comparison; third-party entries and unresolved outcomes unchanged."
+    },
+    {
+      "source_commit": "933a64d07df22a09d01f29020c7c2179dfbd99ab",
+      "receipt": "docs/testing/static-html-wheel-2026-10-20.json",
+      "note": "Static HTML application and README metadata/archive successor after complete independent wheel comparison; third-party entries and unresolved outcomes unchanged."
     }
   ],
   "distributions": [
@@ -1745,7 +1750,7 @@
       "variants": [
         {
           "wheel_filename": "osint_workbench-0.1.0.dev1-py3-none-any.whl",
-          "wheel_sha256": "0f1bb374fbab28b77b56c5ad12964be010ed70ea185f9188ca853af78020c708",
+          "wheel_sha256": "8cc75b02321f13e3eb7791ec2d208e88df8d63f399fcba10e9b99faab0cbf28d",
           "files": []
         }
       ]

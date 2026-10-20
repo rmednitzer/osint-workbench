@@ -1,0 +1,35 @@
+{
+  "format": "osint-workbench-static-html-wheel-review-v1",
+  "date": "2026-10-20",
+  "baseline_commit": "6ea3b55805828795d113be6506a2e55dc2a8ecab",
+  "reviewed_candidate_commit": "933a64d07df22a09d01f29020c7c2179dfbd99ab",
+  "previous_wheel_sha256": "0f1bb374fbab28b77b56c5ad12964be010ed70ea185f9188ca853af78020c708",
+  "candidate_wheel_sha256": "8cc75b02321f13e3eb7791ec2d208e88df8d63f399fcba10e9b99faab0cbf28d",
+  "archive_members": 65,
+  "added_members": [
+    "osint_workbench/html_parser.py"
+  ],
+  "removed_members": [],
+  "changed_members": [
+    "osint_workbench/collection.py",
+    "osint_workbench/contracts.py",
+    "osint_workbench-0.1.0.dev1.dist-info/METADATA",
+    "osint_workbench-0.1.0.dev1.dist-info/RECORD"
+  ],
+  "metadata_headers_unchanged": true,
+  "metadata_bytes": 11086,
+  "metadata_sha256": "c98c8bf8df2865c78c475b7502f1e4a8ad57bc1c7cb52c5f3d45474edef2f59b",
+  "licence_bytes_unchanged": true,
+  "licence_bytes": 11357,
+  "licence_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+  "dependency_and_python_bounds_unchanged": true,
+  "elf_members": 0,
+  "record_inventories_verified": true,
+  "independent_archive_review": true,
+  "legal_approval": false,
+  "limits": [
+    "All archive members, complete METADATA and shipped Apache-2.0 text reviewed against the actual baseline wheel.",
+    "Application metadata, archive and empty-ELF-set identities only; third-party policies, lock and unresolved native/notice outcomes unchanged.",
+    "Native installed acceptance, service execution and exact-main attestations remain separate evidence."
+  ]
+}
