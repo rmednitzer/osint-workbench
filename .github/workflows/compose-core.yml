@@ -1,5 +1,11 @@
 name: Disposable Compose core acceptance
 on:
+  workflow_call:
+    inputs:
+      disposable:
+        description: Acknowledge fresh synthetic containers and guarded teardown
+        required: true
+        type: boolean
   workflow_dispatch:
     inputs:
       disposable:
@@ -10,7 +16,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: compose-core-${{ github.ref }}
+  group: compose-core-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 jobs:
   synthetic-core:
@@ -20,11 +26,16 @@ jobs:
       OW_COMPOSE_BASE: python:3.12.14-slim-trixie@sha256:44ff437bba879d4941b710a369a8f19266aea34b29002807f0c487fabc9eec9b
       OW_COMPOSE_POSTGRES: pgvector/pgvector:pg18@sha256:2358fcba361ed2233a5ed81b5fe4ca779ccb304120ce531a3bf51c0ed7e2bc11
     steps:
-      - name: Require explicit disposable hosted execution
+      - name: Require disposable hosted execution
         env:
           ACKNOWLEDGED: ${{ inputs.disposable }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           test "$ACKNOWLEDGED" = true
+          case "$EVENT_NAME" in
+            pull_request|push|workflow_dispatch) ;;
+            *) exit 1 ;;
+          esac
           test "$RUNNER_ENVIRONMENT" = github-hosted
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

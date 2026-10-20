@@ -1,5 +1,6 @@
 name: Audit locked dependencies
 on:
+  workflow_call:
   schedule:
     # GitHub cron is UTC; Renovate's Europe/Vienna schedule is a separate policy.
     - cron: "23 5 * * 2"
@@ -7,7 +8,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: dependency-audit-${{ github.ref }}
+  group: dependency-audit-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
   dependency-audit:

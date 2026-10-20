@@ -183,7 +183,7 @@ runs separately with no repository code execution; PR artifacts remain unsigned.
 ## Review and merge
 
 Use the [PR template](.github/pull_request_template.md). Require current
-`repository-policy`, `renovate-policy` and `installed-artifact` checks before merge.
+`repository-policy`, `renovate-policy`, `installed-artifact` and `acceptance` checks before merge.
 The `installed-artifact` aggregate requires every native matrix leg to succeed.
 Use merge commits to retain tested source SHAs and their evidence ancestry. A solo
 maintainer does not need a fictitious second-person approval, but remains

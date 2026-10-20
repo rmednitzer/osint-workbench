@@ -61,10 +61,28 @@ jobs:
           MATRIX_RESULT: ${{ needs.installed-artifact-matrix.result }}
         run: test "$MATRIX_RESULT" = success
 
+  dependency-audit:
+    uses: ./.github/workflows/dependency-audit.yml
+  compose-core:
+    uses: ./.github/workflows/compose-core.yml
+    with:
+      disposable: true
+  acceptance:
+    if: ${{ always() }}
+    needs: [dependency-audit, compose-core]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Require advisory audit and disposable container acceptance
+        env:
+          AUDIT_RESULT: ${{ needs.dependency-audit.result }}
+          COMPOSE_RESULT: ${{ needs.compose-core.result }}
+        run: test "$AUDIT_RESULT" = success && test "$COMPOSE_RESULT" = success
+
   attest-builds:
     # Never grant signing capabilities to PR code, manual branches or failed builds.
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'rmednitzer/osint-workbench' }}
-    needs: [repository-policy, renovate-policy, installed-artifact]
+    needs: [repository-policy, renovate-policy, installed-artifact, acceptance]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:

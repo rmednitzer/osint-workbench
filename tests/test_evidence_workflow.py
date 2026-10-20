@@ -237,6 +237,7 @@ def test_runtime_workflow_wiring_preserves_lts_qualification_and_optional_author
         "repository-policy",
         "renovate-policy",
         "installed-artifact",
+        "acceptance",
     }
     # PyYAML's YAML 1.1 reader parses the unquoted Actions `on` key as True.
     triggers = optional.get("on", optional.get(True))

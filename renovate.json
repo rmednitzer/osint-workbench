@@ -1,9 +1,20 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended", "docker:pinDigests", "helpers:pinGitHubActionDigests"],
+  "extends": [
+    "config:recommended",
+    "docker:pinDigests",
+    "helpers:pinGitHubActionDigests"
+  ],
   "timezone": "Europe/Vienna",
-  "schedule": ["before 6am on monday"],
-  "enabledManagers": ["pep621", "github-actions", "dockerfile"],
+  "schedule": [
+    "before 6am on monday"
+  ],
+  "enabledManagers": [
+    "pep621",
+    "github-actions",
+    "dockerfile",
+    "custom.regex"
+  ],
   "dependencyDashboard": true,
   "dependencyDashboardTitle": "Dependency maintenance",
   "prConcurrentLimit": 3,
@@ -12,42 +23,95 @@
   "automerge": false,
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": ["before 6am on monday"]
+    "schedule": [
+      "before 6am on monday"
+    ]
   },
   "packageRules": [
     {
       "description": "Runtime support is an explicit compatibility decision, not a dependency upgrade.",
-      "matchManagers": ["pep621"],
-      "matchDepTypes": ["requires-python"],
+      "matchManagers": [
+        "pep621"
+      ],
+      "matchDepTypes": [
+        "requires-python"
+      ],
       "enabled": false
     },
     {
       "description": "Update Hatchling and the complete hashed build closure together using the maintenance procedure.",
-      "matchManagers": ["pep621"],
-      "matchDepTypes": ["build-system.requires"],
+      "matchManagers": [
+        "pep621"
+      ],
+      "matchDepTypes": [
+        "build-system.requires"
+      ],
       "enabled": false
     },
     {
       "description": "Keep the tested runner explicit; upgrades require native-runtime review.",
-      "matchManagers": ["github-actions"],
-      "matchPackageNames": ["ubuntu"],
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchPackageNames": [
+        "ubuntu"
+      ],
       "enabled": false
     },
     {
-      "matchManagers": ["pep621"],
-      "matchDepTypes": ["project.dependencies", "project.optional-dependencies", "dependency-groups"],
-      "matchUpdateTypes": ["minor", "patch"],
+      "matchManagers": [
+        "pep621"
+      ],
+      "matchDepTypes": [
+        "project.dependencies",
+        "project.optional-dependencies",
+        "dependency-groups"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
       "groupName": "Python dependencies (non-major)",
       "minimumReleaseAge": "3 days"
     },
     {
-      "matchManagers": ["github-actions", "dockerfile"],
-      "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
+      "matchManagers": [
+        "github-actions",
+        "dockerfile",
+        "custom.regex"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "digest",
+        "pin",
+        "pinDigest"
+      ],
       "groupName": "CI actions and images (non-major)"
     },
     {
-      "matchUpdateTypes": ["major"],
+      "matchUpdateTypes": [
+        "major"
+      ],
       "dependencyDashboardApproval": true
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "automerge": false
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Maintain the pinned disposable Compose image tags and digests in workflow environment variables.",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/compose-core\\.yml$/"
+      ],
+      "matchStrings": [
+        "OW_COMPOSE_(?:BASE|POSTGRES): (?<depName>[^\\s:]+):(?<currentValue>[^\\s@]+)@(?<currentDigest>sha256:[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
     }
   ]
 }
