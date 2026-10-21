@@ -138,3 +138,45 @@ trusted processes sharing one stable lock path. It is not a same-UID sandbox or
 cross-host scheduler. Never remove/change the lock or bypass a reservation to
 restore throughput. Before binary rollback, stop workers, establish termination
 and resolve API receipts using this version; older clients refuse the new format.
+
+
+## Optional bounded supervised worker
+
+`enrich work --local-api-manifest /private/local-api.json --max-jobs 4` processes
+only already-enqueued jobs for that exact generator identity. The limit accepts
+1–32 claims and defaults to 4. Native/cloud batch selection is refused; their
+existing work-once commands remain separate. The tick stops on the first failed
+job and exits 1. Earlier accepted proposals/abstentions stay committed. Its JSON
+contains aggregate counts only. `idle_observed` is a bounded claim observation;
+`limit_reached` means the claim cap was reached, not that another job exists.
+Neither is an empty-queue guarantee. No tick enqueues, resets or approves work.
+
+The opt-in `osint-workbench-enrich-local-api.service` and matching timer require:
+
+- A separate `osint-workbench-enrich` OS account in the explicitly provisioned
+  evidence-sharing group, and its own scoped login with `ow_writer` membership.
+- `/etc/osint-workbench-enrich/runtime.env` selecting only `OW_WRITER_DSN`, and
+  `local-api.json` readable by the service through a root-owned private directory.
+- A root-only `local-api-token` loaded by systemd, referenced in the manifest as
+  `{"kind":"systemd","name":"local-api-token"}`. Token values never belong in
+  the manifest, unit, environment or journal. This template requires a token.
+- Previously provisioned group-readable evidence; do not broaden a private tree
+  implicitly. The service mounts evidence read-only and cannot review proposals.
+
+The service defaults to loopback network access. Private-LAN inference needs an
+explicit reviewed address allowance plus the existing authenticated TLS manifest;
+database connectivity must also fit the selected allowance. Resource/supervisor
+limits and timer cadence are examples, not SLOs or backend memory/context proof.
+Provision and test the account/storage/configuration before enabling the timer.
+
+`OW_INFERENCE_LOCK` points into persistent private systemd StateDirectory at
+`/var/lib/osint-workbench-enrich/`. Do not replace it with PrivateTmp or delete it
+on restart. An uncertain request keeps its marker across ticks/restarts; another
+tick cannot establish remote termination or safely replay it. Follow the explicit
+reconciliation procedure above. The timer never confirms termination. Admission
+coordinates cooperating processes with this account/path, not other accounts,
+backend clients, hosts or GPU schedulers. Provision backend capacity independently.
+
+Disable/stop the new timer and service to roll back supervision. Preserve unresolved
+markers and job outcomes. Synthetic service acceptance does not qualify actual
+Ollama/vLLM models, forwarding policy, licences or semantic usefulness.

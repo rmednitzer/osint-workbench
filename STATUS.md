@@ -25,7 +25,7 @@ profiles and counts; this policy change is not a new runtime acceptance result.
 ## Current contracts
 
 Core schema **12**, retrieval profile **5**, checkpoint format **2**.
-The programme contains 62 ADRs, 58 requirements and 51 full acceptance scenarios.
+The programme contains 63 ADRs, 58 requirements and 51 full acceptance scenarios.
 Native Ubuntu installs use the distro Python in a venv: 24.04/3.12 and
 26.04/3.14. Python 3.14 is not the global minimum; see
 [runtime support](docs/runtime-support.md#native-ubuntu-installation).
@@ -49,8 +49,13 @@ scope; passing foundation regressions does not close every scenario.
 | Governed cloud | Explicitly routed/classified compatible chat-completions enrichment, declared provider facts, denial records, Decimal per-currency reservations and unresolved-attempt replay guard | Provider facts are operator declarations; no independent sovereignty verification, live-provider acceptance, native vendor adapters, streaming, batches, silent fallback or separate dispatcher identity |
 | Accounting | Immutable evidence-digest-bound operator settlement under separate accounting authority; database transition times and row-lock ordering; Read Committed reservation admission before the route lock | No invoice import, automatic reconciliation or settlement correction workflow; settlement asserts an amount, not verified invoice semantics; same terminal job is not requeued automatically |
 | Lifecycle and recovery | Retention/holds/logical retirement, filtered reads, current-policy restore reconciliation, bounded private checkpoint/empty-target restore, reviewed orphan GC and transactional retired-record SQL purge | Purge preserves remote ledger rows; CAS/shared feeds/WAL/backups/provider and published copies are not erased; independent policy custody, larger-corpus and full-host/PITR acceptance remain open |
-| Deployment | Non-root feed/API collectors, bounded chunk-worker and aggregate-health service/timer templates; explicit group-readable evidence, guarded disposable reference-service harness and opt-in isolated Compose core acceptance | Thresholds are operator choices; unsupported downstream jobs remain queued; historical receipts cover named revisions; no complete stack, dashboard/notification routing, backup automation or operational-host acceptance |
+| Deployment | Non-root feed/API collectors, bounded chunk-worker, opt-in local-API enrichment and aggregate-health service/timer templates; explicit group-readable evidence, guarded disposable reference-service harness and opt-in isolated Compose core acceptance | Thresholds are operator choices; unsupported downstream jobs remain queued; historical receipts cover named revisions; no complete stack, dashboard/notification routing, backup automation or operational-host acceptance |
 | Publication and supply chain | Positive file selection, source/artifact/new-metadata scans, planned-message preflight, locked builds, Python CycloneDX SBOM, reviewed licence/native-file evidence and separate main-push signing | Private exact-value scans stay outside public CI; native/OS/model composition and redistribution clearance remain incomplete; neither scanner success nor signatures establish anonymity or full assurance |
+
+The opt-in local-API enrichment worker claims only its exact explicitly selected
+generator identity, processes a bounded batch and stops on first failure. Its
+service keeps uncertainty in persistent private state; model/backend adoption
+remains separate. See [ADR-0063](docs/adr/0063-supervised-local-api-enrichment.md).
 
 The generic chunk worker handles only `document.accepted`. Enrichment claims only
 its explicitly selected local generator or cloud route identity. Other job kinds

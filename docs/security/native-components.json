@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "review_date": "2026-10-20",
+  "review_date": "2026-10-21",
   "scope": "RECORD-listed ELF file-set identity; standard CPython3.12-3.14 manylinux x86_64 and compatible ABI3; no native dependency closure or legal approval",
-  "lock_sha256": "4ff11370cf733dc0395a54cb8c281bf83fd2e3fb20d18fcb60992566e8c5d072",
+  "lock_sha256": "6e893929dbb17db51d63ce838005ef2531e297c772bcccbe45617d47cc6a801b",
   "review_history": [
     {
       "source_commit": "331d597",
@@ -19,6 +19,11 @@
       "source_commit": "933a64d07df22a09d01f29020c7c2179dfbd99ab",
       "receipt": "docs/testing/static-html-wheel-2026-10-20.json",
       "note": "Static HTML application and README metadata/archive successor after complete independent wheel comparison; third-party entries and unresolved outcomes unchanged."
+    },
+    {
+      "source_commit": "f266d632257ff2135d09c2ca9a8465535ad9a323",
+      "receipt": "docs/testing/local-api-supervision-wheel-2026-10-21.json",
+      "note": "Bounded local API application wheel successor and reviewed certifi-only lock refresh; other third-party variants and unresolved outcomes unchanged."
     }
   ],
   "distributions": [
@@ -60,12 +65,12 @@
     },
     {
       "name": "certifi",
-      "version": "2026.10.18",
+      "version": "2026.10.19",
       "native_dependency_closure": "not-established-by-empty-ELF-set",
       "variants": [
         {
-          "wheel_filename": "certifi-2026.10.18-py3-none-any.whl",
-          "wheel_sha256": "73191c47aaa79da394e8fee2dbc2ec827432cab56311122c9e47abf79e390f62",
+          "wheel_filename": "certifi-2026.10.19-py3-none-any.whl",
+          "wheel_sha256": "42d35340cc5b9ba78e818ddbff0c5b1c2b779de448a340fd1b989f5fa8670e1b",
           "files": []
         }
       ]
@@ -1750,7 +1755,7 @@
       "variants": [
         {
           "wheel_filename": "osint_workbench-0.1.0.dev1-py3-none-any.whl",
-          "wheel_sha256": "8cc75b02321f13e3eb7791ec2d208e88df8d63f399fcba10e9b99faab0cbf28d",
+          "wheel_sha256": "5aa839983242db516c155100133354ed37928752e15ce5834cc115d8cd478e5f",
           "files": []
         }
       ]

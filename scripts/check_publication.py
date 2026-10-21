@@ -297,6 +297,10 @@ def inspect_text(name: str, content: str, private_values=(), *, verified_notice=
                 name == "docs/local-inference-api.md"
                 and url == "http:" + "//127.0.0.1:11434/v1/chat/completions"
             )
+            or (
+                name == "scripts/test_reference_deployment.py"
+                and url == "http:" + "//127.0.0.1:{peer.server_port}/v1/chat/completions"
+            )
             or host.endswith(".invalid")
             or (
                 name == ".github/workflows/compose-core.yml"

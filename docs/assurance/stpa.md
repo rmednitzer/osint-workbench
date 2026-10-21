@@ -1033,3 +1033,19 @@ boundary. Native SQL/TLS/worker/MCP and explicitly disposable installed-service
 acceptance complement pure parsing tests. Parsing limits are not a sandbox, rights
 are operator declarations, and syntactic extraction does not establish browser
 visibility, prompt safety, source truth or operational Internet acceptance.
+
+
+## Supervised local API enrichment: ADR-0063
+
+SC1/SC2/SC3/SC4/SC6 apply to the new bounded service controller. Unsafe actions
+include dispatching unselected generator jobs, continuing after an uncertain
+failure, treating a restarted service as proof of terminated inference, deleting
+admission markers with a temporary directory, or treating proposals as reviews.
+Bind claims to the explicit local generator; cap work and stop the tick on first
+failure; retain uncertain markers in persistent account-owned storage. The timer
+never enqueues or reconciles work. Aggregate failure feedback drives operator
+inspection, not automatic resource or disclosure escalation. Explicit loaded
+credentials, read-only evidence and a separate account preserve authority/custody.
+Native SQL/HTTP and actual supervised credential/restart negatives verify these
+constraints. Root and same-UID control, backend forwarding/quality and operational
+adoption remain outside these synthetic guarantees.

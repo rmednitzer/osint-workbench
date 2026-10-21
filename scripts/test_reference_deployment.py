@@ -38,7 +38,21 @@ HEALTH_SERVICE = "osint-workbench-health.service"
 HEALTH_TIMER = "osint-workbench-health.timer"
 API_SERVICE = "osint-workbench-collect-api.service"
 API_TIMER = "osint-workbench-collect-api.timer"
-OPERATIONAL_UNITS = (WORK_SERVICE, WORK_TIMER, HEALTH_SERVICE, HEALTH_TIMER, API_SERVICE, API_TIMER)
+ENRICH_ACCOUNT = "osint-workbench-enrich"
+ENRICH_CONFIG = Path("/etc/osint-workbench-enrich")
+ENRICH_STATE = Path("/var/lib/osint-workbench-enrich")
+ENRICH_SERVICE = "osint-workbench-enrich-local-api.service"
+ENRICH_TIMER = "osint-workbench-enrich-local-api.timer"
+OPERATIONAL_UNITS = (
+    WORK_SERVICE,
+    WORK_TIMER,
+    HEALTH_SERVICE,
+    HEALTH_TIMER,
+    API_SERVICE,
+    API_TIMER,
+    ENRICH_SERVICE,
+    ENRICH_TIMER,
+)
 COMMAND_ENV = {"PATH": "/usr/sbin:/usr/bin:/sbin:/bin", "LC_ALL": "C"}
 
 
@@ -184,12 +198,16 @@ def preflight(venv, units, *, operational_fixture=False):
     names = (SERVICE, TIMER, *OPERATIONAL_UNITS) if operational_fixture else (SERVICE, TIMER)
     targets = (APP, CONFIG, STATE, *(UNIT_ROOT / name for name in names))
     if operational_fixture:
-        targets = (*targets, WORK_CONFIG, HEALTH_CONFIG)
+        targets = (*targets, WORK_CONFIG, HEALTH_CONFIG, ENRICH_CONFIG, ENRICH_STATE)
     for path in targets:
         require(not os.path.lexists(path), "TARGET_ALREADY_EXISTS")
     for name in names:
         require(not os.path.lexists(UNIT_ROOT / f"{name}.d"), "DROPIN_TARGET_ALREADY_EXISTS")
-    accounts = (ACCOUNT, WORK_ACCOUNT, HEALTH_ACCOUNT) if operational_fixture else (ACCOUNT,)
+    accounts = (
+        (ACCOUNT, WORK_ACCOUNT, HEALTH_ACCOUNT, ENRICH_ACCOUNT)
+        if operational_fixture
+        else (ACCOUNT,)
+    )
     for lookup in (pwd.getpwnam, grp.getgrnam):
         for account in accounts:
             try:
@@ -324,7 +342,11 @@ def prepare_database_fixture(venv, *, enabled_http_fixture=False, operational_fi
         for name, group in (
             ("ow_reference_collector", "ow_collector"),
             ("ow_reference_writer", "ow_writer"),
-            *(([("ow_reference_reader", "ow_reader")]) if operational_fixture else []),
+            *(
+                ([("ow_reference_reader", "ow_reader"), ("ow_reference_enricher", "ow_writer")])
+                if operational_fixture
+                else []
+            ),
         ):
             conn.execute(
                 sql.SQL(
@@ -1635,6 +1657,228 @@ print('KEV_READER_PROBE_OK')
 """
 
 
+def local_api_service_acceptance(owned):
+    """Actual non-root service and loaded token against a synthetic local peer."""
+    import contextlib
+    import socket
+    import threading
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    import psycopg
+
+    from osint_workbench import intelligence
+    from osint_workbench.database import Database
+    from osint_workbench.local_api import LocalApiGenerator, LocalApiManifest
+
+    command(
+        [
+            "useradd",
+            "--system",
+            "--user-group",
+            "--no-create-home",
+            "--shell",
+            "/usr/sbin/nologin",
+            "--groups",
+            EVIDENCE_GROUP,
+            ENRICH_ACCOUNT,
+        ]
+    )
+    account = pwd.getpwnam(ENRICH_ACCOUNT)
+    ENRICH_CONFIG.mkdir(mode=0o750)
+    os.chown(ENRICH_CONFIG, 0, account.pw_gid)
+    writer = Database(FIXTURE_WRITER_DSN)
+    with psycopg.connect(FIXTURE_ADMIN_DSN) as conn:
+        document = conn.execute("SELECT document_id FROM ow.active_documents LIMIT 1").fetchone()[0]
+    calls = []
+    mode = {"ambiguous": False}
+    token = "synthetic-local-api-credential"
+
+    class Handler(BaseHTTPRequestHandler):
+        def log_message(self, *_args):
+            pass
+
+        def reply(self, value):
+            body = json.dumps(value).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            with contextlib.suppress(BrokenPipeError, ConnectionResetError):
+                self.wfile.write(body)
+
+        def authorized(self):
+            valid = self.headers.get("Authorization") == "Bearer " + token
+            calls.append((self.command, valid))
+            return valid
+
+        def do_GET(self):
+            if not self.authorized() or self.path != "/v1/models":
+                self.send_error(403)
+                return
+            self.reply({"data": [{"id": "synthetic"}]})
+
+        def do_POST(self):
+            if not self.authorized() or self.path != "/v1/chat/completions":
+                self.send_error(403)
+                return
+            length = int(self.headers.get("Content-Length", "0"))
+            if not 1 <= length <= 131072:
+                self.send_error(413)
+                return
+            self.rfile.read(length)
+            if mode["ambiguous"]:
+                self.close_connection = True
+                self.connection.shutdown(socket.SHUT_RDWR)
+                return
+            self.reply(
+                {
+                    "model": "synthetic",
+                    "choices": [
+                        {
+                            "finish_reason": "stop",
+                            "message": {"role": "assistant", "content": '{"claims":[]}'},
+                        }
+                    ],
+                }
+            )
+
+    peer = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=peer.serve_forever, daemon=True)
+    thread.start()
+    try:
+        manifest = LocalApiManifest.model_validate(
+            {
+                "endpoint": f"http://127.0.0.1:{peer.server_port}/v1/chat/completions",
+                "model": "synthetic",
+                "operator_controlled": True,
+                "remote_forwarding": False,
+                "metered": False,
+                "qualification_sha256": "a" * 64,
+                "model_revision_sha256": "b" * 64,
+                "data_classes": ["public"],
+                "timeout_seconds": 2,
+                "credential": {"kind": "systemd", "name": "local-api-token"},
+            }
+        )
+        generator = LocalApiGenerator(manifest)
+        config = ENRICH_CONFIG / "local-api.json"
+        write_private(config, manifest.model_dump_json(), mode=0o640)
+        os.chown(config, 0, account.pw_gid)
+        environment = ENRICH_CONFIG / "runtime.env"
+        write_private(
+            environment,
+            "OW_WRITER_DSN="
+            + FIXTURE_WRITER_DSN.replace("ow_reference_writer", "ow_reference_enricher")
+            + "\n",
+            mode=0o640,
+        )
+        os.chown(environment, 0, account.pw_gid)
+        credential = ENRICH_CONFIG / "local-api-token"
+        write_private(credential, token)
+        directory = UNIT_ROOT / f"{ENRICH_SERVICE}.d"
+        directory.mkdir(mode=0o755)
+        owned.append(directory)
+        override = directory / "bounded-probe.conf"
+        write_private(
+            override,
+            "[Service]\nExecStart=\n"
+            "ExecStart=/opt/osint-workbench/venv/bin/osint-workbench enrich work "
+            "--local-api-manifest /etc/osint-workbench-enrich/local-api.json --max-jobs 2\n",
+            mode=0o644,
+        )
+        owned.append(override)
+        command(["systemctl", "daemon-reload"])
+
+        def enqueue(operation, selected=generator):
+            return intelligence.enqueue(writer, selected, document, operation, "public")
+
+        def tick(*, failed=False):
+            since = str(time.time())
+            state = command(
+                ["systemctl", "show", ENRICH_SERVICE, "--property=ActiveState", "--value"]
+            ).strip()
+            if state == "failed":
+                command(["systemctl", "reset-failed", ENRICH_SERVICE])
+            command(
+                ["systemctl", "start", ENRICH_SERVICE], allowed=(1,) if failed else (0,), timeout=30
+            )
+            command(["journalctl", "--sync"])
+            raw = command(
+                [
+                    "journalctl",
+                    "--unit",
+                    ENRICH_SERVICE,
+                    f"--since=@{since}",
+                    "--output=json",
+                    "--no-pager",
+                ]
+            )
+            require(token not in raw, "ENRICH_CREDENTIAL_RETAINED")
+            for line in raw.splitlines():
+                row = json.loads(line)
+                try:
+                    result = json.loads(row.get("MESSAGE", ""))
+                except (ValueError, TypeError):
+                    continue
+                if isinstance(result, dict) and result.get("kind") == "local_api_enrichment_tick":
+                    require(row.get("_UID") == str(account.pw_uid), "ENRICH_SERVICE_UID_MISMATCH")
+                    return result
+            raise Rejected("ENRICH_TICK_NOT_OBSERVED")
+
+        for operation in ("service-one", "service-two", "service-three"):
+            enqueue(operation)
+        other = LocalApiGenerator(manifest.model_copy(update={"qualification_sha256": "c" * 64}))
+        enqueue("other-generator", other)
+        first = tick()
+        require(
+            first["attempted"] == 2 and first["abstained"] == 2 and first["limit_reached"],
+            "ENRICH_CAP_NOT_OBSERVED",
+        )
+        second = tick()
+        require(
+            second["attempted"] == 1 and second["abstained"] == 1 and second["idle_observed"],
+            "ENRICH_IDLE_NOT_OBSERVED",
+        )
+        before = len(calls)
+        enqueue("credential-recovery")
+        credential.unlink()
+        command(["systemctl", "start", ENRICH_SERVICE], allowed=(1,), timeout=30)
+        require(len(calls) == before, "ENRICH_MISSING_CREDENTIAL_DISPATCHED")
+        write_private(credential, token)
+        require(tick()["abstained"] == 1, "ENRICH_CREDENTIAL_RECOVERY_FAILED")
+        mode["ambiguous"] = True
+        enqueue("uncertain-one")
+        enqueue("uncertain-two")
+        failed = tick(failed=True)
+        require(
+            failed["attempted"] == 1 and failed["stopped_on_failure"],
+            "ENRICH_DID_NOT_STOP_ON_FAILURE",
+        )
+        before = len(calls)
+        restarted = tick(failed=True)
+        require(
+            restarted["attempted"] == 1 and restarted["failed"] == 1 and len(calls) == before,
+            "ENRICH_RESTART_REDISPATCHED_UNCERTAINTY",
+        )
+        require(
+            ENRICH_STATE.stat().st_uid == account.pw_uid
+            and ENRICH_STATE.stat().st_mode & 0o777 == 0o700,
+            "ENRICH_STATE_NOT_PRIVATE",
+        )
+        require(all(valid for _, valid in calls), "ENRICH_UNAUTHENTICATED_REQUEST")
+        return {
+            "local_api_service_uid_and_credential": True,
+            "local_api_batch_cap_and_identity": True,
+            "local_api_credential_refusal_and_recovery": True,
+            "local_api_uncertainty_survives_service_restart": True,
+            "local_api_model_quality_tested": False,
+        }
+    finally:
+        peer.shutdown()
+        peer.server_close()
+        thread.join(timeout=5)
+
+
 def operational_service_acceptance(worker, observer, owned):
     """Exercise separate non-root units only inside the guarded synthetic fixture."""
     import psycopg
@@ -2133,6 +2377,7 @@ def acceptance(
     api_result = (
         api_service_acceptance(account, units, shared_gid, dropins) if operational_fixture else {}
     )
+    local_api_result = local_api_service_acceptance(dropins) if operational_fixture else {}
     probe_dir = APP / "writable-probe"
     probe_dir.mkdir(mode=0o700)
     os.chown(probe_dir, account.pw_uid, account.pw_gid)
@@ -2185,6 +2430,7 @@ def acceptance(
         **database_result,
         **http_result,
         **api_result,
+        **local_api_result,
         "external_sources_tested": False,
         "synthetic_database_tested": database_fixture,
         "timer_activation_tested": enabled_http_fixture,

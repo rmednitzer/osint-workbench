@@ -79,6 +79,36 @@ def enqueue(
     return db.enqueue(_kind(generator), key, value)
 
 
+def enrich_batch(db, store, generator, *, max_jobs=4):
+    """One bounded exact-generator tick; failure never dispatches another claim."""
+    from .local_api import LocalApiGenerator
+
+    if not isinstance(generator, LocalApiGenerator):
+        raise WorkbenchError("LOCAL_API_BATCH_REQUIRED")
+    if type(max_jobs) is not int or not 1 <= max_jobs <= 32:
+        raise WorkbenchError("INVALID_WORK_LIMIT")
+    counts = {"proposed": 0, "abstained": 0, "failed": 0, "superseded": 0}
+    idle = False
+    for _ in range(max_jobs):
+        result = enrich_once(db, store, generator)
+        status = result["status"]
+        if status == "idle":
+            idle = True
+            break
+        counts[status] += 1
+        if status == "failed":
+            break
+    attempted = sum(counts.values())
+    return {
+        "kind": "local_api_enrichment_tick",
+        "attempted": attempted,
+        **counts,
+        "idle_observed": idle,
+        "limit_reached": attempted == max_jobs,
+        "stopped_on_failure": bool(counts["failed"]),
+    }
+
+
 def enrich_once(db: Database, store: EvidenceStore, generator: LocalGenerator):
     jobs = Jobs(db)
     job = jobs.claim(

@@ -61,3 +61,13 @@ def test_local_api_documentation_exception_is_exact_and_keeps_private_checks():
         "unclassified-url"
     ]
     assert check("docs/local-inference-api.md", url, ["127.0.0.1"]) == ["private-identifier"]
+
+
+def test_local_api_service_fixture_allowance_is_exact_and_location_scoped():
+    check = scanner()
+    fixture = "http:" + "//127.0.0.1:{peer.server_port}/v1/chat/completions"
+    name = "scripts/test_reference_deployment.py"
+    assert check(name, fixture) == []
+    assert check("src/example.py", fixture) == ["unclassified-url"]
+    assert check(name, fixture.replace("{peer.server_port}", "8080")) == ["unclassified-url"]
+    assert check(name, fixture.replace("/v1/chat/completions", "/private")) == ["unclassified-url"]

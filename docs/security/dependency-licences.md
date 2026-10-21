@@ -236,3 +236,17 @@ shipped Apache-2.0 text match. The README adds the bounded Compose test link.
 The own-project metadata and reviewed archive identities advance; the empty ELF
 set, all third-party policy rows and existing unresolved obligations remain
 unchanged. This adds no legal or native-closure approval.
+
+
+## Certifi advisory refresh, 2026-10-21
+
+The locked certifi wheel is now 2026.10.19. The PyPI release JSON and downloaded
+wheel digest agree. Its complete shipped licence text is unchanged (MPL-2.0);
+METADATA still declares the legacy License field without License-Expression.
+The exact METADATA and wheel hashes are updated in the machine-readable policy.
+The wheel contains no native ELF files; this does not establish an external
+native or certificate trust closure. Existing notice obligations remain.
+
+The advisory audit rejected 2026.10.18 and recommends 2026.10.19, while the
+upstream advisory lists 2026.10.18 as patched. This update follows the newer
+published release rather than suppressing the inconsistent advisory result.

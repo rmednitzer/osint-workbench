@@ -1,0 +1,32 @@
+{
+  "baseline_commit": "1c0ec3a26dbdf6c1cd2ee3cf9ede73a90da66c7e",
+  "reviewed_candidate_commit": "f266d632257ff2135d09c2ca9a8465535ad9a323",
+  "previous_wheel_sha256": "8cc75b02321f13e3eb7791ec2d208e88df8d63f399fcba10e9b99faab0cbf28d",
+  "candidate_wheel_sha256": "5aa839983242db516c155100133354ed37928752e15ce5834cc115d8cd478e5f",
+  "archive_members": 65,
+  "added_members": [],
+  "removed_members": [],
+  "changed_members": [
+    "osint_workbench-0.1.0.dev1.dist-info/RECORD",
+    "osint_workbench/cli.py",
+    "osint_workbench/intelligence.py"
+  ],
+  "format": "osint-workbench-local-api-supervision-wheel-review-v1",
+  "date": "2026-10-21",
+  "metadata_headers_unchanged": true,
+  "metadata_bytes": 11086,
+  "metadata_sha256": "c98c8bf8df2865c78c475b7502f1e4a8ad57bc1c7cb52c5f3d45474edef2f59b",
+  "licence_bytes_unchanged": true,
+  "licence_bytes": 11357,
+  "licence_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+  "dependency_and_python_bounds_unchanged": true,
+  "elf_members": 0,
+  "record_inventories_verified": true,
+  "independent_archive_review": true,
+  "legal_approval": false,
+  "limits": [
+    "All archive members compared against the independently built baseline wheel; only reviewed CLI and enrichment implementation plus RECORD changed.",
+    "Certifi is the only third-party lock change; shipped licence, metadata and complete wheel were reviewed separately.",
+    "Native file sets do not establish loader dependency closure or redistribution clearance; model/backend qualification remains separate."
+  ]
+}
