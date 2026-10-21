@@ -362,10 +362,14 @@ def main():
         command(compose + ["down", "--remove-orphans", "--timeout", "15"], env=env)
         for volume in created:
             command(["docker", "volume", "rm", volume])
-        image_info = command(["docker", "image", "ls", "-q", image]).strip()
-        if image_info:
-            ownership(json.loads(command(["docker", "image", "inspect", image]))[0], nonce)
-            command(["docker", "image", "rm", image])
+        image_ids = command(["docker", "image", "ls", "-q", image]).split()
+        require(len(image_ids) <= 1, "PROFILE_IMAGE_CLEANUP_AMBIGUOUS")
+        if image_ids:
+            # Inspect and remove the immutable ID returned by Docker. Compose may
+            # drop or retarget the temporary name while retaining the built image.
+            image_id = image_ids[0]
+            ownership(json.loads(command(["docker", "image", "inspect", image_id]))[0], nonce)
+            command(["docker", "image", "rm", image_id])
 
     with cleanup_guard(cleanup):
         command(
