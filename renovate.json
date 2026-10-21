@@ -123,6 +123,18 @@
       ],
       "datasourceTemplate": "docker",
       "versioningTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "Keep the synthetic Compose verifier's Python image pin aligned with the workflow image.",
+      "managerFilePatterns": [
+        "/^scripts/test_compose_core\\.py$/"
+      ],
+      "matchStrings": [
+        "BASE = \"(?<depName>[^:]+):(?<currentValue>[^@]+)@(?<currentDigest>sha256:[a-f0-9]{64})\""
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
     }
   ]
 }
