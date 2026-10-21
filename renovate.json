@@ -94,6 +94,17 @@
         "major"
       ],
       "dependencyDashboardApproval": true
+    },
+    {
+      "description": "The core container qualifies Python3.12; interpreter-line changes require explicit runtime acceptance, not routine image maintenance.",
+      "matchManagers": [
+        "dockerfile",
+        "custom.regex"
+      ],
+      "matchPackageNames": [
+        "python"
+      ],
+      "allowedVersions": "/^3\\.12\\./"
     }
   ],
   "vulnerabilityAlerts": {
