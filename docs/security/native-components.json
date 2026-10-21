@@ -2,7 +2,7 @@
   "schema_version": 1,
   "review_date": "2026-10-21",
   "scope": "RECORD-listed ELF file-set identity; standard CPython3.12-3.14 manylinux x86_64 and compatible ABI3; no native dependency closure or legal approval",
-  "lock_sha256": "c2627ac5df49e05c5af1488a148d093ae6e6452ed15a77a3edc11c58bfb5143b",
+  "lock_sha256": "f038f383cca1658e9d4d2068146e363f3756a2ece4847a669984be49a26cba48",
   "review_history": [
     {
       "source_commit": "331d597",
@@ -28,6 +28,10 @@
     {
       "source_commit": "9272f5d9c4440ebbfcc1dcd7d8cfa4876c13b7e7",
       "note": "Pip-only development lock refresh to26.2.2; verified PyPI wheel digest, unchanged complete shipped licence set and no ELF files. Runtime/retrieval inventory and all reviewed wheel/file sets are unchanged."
+    },
+    {
+      "source_commit": "b69d34de436887a0334508765afc66ed6f75388f",
+      "note": "Reviewed httpcore2 and httpx2 2.16.0 lock refresh: verified exact PyPI wheel hashes and matching upstream v2.16.0 tag/release notes; BSD-3-Clause expressions and complete shipped licence files are unchanged; wheels contain no native libraries."
     }
   ],
   "distributions": [
@@ -432,7 +436,7 @@
     },
     {
       "name": "httpcore2",
-      "version": "2.15.1",
+      "version": "2.16.0",
       "native_dependency_closure": "not-established-by-empty-ELF-set",
       "variants": [
         {
@@ -440,17 +444,51 @@
           "wheel_sha256": "730f603058c260a3288378217b464713350c23e3b8fe8bba753701054032d98a",
           "files": []
         }
+      ],
+      "locked_wheel_sha256": [
+        "5c4358319f2602d984ad93182c9fee5160f22e9da7babdda870a5e7c4e2dc34f"
+      ],
+      "evidence": [
+        {
+          "path": "httpcore2-2.16.0.dist-info/METADATA",
+          "bytes": 27552,
+          "sha256": "c073bd68b2bd543fbc2bab3763b42ed1e70666536d32c1bf39ef2764fd50b0a4",
+          "kind": "metadata"
+        },
+        {
+          "path": "httpcore2-2.16.0.dist-info/licenses/LICENSE.md",
+          "bytes": 1599,
+          "sha256": "c4df125c807b0613501e943a5c92496dd11d2c16604ce396097a8dde396304d9",
+          "kind": "licence-text"
+        }
       ]
     },
     {
       "name": "httpx2",
-      "version": "2.15.1",
+      "version": "2.16.0",
       "native_dependency_closure": "not-established-by-empty-ELF-set",
       "variants": [
         {
           "wheel_filename": "httpx2-2.15.1-py3-none-any.whl",
           "wheel_sha256": "75841cd83d16b417f7d6da8f2089ce8120806efdbf96af37d46c5129c49015be",
           "files": []
+        }
+      ],
+      "locked_wheel_sha256": [
+        "fd2c5d7909e8d86fe92d53020c310ca0e4e431b838c207c5754b9bbf0308d49a"
+      ],
+      "evidence": [
+        {
+          "path": "httpx2-2.16.0.dist-info/METADATA",
+          "bytes": 10019,
+          "sha256": "192f20046200ff50911a7278c21dfbee1e1a4c6fa7943227afe9231d28defc3f",
+          "kind": "metadata"
+        },
+        {
+          "path": "httpx2-2.16.0.dist-info/licenses/LICENSE.md",
+          "bytes": 1589,
+          "sha256": "7e7d6dbaf7fe160d39fd6e84fd02c33cab96bcbea34d36998d545bceb4a19c30",
+          "kind": "licence-text"
         }
       ]
     },
