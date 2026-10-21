@@ -94,6 +94,17 @@
         "major"
       ],
       "dependencyDashboardApproval": true
+    },
+    {
+      "description": "The core container qualifies Python3.12; interpreter-line changes require explicit runtime acceptance, not routine image maintenance.",
+      "matchManagers": [
+        "dockerfile",
+        "custom.regex"
+      ],
+      "matchPackageNames": [
+        "python"
+      ],
+      "allowedVersions": "/^3\\.12\\./"
     }
   ],
   "vulnerabilityAlerts": {
@@ -109,6 +120,18 @@
       ],
       "matchStrings": [
         "OW_COMPOSE_(?:BASE|POSTGRES): (?<depName>[^\\s:]+):(?<currentValue>[^\\s@]+)@(?<currentDigest>sha256:[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "Keep the synthetic Compose verifier's Python image pin aligned with the workflow image.",
+      "managerFilePatterns": [
+        "/^scripts/test_compose_core\\.py$/"
+      ],
+      "matchStrings": [
+        "BASE = \"(?<depName>[^:]+):(?<currentValue>[^@]+)@(?<currentDigest>sha256:[a-f0-9]{64})\""
       ],
       "datasourceTemplate": "docker",
       "versioningTemplate": "docker"

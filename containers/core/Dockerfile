@@ -1,5 +1,5 @@
 # Explicit local-only build; independent container OS qualification.
-FROM python:3.12.14-slim-trixie@sha256:44ff437bba879d4941b710a369a8f19266aea34b29002807f0c487fabc9eec9b
+FROM python:3.12.15-slim-trixie@sha256:2259debdc6af85626058a15a7bf44ad6a68b8c98c9ae82a02cf5cdb92f096d47
 ARG WHEEL_SHA256
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_DISABLE_PIP_VERSION_CHECK=1
 COPY wheels/ /build/wheels/
