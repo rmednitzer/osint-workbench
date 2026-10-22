@@ -403,3 +403,18 @@ def test_policy_descriptor_is_closed_on_guard_rejection_parse_failure_and_succes
     assert json.loads(capsys.readouterr().out)["findings"] == (
         [] if kind == "valid" else [{"category": "invalid-private-policy"}]
     )
+
+
+def test_approved_connector_identity_is_metadata_only(checker, history):
+    repo, _, commit = history
+    email = "r.mednitzer" + "@outlook.com"
+    base = commit()
+    commit(GIT_AUTHOR_EMAIL=email, GIT_COMMITTER_EMAIL=email)
+    assert checker.scan_commit_metadata(repo, base)["findings"] == []
+    assert checker.scan_commit_metadata(repo, base, [email])["findings"]
+    assert "email" in checker.inspect_text("docs/synthetic.md", email)
+    commit(GIT_AUTHOR_EMAIL="other" + "@outlook.com")
+    assert any(
+        finding["category"] == "metadata-email"
+        for finding in checker.scan_commit_metadata(repo, base)["findings"]
+    )

@@ -143,3 +143,11 @@ allowance only after the entire bundle matches independently rebuilt content
 from the pinned source texts and current reviewed policy. Matching a filename
 alone grants no allowance. Substituted content fails provenance and is still
 scanned for private identifiers. No private-value file is uploaded to public CI.
+
+
+The maintainer explicitly approved the verified GitHub connector author identity
+for publishing the security-controls review. The commit-metadata scanner admits
+that exact account email, recorded in its metadata-only policy. This does not
+admit other addresses at the same provider, relax source or artifact email checks,
+or override the private-value denylist. Recheck connector author and committer
+metadata before attaching new publication commits to a branch.

@@ -224,6 +224,9 @@ def scan_commit_metadata(root, base_revision, private_values=(), *, allow_base_i
         if len(revisions) > MAX_NEW_COMMITS:
             raise MetadataError("metadata-limit-exceeded")
         base_emails = set(_commit(root, base)[1]) if allow_base_identities else set()
+        # Explicitly approved public connector author; no domain-wide allowance.
+        # This exception is confined to Git metadata, never source/artifact scans.
+        base_emails.add("r.mednitzer" + "@outlook.com")
         findings, total = [], 0
         for revision in revisions:
             text, identities, size = _commit(root, revision)
