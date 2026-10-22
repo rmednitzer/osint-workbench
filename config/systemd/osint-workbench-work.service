@@ -1,4 +1,4 @@
-# Requires the explicit shared-evidence profile and a separately scoped writer login.
+# Requires the explicit shared-evidence profile and a separate ow_chunk_worker login.
 [Unit]
 Description=OSINT Workbench bounded document chunk worker
 Wants=network-online.target

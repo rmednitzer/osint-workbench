@@ -226,6 +226,9 @@ def roles(tmp_path_factory):
     with psycopg.connect(dsn, autocommit=True) as conn:
         for role, group, password in [
             ("ow_test_writer", "ow_writer", writer_password),
+            ("ow_test_chunk", "ow_chunk_worker", writer_password),
+            ("ow_test_local_enricher", "ow_local_enricher", writer_password),
+            ("ow_test_dispatcher", "ow_dispatcher", writer_password),
             ("ow_test_reader", "ow_reader", reader_password),
             ("ow_test_lifecycle", "ow_lifecycle", writer_password),
             ("ow_test_collector", "ow_collector", collector_password),
@@ -247,6 +250,11 @@ def roles(tmp_path_factory):
         "admin": dsn,
         "reviewer": make_conninfo(dsn, user="ow_test_reviewer", password=reviewer_password),
         "writer": make_conninfo(dsn, user="ow_test_writer", password=writer_password),
+        "chunk": make_conninfo(dsn, user="ow_test_chunk", password=writer_password),
+        "local_enricher": make_conninfo(
+            dsn, user="ow_test_local_enricher", password=writer_password
+        ),
+        "dispatcher": make_conninfo(dsn, user="ow_test_dispatcher", password=writer_password),
         "reader": make_conninfo(dsn, user="ow_test_reader", password=reader_password),
         "lifecycle": make_conninfo(dsn, user="ow_test_lifecycle", password=writer_password),
         "collector": make_conninfo(dsn, user="ow_test_collector", password=collector_password),

@@ -9,6 +9,7 @@ import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+import psycopg
 import pytest
 from pydantic import ValidationError
 
@@ -718,11 +719,17 @@ def test_local_api_batch_cap_identity_and_installed_cli(databases, tmp_path, loc
             intelligence.enqueue(writer, generator, document, operation, "public")
         other = LocalApiGenerator(manifest(url, qualification_sha256="c" * 64))
         intelligence.enqueue(writer, other, document, "other", "public")
+        with psycopg.connect(roles["admin"]) as conn:
+            conn.execute(
+                "INSERT INTO ow.worker_kinds VALUES (%s,%s,'local') "
+                "ON CONFLICT (database_principal) DO UPDATE SET kind=excluded.kind",
+                ("ow_test_local_enricher", "document.enrich/" + generator.manifest.identity()),
+            )
         config = tmp_path / "api.json"
         config.write_text(selected.model_dump_json())
         environment = {
             **os.environ,
-            "OW_WRITER_DSN": roles["writer"],
+            "OW_ENRICHMENT_DSN": roles["local_enricher"],
             "OW_EVIDENCE_ROOT": str(store.root),
         }
         command = [

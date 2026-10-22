@@ -816,7 +816,7 @@ def test_known_core_checkpoint_adopts_into_current_schema(
     with pytest.raises(WorkbenchError, match="DOCUMENT_NOT_FOUND"):
         service.document(document)
     with Database(destination["admin"]).connect() as conn:
-        assert conn.execute("SELECT max(version) AS v FROM ow.migrations").fetchone()["v"] == 12
+        assert conn.execute("SELECT max(version) AS v FROM ow.migrations").fetchone()["v"] == 13
         assert conn.execute("SELECT count(*) AS n FROM ow.remote_operations").fetchone()["n"] == 0
         assert (
             conn.execute("SELECT max(version) AS v FROM ow.retrieval_migrations").fetchone()["v"]

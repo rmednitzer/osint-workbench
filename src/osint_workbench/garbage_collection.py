@@ -11,7 +11,7 @@ from pydantic import Field
 
 from .contracts import Digest, Identifier, StrictModel
 from .errors import WorkbenchError
-from .evidence import MAX_OBJECT, EvidenceStore
+from .evidence import ALLOCATION_LOCK, MAX_OBJECT, EvidenceStore
 from .lifecycle import _authorize
 from .recovery import _history, _json, _read_envelope, _write_new
 from .text import digest
@@ -109,6 +109,11 @@ def plan(db, store: EvidenceStore, path: Path, *, operation_id, minimum_age_seco
             # scandir remains streaming; neither arbitrary entries nor retained files bypass bounds.
             with os.scandir(root) as shards:
                 for shard in shards:
+                    if shard.name == ALLOCATION_LOCK:
+                        lock_info = shard.stat(follow_symlinks=False)
+                        if not stat.S_ISREG(lock_info.st_mode) or lock_info.st_size != 0:
+                            raise WorkbenchError("GC_UNEXPECTED_ENTRY")
+                        continue
                     count += 1
                     if count > MAX_FILES:
                         raise WorkbenchError("GC_LIMIT_EXCEEDED")

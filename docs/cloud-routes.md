@@ -122,8 +122,8 @@ any provider connection; policy denials also get a row:
 | `reserved` | Worst-case cost reserved, not yet sent | reservation |
 | `dispatched` | Committed immediately before sending; a crash leaves it here | reservation |
 | `released` | Confirmed not sent: deadline before sending or destination/DNS/TCP/TLS refusal | 0 |
-| `completed`, `refused`, `incomplete` | Complete provider response | estimated cost if usage was reported, else reservation |
-| `failed` | Non-200 or malformed response | reservation unless usage was reported |
+| `completed`, `refused`, `incomplete` | Complete provider response | reservation until separate settlement |
+| `failed` | Non-200 or malformed response | reservation until separate settlement |
 | `outcome_unknown` | Connection lost or deadline after sending | reservation |
 | eligible attempt, settled | Operator assertion bound to provider evidence, or zero for a stale unsent reservation | settled amount |
 
@@ -133,8 +133,8 @@ most one token per byte) plus the route's maximum output tokens at the
 declared prices, rounded up. Reported usage counts only when it is possible for
 the request: at least one and at most one input token per request byte, and no
 more output tokens than the route allows. Otherwise it is recorded as missing
-and the reservation stands. Plausible reported usage can reduce the estimate
-below its reservation; these bounds do not verify the provider's usage report or
+and the reservation stands. Plausible reported usage can reduce the informational estimate
+below its reservation, but never admission exposure; these bounds do not verify the provider's usage report or
 actual billing. A database trigger enforces the
 state machine: reserved to dispatched, dispatched to exactly one outcome, and
 nothing after that, and a settled attempt is final. Exposure is per route and
@@ -179,9 +179,9 @@ osint-workbench cloud-ledger settle --attempt-id ATTEMPT_UUID \
   --actor operator-id --rationale "Invoice line for the dropped request"
 ```
 
-`unsettled` lists, oldest first and at most 500 per call, the attempts whose
-exposure is still the reservation. Add `--include-estimated` to include
-completed attempts with reported usage. `in_flight` marks reserved or
+`unsettled` lists, oldest first and at most 500 per call, unsettled attempts without reported usage. Add `--include-estimated` to include
+completed attempts with reported usage; their admission exposure also remains
+the reservation. `in_flight` marks reserved or
 dispatched rows changed in the last ten minutes. These may belong to a live
 worker and cannot be settled yet.
 
@@ -242,3 +242,10 @@ Lifecycle retirement and job cancellation do not recall already-admitted or
 physically in-flight provider requests, or prove provider-side deletion.
 Model output passes the same schema, quotation and review controls as local
 generation; remote output is never accepted as fact without review.
+
+
+Runtime dispatch uses a separate `OW_DISPATCH_DSN` with `ow_dispatcher`, bound to
+its exact generator kind in `ow.worker_kinds`; see
+[the operational profile](operational-profile.md#runtime-capabilities-and-evidence-allocation).
+Provider usage is telemetry. Only evidence-bound settlement under the independent
+accounting credential can reduce a dispatched attempt below its reservation.

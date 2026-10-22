@@ -1049,3 +1049,22 @@ credentials, read-only evidence and a separate account preserve authority/custod
 Native SQL/HTTP and actual supervised credential/restart negatives verify these
 constraints. Root and same-UID control, backend forwarding/quality and operational
 adoption remain outside these synthetic guarantees.
+
+
+## Security control boundaries: ADR-0064
+
+Unsafe actions include signing a distribution replaced after testing, admitting
+ambiguous archive representations, continuing unique retained acquisition beyond
+capacity, allowing a chunk/local worker to mutate sibling dispatch work, and
+lowering exposure using the spending counterparty's unverified telemetry.
+
+Bind test/signing inputs to the original pre-test immutable artifact across fresh
+runner boundaries. Reject ambiguous physical archive inventories and inspect
+supported exposed metadata. Serialize cumulative CAS allocation and fail closed
+at byte/object bounds without implicit eviction. Provision separate runtime
+capabilities; authenticate allowed job kinds, lease owners and remote-attempt
+owners in the database, preserving immutable identity and terminal state. Retain
+cloud reservations until independent evidence-bound settlement. Quota failure,
+unknown ownership and missing assignments require explicit operator action.
+Database/WAL/storage metadata quotas, malicious same-UID code, compromised
+approved dispatchers and actual provider billing remain external limits.

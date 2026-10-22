@@ -10,7 +10,7 @@ from .contracts import DocumentInput
 from .errors import WorkbenchError
 from .evidence import EvidenceStore
 
-SCHEMA_VERSION = 12
+SCHEMA_VERSION = 13
 LIFECYCLE_LOCK = 418287408
 MIGRATIONS = (
     "schema.sql",
@@ -25,6 +25,7 @@ MIGRATIONS = (
     "migrations/010_cloud_settlement.sql",
     "migrations/011_api_collection_state.sql",
     "migrations/012_reviewer_authority.sql",
+    "migrations/013_worker_authority.sql",
 )
 
 
@@ -82,6 +83,68 @@ class Database:
         except Exception:
             conn.close()
             raise
+
+    def validate_worker(self, capability):
+        """Refuse operator, owner and mixed-role credentials before worker execution."""
+        if capability not in {"ow_chunk_worker", "ow_local_enricher", "ow_dispatcher"}:
+            raise WorkbenchError("UNSAFE_WORKER_IDENTITY")
+        with self.connect() as conn:
+            unsafe = conn.execute(
+                """SELECT
+              session_user<>current_user AS changed_identity,
+              NOT pg_has_role(current_user,%s,'USAGE') AS missing_capability,
+              EXISTS(SELECT 1 FROM pg_roles r WHERE pg_has_role(current_user,r.oid,'MEMBER')
+                AND (r.rolsuper OR r.rolcreatedb OR r.rolcreaterole OR r.rolbypassrls
+                  OR r.rolreplication OR r.rolname NOT IN (current_user,%s))) AS unsafe_roles,
+              EXISTS(SELECT 1 FROM pg_database WHERE datname=current_database()
+                AND pg_has_role(current_user,datdba,'MEMBER')) AS database_owner,
+              EXISTS(SELECT 1 FROM pg_namespace WHERE nspname IN ('ow','ow_vector','public')
+                AND has_schema_privilege(current_user,oid,'CREATE')) AS schema_creation,
+              EXISTS(SELECT 1 FROM pg_auth_members WHERE admin_option
+                AND pg_has_role(current_user,member,'MEMBER')) AS delegated
+            """,
+                (capability, capability),
+            ).fetchone()
+            if any(unsafe.values()):
+                raise WorkbenchError("UNSAFE_WORKER_IDENTITY")
+            common = {
+                "worker_kinds",
+                "jobs",
+                "job_events",
+                "visible_documents",
+                "visible_snapshots",
+                "active_documents",
+                "lifecycle_items",
+                "lifecycle_tombstones",
+            }
+            allowed = {(name, "SELECT") for name in common}
+            allowed |= {("jobs", "UPDATE"), ("job_events", "INSERT")}
+            if capability == "ow_chunk_worker":
+                allowed |= {("chunks", "SELECT"), ("chunks", "INSERT"), ("jobs", "INSERT")}
+            else:
+                allowed |= {
+                    (name, privilege)
+                    for name in ("enrichments", "assertions")
+                    for privilege in ("SELECT", "INSERT")
+                }
+            if capability == "ow_dispatcher":
+                allowed |= {
+                    ("remote_operations", privilege) for privilege in ("SELECT", "INSERT", "UPDATE")
+                }
+            grants = conn.execute("""SELECT c.relname,p.privilege
+              FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+              CROSS JOIN (VALUES ('SELECT'),('INSERT'),('UPDATE'),('REFERENCES')) p(privilege)
+              WHERE n.nspname IN ('ow','ow_vector') AND c.relkind IN ('r','p','v','m','f')
+                AND has_any_column_privilege(current_user,c.oid,p.privilege)
+            """).fetchall()
+            dangerous = conn.execute("""SELECT EXISTS(
+              SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+              WHERE n.nspname IN ('ow','ow_vector') AND c.relkind IN ('r','p','v','m','f')
+                AND (pg_has_role(current_user,c.relowner,'MEMBER') OR
+                     has_table_privilege(current_user,c.oid,'DELETE,TRUNCATE,TRIGGER,MAINTAIN'))
+              ) AS authority""").fetchone()["authority"]
+            if dangerous or any((r["relname"], r["privilege"]) not in allowed for r in grants):
+                raise WorkbenchError("UNSAFE_WORKER_IDENTITY")
 
     def validate_reader(self) -> None:
         """Refuse application reads beyond the published reader projection.

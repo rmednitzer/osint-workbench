@@ -20,7 +20,7 @@ from osint_workbench.service import ReadService
 
 ROLE_KEYS = {
     "writer": "OW_WRITER_DSN",
-    "worker": "OW_WRITER_DSN",
+    "worker": "OW_CHUNK_DSN",
     "reader": "OW_READER_DSN",
     "lifecycle": "OW_LIFECYCLE_DSN",
     "recovery": "OW_RECOVERY_DSN",
@@ -125,7 +125,7 @@ def main():
                 migrate(target)
             for name, group in (
                 ("writer", "ow_writer"),
-                ("worker", "ow_writer"),
+                ("worker", "ow_chunk_worker"),
                 ("reader", "ow_reader"),
                 ("lifecycle", "ow_lifecycle"),
                 ("recovery", None),

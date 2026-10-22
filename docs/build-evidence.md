@@ -169,3 +169,15 @@ and provenance under the selected trust roots, not application safety, licence
 clearance or complete programme acceptance. This adds no package release or live
 deployment. Missing or failed verification must be investigated before consuming
 an artifact. Roll back through a protected PR while preserving signer isolation.
+
+
+## Immutable distribution continuity
+
+The reusable installed-profile workflow builds distributions in a dedicated job
+and uploads them before test code executes. Test jobs download that immutable
+same-run artifact. A fresh runner compares the retained post-test distributions
+and receipt hashes against the original artifact; replacement fails the required
+installed-artifact check even if test code rewrites its local receipt. Main-push
+signing separately downloads the originals and repeats the byte comparison.
+No repository code runs in either comparison job. This binds distribution bytes
+across the workflow; it does not prove the honesty or completeness of tests.

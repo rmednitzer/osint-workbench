@@ -296,6 +296,6 @@ def test_credential_echo_real_tls_accepts_no_assertions_and_preserves_exposure(
     assert record["status"] == "completed" and record["error_code"] == "REMOTE_CREDENTIAL_REFLECTED"
     assert record["usage"] == ("reported" if reported_usage else "missing")
     exposure = cloud.exposure(writer, configured["route_id"], configured["pricebook"]["currency"])
-    expected = record["estimated_cost"] if reported_usage else record["reserved"]
+    expected = record["reserved"]
     assert exposure == expected and exposure > 0
     assert CANARY not in repr(record)

@@ -56,7 +56,7 @@ this is not document authorization. Keep unrelated workloads out of the evidence
 group.
 
 Install the worker's environment as root-owned mode 0600
-`/etc/osint-workbench-worker/runtime.env`, containing only its `OW_WRITER_DSN`
+`/etc/osint-workbench-worker/runtime.env`, containing only its `OW_CHUNK_DSN`
 and any explicitly needed libpq configuration. Install the health environment
 similarly at `/etc/osint-workbench-health/runtime.env`, with `OW_READER_DSN` and
 explicit `OW_HEALTH_MAX_SOURCE_AGE_SECONDS`, `OW_HEALTH_MAX_PENDING_JOBS` and

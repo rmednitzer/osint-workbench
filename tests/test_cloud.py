@@ -252,7 +252,7 @@ def test_routed_enrichment_reaches_proposals_and_settles_reported_usage(
     # Digests and accounting only: no credential, prompt or response text.
     assert "synthetic-credential-canary" not in json.dumps(row, default=str)
     assert "Straße" not in json.dumps(row, default=str)
-    assert cloud.exposure(writer, "fixture-eu", "EUR") == Decimal("0.000084000")
+    assert cloud.exposure(writer, "fixture-eu", "EUR") == row["reserved"]
 
 
 @pytest.mark.integration
@@ -374,8 +374,8 @@ def test_provider_outcomes_are_explicit_and_never_free(
     (row,) = ledger(roles)
     assert row["status"] == status and row["usage"] == usage
     assert row["status"] != "dispatched"
-    expected = row["estimated_cost"] if usage == "reported" else row["reserved"]
-    # Unreported usage keeps the full reservation as exposure; it is never zero.
+    expected = row["reserved"]
+    # Provider telemetry never releases the reservation before separate settlement.
     assert cloud.exposure(writer, "fixture-eu", "EUR") == expected > 0
     # Failed work is terminal and is not replayed by the worker.
     assert intel.enrich_once(writer, store, generator)["status"] == "idle"

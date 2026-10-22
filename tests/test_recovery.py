@@ -221,6 +221,11 @@ def published_pair(payload, core, profile=None):
             del payload["migrations"][key]
     if profile < 4:
         payload["tables"].pop("retrieval_exclusions", None)
+    if core < 13:
+        for row in payload["tables"].get("jobs", []):
+            row.pop("claimed_by")
+        for row in payload["tables"].get("remote_operations", []):
+            row.pop("database_principal")
     if core < 12:
         for row in payload["tables"].get("assertion_reviews", []):
             row.pop("authority")
@@ -441,7 +446,7 @@ def test_non_regular_objects_and_oversize_bundles_fail_without_blocking(tmp_path
     ],
 )
 def test_legacy_checkpoint_history_requires_complete_exact_known_pair(version, profile):
-    current = {str(i): digest(f"published migration {i}".encode()) for i in range(1, 13)}
+    current = {str(i): digest(f"published migration {i}".encode()) for i in range(1, 14)}
     current.update({f"retrieval/{i}": str(i) * 64 for i in range(1, 6)})
     known = {
         key: value
@@ -465,7 +470,7 @@ def test_legacy_checkpoint_history_requires_complete_exact_known_pair(version, p
     )
     assert not recovery._known_legacy_history(known, current, 3)
     # The current pair itself is not legacy; it takes the ordinary exact path.
-    assert not recovery._known_legacy_history(current, current, 12)
+    assert not recovery._known_legacy_history(current, current, 13)
 
 
 @pytest.mark.integration
@@ -529,7 +534,7 @@ def test_known_v5_checkpoint_restores_retained_data_with_current_policy(
             conn.execute("SELECT hold_id FROM ow.lifecycle_holds").fetchone()["hold_id"]
             == "hold-v5"
         )
-        assert conn.execute("SELECT max(version) AS v FROM ow.migrations").fetchone()["v"] == 12
+        assert conn.execute("SELECT max(version) AS v FROM ow.migrations").fetchone()["v"] == 13
         jobs = conn.execute(
             "SELECT status FROM ow.jobs WHERE job_id=ANY(%s::uuid[])", ([pending, leased],)
         ).fetchall()

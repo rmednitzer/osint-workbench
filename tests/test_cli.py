@@ -190,7 +190,7 @@ def test_enrichment_requires_exactly_one_generator_selection(tmp_path, arguments
 
 def test_routed_enrichment_requires_a_policy_file(tmp_path):
     code, out, err = _cli(
-        "enrich", "work-once", "--route", "r", env={"OW_WRITER_DSN": "postgresql:///never-used"}
+        "enrich", "work-once", "--route", "r", env={"OW_DISPATCH_DSN": "postgresql:///never-used"}
     )
     assert code == 1 and json.loads(err) == {"error": "CLOUD_POLICY_REQUIRED"}
 

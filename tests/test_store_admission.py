@@ -86,3 +86,40 @@ def test_connection_exit_precedes_release_and_failure_releases_root(tmp_path, co
         store.admitted_root()
     with EvidenceStore(store.root).admission(exclusive=True):
         pass
+
+
+def test_cumulative_budget_preserves_dedup_and_refuses_new_bytes(tmp_path):
+    store = EvidenceStore(tmp_path / "objects", max_bytes=6)
+    sha = store.put(b"abc")
+    store.put(b"def")
+    assert store.put(b"abc") == sha
+    with pytest.raises(WorkbenchError, match="^EVIDENCE_BUDGET_EXHAUSTED$"):
+        store.put(b"g")
+    assert store.get(sha) == b"abc"
+
+
+@pytest.mark.parametrize("same", [False, True])
+def test_independent_writers_cannot_overbook_budget(tmp_path, same):
+    root = tmp_path / "objects"
+    stores = [EvidenceStore(root, max_bytes=3), EvidenceStore(root, max_bytes=3)]
+    barrier, results = threading.Barrier(2), []
+
+    def write(store, value):
+        barrier.wait(timeout=5)
+        try:
+            store.put(value)
+            results.append("stored")
+        except WorkbenchError as error:
+            results.append(error.code)
+
+    threads = [
+        threading.Thread(target=write, args=(s, v))
+        for s, v in zip(stores, (b"abc", b"abc" if same else b"def"), strict=True)
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=10)
+        assert not thread.is_alive()
+    expected = ["stored", "stored"] if same else ["EVIDENCE_BUDGET_EXHAUSTED", "stored"]
+    assert sorted(results) == expected

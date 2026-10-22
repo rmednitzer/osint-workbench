@@ -25,7 +25,7 @@ from .collection import collect, collect_due
 from .contracts import DocumentInput, SourceConfig
 from .database import SCHEMA_VERSION, Database, migrate
 from .errors import WorkbenchError
-from .evidence import EvidenceStore
+from .evidence import DEFAULT_MAX_BYTES, EvidenceStore
 from .jobs import Jobs
 from .local_api import LocalApiGenerator, LocalApiManifest
 from .local_encoder import EncoderManifest, LocalEncoder
@@ -50,7 +50,14 @@ def _writable_store():
     gid = int(group) if group is not None else None
     if gid is not None and not 0 <= gid < 2**32 - 1:
         raise WorkbenchError("INVALID_EVIDENCE_GROUP")
-    return EvidenceStore(Path(os.environ["OW_EVIDENCE_ROOT"]), shared_group=gid)
+    budget = os.environ.get("OW_EVIDENCE_MAX_BYTES")
+    if budget is not None and (not budget.isascii() or not budget.isdecimal()):
+        raise WorkbenchError("INVALID_EVIDENCE_BUDGET")
+    return EvidenceStore(
+        Path(os.environ["OW_EVIDENCE_ROOT"]),
+        shared_group=gid,
+        max_bytes=int(budget) if budget is not None else DEFAULT_MAX_BYTES,
+    )
 
 
 def _manifest(path, model):
@@ -402,7 +409,7 @@ def main():
             ):
                 raise WorkbenchError("INVALID_WORK_LIMIT")
             db = (
-                Database(_dsn("OW_WRITER_DSN"))
+                Database(_dsn("OW_WRITER_DSN" if args.action == "enqueue" else "OW_DISPATCH_DSN"))
                 if args.route is not None
                 and args.manifest is None
                 and args.local_api_manifest is None
@@ -429,7 +436,11 @@ def main():
                     else generator.reconcile()
                 )
             else:
-                db = db or Database(_dsn("OW_WRITER_DSN"))
+                db = db or Database(
+                    _dsn("OW_WRITER_DSN" if args.action == "enqueue" else "OW_ENRICHMENT_DSN")
+                )
+                if args.action != "enqueue":
+                    db.validate_worker("ow_dispatcher" if args.route else "ow_local_enricher")
                 if args.action == "enqueue":
                     if not args.document_id:
                         raise WorkbenchError("DOCUMENT_ID_REQUIRED")
@@ -532,7 +543,8 @@ def main():
         elif args.command in {"work-once", "work"}:
             if args.command == "work" and not 1 <= args.max_jobs <= 1000:
                 raise WorkbenchError("INVALID_WORK_LIMIT")
-            db = Database(_dsn("OW_WRITER_DSN"))
+            db = Database(_dsn("OW_CHUNK_DSN"))
+            db.validate_worker("ow_chunk_worker")
             store = EvidenceStore(Path(os.environ["OW_EVIDENCE_ROOT"]), read_only=True)
             if args.command == "work-once":
                 value = run_once(db, store)

@@ -71,7 +71,7 @@ COLUMNS = {
     "published_at search_vector",
     "document_heads": "source_id external_key document_id",
     "jobs": "job_id kind dedup_key payload status attempt fence lease_until result available_at "
-    "max_attempts last_error created_at updated_at",
+    "max_attempts last_error created_at updated_at claimed_by",
     "job_events": "event_id job_id attempt fence event code recorded_at",
     "chunks": "chunk_id document_id chunker ordinal start_offset end_offset text_sha256 body",
     "collection_runs": "run_id source_id status accepted_documents raw_sha256 error_code "
@@ -89,7 +89,8 @@ COLUMNS = {
     "remote_operations": "attempt_id operation_id route_id policy_sha256 task data_class "
     "decision reason packet_sha256 currency reserved status input_tokens output_tokens usage "
     "estimated_cost response_sha256 error_code created_at updated_at settlement_basis "
-    "settled_cost settlement_evidence_sha256 settled_by settlement_rationale settled_at",
+    "settled_cost settlement_evidence_sha256 settled_by settlement_rationale settled_at "
+    "database_principal",
     "lifecycle_control": "singleton dataset_id revision",
     "lifecycle_items": "source_id external_key retention_class retain_until",
     "lifecycle_holds": "hold_id source_id external_key placed_at released_at",
@@ -270,6 +271,9 @@ def _state(conn):
         JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='ow'
         AND NOT t.tgisinternal AND NOT ((c.relname='remote_operations'
           AND t.tgname='remote_operation_transition' AND t.tgtype=19)
+          OR (c.relname='remote_operations' AND t.tgname='guard_remote_owner' AND t.tgtype=23)
+          OR (c.relname='jobs' AND t.tgname='guard_worker_job' AND t.tgtype=23)
+          OR (c.relname='job_events' AND t.tgname='guard_worker_event' AND t.tgtype=7)
           OR (c.relname='assertion_reviews' AND t.tgname='authenticate_review'
             AND t.tgtype=7)) UNION ALL
         SELECT 1 FROM pg_rewrite w JOIN pg_class c ON c.oid=w.ev_class

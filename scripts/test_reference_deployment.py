@@ -271,6 +271,7 @@ def collector_environment(dsn, shared_gid=None):
     if shared_gid is not None:
         require(type(shared_gid) is int and shared_gid >= 0, "INVALID_SHARED_GROUP")
         result += f"OW_EVIDENCE_READ_GID={shared_gid}\n"
+    result += "OW_EVIDENCE_MAX_BYTES=67108864\n"
     return result
 
 
@@ -342,8 +343,14 @@ def prepare_database_fixture(venv, *, enabled_http_fixture=False, operational_fi
         for name, group in (
             ("ow_reference_collector", "ow_collector"),
             ("ow_reference_writer", "ow_writer"),
+            ("ow_reference_chunk", "ow_chunk_worker"),
             *(
-                ([("ow_reference_reader", "ow_reader"), ("ow_reference_enricher", "ow_writer")])
+                (
+                    [
+                        ("ow_reference_reader", "ow_reader"),
+                        ("ow_reference_enricher", "ow_local_enricher"),
+                    ]
+                )
                 if operational_fixture
                 else []
             ),
@@ -1761,13 +1768,18 @@ def local_api_service_acceptance(owned):
             }
         )
         generator = LocalApiGenerator(manifest)
+        with psycopg.connect(FIXTURE_ADMIN_DSN) as conn:
+            conn.execute(
+                "INSERT INTO ow.worker_kinds VALUES (%s,%s,'local')",
+                ("ow_reference_enricher", "document.enrich/" + generator.manifest.identity()),
+            )
         config = ENRICH_CONFIG / "local-api.json"
         write_private(config, manifest.model_dump_json(), mode=0o640)
         os.chown(config, 0, account.pw_gid)
         environment = ENRICH_CONFIG / "runtime.env"
         write_private(
             environment,
-            "OW_WRITER_DSN="
+            "OW_ENRICHMENT_DSN="
             + FIXTURE_WRITER_DSN.replace("ow_reference_writer", "ow_reference_enricher")
             + "\n",
             mode=0o640,
@@ -1940,12 +1952,12 @@ def operational_service_acceptance(worker, observer, owned):
             f"OW_HEALTH_MAX_PENDING_JOBS={pending}\nOW_HEALTH_MAX_FAILED_JOBS=0\n"
         )
 
-    writer_dsn = FIXTURE_WRITER_DSN
+    writer_dsn = FIXTURE_WRITER_DSN.replace("ow_reference_writer", "ow_reference_chunk")
     reader_dsn = (
         "host=127.0.0.1 port=5432 dbname=ow_test user=ow_reference_reader "
         "password=ci-fixture-only connect_timeout=5 sslmode=disable"
     )
-    write_private(WORK_CONFIG / "runtime.env", "OW_WRITER_DSN=" + writer_dsn + "\n")
+    write_private(WORK_CONFIG / "runtime.env", "OW_CHUNK_DSN=" + writer_dsn + "\n")
     write_private(HEALTH_CONFIG / "runtime.env", health_environment(8))
     before, chunks, sha = state()
     require(
@@ -1954,13 +1966,13 @@ def operational_service_acceptance(worker, observer, owned):
     )
     # Actual authentication failure must not claim or discard durable work.
     (WORK_CONFIG / "runtime.env").write_text(
-        "OW_WRITER_DSN="
+        "OW_CHUNK_DSN="
         + writer_dsn.replace("password=ci-fixture-only", "password=wrong-fixture")
         + "\n"
     )
     command(["systemctl", "start", WORK_SERVICE], allowed=(1,), timeout=20)
     require(state()[:2] == (before, []), "WORKER_AUTH_FAILURE_MUTATED_WORK")
-    (WORK_CONFIG / "runtime.env").write_text("OW_WRITER_DSN=" + writer_dsn + "\n")
+    (WORK_CONFIG / "runtime.env").write_text("OW_CHUNK_DSN=" + writer_dsn + "\n")
     command(["systemctl", "reset-failed", WORK_SERVICE])
     started = str(time.time())
     command(["systemctl", "start", WORK_SERVICE], timeout=30)

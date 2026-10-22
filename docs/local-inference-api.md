@@ -155,7 +155,7 @@ The opt-in `osint-workbench-enrich-local-api.service` and matching timer require
 
 - A separate `osint-workbench-enrich` OS account in the explicitly provisioned
   evidence-sharing group, and its own scoped login with `ow_writer` membership.
-- `/etc/osint-workbench-enrich/runtime.env` selecting only `OW_WRITER_DSN`, and
+- `/etc/osint-workbench-enrich/runtime.env` selecting only `OW_ENRICHMENT_DSN`, and
   `local-api.json` readable by the service through a root-owned private directory.
 - A root-only `local-api-token` loaded by systemd, referenced in the manifest as
   `{"kind":"systemd","name":"local-api-token"}`. Token values never belong in

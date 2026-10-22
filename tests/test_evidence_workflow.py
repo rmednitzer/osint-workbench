@@ -60,6 +60,7 @@ def signer_fixture(tmp_path):
             "related_evidence": [record(p) for p in sorted((leg / "assurance").iterdir())],
         }
         write_manifest(leg, document)
+        shutil.copytree(leg / "dist", tmp_path / "originals" / ("distributions-" + leg.name))
     workflow = yaml.safe_load(
         (Path(__file__).resolve().parents[1] / ".github/workflows/ci.yml").read_text()
     )
@@ -250,3 +251,14 @@ def test_runtime_workflow_wiring_preserves_lts_qualification_and_optional_author
     for job in shared["jobs"].values():
         assert "permissions" not in job
         assert not any("actions/attest@" in step.get("uses", "") for step in job["steps"])
+
+
+@pytest.mark.parametrize("suffix", [".whl", ".tar.gz"])
+def test_signer_refuses_replacement_even_with_matching_post_test_receipt(signer_fixture, suffix):
+    leg, document, run = signer_fixture
+    artifact = next(p for p in (leg / "dist").iterdir() if p.name.endswith(suffix))
+    artifact.write_bytes(b"replacement never installed by tests")
+    document["artifacts"] = [record(p) for p in sorted((leg / "dist").iterdir())]
+    write_manifest(leg, document)
+    result = run()
+    assert result.returncode != 0 and b"EVIDENCE_SET_REFUSED" in result.stderr
