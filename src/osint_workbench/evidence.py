@@ -13,12 +13,25 @@ from .text import digest
 
 MAX_OBJECT = 20 * 1024 * 1024
 ADMISSION_SECONDS = 5.0
+DEFAULT_MAX_BYTES = 1024 * 1024 * 1024
+MAX_STORE_OBJECTS = 100_000
+ALLOCATION_LOCK = ".allocation-lock"
 
 
 class EvidenceStore:
     """Immutable objects with dirfd-relative, no-follow reads and promotion."""
 
-    def __init__(self, root: Path, *, read_only: bool = False, shared_group: int | None = None):
+    def __init__(
+        self,
+        root: Path,
+        *,
+        read_only: bool = False,
+        shared_group: int | None = None,
+        max_bytes: int = DEFAULT_MAX_BYTES,
+    ):
+        if type(max_bytes) is not int or not 1 <= max_bytes <= 2**63 - 1:
+            raise WorkbenchError("INVALID_EVIDENCE_BUDGET")
+        self.max_bytes = max_bytes
         self.root = root
         self.read_only = read_only
         self.shared_group = shared_group
@@ -220,6 +233,89 @@ class EvidenceStore:
             finally:
                 os.close(child_fd)
 
+    @contextmanager
+    def _allocation(self, size, sha):
+        """Serialize cooperative writers and count physical retained/staging bytes.
+
+        The root admission lock still orders deletion/recovery. This separate
+        lock avoids upgrading shared admission while a DB transaction is held.
+        Unknown entries and excessive inventories fail closed. Filesystem quotas
+        remain necessary for noncooperating processes and database/WAL storage.
+        """
+        import fcntl
+
+        root = self.admitted_root()
+        fd = os.open(
+            ALLOCATION_LOCK,
+            os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW | os.O_NONBLOCK,
+            0o600,
+            dir_fd=root,
+        )
+        try:
+            info = os.fstat(fd)
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+                or info.st_uid != os.geteuid()
+                or stat.S_IMODE(info.st_mode) != 0o600
+                or info.st_size != 0
+            ):
+                raise WorkbenchError("EVIDENCE_BUDGET_UNAVAILABLE")
+            deadline = time.monotonic() + ADMISSION_SECONDS
+            while True:
+                try:
+                    fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    break
+                except BlockingIOError:
+                    if time.monotonic() >= deadline:
+                        raise WorkbenchError("EVIDENCE_STORE_BUSY") from None
+                    time.sleep(0.01)
+            # A concurrent writer may have promoted this exact object while
+            # this writer waited. Deduplication must also hold at the limit.
+            shard = os.open(sha[:2], os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=root)
+            try:
+                try:
+                    os.stat(sha, dir_fd=shard, follow_symlinks=False)
+                except FileNotFoundError:
+                    exists = False
+                else:
+                    self.get(sha)
+                    exists = True
+            finally:
+                os.close(shard)
+            if exists:
+                yield False
+                return
+            total, count = 0, 0
+            with os.scandir(root) as shards:
+                for shard in shards:
+                    if shard.name == ALLOCATION_LOCK:
+                        continue
+                    if not re.fullmatch(r"[0-9a-f]{2}", shard.name):
+                        raise WorkbenchError("EVIDENCE_BUDGET_UNAVAILABLE")
+                    child = os.open(
+                        shard.name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=root
+                    )
+                    try:
+                        with os.scandir(child) as entries:
+                            for entry in entries:
+                                count += 1
+                                info = entry.stat(follow_symlinks=False)
+                                if (
+                                    count >= MAX_STORE_OBJECTS
+                                    or not stat.S_ISREG(info.st_mode)
+                                    or not re.fullmatch(shard.name + r"[0-9a-f]{62}", entry.name)
+                                ):
+                                    raise WorkbenchError("EVIDENCE_BUDGET_UNAVAILABLE")
+                                total += info.st_size
+                    finally:
+                        os.close(child)
+            if total + size > self.max_bytes:
+                raise WorkbenchError("EVIDENCE_BUDGET_EXHAUSTED")
+            yield True
+        finally:
+            os.close(fd)
+
     def put(self, data: bytes) -> str:
         if self.read_only:
             raise WorkbenchError("READ_ONLY_STORE")
@@ -228,38 +324,51 @@ class EvidenceStore:
         sha = digest(data)
         temp = ".staging-" + uuid.uuid4().hex
         with self._directory(sha) as directory:
-            fd = os.open(
-                temp, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600, dir_fd=directory
-            )
+            # Existing exact objects consume no new space and remain reusable
+            # at the quota. Validate bytes rather than trusting the filename.
             try:
-                if self.shared_group is not None:
-                    try:
-                        info = os.fstat(fd)
-                        if info.st_nlink != 1 or info.st_gid != self.shared_group:
-                            raise WorkbenchError("EVIDENCE_SHARED_CUSTODY_UNSAFE")
-                        self._shared_acl(fd)
-                    except BaseException:
-                        os.close(fd)
-                        raise
-                with os.fdopen(fd, "wb") as stream:
-                    stream.write(data)
-                    stream.flush()
-                    if self.shared_group is not None:
-                        # Staging remains private until the complete bytes have
-                        # been flushed. Publish only after verified final custody.
-                        self._shared_acl(stream.fileno())
-                        os.fchmod(stream.fileno(), 0o640)
-                        self._shared_object(os.fstat(stream.fileno()), stream.fileno())
-                    os.fsync(stream.fileno())
+                os.stat(sha, dir_fd=directory, follow_symlinks=False)
+            except FileNotFoundError:
+                pass
+            else:
+                self.get(sha)
+                return sha
+            with self._allocation(len(data), sha) as allocate:
+                return self._put_admitted(data, sha, temp, directory) if allocate else sha
+
+    def _put_admitted(self, data, sha, temp, directory):
+        fd = os.open(
+            temp, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600, dir_fd=directory
+        )
+        try:
+            if self.shared_group is not None:
                 try:
-                    os.link(
-                        temp, sha, src_dir_fd=directory, dst_dir_fd=directory, follow_symlinks=False
-                    )
-                except FileExistsError:
-                    self.get(sha)
-                os.fsync(directory)
-            finally:
-                os.unlink(temp, dir_fd=directory)
+                    info = os.fstat(fd)
+                    if info.st_nlink != 1 or info.st_gid != self.shared_group:
+                        raise WorkbenchError("EVIDENCE_SHARED_CUSTODY_UNSAFE")
+                    self._shared_acl(fd)
+                except BaseException:
+                    os.close(fd)
+                    raise
+            with os.fdopen(fd, "wb") as stream:
+                stream.write(data)
+                stream.flush()
+                if self.shared_group is not None:
+                    # Staging remains private until the complete bytes have
+                    # been flushed. Publish only after verified final custody.
+                    self._shared_acl(stream.fileno())
+                    os.fchmod(stream.fileno(), 0o640)
+                    self._shared_object(os.fstat(stream.fileno()), stream.fileno())
+                os.fsync(stream.fileno())
+            try:
+                os.link(
+                    temp, sha, src_dir_fd=directory, dst_dir_fd=directory, follow_symlinks=False
+                )
+            except FileExistsError:
+                self.get(sha)
+            os.fsync(directory)
+        finally:
+            os.unlink(temp, dir_fd=directory)
         return sha
 
     def get(self, sha: str) -> bytes:

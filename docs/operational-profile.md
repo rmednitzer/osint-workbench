@@ -33,7 +33,7 @@ revision-bound results belong in [STATUS](../STATUS.md); this table is not a pas
 
 ## Bounded worker
 
-`osint-workbench work --max-jobs 32` uses only `OW_WRITER_DSN` and a read-only
+`osint-workbench work --max-jobs 32` uses only `OW_CHUNK_DSN` and a read-only
 `OW_EVIDENCE_ROOT`. The cap is 1–1000 claims per tick, default 32; it is a work
 bound, not a throughput target. It claims only `document.accepted`. Successful
 jobs commit independently. A failed job increments the aggregate failure count
@@ -116,3 +116,36 @@ not expand the core chunk worker, approve proposals, qualify a useful model or
 close the full enrichment/domain roadmap. Its persistent uncertainty and loaded
 credential custody require separate provisioning; the timer is never enabled by
 installation. Current revision-bound service evidence belongs in STATUS.
+
+
+## Runtime capabilities and evidence allocation
+
+See [ADR-0064](adr/0064-security-scan-control-boundaries.md). Provision the chunk
+login with only `ow_chunk_worker`. Local enrichment uses only `ow_local_enricher`
+and `OW_ENRICHMENT_DSN`; governed generation uses only `ow_dispatcher` and
+`OW_DISPATCH_DSN`. Keep `ow_writer` for explicit operator production commands.
+Do not combine these memberships or share a login across deployed components.
+
+The database administrator registers the selected enrichment login in
+`ow.worker_kinds` with its exact `document.enrich/GENERATOR_SHA256` kind and
+`local` or `remote` execution class. Use the generator identity from the selected
+validated manifest; changing that manifest requires an explicit assignment update.
+The worker cannot register itself. Queue reads remain shared; mutations are
+restricted by component, kind, terminal state and authenticated lease ownership.
+
+Select `OW_EVIDENCE_MAX_BYTES` consistently for every writer sharing a CAS root.
+The default is a finite 1 GiB library safety bound, not an operational capacity
+recommendation. A store also admits at most 100000 objects. Exact deduplication
+continues at the limit; new bytes fail with `EVIDENCE_BUDGET_EXHAUSTED`. Inspect
+retention and capacity; never delete referenced evidence merely to clear the
+alarm. Unknown files or abandoned staging cause `EVIDENCE_BUDGET_UNAVAILABLE`
+and require explicit custody/integrity investigation. The private
+`.allocation-lock` is part of the writer protocol; do not replace it while writers
+are active. External filesystem, database/WAL and backup quotas remain required.
+
+Quiesce workers before migration 13 and provision the new logins before restart.
+Historical running jobs can be reclaimed after expiry. Historical remote attempts
+with unknown ownership remain for separate accounting, never automatic release.
+Recovery does not import `worker_kinds`: reprovision deployment assignments under
+administrator authority on the isolated restored target. Binary rollback requires
+the matching pre-migration database; an old binary is not a schema downgrade.

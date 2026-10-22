@@ -9,9 +9,14 @@ from osint_workbench import cli
 @pytest.mark.parametrize("failed", [0, 1])
 def test_worker_cli_aggregate_exit_and_read_only_store(monkeypatch, capsys, failed):
     monkeypatch.setattr(sys, "argv", ["osint-workbench", "work", "--max-jobs", "7"])
-    monkeypatch.setenv("OW_WRITER_DSN", "synthetic")
+    monkeypatch.setenv("OW_CHUNK_DSN", "synthetic")
     monkeypatch.setenv("OW_EVIDENCE_ROOT", "/synthetic")
-    monkeypatch.setattr(cli, "Database", lambda dsn: dsn)
+
+    class WorkerDatabase(str):
+        def validate_worker(self, capability):
+            assert capability == "ow_chunk_worker"
+
+    monkeypatch.setattr(cli, "Database", WorkerDatabase)
 
     def store(path, *, read_only):
         assert str(path) == "/synthetic" and read_only
@@ -38,7 +43,7 @@ def test_worker_cli_aggregate_exit_and_read_only_store(monkeypatch, capsys, fail
 @pytest.mark.parametrize("limit", [0, 1001])
 def test_worker_limit_refused_before_backend(monkeypatch, capsys, limit):
     monkeypatch.setattr(sys, "argv", ["ow", "work", "--max-jobs", str(limit)])
-    monkeypatch.delenv("OW_WRITER_DSN", raising=False)
+    monkeypatch.delenv("OW_CHUNK_DSN", raising=False)
     with pytest.raises(SystemExit) as error:
         cli.main()
     assert error.value.code == 1

@@ -7,7 +7,7 @@ from pathlib import Path
 
 ROLES = {
     "writer": "OW_WRITER_DSN",
-    "worker": "OW_WRITER_DSN",
+    "worker": "OW_CHUNK_DSN",
     "reader": "OW_READER_DSN",
     "lifecycle": "OW_LIFECYCLE_DSN",
     "recovery": "OW_RECOVERY_DSN",

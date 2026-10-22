@@ -12,6 +12,19 @@ drift and operator-file admission, and adds an initial bounded
 [ASVS control assessment](docs/security/control-evidence.md). Full-profile
 acceptance remains open; the review is not a replacement runtime receipt.
 
+## Security control hardening
+
+[ADR-0064](docs/adr/0064-security-scan-control-boundaries.md) adds immutable
+pre-test distribution handoffs and fresh-runner continuity checks, physical ZIP
+inventory/metadata scanning, serialized cumulative CAS admission, separately
+scoped runtime worker credentials and database mutation ownership, and conservative
+cloud reservations until independent settlement. Core migration 13 requires new
+worker credentials and enrichment-kind provisioning before service startup.
+These changes do not establish hosted CI, operational migration or service
+acceptance until their revision-bound results exist. Historical receipts remain
+unchanged. Database/WAL quotas and component-confidential queue reads remain
+outside the CAS and mutation guards.
+
 ## Current runtime qualification
 
 Required foundation and signed build evidence covers Ubuntu 24.04/CPython 3.12
@@ -24,8 +37,8 @@ profiles and counts; this policy change is not a new runtime acceptance result.
 
 ## Current contracts
 
-Core schema **12**, retrieval profile **5**, checkpoint format **2**.
-The programme contains 63 ADRs, 58 requirements and 51 full acceptance scenarios.
+Core schema **13**, retrieval profile **5**, checkpoint format **2**.
+The programme contains 64 ADRs, 58 requirements and 51 full acceptance scenarios.
 Native Ubuntu installs use the distro Python in a venv: 24.04/3.12 and
 26.04/3.14. Python 3.14 is not the global minimum; see
 [runtime support](docs/runtime-support.md#native-ubuntu-installation).
@@ -46,7 +59,7 @@ scope; passing foundation regressions does not close every scenario.
 | Local inference | Opt-in [local compatible chat API](docs/local-inference-api.md) with managed credentials, classified requests and durable uncertainty/resolution records; synthetic ONNX/GGUF execution, Unix-socket generation, literal source/trusted-template token separation and tokenization-policy generator identity; shared cooperative admission, uncertain-work markers and encoder/reranker parent-death binding | API model/qualification and no-forwarding/unmetered facts are operator declarations; API profile lacks native token isolation/context preflight; actual Ollama/vLLM deployment remains unqualified. Automatic tokenizer suffixes/transformations unsupported; old enrichment kinds stay queued; single-account Linux controls, not a same-UID sandbox or cross-host/GPU scheduler; scheduling overlap and uncertainty remain explicit |
 | Enrichment and cited products | Typed extraction proposals, explicitly named quotation-bound label bindings (response v2), original-text evidence spans, append-only operator review, current accepted assertion reads and evidence-bound cited digests | Review requires a separate database principal; actor labels do not establish human independence; subject/object labels need not occur in the quote; no entailment, richer aliases/merges, diversity or semantic-quality acceptance |
 | Domain profiles | Strict offline advisory-observation envelope and [evidence-verified KEV operator projection](docs/kev-advisory-projection.md), with explicit source attribution, normalized UTF-8 evidence and unknown current membership | No upstream advisory persistence/applicability engine or implemented regulatory intelligence; catalogue presence does not establish exposure |
-| Governed cloud | Explicitly routed/classified compatible chat-completions enrichment, declared provider facts, denial records, Decimal per-currency reservations and unresolved-attempt replay guard | Provider facts are operator declarations; no independent sovereignty verification, live-provider acceptance, native vendor adapters, streaming, batches, silent fallback or separate dispatcher identity |
+| Governed cloud | Explicitly routed/classified compatible chat-completions enrichment, declared provider facts, denial records, Decimal per-currency reservations and unresolved-attempt replay guard | Provider facts are operator declarations; no independent sovereignty verification, live-provider acceptance, native vendor adapters, streaming, batches or silent fallback |
 | Accounting | Immutable evidence-digest-bound operator settlement under separate accounting authority; database transition times and row-lock ordering; Read Committed reservation admission before the route lock | No invoice import, automatic reconciliation or settlement correction workflow; settlement asserts an amount, not verified invoice semantics; same terminal job is not requeued automatically |
 | Lifecycle and recovery | Retention/holds/logical retirement, filtered reads, current-policy restore reconciliation, bounded private checkpoint/empty-target restore, reviewed orphan GC and transactional retired-record SQL purge | Purge preserves remote ledger rows; CAS/shared feeds/WAL/backups/provider and published copies are not erased; independent policy custody, larger-corpus and full-host/PITR acceptance remain open |
 | Deployment | Non-root feed/API collectors, bounded chunk-worker, opt-in local-API enrichment and aggregate-health service/timer templates; explicit group-readable evidence, guarded disposable reference-service harness and opt-in isolated Compose core acceptance | Thresholds are operator choices; unsupported downstream jobs remain queued; historical receipts cover named revisions; no complete stack, dashboard/notification routing, backup automation or operational-host acceptance |

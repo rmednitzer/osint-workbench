@@ -23,7 +23,8 @@
       "environment": {
         "PROFILE_ROLE": "writer",
         "OW_EVIDENCE_ROOT": "/evidence",
-        "OW_EVIDENCE_READ_GID": "10100"
+        "OW_EVIDENCE_READ_GID": "10100",
+        "OW_EVIDENCE_MAX_BYTES": "67108864"
       },
       "volumes": [
         {

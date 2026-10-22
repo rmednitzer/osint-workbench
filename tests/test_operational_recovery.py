@@ -183,8 +183,8 @@ def test_collected_chunked_checkpoint_restores_current_policy_and_restart_state(
     for completed in fixture["completed"]:
         job = cli(
             ["job", "inspect", completed["job_id"]],
-            role="OW_WRITER_DSN",
-            dsn=destination["writer"],
+            role="OW_CHUNK_DSN",
+            dsn=destination["chunk"],
             root=root,
         )
         assert job["status"] == "succeeded" and job["events"][-1]["event"] == "succeeded"
@@ -192,7 +192,7 @@ def test_collected_chunked_checkpoint_restores_current_policy_and_restart_state(
         job = Jobs(Database(destination["writer"])).inspect(pending["job_id"])
         assert job["status"] == "failed"
         assert job["events"][-1]["code"] == "RECOVERY_RECONCILIATION_REQUIRED"
-    assert cli(["work-once"], role="OW_WRITER_DSN", dsn=destination["writer"], root=root) == {
+    assert cli(["work-once"], role="OW_CHUNK_DSN", dsn=destination["chunk"], root=root) == {
         "status": "idle"
     }
     with Database(destination["writer"]).connect() as conn:

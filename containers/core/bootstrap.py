@@ -61,6 +61,8 @@ def main():
             raise RuntimeError("PROFILE_STORE_INVALID")
         total = 0
         for prefix in sorted(source.iterdir()):
+            if prefix.name == ".allocation-lock" and regular(prefix, 0) == b"":
+                continue
             if not re.fullmatch("[0-9a-f]{2}", prefix.name) or not stat.S_ISDIR(
                 prefix.lstat().st_mode
             ):

@@ -259,13 +259,12 @@ def observed_cost(route: Route, input_tokens: int, output_tokens: int):
     return amount.quantize(Decimal("0.000000001"), rounding=ROUND_CEILING)
 
 
-# Anything that could have cost money counts at its reservation unless usage
-# was reported; denied and released attempts sent no application request bytes. An
-# operator settlement bound to provider evidence replaces either estimate.
+# Response usage is telemetry, never authority to release admission exposure.
+# Only a separate evidence-bound settlement may replace the reservation; denied
+# and released attempts provably sent no application request bytes.
 _EXPOSURE = """SELECT coalesce(sum(CASE
     WHEN settlement_basis IS NOT NULL THEN settled_cost
     WHEN status IN ('denied','released') THEN 0
-    WHEN usage='reported' THEN estimated_cost
     ELSE reserved END),0) AS exposure
     FROM ow.remote_operations WHERE route_id=%s AND currency=%s"""
 
@@ -442,7 +441,12 @@ def _accounting(conn):
         "SELECT coalesce(pg_has_role(current_user,to_regrole('ow_accounting')::oid,'USAGE'),"
         "false) AS accounting,pg_has_role(current_user,'ow_writer','MEMBER') AS writer"
     ).fetchone()
-    if not row["accounting"] or row["writer"]:
+    runtime = conn.execute(
+        "SELECT pg_has_role(current_user,'ow_dispatcher','MEMBER') OR "
+        "pg_has_role(current_user,'ow_local_enricher','MEMBER') OR "
+        "pg_has_role(current_user,'ow_chunk_worker','MEMBER') AS worker"
+    ).fetchone()["worker"]
+    if not row["accounting"] or row["writer"] or runtime:
         raise WorkbenchError("ACCOUNTING_OPERATOR_REQUIRED")
 
 
