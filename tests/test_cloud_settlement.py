@@ -498,6 +498,9 @@ def test_core9_checkpoint_attempts_adopt_unsettled(databases, destination, tmp_p
         **policy_arguments(roles, path),
     )
     assert result["adopted_core_v9"] is True
+    # Published core 9 carried no authenticated runtime ownership.
+    for record in before:
+        record["database_principal"] = None
     assert ledger({"admin": destination["admin"]}) == before
 
 

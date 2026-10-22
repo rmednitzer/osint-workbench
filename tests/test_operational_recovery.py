@@ -183,8 +183,8 @@ def test_collected_chunked_checkpoint_restores_current_policy_and_restart_state(
     for completed in fixture["completed"]:
         job = cli(
             ["job", "inspect", completed["job_id"]],
-            role="OW_CHUNK_DSN",
-            dsn=destination["chunk"],
+            role="OW_WRITER_DSN",
+            dsn=destination["writer"],
             root=root,
         )
         assert job["status"] == "succeeded" and job["events"][-1]["event"] == "succeeded"
