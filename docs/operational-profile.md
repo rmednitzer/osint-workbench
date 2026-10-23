@@ -58,7 +58,8 @@ downstream backlog is a remaining workflow integration limit.
 ### Sanitized runtime diagnostics
 
 Run `osint-workbench diagnose` for a fixed JSON report of application version,
-numeric Python version, required Ubuntu/Python profile matching and presence of
+numeric Python version, architecture, required Ubuntu/Python/x86-64 profile
+matching and presence of
 the reader DSN, evidence root and encoder/reranker manifest environment variables.
 Presence means a nonempty value, not valid configuration. The offline default
 does not connect to PostgreSQL, open application configuration/evidence/model

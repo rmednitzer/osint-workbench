@@ -28,9 +28,13 @@ def diagnose(*, check_reader=False):
         release = {}
     ubuntu = release.get("VERSION_ID") if release.get("ID") == "ubuntu" else None
     ubuntu = ubuntu if ubuntu in ("24.04", "26.04") else "other_or_unknown"
+    machine = platform.machine()
+    architecture = machine if machine in ("x86_64", "aarch64") else "other_or_unknown"
     minor = sys.version_info[:2]
-    required_profile = platform.python_implementation() == "CPython" and (
-        (ubuntu == "24.04" and minor == (3, 12)) or (ubuntu == "26.04" and minor == (3, 14))
+    required_profile = (
+        architecture == "x86_64"
+        and platform.python_implementation() == "CPython"
+        and ((ubuntu == "24.04" and minor == (3, 12)) or (ubuntu == "26.04" and minor == (3, 14)))
     )
     result = {
         "format": 1,
@@ -40,6 +44,7 @@ def diagnose(*, check_reader=False):
             "python": ".".join(str(n) for n in sys.version_info[:3]),
             "cpython": platform.python_implementation() == "CPython",
             "ubuntu_profile": ubuntu,
+            "architecture": architecture,
             "matches_required_profile": required_profile,
         },
         "configuration_present": {key: bool(os.environ.get(key)) for key in _CONFIGURATION},

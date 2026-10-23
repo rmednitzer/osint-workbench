@@ -101,3 +101,31 @@ def test_native_reader_and_writer_authority(databases, monkeypatch):
     assert diagnostics.diagnose(check_reader=True)["reader"]["state"] == "compatible"
     monkeypatch.setenv("OW_READER_DSN", roles["writer"])
     assert diagnostics.diagnose(check_reader=True)["reader"]["state"] == "unavailable_or_unsafe"
+
+
+@pytest.mark.parametrize(
+    "ubuntu,minor,machine,implementation,matches",
+    [
+        ("24.04", 12, "x86_64", "CPython", True),
+        ("26.04", 14, "x86_64", "CPython", True),
+        ("24.04", 12, "aarch64", "CPython", False),
+        ("26.04", 14, "aarch64", "CPython", False),
+        ("24.04", 13, "x86_64", "CPython", False),
+        ("24.04", 12, "x86_64", "PyPy", False),
+        ("24.04", 12, "private-canary", "CPython", False),
+    ],
+)
+def test_required_profile_matches_only_supported_native_triples(
+    monkeypatch, ubuntu, minor, machine, implementation, matches
+):
+    monkeypatch.setattr(
+        diagnostics.platform,
+        "freedesktop_os_release",
+        lambda: {"ID": "ubuntu", "VERSION_ID": ubuntu},
+    )
+    monkeypatch.setattr(diagnostics.platform, "machine", lambda: machine)
+    monkeypatch.setattr(diagnostics.platform, "python_implementation", lambda: implementation)
+    monkeypatch.setattr(diagnostics.sys, "version_info", (3, minor, 0))
+    value = diagnostics.diagnose()
+    assert value["runtime"]["matches_required_profile"] is matches
+    assert "private-canary" not in json.dumps(value)
