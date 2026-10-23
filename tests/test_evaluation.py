@@ -331,3 +331,20 @@ def test_paired_cli_is_offline_and_never_overwrites_output(tmp_path):
     assert "private-canary" not in result.stdout and str(tmp_path) not in result.stdout
     again = subprocess.run(command, env=env, capture_output=True, text=True, timeout=15)
     assert again.returncode == 1 and output.read_bytes() == original
+
+
+@pytest.mark.parametrize("side", ["suite", "baseline", "candidate"])
+def test_paired_unserializable_models_return_only_invalid_input(side):
+    import warnings
+
+    from osint_workbench.evaluation import compare
+
+    suite = load(suite_input())
+    valid = predictions(suite)
+    values = {"suite": suite, "baseline": valid, "candidate": valid}
+    field = "queries" if side == "suite" else "rankings"
+    values[side] = values[side].model_copy(update={field: (object(),)})
+    with warnings.catch_warnings(record=True) as emitted:
+        with pytest.raises(WorkbenchError, match="^EVALUATION_INPUT_INVALID$"):
+            compare(**values)
+    assert emitted == []

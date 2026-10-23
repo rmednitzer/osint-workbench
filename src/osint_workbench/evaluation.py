@@ -252,9 +252,18 @@ def compare(suite: Suite, baseline: Predictions, candidate: Predictions) -> dict
     Pairing is by query identity, never prediction order. No uncertainty or
     population-generalization estimate is inferred from these fixed cases.
     """
-    suite = parse_suite(suite.model_dump_json().encode())
-    baseline = parse_predictions(baseline.model_dump_json().encode())
-    candidate = parse_predictions(candidate.model_dump_json().encode())
+    if not isinstance(suite, Suite) or not all(
+        isinstance(value, Predictions) for value in (baseline, candidate)
+    ):
+        raise WorkbenchError("EVALUATION_INPUT_INVALID")
+    try:
+        # Constructed models can fail serialization before strict parsing starts.
+        # Suppress serializer warnings, which can include caller-provided values.
+        suite = parse_suite(suite.model_dump_json(warnings=False).encode())
+        baseline = parse_predictions(baseline.model_dump_json(warnings=False).encode())
+        candidate = parse_predictions(candidate.model_dump_json(warnings=False).encode())
+    except (ValueError, TypeError, RecursionError):
+        raise WorkbenchError("EVALUATION_INPUT_INVALID") from None
     receipts = {"baseline": evaluate(suite, baseline), "candidate": evaluate(suite, candidate)}
     rows = {
         side: {row["query_id"]: row for row in receipt["payload"]["queries"]}
