@@ -1,6 +1,7 @@
 import hashlib
 import json
 import uuid
+from contextlib import nullcontext
 from importlib.resources import files
 
 import psycopg
@@ -146,13 +147,15 @@ class Database:
             if dangerous or any((r["relname"], r["privilege"]) not in allowed for r in grants):
                 raise WorkbenchError("UNSAFE_WORKER_IDENTITY")
 
-    def validate_reader(self) -> None:
+    def validate_reader(self, *, connection=None) -> None:
         """Refuse application reads beyond the published reader projection.
 
         Effective ACL checks include inherited and PUBLIC grants. Unrelated role
         memberships are refused even without inheritance: SET ROLE must not
         recover broader authority after this startup check. Missing read grants
         can reduce availability but cannot expand this allowlist.
+        A supplied connection remains caller-owned and is checked in place;
+        otherwise this method opens and closes its own session.
         """
         document_columns = (
             "document_id source_id external_key snapshot_id title body published_at search_vector"
@@ -201,7 +204,7 @@ class Database:
         allowed = {
             ("ow", name, column) for name, names in columns.items() for column in names.split()
         }
-        with self.connect() as conn:
+        with self.connect() if connection is None else nullcontext(connection) as conn:
             row = conn.execute("""SELECT
               session_user<>current_user AS changed_identity,
               EXISTS(SELECT 1 FROM pg_roles r

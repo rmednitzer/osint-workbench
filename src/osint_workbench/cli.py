@@ -10,6 +10,7 @@ from pydantic import ValidationError
 
 from . import (
     cloud,
+    diagnostics,
     evaluation,
     garbage_collection,
     health,
@@ -151,6 +152,8 @@ def _evaluation_input(path):
 def main():
     parser = argparse.ArgumentParser(prog="osint-workbench")
     sub = parser.add_subparsers(dest="command", required=True)
+    diagnostic = sub.add_parser("diagnose")
+    diagnostic.add_argument("--check-reader", action="store_true")
     assess = sub.add_parser("evaluate")
     modes = assess.add_subparsers(dest="mode", required=True)
     replay = modes.add_parser("replay")
@@ -279,6 +282,12 @@ def main():
     job.add_argument("job_id")
     args = parser.parse_args()
     try:
+        if args.command == "diagnose":
+            value = diagnostics.diagnose(check_reader=args.check_reader)
+            print(json.dumps(value))
+            if args.check_reader and value["reader"]["state"] != "compatible":
+                raise SystemExit(1)
+            return
         if args.command == "evaluate":
             suite = evaluation.parse_suite(_evaluation_input(args.suite))
             if args.mode == "replay":
