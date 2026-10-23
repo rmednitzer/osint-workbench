@@ -34,6 +34,12 @@ cover the no-application-I/O boundary, fixed output projection, refusal and nati
 reader/writer authority; qualification requires their revision-bound CI results.
 See [diagnostics](docs/operational-profile.md#sanitized-runtime-diagnostics).
 
+The source-checkout [template comparison](docs/deployment.md#offline-template-comparison)
+adds an opt-in read-only comparison of selected installed systemd template bytes.
+Its bounded sanitized report distinguishes changed/missing/unsafe files and invalid
+reference reads. It does not inspect effective systemd settings, ownership, running
+services or private configuration and does not establish deployment qualification.
+
 Required foundation and signed build evidence covers Ubuntu 24.04/CPython 3.12
 and Ubuntu 26.04/CPython 3.14. Python 3.13 remains permitted with optional
 weekly/manual compatibility coverage. The manual Python 3.15 probe covers locked

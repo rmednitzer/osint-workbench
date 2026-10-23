@@ -14,6 +14,43 @@ The [operational profile](operational-profile.md) defines its goal, health
 semantics and remaining adoption gates. The procedure below first describes
 private collector storage; the shared profile is a separate explicit choice.
 
+## Offline template comparison
+
+From a trusted checkout pinned to the deployed release, run:
+
+```sh
+python3 scripts/check_deployment_templates.py --profile collector
+python3 scripts/check_deployment_templates.py --profile collector --profile shared
+```
+
+The checkout tool compares exact bytes at fixed installed template paths beneath
+`/etc/systemd/system`. With `--offline`, it compares the fixed `systemd` directory
+beneath the current working directory instead; invoke the checkout script by its
+absolute path from a trusted staging directory. Select profiles explicitly: `collector`, `shared`, `api`,
+`api-credential` and `local-api`; repeat `--profile` to combine them. The `shared`
+profile checks the collector sharing drop-in and worker/health service/timer pairs.
+The `api-credential` profile checks the API credential drop-in. Drop-ins are checked
+under the matching service's `.service.d` directory with their supplied filenames.
+The checker is shipped in the source checkout, not the application wheel.
+
+JSON contains only public template names and fixed states: `matches`, `changed`,
+`missing`, `unsafe`, `unavailable`, or `reference_unavailable_or_unsafe`. Exit 0
+means all selected bytes match, 1 means installed drift/refusal and 2 means a
+reference could not be read safely. Reads are limited to 64 KiB per file; final
+root, drop-in directory and file symlinks, special files and oversized files are
+refused. Parent directories of the selected root must be trusted. No file
+contents, actual hashes, private paths or operating-system exception text are
+printed. It performs no writes, subprocesses, networking or application reads.
+Run it with existing read access; it does not request privileges or repair files.
+
+A changed template may be an intentional local edit: review it privately against
+the selected revision. A match is only a file comparison. Other drop-ins, unit
+search-path precedence, loaded manager state, enablement, ownership/modes,
+credentials, wheel identity and running service behavior are outside this check.
+It does not establish effective configuration, service health or deployment
+qualification. Continue the syntax, effective-setting and synthetic acceptance
+checks below; never overwrite an override merely to obtain a match.
+
 ## Opt-in container test profile
 
 The [disposable Compose core acceptance](compose-core.md) tests installed core
