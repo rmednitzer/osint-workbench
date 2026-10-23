@@ -99,7 +99,11 @@ Answerable and unsupported queries retain separate metric populations. Missing
 populations yield null deltas and zero paired counts; they do not become ties or
 passing gates. Both prediction files must satisfy the existing exact coverage,
 suite-hash and ranking contracts. The Python API is
-`evaluation.compare(suite, baseline, candidate)`.
+`evaluation.compare(suite_data, baseline_data, candidate_data)`, accepting serialized
+JSON bytes only, with the existing 8 MiB limit per input checked before parsing.
+Python model objects are refused without traversal or serialization; callers must
+supply the original input bytes. Unknown wire fields are rejected rather than
+silently removed by a model serializer.
 
 Exit 0 means a valid comparison was written, including when both systems fail
 all targets or the candidate regresses. Exit 1 indicates invalid input or failure

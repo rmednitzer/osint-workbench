@@ -22,15 +22,19 @@ no execution or adoption authority. A numerical gain is not population evidence.
 | No change; inspect separate replay receipts manually | Preserves current behavior but makes pairing and source-identity mistakes easier | Retain as a valid fallback |
 | Ad hoc spreadsheets or copied aggregate totals | Flexible, but pairing/denominators and provenance depend on separate manual work | Not the repository contract |
 | Automatic significance tests, confidence intervals or winner selection | Requires independent-unit, sampling and decision assumptions absent from supplied fixed suites | Rejected for this increment |
+| Serialize copied Python model inputs before validating | Can omit undeclared fields and allocate oversized serialized output before bounds apply | Rejected; accept bounded bytes only |
 | Versioned paired replay with fixed descriptive limits | Reuses strict scorer semantics and retains query-level changes without making adoption claims | Selected |
 
 ## Decision and externally visible contract
 
-Add `evaluation.compare(suite, baseline, candidate)` and `evaluate compare`.
-Revalidate all input models, including constructed/copied instances, before
-scoring. Normalize serialization and validation failures to bounded input errors;
-do not emit serializer warnings containing supplied values. Require both complete
-prediction sets to bind the same canonical validated suite. Pair by query ID,
+Add `evaluation.compare(suite_data, baseline_data, candidate_data)` and
+`evaluate compare`. The Python API accepts original serialized JSON bytes only.
+Use the existing strict parsers, enforcing the 8 MiB per-input bound before JSON
+parsing and rejecting unknown wire fields. Refuse Python model objects without
+traversal or serialization: schema serialization can silently omit undeclared
+copied-model state and allocate unbounded output before validation. This avoids
+serializer errors/warnings and a second structural-validation implementation.
+Require both complete prediction sets to bind the same canonical validated suite. Pair by query ID,
 never file ordering; reuse the existing scorer without changing its version.
 
 The format-1 `paired_ranking_comparison` receipt and policy
@@ -83,7 +87,8 @@ needed because comparison cannot activate anything.
 
 Regression cases discriminate independent arithmetic, query reordering,
 improvement/regression/ties, missing populations, wrong-suite inputs on either
-side, invalid/unserializable constructed models, offline CLI and no-overwrite
+side, model-object refusal without serialization, byte bounds, undeclared nested wire
+fields, offline CLI and no-overwrite
 private persistence. Required installed/native CI is revision-bound evidence,
 separate from this decision. Existing public predictions can exercise replay
 without new inference; their equal metrics and failed abstention remain negative

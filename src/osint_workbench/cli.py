@@ -294,11 +294,12 @@ def main():
                 raise SystemExit(1)
             return
         if args.command == "evaluate":
-            suite = evaluation.parse_suite(_evaluation_input(args.suite))
             if args.mode == "compare":
-                baseline = evaluation.parse_predictions(_evaluation_input(args.baseline))
-                candidate = evaluation.parse_predictions(_evaluation_input(args.candidate))
-                value = evaluation.compare(suite, baseline, candidate)
+                value = evaluation.compare(
+                    _evaluation_input(args.suite),
+                    _evaluation_input(args.baseline),
+                    _evaluation_input(args.candidate),
+                )
                 recovery._write_new(args.file, evaluation._canonical(value))
                 print(
                     json.dumps(
@@ -306,6 +307,7 @@ def main():
                     )
                 )
                 return
+            suite = evaluation.parse_suite(_evaluation_input(args.suite))
             if args.mode == "replay":
                 predictions = evaluation.parse_predictions(_evaluation_input(args.predictions))
                 value = evaluation.evaluate(suite, predictions)

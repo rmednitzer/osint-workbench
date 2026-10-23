@@ -204,14 +204,18 @@ def test_bounds_are_semantic_not_only_byte_count():
         load(value)
 
 
-def test_paired_comparison_uses_query_identity_and_independent_deltas():
+def compare_models(suite, baseline, candidate):
     from osint_workbench.evaluation import compare
 
+    return compare(*(value.model_dump_json().encode() for value in (suite, baseline, candidate)))
+
+
+def test_paired_comparison_uses_query_identity_and_independent_deltas():
     suite = load(suite_input())
     baseline = predictions(suite, abstain=False)
     candidate = predictions(suite, ("doc0", "doc1"))
     candidate = candidate.model_copy(update={"rankings": tuple(reversed(candidate.rankings))})
-    receipt = compare(suite, baseline, candidate)
+    receipt = compare_models(suite, baseline, candidate)
     payload = receipt["payload"]
     expected_ndcg = (1 / math.log2(3)) / (7 + 1 / math.log2(3))
     for split in ("development", "held_out"):
@@ -228,7 +232,7 @@ def test_paired_comparison_uses_query_identity_and_independent_deltas():
             counts == {"improved": 1, "regressed": 0, "unchanged": 0, "count": 1}
             for counts in summary["paired_counts"].values()
         )
-    reverse = compare(suite, candidate, baseline)["payload"]
+    reverse = compare_models(suite, candidate, baseline)["payload"]
     assert reverse["splits"]["held_out"]["candidate_minus_baseline"]["recall_at_k"] == -0.5
     assert reverse["splits"]["held_out"]["paired_counts"]["recall_at_k"]["regressed"] == 1
     assert (
@@ -245,13 +249,11 @@ def test_paired_comparison_uses_query_identity_and_independent_deltas():
 
 
 def test_paired_ties_and_missing_populations_do_not_become_improvements():
-    from osint_workbench.evaluation import compare
-
     value = suite_input()
     value["queries"] = value["queries"][:1]
     suite = load(value)
     replay = predictions(suite)
-    result = compare(suite, replay, replay)["payload"]
+    result = compare_models(suite, replay, replay)["payload"]
     dev = result["splits"]["development"]
     assert dev["paired_counts"]["recall_at_k"] == {
         "improved": 0,
@@ -268,29 +270,13 @@ def test_paired_ties_and_missing_populations_do_not_become_improvements():
 
 @pytest.mark.parametrize("side", ["baseline", "candidate"])
 def test_paired_comparison_refuses_mismatched_suite_on_either_side(side):
-    from osint_workbench.evaluation import compare
-
     suite = load(suite_input())
     valid = predictions(suite)
     invalid = valid.model_copy(update={"suite_sha256": "f" * 64})
     with pytest.raises(WorkbenchError, match="EVALUATION_SUITE_MISMATCH"):
-        compare(suite, **{side: invalid, "candidate" if side == "baseline" else "baseline": valid})
-
-
-def test_paired_comparison_revalidates_constructed_objects():
-    from osint_workbench.evaluation import compare
-
-    suite = load(suite_input())
-    valid = predictions(suite)
-    invalid = valid.model_copy(
-        update={
-            "rankings": (
-                valid.rankings[0].model_copy(update={"abstained": True, "document_ids": ("doc0",)}),
-            )
-        }
-    )
-    with pytest.raises(WorkbenchError, match="EVALUATION_INPUT_INVALID"):
-        compare(suite, valid, invalid)
+        compare_models(
+            suite, **{side: invalid, "candidate" if side == "baseline" else "baseline": valid}
+        )
 
 
 def test_paired_cli_is_offline_and_never_overwrites_output(tmp_path):
@@ -333,18 +319,47 @@ def test_paired_cli_is_offline_and_never_overwrites_output(tmp_path):
     assert again.returncode == 1 and output.read_bytes() == original
 
 
-@pytest.mark.parametrize("side", ["suite", "baseline", "candidate"])
-def test_paired_unserializable_models_return_only_invalid_input(side):
-    import warnings
-
+@pytest.mark.parametrize("side", range(3))
+def test_paired_api_rejects_model_objects_without_serializing_them(side, monkeypatch):
     from osint_workbench.evaluation import compare
 
     suite = load(suite_input())
     valid = predictions(suite)
-    values = {"suite": suite, "baseline": valid, "candidate": valid}
-    field = "queries" if side == "suite" else "rankings"
-    values[side] = values[side].model_copy(update={field: (object(),)})
-    with warnings.catch_warnings(record=True) as emitted:
-        with pytest.raises(WorkbenchError, match="^EVALUATION_INPUT_INVALID$"):
-            compare(**values)
-    assert emitted == []
+    models = (suite, valid, valid)
+    values = [value.model_dump_json().encode() for value in models]
+    # Undeclared attributes must not disappear through schema serialization.
+    values[side] = models[side].model_copy(update={"unexpected": object()})
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("caller-owned model must not be serialized")
+
+    monkeypatch.setattr(type(models[side]), "model_dump_json", forbidden)
+    with pytest.raises(WorkbenchError, match="^EVALUATION_INPUT_INVALID$"):
+        compare(*values)
+
+
+@pytest.mark.parametrize("side", range(3))
+def test_paired_api_rejects_oversized_bytes_on_either_prediction_or_suite(side):
+    from osint_workbench.evaluation import MAX_INPUT_BYTES, compare
+
+    suite = load(suite_input())
+    valid = predictions(suite)
+    values = [value.model_dump_json().encode() for value in (suite, valid, valid)]
+    values[side] = b" " * (MAX_INPUT_BYTES + 1)
+    with pytest.raises(WorkbenchError, match="^EVALUATION_INPUT_INVALID$"):
+        compare(*values)
+
+
+def test_paired_api_refuses_undeclared_nested_wire_fields():
+    from osint_workbench.evaluation import compare
+
+    suite = load(suite_input())
+    valid = predictions(suite)
+    value = valid.model_dump(mode="json")
+    value["rankings"][0]["unexpected"] = "private-canary"
+    with pytest.raises(WorkbenchError, match="^EVALUATION_INPUT_INVALID$"):
+        compare(
+            suite.model_dump_json().encode(),
+            valid.model_dump_json().encode(),
+            json.dumps(value).encode(),
+        )

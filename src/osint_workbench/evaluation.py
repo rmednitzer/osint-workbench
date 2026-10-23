@@ -246,24 +246,16 @@ def evaluate(suite: Suite, predictions: Predictions) -> dict:
     return {"payload": receipt, "sha256": hashlib.sha256(_canonical(receipt)).hexdigest()}
 
 
-def compare(suite: Suite, baseline: Predictions, candidate: Predictions) -> dict:
-    """Describe paired changes on one frozen suite; do not select or adopt a model.
+def compare(suite_data: bytes, baseline_data: bytes, candidate_data: bytes) -> dict:
+    """Describe paired changes from bounded serialized JSON; never adopt a model.
 
-    Pairing is by query identity, never prediction order. No uncertainty or
-    population-generalization estimate is inferred from these fixed cases.
+    Accept bytes only: do not serialize caller-owned constructed Python models.
+    Pair by query identity, never prediction order. No population uncertainty
+    estimate is inferred from these fixed cases.
     """
-    if not isinstance(suite, Suite) or not all(
-        isinstance(value, Predictions) for value in (baseline, candidate)
-    ):
-        raise WorkbenchError("EVALUATION_INPUT_INVALID")
-    try:
-        # Constructed models can fail serialization before strict parsing starts.
-        # Suppress serializer warnings, which can include caller-provided values.
-        suite = parse_suite(suite.model_dump_json(warnings=False).encode())
-        baseline = parse_predictions(baseline.model_dump_json(warnings=False).encode())
-        candidate = parse_predictions(candidate.model_dump_json(warnings=False).encode())
-    except (ValueError, TypeError, RecursionError):
-        raise WorkbenchError("EVALUATION_INPUT_INVALID") from None
+    suite = parse_suite(suite_data)
+    baseline = parse_predictions(baseline_data)
+    candidate = parse_predictions(candidate_data)
     receipts = {"baseline": evaluate(suite, baseline), "candidate": evaluate(suite, candidate)}
     rows = {
         side: {row["query_id"]: row for row in receipt["payload"]["queries"]}
