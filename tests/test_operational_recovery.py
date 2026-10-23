@@ -1,10 +1,12 @@
 """Collected/chunked evidence survives isolated restore and fresh CLI processes.
 
 HTTP framing uses an authored in-memory h11 peer; feed parsing, PostgreSQL,
-CAS bytes, policy reconciliation and installed CLI execution remain real.
-This does not establish backup scheduling, host recovery or operational RPO/RTO.
+CAS bytes, scoped worker CLI execution, policy reconciliation and the recovered
+MCP subprocess remain real. This does not qualify an independent assistant client,
+backup scheduling, host recovery or operational RPO/RTO.
 """
 
+import asyncio
 import json
 import os
 import stat
@@ -12,6 +14,7 @@ import subprocess
 import sys
 
 import pytest
+from mcp import Client, StdioServerParameters
 
 from osint_workbench import lifecycle
 from osint_workbench.collection import collect
@@ -22,7 +25,6 @@ from osint_workbench.evidence import EvidenceStore
 from osint_workbench.jobs import Jobs
 from osint_workbench.service import ReadService
 from osint_workbench.text import digest
-from osint_workbench.worker import run_once
 from tests.test_recovery import destination as destination
 from tests.test_scheduled_collection import ResponseWire, install
 from tests.test_workflows import FEED
@@ -76,9 +78,14 @@ def collected_checkpoint(databases, tmp_path, monkeypatch):
     install(monkeypatch, wire)
     accepted = collect(source, collector, store, due_only=True)
     assert accepted["status"] == "success" and accepted["documents"] == 2
-    completed = [run_once(writer, store), run_once(writer, store)]
+    completed = [
+        cli(["work-once"], role="OW_CHUNK_DSN", dsn=roles["chunk"], root=store.root)
+        for _ in range(2)
+    ]
     assert all(result["status"] == "succeeded" and result["chunks"] == 1 for result in completed)
-    assert run_once(writer, store) == {"status": "idle"}
+    assert cli(["work-once"], role="OW_CHUNK_DSN", dsn=roles["chunk"], root=store.root) == {
+        "status": "idle"
+    }
     with writer.connect() as conn:
         chunks = conn.execute(
             "SELECT chunk_id,document_id,start_offset,end_offset,text_sha256,body "
@@ -87,6 +94,10 @@ def collected_checkpoint(databases, tmp_path, monkeypatch):
         pending = conn.execute(
             "SELECT job_id FROM ow.jobs WHERE kind='document.chunked' ORDER BY job_id"
         ).fetchall()
+        snapshots = {
+            row["document_id"]: row["snapshot_id"]
+            for row in conn.execute("SELECT document_id,snapshot_id FROM ow.documents").fetchall()
+        }
     assert len(chunks) == len(pending) == 2
     policy_path = tmp_path / "checkpoint-policy.owpolicy"
     old_policy = cli(
@@ -137,6 +148,7 @@ def collected_checkpoint(databases, tmp_path, monkeypatch):
         "pending": pending,
         "chunks": chunks,
         "retired": retired,
+        "snapshots": snapshots,
     }
 
 
@@ -179,6 +191,74 @@ def test_collected_chunked_checkpoint_restores_current_policy_and_restart_state(
     with pytest.raises(WorkbenchError, match="^DOCUMENT_NOT_FOUND$"):
         service.document(fixture["retired"])
     assert reader.sources()[0]["enabled"] is False
+
+    async def mcp_roundtrip():
+        # Launch the actual installed CLI from outside the checkout with only
+        # reader authority, no fixture Service or inherited OW_* configuration.
+        parameters = StdioServerParameters(
+            command=sys.executable,
+            args=["-I", "-m", "osint_workbench.cli", "mcp"],
+            cwd=tmp_path,
+            env={
+                "PATH": os.defpath,
+                "OW_READER_DSN": destination["reader"],
+                "OW_EVIDENCE_ROOT": str(root),
+            },
+        )
+        async with (
+            asyncio.timeout(30),
+            Client(parameters, mode="2026-07-28", read_timeout_seconds=10) as client,
+        ):
+            assert len((await client.list_tools()).tools) == 7
+
+            async def call(tool, arguments, *, error=None):
+                result = await client.call_tool(tool, arguments)
+                assert len(result.content) == 1 and result.content[0].type == "text"
+                value = json.loads(result.content[0].text)
+                assert result.is_error is (error is not None)
+                if error is not None:
+                    assert value == {"error": error}
+                return value
+
+            visible = fixture["accepted"]["document_ids"][0]
+            found = await call("search_documents", {"query": "evidence"})
+            assert [row["document_id"] for row in found["results"]] == [visible]
+            document = await call("get_document", {"document_id": visible})
+            assert document["text"] == "First evidence" and document["integrity"] == "verified"
+            snapshot = fixture["snapshots"][visible]
+            evidence = await call("get_evidence", {"snapshot_id": snapshot})
+            assert evidence["integrity"] == "verified" and evidence["raw_sha256"] == digest(FEED)
+            await call(
+                "get_document", {"document_id": fixture["retired"]}, error="DOCUMENT_NOT_FOUND"
+            )
+            await call(
+                "get_evidence",
+                {"snapshot_id": fixture["snapshots"][fixture["retired"]]},
+                error="SNAPSHOT_NOT_FOUND",
+            )
+            sources = await call("list_sources", {})
+            assert len(sources["results"]) == 1 and sources["results"][0]["enabled"] is False
+
+            # Corrupt only the disposable restored CAS. The MCP error must not
+            # turn bad bytes into evidence or disclose the injected contents.
+            raw_sha = evidence["raw_sha256"]
+            raw_path = root / raw_sha[:2] / raw_sha
+            original = raw_path.read_bytes()
+            try:
+                raw_path.write_bytes(b"synthetic-corruption-canary")
+                await call(
+                    "get_evidence", {"snapshot_id": snapshot}, error="EVIDENCE_INTEGRITY_MISMATCH"
+                )
+            finally:
+                raw_path.write_bytes(original)
+            assert (await call("get_evidence", {"snapshot_id": snapshot}))[
+                "integrity"
+            ] == "verified"
+            # A refused read does not destroy the session or rewrite job state.
+            status = await call("pipeline_status", {})
+            assert status["failed_jobs"] == 2 and status["ready_jobs"] == 0
+
+    asyncio.run(mcp_roundtrip())
 
     for completed in fixture["completed"]:
         job = cli(
