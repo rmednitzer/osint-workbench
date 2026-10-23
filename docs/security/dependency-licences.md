@@ -20,6 +20,14 @@ evidence nor classifiers/legacy declarations resolve missing wheel notices.
 
 ## Evidence and verification
 
+The runtime-diagnostics change adds operator guidance to the README embedded in
+the application's wheel METADATA. Replacing only that new README payload with
+the preceding README reproduces the recorded baseline METADATA hash exactly;
+the metadata headers, declared Apache-2.0 expression and complete shipped licence
+text are unchanged. The application-only metadata evidence and reviewed local
+wheel identity are refreshed after that byte comparison. Registry dependencies,
+licence dispositions and unresolved native/notice obligations are unchanged.
+
 The current MCP 2.3.0 refresh uses a newly built application wheel and frozen,
 no-development runtime plus retrieval installation on CPython 3.12/Linux x86_64.
 It reviews 67 archives: 30 standard-ABI/compatible-ABI3 manylinux x86_64 native
