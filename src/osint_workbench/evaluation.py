@@ -244,3 +244,85 @@ def evaluate(suite: Suite, predictions: Predictions) -> dict:
         "queries": results,
     }
     return {"payload": receipt, "sha256": hashlib.sha256(_canonical(receipt)).hexdigest()}
+
+
+def compare(suite: Suite, baseline: Predictions, candidate: Predictions) -> dict:
+    """Describe paired changes on one frozen suite; do not select or adopt a model.
+
+    Pairing is by query identity, never prediction order. No uncertainty or
+    population-generalization estimate is inferred from these fixed cases.
+    """
+    suite = parse_suite(suite.model_dump_json().encode())
+    baseline = parse_predictions(baseline.model_dump_json().encode())
+    candidate = parse_predictions(candidate.model_dump_json().encode())
+    receipts = {"baseline": evaluate(suite, baseline), "candidate": evaluate(suite, candidate)}
+    rows = {
+        side: {row["query_id"]: row for row in receipt["payload"]["queries"]}
+        for side, receipt in receipts.items()
+    }
+    metrics = ("recall_at_k", "mrr_at_k", "ndcg_at_k", "unanswerable_abstention_rate")
+    queries = []
+    for query in suite.queries:
+        changes = {}
+        for metric in metrics:
+            field = "correct_abstention" if metric == "unanswerable_abstention_rate" else metric
+            before = rows["baseline"][query.query_id][field]
+            after = rows["candidate"][query.query_id][field]
+            changes[metric] = {
+                "baseline": before,
+                "candidate": after,
+                "delta": None if before is None or after is None else float(after) - float(before),
+            }
+        queries.append(
+            {
+                "query_id": query.query_id,
+                "split": query.split,
+                "answerable": query.answerable,
+                "metrics": changes,
+            }
+        )
+    splits = {}
+    for split in ("development", "held_out"):
+        summaries = {
+            side: receipt["payload"]["splits"][split] for side, receipt in receipts.items()
+        }
+        deltas, paired = {}, {}
+        for metric in metrics:
+            before = summaries["baseline"]["metrics"][metric]
+            after = summaries["candidate"]["metrics"][metric]
+            deltas[metric] = None if before is None or after is None else after - before
+            values = [
+                row["metrics"][metric]["delta"]
+                for row in queries
+                if row["split"] == split and row["metrics"][metric]["delta"] is not None
+            ]
+            paired[metric] = {
+                "improved": sum(value > 0 for value in values),
+                "regressed": sum(value < 0 for value in values),
+                "unchanged": sum(value == 0 for value in values),
+                "count": len(values),
+            }
+        splits[split] = {**summaries, "candidate_minus_baseline": deltas, "paired_counts": paired}
+    payload = {
+        "format": 1,
+        "kind": "paired_ranking_comparison",
+        "comparison_policy": "paired-ranking-replay-v1",
+        "scorer": SCORER_VERSION,
+        "suite_sha256": digest(suite),
+        "label_origin": suite.label_origin,
+        "cutoff": suite.cutoff,
+        "systems": {
+            side: {
+                "system_id": receipt["payload"]["system_id"],
+                "system_manifest_sha256": receipt["payload"]["system_manifest_sha256"],
+                "predictions_sha256": receipt["payload"]["predictions_sha256"],
+                "evaluation_sha256": receipt["sha256"],
+            }
+            for side, receipt in receipts.items()
+        },
+        "semantic_acceptance": "not_established_by_paired_replay",
+        "uncertainty": "not_estimated_fixed_suite_description_only",
+        "splits": splits,
+        "queries": queries,
+    }
+    return {"payload": payload, "sha256": hashlib.sha256(_canonical(payload)).hexdigest()}

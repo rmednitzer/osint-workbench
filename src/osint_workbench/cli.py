@@ -160,6 +160,11 @@ def main():
     replay.add_argument("--suite", type=Path, required=True)
     replay.add_argument("--predictions", type=Path, required=True)
     replay.add_argument("--file", type=Path, required=True)
+    comparison = modes.add_parser("compare")
+    comparison.add_argument("--suite", type=Path, required=True)
+    comparison.add_argument("--baseline", type=Path, required=True)
+    comparison.add_argument("--candidate", type=Path, required=True)
+    comparison.add_argument("--file", type=Path, required=True)
     local = modes.add_parser("local")
     local.add_argument("--suite", type=Path, required=True)
     local.add_argument("--output", type=Path, required=True)
@@ -290,6 +295,17 @@ def main():
             return
         if args.command == "evaluate":
             suite = evaluation.parse_suite(_evaluation_input(args.suite))
+            if args.mode == "compare":
+                baseline = evaluation.parse_predictions(_evaluation_input(args.baseline))
+                candidate = evaluation.parse_predictions(_evaluation_input(args.candidate))
+                value = evaluation.compare(suite, baseline, candidate)
+                recovery._write_new(args.file, evaluation._canonical(value))
+                print(
+                    json.dumps(
+                        {"sha256": value["sha256"], "semantic_acceptance": "not_established"}
+                    )
+                )
+                return
             if args.mode == "replay":
                 predictions = evaluation.parse_predictions(_evaluation_input(args.predictions))
                 value = evaluation.evaluate(suite, predictions)
