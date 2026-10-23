@@ -3,6 +3,7 @@
 import os
 import platform
 import sys
+import sysconfig
 
 from . import __version__
 from .database import SCHEMA_VERSION, Database
@@ -24,15 +25,17 @@ def diagnose(*, check_reader=False):
     """
     try:
         release = platform.freedesktop_os_release()
-    except OSError:
+    except (OSError, UnicodeError):
         release = {}
     ubuntu = release.get("VERSION_ID") if release.get("ID") == "ubuntu" else None
     ubuntu = ubuntu if ubuntu in ("24.04", "26.04") else "other_or_unknown"
     machine = platform.machine()
     architecture = machine if machine in ("x86_64", "aarch64") else "other_or_unknown"
     minor = sys.version_info[:2]
+    standard_gil_build = sysconfig.get_config_var("Py_GIL_DISABLED") not in (1, "1")
     required_profile = (
         architecture == "x86_64"
+        and standard_gil_build
         and platform.python_implementation() == "CPython"
         and ((ubuntu == "24.04" and minor == (3, 12)) or (ubuntu == "26.04" and minor == (3, 14)))
     )
@@ -45,6 +48,7 @@ def diagnose(*, check_reader=False):
             "cpython": platform.python_implementation() == "CPython",
             "ubuntu_profile": ubuntu,
             "architecture": architecture,
+            "standard_gil_build": standard_gil_build,
             "matches_required_profile": required_profile,
         },
         "configuration_present": {key: bool(os.environ.get(key)) for key in _CONFIGURATION},
@@ -63,8 +67,8 @@ def diagnose(*, check_reader=False):
         return result
     try:
         db = Database(dsn)
-        db.validate_reader()
         with db.connect() as conn:
+            db.validate_reader(connection=conn)
             row = conn.execute("SELECT version FROM ow.schema_status").fetchone()
         version = row["version"]
         if type(version) is not int or not 0 <= version <= 2**31 - 1:

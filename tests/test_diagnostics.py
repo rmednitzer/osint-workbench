@@ -39,7 +39,8 @@ def test_reader_authority_precedes_fixed_schema_projection(monkeypatch, version,
     calls = []
     monkeypatch.setenv("OW_READER_DSN", "private-canary")
 
-    def validate():
+    def validate(*, connection):
+        assert connection is conn
         calls.append("authority")
 
     def execute(query):
@@ -47,29 +48,44 @@ def test_reader_authority_precedes_fixed_schema_projection(monkeypatch, version,
         calls.append("schema")
         return SimpleNamespace(fetchone=lambda: {"version": version, "private": "canary"})
 
+    conn = SimpleNamespace(execute=execute)
+    connections = []
+
+    def connect():
+        connections.append(conn)
+        assert len(connections) == 1
+        return nullcontext(conn)
+
     monkeypatch.setattr(
         diagnostics,
         "Database",
-        lambda _: SimpleNamespace(
-            validate_reader=validate, connect=lambda: nullcontext(SimpleNamespace(execute=execute))
-        ),
+        lambda _: SimpleNamespace(validate_reader=validate, connect=connect),
     )
     result = diagnostics.diagnose(check_reader=True)
     assert result["reader"]["state"] == state and calls == ["authority", "schema"]
+    assert connections == [conn]
     assert "canary" not in json.dumps(result)
 
 
 def test_denied_authority_stops_before_schema_and_sanitizes_exception(monkeypatch):
     monkeypatch.setenv("OW_READER_DSN", "private-canary")
 
-    def denied():
+    calls = []
+
+    def denied(*, connection):
+        calls.append("authority")
         raise RuntimeError("private-canary")
 
-    monkeypatch.setattr(diagnostics, "Database", lambda _: SimpleNamespace(validate_reader=denied))
+    monkeypatch.setattr(
+        diagnostics,
+        "Database",
+        lambda _: SimpleNamespace(validate_reader=denied, connect=lambda: nullcontext(object())),
+    )
     result = diagnostics.diagnose(check_reader=True)
     assert result["reader"]["state"] == "unavailable_or_unsafe"
     assert result["reader"]["observed_schema_version"] is None
     assert "canary" not in json.dumps(result)
+    assert calls == ["authority"]
 
 
 def test_explicit_reader_check_fails_when_unconfigured(monkeypatch, capsys):
@@ -126,6 +142,53 @@ def test_required_profile_matches_only_supported_native_triples(
     monkeypatch.setattr(diagnostics.platform, "machine", lambda: machine)
     monkeypatch.setattr(diagnostics.platform, "python_implementation", lambda: implementation)
     monkeypatch.setattr(diagnostics.sys, "version_info", (3, minor, 0))
+    monkeypatch.setattr(diagnostics.sysconfig, "get_config_var", lambda _: None)
     value = diagnostics.diagnose()
     assert value["runtime"]["matches_required_profile"] is matches
     assert "private-canary" not in json.dumps(value)
+
+
+def test_free_threaded_build_does_not_match_required_profile(monkeypatch):
+    monkeypatch.setattr(
+        diagnostics.platform,
+        "freedesktop_os_release",
+        lambda: {"ID": "ubuntu", "VERSION_ID": "26.04"},
+    )
+    monkeypatch.setattr(diagnostics.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(diagnostics.platform, "python_implementation", lambda: "CPython")
+    monkeypatch.setattr(diagnostics.sys, "version_info", (3, 14, 0))
+    monkeypatch.setattr(diagnostics.sysconfig, "get_config_var", lambda _: 1)
+    runtime = diagnostics.diagnose()["runtime"]
+    assert not runtime["standard_gil_build"] and not runtime["matches_required_profile"]
+
+
+@pytest.mark.parametrize(
+    "error",
+    [OSError("private-canary"), UnicodeDecodeError("utf-8", b"\xff", 0, 1, "private-canary")],
+)
+def test_unreadable_os_metadata_remains_diagnosable(monkeypatch, error):
+    def fail():
+        raise error
+
+    monkeypatch.setattr(diagnostics.platform, "freedesktop_os_release", fail)
+    value = diagnostics.diagnose()
+    assert value["runtime"]["ubuntu_profile"] == "other_or_unknown"
+    assert not value["runtime"]["matches_required_profile"]
+    assert "canary" not in json.dumps(value)
+
+
+@pytest.mark.integration
+def test_reader_validation_reuses_caller_owned_native_connection(databases, monkeypatch):
+    _, reader, _ = databases
+    with reader.connect() as connection:
+
+        def refuse_new_connection():
+            raise AssertionError("a second backend must not be contacted")
+
+        monkeypatch.setattr(reader, "connect", refuse_new_connection)
+        reader.validate_reader(connection=connection)
+        assert (
+            connection.execute("SELECT version FROM ow.schema_status").fetchone()["version"]
+            == SCHEMA_VERSION
+        )
+        assert not connection.closed

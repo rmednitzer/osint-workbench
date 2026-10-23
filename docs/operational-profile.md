@@ -58,18 +58,20 @@ downstream backlog is a remaining workflow integration limit.
 ### Sanitized runtime diagnostics
 
 Run `osint-workbench diagnose` for a fixed JSON report of application version,
-numeric Python version, architecture, required Ubuntu/Python/x86-64 profile
-matching and presence of
+numeric Python version, architecture, standard GIL build status, required
+Ubuntu/Python/x86-64 profile matching and presence of
 the reader DSN, evidence root and encoder/reranker manifest environment variables.
 Presence means a nonempty value, not valid configuration. The offline default
 does not connect to PostgreSQL, open application configuration/evidence/model
 files or execute inference. It reads OS release metadata to identify the runtime.
 It prints no environment values, paths, source identities or exception messages.
+Unreadable or malformed UTF-8 OS release metadata yields an unknown OS profile.
 A runtime match is not an installed-artifact qualification receipt.
 
 Use `osint-workbench diagnose --check-reader` to opt into the existing bounded
 database connection and reader-authority validation, followed by a schema-version
-read. Only `compatible` exits 0; missing configuration, unsafe/unavailable
+read on that same caller-owned session. Only `compatible` exits 0; missing
+configuration, unsafe/unavailable
 authority, invalid status and schema mismatch exit 1 with fixed states. This
 check needs only `OW_READER_DSN`; it does not instantiate models or require an
 evidence root. `compatible` establishes this sampled reader/schema check only.
