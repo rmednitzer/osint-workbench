@@ -130,6 +130,15 @@ with sources disabled. Restore does not requeue uncertain chargeable work.
 
 The repository acceptance adds a composed synthetic collected/chunked recovery
 path, including later-policy retirement and invalid-digest/rollback refusals.
+The collected jobs run through separate CLI processes with only the chunk-worker
+credential. After isolated restore, a fresh installed CLI MCP subprocess receives
+only the reader credential and evidence root. The SDK client searches retained
+content, verifies its document/evidence reads, checks retired document/snapshot
+refusals and disabled-source state, then exercises corrupt raw-evidence refusal
+and successful reread after fixture repair in the same session. Queued unsupported
+downstream work remains explicit and is quarantined by restore rather than
+silently counted as processed. These are synthetic SDK-client integration checks,
+not independent assistant-client acceptance or production evidence repair guidance.
 This tests logical recovery mechanics across processes. Automation with least
 backup authority, scheduling, remote storage, retention/expiry, custody failure,
 large-corpus limits and target-host recovery timing still need implementation and

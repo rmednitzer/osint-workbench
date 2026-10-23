@@ -96,6 +96,14 @@ data-loss prevention are not established. See [cloud routes](docs/cloud-routes.m
 
 ## Verified baseline and evidence scope
 
+The composed operational recovery scenario now connects collected evidence and
+scoped worker CLI execution to a fresh installed MCP process after restore under
+newer lifecycle policy. It includes retired-read denial and corrupt-CAS refusal
+followed by same-session recovery. Its authored in-memory HTTP peer and SDK client
+do not qualify Internet acquisition, an independent assistant, OS account isolation
+or operational recovery. Use revision-bound native CI for the test result; the
+scenario is documented in the [operational profile](docs/operational-profile.md).
+
 Test counts describe a particular revision and its parameter expansion; they are
 not a minimum, completion metric or quality score. Use
 [proportional test design](CONTRIBUTING.md#proportional-test-design) when changing
