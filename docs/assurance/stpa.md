@@ -1068,3 +1068,22 @@ cloud reservations until independent evidence-bound settlement. Quota failure,
 unknown ownership and missing assignments require explicit operator action.
 Database/WAL/storage metadata quotas, malicious same-UID code, compromised
 approved dispatchers and actual provider billing remain external limits.
+
+## Paired ranking comparison: ADR-0065
+
+[ADR-0065](../adr/0065-paired-ranking-comparison.md) refines U38/C38 and U41/C41
+under H1/H5/H8. The operator may request a descriptive comparison, but CA9 must
+not treat successful comparison or a positive metric delta as model acceptance.
+No new controller or execution authority is added.
+
+| Unsafe interpretation or input | Existing constraint allocation | Discriminating verification |
+| --- | --- | --- |
+| Compare different suites, pair by file order or silently omit failed queries | C38: bounded serialized inputs, strict parsing, common suite identity, complete query coverage and ID pairing before scoring | Wrong-suite refusal on either side, reordered predictions and independent delta oracle |
+| Treat absent populations as ties/passes or hide offsetting query changes behind means | C38: null missing-population deltas, zero paired counts, per-query deltas and explicit split gates | Missing-population, improvement/regression/tie cases |
+| Treat declared independent labels, digests or comparison completion as semantic/population acceptance | C9/C12/C38: preserve label-origin assertion, semantic limitation, descriptive-only uncertainty state and separate protocol/custody requirements | Receipt limitation assertions and retained failed target gates; independent qualification remains open |
+| Drop undeclared copied-model state, serialize unbounded models, leak diagnostics or replace a prior receipt | C38/C41: accept bounded original JSON bytes only, refuse Python model objects without serialization, reject undeclared wire fields, reuse private durable no-overwrite output | Model-object refusal without serialization, per-input byte bounds, undeclared nested wire fields, CLI private mode and repeat-write refusal |
+
+The threat boundary remains local operator input to bounded parsing/scoring and
+private output. No model loading, network, SQL, MCP tool, route activation or
+shared runtime mutation is introduced. Parent-directory custody and the truth of
+external provenance declarations remain operator responsibilities.

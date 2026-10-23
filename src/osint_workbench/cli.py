@@ -160,6 +160,11 @@ def main():
     replay.add_argument("--suite", type=Path, required=True)
     replay.add_argument("--predictions", type=Path, required=True)
     replay.add_argument("--file", type=Path, required=True)
+    comparison = modes.add_parser("compare")
+    comparison.add_argument("--suite", type=Path, required=True)
+    comparison.add_argument("--baseline", type=Path, required=True)
+    comparison.add_argument("--candidate", type=Path, required=True)
+    comparison.add_argument("--file", type=Path, required=True)
     local = modes.add_parser("local")
     local.add_argument("--suite", type=Path, required=True)
     local.add_argument("--output", type=Path, required=True)
@@ -289,6 +294,19 @@ def main():
                 raise SystemExit(1)
             return
         if args.command == "evaluate":
+            if args.mode == "compare":
+                value = evaluation.compare(
+                    _evaluation_input(args.suite),
+                    _evaluation_input(args.baseline),
+                    _evaluation_input(args.candidate),
+                )
+                recovery._write_new(args.file, evaluation._canonical(value))
+                print(
+                    json.dumps(
+                        {"sha256": value["sha256"], "semantic_acceptance": "not_established"}
+                    )
+                )
+                return
             suite = evaluation.parse_suite(_evaluation_input(args.suite))
             if args.mode == "replay":
                 predictions = evaluation.parse_predictions(_evaluation_input(args.predictions))

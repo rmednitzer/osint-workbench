@@ -73,6 +73,87 @@ system-manifest identity, scorer version, per-query results and split gates.
 Hashes bind the supplied data; they do not attest the truth of the supplied model
 provenance or independently validate the labels.
 
+## Paired replay comparison
+
+Compare two complete prediction files on exactly the same frozen suite without
+executing models, loading their configuration or accessing the database:
+
+```sh
+osint-workbench evaluate compare \
+  --suite config/evaluation.example.json \
+  --baseline /tmp/ow-lexical-diagnostic/lexical-predictions.json \
+  --candidate /tmp/ow-encoder-diagnostic/encoder-predictions.json \
+  --file /tmp/ow-paired-comparison.json
+```
+
+The absent destination is created privately without overwrite. The format-1
+`paired_ranking_comparison` receipt binds the suite, scorer, comparison policy,
+both prediction digests, declared system/manifest identities and both replay
+receipt digests. It includes their existing split summaries/target gates,
+candidate-minus-baseline aggregate deltas, per-query deltas and split-level
+improved/regressed/unchanged counts for each metric. Pairing uses query IDs;
+prediction order is immaterial. Positive deltas mean a larger measured metric,
+not model acceptance. Ties use exact equality of the deterministic scored values.
+
+Answerable and unsupported queries retain separate metric populations. Missing
+populations yield null deltas and zero paired counts; they do not become ties or
+passing gates. Both prediction files must satisfy the existing exact coverage,
+suite-hash and ranking contracts. The Python API is
+`evaluation.compare(suite_data, baseline_data, candidate_data)`, accepting serialized
+JSON bytes only, with the existing 8 MiB limit per input checked before parsing.
+Python model objects are refused without traversal or serialization; callers must
+supply the original input bytes. Unknown wire fields are rejected rather than
+silently removed by a model serializer.
+
+Exit 0 means a valid comparison was written, including when both systems fail
+all targets or the candidate regresses. Exit 1 indicates invalid input or failure
+to write the receipt. Unlike replay/local execution, comparison does not use exit
+2 for numerical target failures. Inspect the embedded gates and paired results.
+The CLI prints only receipt identity and the semantic-acceptance limitation.
+
+This is descriptive evidence for the supplied fixed cases. It estimates no
+confidence interval, statistical significance, population effect or causal effect.
+Query counts are not independent replicates when cases share sources or leakage
+groups. The receipt does not verify label independence, truthful system provenance,
+fair resource use or actual model execution. Retain protocols and raw observations;
+a paired receipt alone cannot establish those conditions.
+
+## Independent qualification prerequisites
+
+The public diagnostic remains exposed development evidence. Before running an
+acceptance comparison, the evaluator must record a separate protocol that fixes:
+
+- The intended deployment decision, workload/languages, unit of analysis, source
+  or topic clusters, sampling frame, scope of inference and material exclusions.
+- The label custodian and separation from implementation/model tuning; who has
+  seen each query group, any prior exposure, and the access/release procedure.
+  Keep controlled held-out queries and labels outside the public repository.
+- Independent assessor instructions for grades 0–3, answerability and evidence
+  support; preserve original judgments, disagreements and adjudication provenance.
+  An LLM judge may supplement these records; it is not the independent oracle.
+- The suite, cutoff, targets, baseline and candidate identities, permitted corpus
+  and resources, scorer/comparison version and source/environment identities,
+  all frozen before inspecting held-out predictions. A declared
+  `independently_labelled` value is an assertion requiring external custody evidence.
+- A development-only answerability policy, including calibration and refusal
+  behavior. Do not fit score thresholds to held-out failures or remove unsupported
+  queries after seeing results. Record tuning and contaminated/excluded cases.
+- The primary metric and decision margin, regression limits, uncertainty method
+  appropriate to independent units/clusters, sample-size rationale and stopping
+  rule. The paired command supplies descriptive measurements, not that analysis.
+- Failure, timeout, missing-output and retry handling; preserve unsuccessful
+  attempts. Partial prediction sets cannot silently disappear or pass replay.
+  Record deviations and distinguish exploratory follow-ups from frozen evaluation.
+
+Execute with the same permitted workload/resources for both systems, preserve
+raw predictions and execution journals, recompute replay/comparison receipts, and
+review failures alongside resource costs. A criterion failure keeps adoption open;
+repeat only under a separately identified protocol with the original retained.
+A pass supports only the declared workload and conditions. Production-cascade
+retrieval, citation support, briefing omissions, actual deployment and sovereignty
+remain separate acceptance obligations. No independent dataset, custodian,
+statistical power or adopted model is established by this prerequisite list.
+
 ## Execute local diagnostics
 
 The lexical-only path requires no model, database, network, credentials or retrieval

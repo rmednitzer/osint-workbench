@@ -48,10 +48,18 @@ dependency wheels only; the application bound remains `>=3.12,<3.15`.
 the earlier three-profile requirement. Historical receipts retain their tested
 profiles and counts; this policy change is not a new runtime acceptance result.
 
+[ADR-0065](docs/adr/0065-paired-ranking-comparison.md) defines the offline
+`evaluate compare` command, which adds suite-bound baseline/candidate
+replays, paired query deltas and split-specific improvement/regression counts.
+[Its contract and independent qualification prerequisites](docs/local-quality.md#paired-replay-comparison)
+retain exposed-label, missing-population and provenance limits. Comparison does
+not run or adopt models, estimate population uncertainty or establish independent
+semantic quality; controlled labels and a frozen acceptance protocol remain open.
+
 ## Current contracts
 
 Core schema **13**, retrieval profile **5**, checkpoint format **2**.
-The programme contains 64 ADRs, 58 requirements and 51 full acceptance scenarios.
+The programme contains 65 ADRs, 58 requirements and 51 full acceptance scenarios.
 Native Ubuntu installs use the distro Python in a venv: 24.04/3.12 and
 26.04/3.14. Python 3.14 is not the global minimum; see
 [runtime support](docs/runtime-support.md#native-ubuntu-installation).
