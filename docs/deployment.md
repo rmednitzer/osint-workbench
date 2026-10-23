@@ -24,8 +24,9 @@ python3 scripts/check_deployment_templates.py --profile collector --profile shar
 ```
 
 The checkout tool compares exact bytes at fixed installed template paths beneath
-`/etc/systemd/system`. Use `--installed-root` for an explicitly selected offline
-unit directory. Select profiles explicitly: `collector`, `shared`, `api`,
+`/etc/systemd/system`. With `--offline`, it compares the fixed `systemd` directory
+beneath the current working directory instead; invoke the checkout script by its
+absolute path from a trusted staging directory. Select profiles explicitly: `collector`, `shared`, `api`,
 `api-credential` and `local-api`; repeat `--profile` to combine them. The `shared`
 profile checks the collector sharing drop-in and worker/health service/timer pairs.
 The `api-credential` profile checks the API credential drop-in. Drop-ins are checked

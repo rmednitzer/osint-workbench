@@ -86,9 +86,12 @@ def check(profiles, installed_root, *, reference_root=ROOT):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--profile", choices=PROFILES, action="append", required=True)
-    parser.add_argument("--installed-root", type=Path, default=Path("/etc/systemd/system"))
+    parser.add_argument(
+        "--offline", action="store_true", help="compare ./systemd instead of system units"
+    )
     args = parser.parse_args()
-    result, code = check(args.profile, args.installed_root)
+    installed_root = Path("systemd") if args.offline else Path("/etc/systemd/system")
+    result, code = check(args.profile, installed_root)
     print(json.dumps(result, sort_keys=True))
     return code
 

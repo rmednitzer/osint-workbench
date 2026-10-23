@@ -20,10 +20,11 @@ def install(tmp_path, profiles):
 
 
 def test_cli_all_profiles_and_no_private_output(tmp_path):
-    install(tmp_path, checker.PROFILES)
+    install(tmp_path / "systemd", checker.PROFILES)
     result = subprocess.run(
-        [sys.executable, str(SCRIPT), "--installed-root", str(tmp_path)]
+        [sys.executable, str(SCRIPT), "--offline"]
         + [arg for profile in checker.PROFILES for arg in ("--profile", profile)],
+        cwd=tmp_path,
         capture_output=True,
         text=True,
         timeout=10,
