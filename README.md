@@ -64,6 +64,11 @@ byte integrity; retrieved content remains untrusted.
 
 ## Operator workflows
 
+`osint-workbench diagnose` reports sanitized runtime and configuration-presence
+facts without application I/O. Add `--check-reader` for an explicit reader-authority
+and schema check; this is not readiness or deployment qualification. See
+[runtime diagnostics](docs/operational-profile.md#sanitized-runtime-diagnostics).
+
 | Task | Procedure |
 | --- | --- |
 | Schedule feeds or authenticated APIs | [Feed acquisition](docs/scheduled-acquisition.md), [API acquisition and secret custody](docs/api-acquisition.md), [OAuth](docs/oauth-acquisition.md), [KEV format](docs/kev-acquisition.md) |

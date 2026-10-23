@@ -27,6 +27,13 @@ outside the CAS and mutation guards.
 
 ## Current runtime qualification
 
+The `diagnose` CLI adds offline sanitized runtime/configuration-presence facts
+and an opt-in reader-authority/schema probe. It preserves the seven MCP reads
+and makes no readiness, deployment-drift or model-qualification claim. New tests
+cover the no-application-I/O boundary, fixed output projection, refusal and native
+reader/writer authority; qualification requires their revision-bound CI results.
+See [diagnostics](docs/operational-profile.md#sanitized-runtime-diagnostics).
+
 Required foundation and signed build evidence covers Ubuntu 24.04/CPython 3.12
 and Ubuntu 26.04/CPython 3.14. Python 3.13 remains permitted with optional
 weekly/manual compatibility coverage. The manual Python 3.15 probe covers locked

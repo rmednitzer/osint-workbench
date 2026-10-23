@@ -55,6 +55,31 @@ downstream backlog is a remaining workflow integration limit.
 
 ## Readiness and response
 
+### Sanitized runtime diagnostics
+
+Run `osint-workbench diagnose` for a fixed JSON report of application version,
+numeric Python version, required Ubuntu/Python profile matching and presence of
+the reader DSN, evidence root and encoder/reranker manifest environment variables.
+Presence means a nonempty value, not valid configuration. The offline default
+does not connect to PostgreSQL, open application configuration/evidence/model
+files or execute inference. It reads OS release metadata to identify the runtime.
+It prints no environment values, paths, source identities or exception messages.
+A runtime match is not an installed-artifact qualification receipt.
+
+Use `osint-workbench diagnose --check-reader` to opt into the existing bounded
+database connection and reader-authority validation, followed by a schema-version
+read. Only `compatible` exits 0; missing configuration, unsafe/unavailable
+authority, invalid status and schema mismatch exit 1 with fixed states. This
+check needs only `OW_READER_DSN`; it does not instantiate models or require an
+evidence root. `compatible` establishes this sampled reader/schema check only.
+It does not test evidence permissions/integrity, active retrieval generation,
+deployment-template drift, model identity/quality, freshness, backup or alerts.
+Use `status`, explicit `health` thresholds and the separate adoption gates for
+those tasks. Offline diagnostics exit 0 even for an unconfigured installation
+or a runtime outside the required profiles; inspect the reported fields.
+
+### Aggregate health
+
 Run `osint-workbench health --max-source-age-seconds AGE --max-pending-jobs PENDING
 --max-failed-jobs FAILED`, replacing every uppercase token with an explicit
 operator-approved integer. Source age accepts 1–31,536,000 seconds; job limits
