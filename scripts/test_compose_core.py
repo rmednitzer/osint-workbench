@@ -19,7 +19,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 LABEL = "org.osint-workbench.synthetic-run"
-BASE = "python:3.12.15-slim-trixie@sha256:2259debdc6af85626058a15a7bf44ad6a68b8c98c9ae82a02cf5cdb92f096d47"  # noqa: E501
+BASE = "python:3.12.15-slim-trixie@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704"  # noqa: E501
 POSTGRES = (
     "pgvector/pgvector:pg18@sha256:2358fcba361ed2233a5ed81b5fe4ca779ccb304120ce531a3bf51c0ed7e2bc11"
 )
