@@ -2,7 +2,7 @@
   "schema_version": 1,
   "scope": "runtime-plus-retrieval; CPython3.12 Linux x86_64 installed wheel evidence and reviewed supported archive variants; no legal approval",
   "review_date": "2026-11-05",
-  "lock_sha256": "9d9533f7c4b9a73f61790cc33a8b70ca050ee48608da244bbbbd8ded36bfacc6",
+  "lock_sha256": "b039032ac5aecf83933e710e1ca2ffc127d868e45e464aa47e3573dca676764b",
   "distributions": [
     {
       "name": "annotated-types",
@@ -1267,7 +1267,7 @@
     },
     {
       "name": "pydantic",
-      "version": "2.14.2",
+      "version": "2.14.3",
       "declared_expression": "MIT",
       "reviewed_text_summary": "MIT",
       "outcome": "declared-and-shipped-text",
@@ -1277,25 +1277,25 @@
       ],
       "evidence": [
         {
-          "path": "pydantic-2.14.2.dist-info/METADATA",
-          "bytes": 137593,
-          "sha256": "5e27715d350cc99bc33877404deba2a9491221ae972db8f8c79f64032bee3a01",
+          "path": "pydantic-2.14.3.dist-info/METADATA",
+          "bytes": 141528,
+          "sha256": "c3eb8984172bedc8e056655e1419351f4497374a91b7b709dbc4a1340f50e1e9",
           "kind": "metadata"
         },
         {
-          "path": "pydantic-2.14.2.dist-info/licenses/LICENSE",
+          "path": "pydantic-2.14.3.dist-info/licenses/LICENSE",
           "bytes": 1129,
           "sha256": "a9e186f3ca16b5eef84318e7a701721351a00cb7b8ae3a4394b67b49e3529ef3",
           "kind": "licence-text"
         }
       ],
       "locked_wheel_sha256": [
-        "7efbf7507b937931cd32a5755acb00ea1cf5ccb1d4e8067a5850d5069e382118"
+        "3f7b347782ab7e4cf4c798496ae3a82787d9f21ec12676a9c564355eeef8daa8"
       ]
     },
     {
       "name": "pydantic-core",
-      "version": "2.50.2",
+      "version": "2.50.4",
       "declared_expression": "MIT",
       "reviewed_text_summary": "MIT",
       "outcome": "declared-and-shipped-text",
@@ -1306,84 +1306,87 @@
       ],
       "evidence": [
         {
-          "path": "pydantic_core-2.50.2.dist-info/METADATA",
-          "bytes": 6515,
-          "sha256": "ca680c6a06d7e24685a8c13f47c56af9f4deaba25272412f8688459cd6dd2dd1",
+          "path": "pydantic_core-2.50.4.dist-info/METADATA",
+          "bytes": 6568,
+          "sha256": "bb1956097beb504f190f8ea20c859b5dfea567679a247ce252d7813dd73f361d",
           "kind": "metadata"
         },
         {
-          "path": "pydantic_core-2.50.2.dist-info/licenses/LICENSE",
+          "path": "pydantic_core-2.50.4.dist-info/licenses/LICENSE",
           "bytes": 1080,
           "sha256": "2afdd30d54b4d62b6f488a6bcc1546e84ec5061f13f4209c03d012348783795a",
           "kind": "licence-text"
         }
       ],
       "locked_wheel_sha256": [
-        "0b94a515f44f1ebcb25395bcdba506c4cdaf6d3fcb0466b9658521b41e5ff057",
-        "0d090ae76d5b09c003600c7779b3adcf3d1b49268f616c5c51d844e54c8e318d",
-        "126f158474346f457c0759c29c1a6334acd5f7f99dd272bb27d19314f3d81b4d",
-        "150f6e101f575c21a4ecfed1be1c05bb89a0ad49cb9c846ed377583bd71b32c2",
-        "18f008ef58cd30782f81b6e0119e20b7e884edcefbc2d370162ebe033f6e5c99",
-        "1ac5b99bc7b0a68ec64f5f75a6828a7bab5535c8df0cdc07901deb50e0815910",
-        "1b9f652e17a13bbc09b45f74c3c326cca72059ce4dcdef687fcb04389db413a9",
-        "1db9cab6197e797824f0479dd2ae5fd2e272aa61c61b7faa5a6e450ca7a0d3b7",
-        "21ea3b00f1e87c66f3f9e92f9f6fec20495ac0e60d7d2e68ba1fc49739d7cf40",
-        "23385c4626f8b5a7792aa381ea573d9432cfbf4c21375a0a5eed2a4fb64e0e58",
-        "240fec32a74af0979f7253532859b3fd209ad5eea822416bb010929dba445c3d",
-        "31a1fb3ffbd1195b24490f671d12623dd4c9bfa56d6af0a299fa43b516134f5b",
-        "33c6800ab9563adaa0d7893e9cd8f5b972ef1e6a23df70498e05c24f3fcec5e1",
-        "36d8b9725684ca3bf658b90a101d335fc8cae405bb22196b7b5ef41344913756",
-        "41ed8abeffda6a880207fdc0cd1343a448cec3cc6b38b53f730c0745f745292d",
-        "43a8fd56f3c681f3cda2d5c842ad28e88241df742dfcbe8fd1dd437a3056e1f6",
-        "4ac996e42a93d80122a23edce44e02c6b9c4913f5c6198a077da31475341a39a",
-        "4ea01f30e119f1ec7a2034e85c40f491d469896aef02cd6436fd9292fe1be3fb",
-        "4eb54c25e3463d73e1e4ed439ffc45d1d7e590df40bc7bb06f11a906afd996c3",
-        "523fe6574aea50f456cbc301c1cdddcbf237939f7657f9af99b4f0f71942b59c",
-        "53bd25e8ab54c02bb4c55d4848c1d36f75f3b9a7356e83179fe27794d9e9e6c4",
-        "596921489390a002d6a5e303384a0f1f98384f8bb550fbf38a1aafa6093da0f9",
-        "5d3cd8be71c4da3c9b42cc92f17e5e3036bdca98bf18555a0e072c3fe87abbb4",
-        "61e13100b30d8d25fc0d1f0297014b32941bf0975a3584bd08f3adebb68d1ead",
-        "6a438cb8a3f87f2c49e82e43fb19511d4d5043f53e0787dc4df937ccb904373a",
-        "6c25b8826be85714b27dafe908d3461e1b09e3e31c0279a7029040c832c781ef",
-        "6e731bf5a5e8e25398544d7709e39068ec4230b0177e4db7fa955692fd415ba3",
-        "6eb6ff07964f39e33c6f57fefe939514e76b8c0d4a694e5663e2e04e80cc1798",
-        "6f5a432c6c1ef18a1a02a04b3616b8d3f2f88b13faa46caae1ac6559ab202234",
-        "6ffb4dce3ecb2cd563aa30f9eb5088a1cf1f4f688b90cbb374fa96e49fc50b02",
-        "713d7c33c0e231e3786eb0ec95885814dd65d5f3a09754399b6acbf5e9365f11",
-        "783abdfac21247d33bec40aa683d26bba30d61655c40de38b2decc4797aabf92",
-        "7c539d452cba22f250103c7d1c00cbe9038eb705e657476e701c43374efd9f2e",
-        "823b222c4fc861a82c650998a6117ecbd150cc71bf8b78f9a31bf3f48c456108",
-        "83d6f42ae6eba44548a1a3d4f900a5b1500fdd14f09f04754a8800ab0d544432",
-        "848984e231190ae49bc8b5229e64d2a6fba4231dc6046e1b6b28ddc060bc7601",
-        "8772c2c0091e6fc2d0499151793d31bf811826986b0727052935a95104845544",
-        "91238117cd296352f54f24117ff5a227bdea428865dba1244aa0cdd1424c0bc2",
-        "92acf02c770b9d5c4e9a3e8d64e9d95ae26456a86ebb7b7cf64a97f899e5871b",
-        "93eb41d626d9a2749a678823c70bba8c25033cef474ae8001fd7621adbbd8437",
-        "9667637665acba166a7dbbc786f14c50512d3a01f7199e0e1a13b929e92d7c7a",
-        "98722314e12a8e4fa346e0afd3fff2098b5732875ff45592b450a7b589b43c4f",
-        "99e1d482138a71902415ba375bb4627679a5fefd3bd07803c3a8f37632f4981d",
-        "9a8a62281fd9c6a373b3fd3d473685e6838d43341eecde5f47729748e2c11ee3",
-        "9b01a092955c1c7530196ad526755cff4f2d11f37ca9a6fc9ebe37ca49a48977",
-        "9e7460abce637f90e37f8c443559fbd687c38884d05cb69ef265e634945f4324",
-        "9eff570402175c7d5fff8497d5a9c05580664a79bb66c07b8f205d17f69e580b",
-        "9fcde11462e0faab4c2a2ae8cd4516f7dd8239eec583bd88c5524d8064ad2d0c",
-        "a53d5f11cd6d15569ba3e53f3498077f0d5e633f6ec604d2ea613e895017ebee",
-        "a55c1163e829a08707b4a92c8ee02a5a3a3847ced74aa4da94e3e975ffe1ec63",
-        "a59db03b80a156a6fbeae41096866d1cb89cdf31031ba44c768a804538880636",
-        "b29b7c5adf4b2be7c941f7f76432aa3269cd5052ff8610376b8ece24d7b02c51",
-        "b381574614245f18fdb2d6d1aa8f149e225869c47b5ee7f81812de8977817314",
-        "b3e681208e2d39fde13fbea449ef2736a85ec1ea2afa41e9193a8c536e71dafe",
-        "b62c89545d21d930c333208fd548e7b4f262228ba3a322fd75c987a75ab11f31",
-        "b7abcfaf66c1dc14c5ed928c349614f223c972a8b021b4be9548dbea6c817371",
-        "bd6ecae08c0d871cf93b6f0d4ee76b06c65be44ea22311981a022b2f1948cf9d",
-        "d18d56c1ec63b304f4bb3c7db7e0d311e61cca1b1c944590a4b13ac39b2ca92b",
-        "e3d824b6152e1c0fd58dc6266f2de470eb7b2286135294f5f7cd26a0f0693738",
-        "e5c801bdf3cc92274b8fc2c7023c8751e5ae81260c009ac558ff55ce712a2d45",
-        "efad0bdc67d3b119c3bab6b94d341a27333c2bb89ed75dfa182a4a06cd0ea329",
-        "f07c965a8aa6d62145f122641f292129984f39a3e3697585b19298a1488287db",
-        "f142cd663d1148ed32993ed9a58e5c67ea312f446a01a6c13a956945aafc9f23",
-        "f81df206b937d0dca5efb38c25fc99037d82dbcd3740e34c3f81997d2322ac1c",
-        "fd9aa71a800c87c0f7ab53fa38009169a23a82c685989626ca74a4bd483e1b67"
+        "0001d6920e3a5d92758cda460d6dc9f918a78ad6d5d092f1c8b5395e6b775356",
+        "09450778e3ab58d3f565899fcfbf6c82926e31af29e28e799d1d50941316e0cb",
+        "0af56dbf8822ba9f4efcbbfdc15478f8b6fb08f1609860cb50aa2cc8476b3c34",
+        "0b059a7968b1911be5a2d9a8234827ab0bef9d1e465d4b42da525894143550e8",
+        "0ec20aca2b067369913716847f7dfe5f4dddf16a46965b7a70bbad5defaaba86",
+        "0f87ae9db5ba8d8de40dcb93982cf8dd544e6552a80d3345af51941cc2146b80",
+        "1239daaf063e62213ca1f34d96663900bd7510c42a786e843fd328af70e46445",
+        "13b6dd62b5279f5b9d72f3bf918a35443ee8bd549241d9dc52d79a2c3b6d7016",
+        "16902a147b3da4840612164a5e67947104d63e978f7a57c395877a5e26690b9c",
+        "1afefe44ec042fbabfb4483ea258c04cf75ff4ff328d754f09b321fdaa232aca",
+        "1e20cbde2b6deb33a51d08cd168454dd9044ec7d4474056f4d98d63f51578783",
+        "219114f8dcdcbe4720d82ef016b1287ce5a0a67d7c69ca61524eb72e82aac344",
+        "22e874666bdbd96d6bf629d32cd8ab376fedf1fd62585b52a42b9fa9fa6c20b6",
+        "23a9ba564b2db709ff16eca990992ba95a19069972b34bff87c81d4b473cd755",
+        "2a60ec2a57ac3ef3767e526e9bf706ec75aa3d79c4ea134d9d4fcf7c62a297a7",
+        "32a991aebd165f227b7c7c60bb9d66c2c7de9c24308552da264c9938fde0f8d6",
+        "32d6dda86383645ec428ea64dfc277036f5cbc60a72238eab28b91a3fdb9a113",
+        "33b21f69540a12c2053cd1d95766d8bd9667a3897f7c712a642de8aa37eb0865",
+        "3a48a5254d15a0ad050318bfc7a9566d4ec740118187e8f303e47a6840287eb7",
+        "3de6c2a4df2af0ac9ab4dc1488746fe8b1a90e27955d870d9edda3187d20092b",
+        "41b2cd8b29dbb5a4c9828a70f50d1abfc92011115c813213d3a91205c6f731b3",
+        "41f4f8ae714e4fea1d635880f8a1af715ecf080eed4d13c5b04a0f3210f9c61a",
+        "4c29b8f2d6417069bb1f257e6b9113f5d64dc2f554cc200ea90b4fe2c5cdb733",
+        "4eb15be588407148ef5937dc8d9256a71f6b115e6cddadb7aa20b6ee384680dc",
+        "523466eba8ee10f7480f3c2057563145978011c583130d2cc01fb1e7af808e25",
+        "5bc1811ef2b4d4ba63e8e452f6e332b6374bd1d2cbbfdf66826c8cb1f71dd10d",
+        "5c074454dc6d4f6f4ba6561a56bf33a14db7651d882a5a5321ba3ae8868e082d",
+        "5c1013647be741647895c102831dcf79c34209662dbb683df9efb864417ed7d5",
+        "601fce6cea9ddeaa85329e12e7f351def38d233075f42a3012b9c48071b02941",
+        "629eae995185540406e3635df5d5cf1d44f19ea240840b835d3f44541ff694d8",
+        "664e74848c2f5fc27db8505fe24e1ecd3ac669412913bf73d176916f86cc08e2",
+        "67f7cc397e1d5556a801d1cba74de0d27d827eb242e6c036c0ca273c745414f1",
+        "6c5687b59b6ba0f663c4f2f15470f68507d6b45ccd3a19ee6d224f95cbee70d8",
+        "70dbc9f83c41f37a4faa62dae5203853847223a891da446f48ef2efcfd5df806",
+        "71395a43da5584bb70556f380387e15f845c0dcf76373c1afbfa0025737576ac",
+        "71e03d2ea1a221d020cfc5b6cc8bbbedef23a06704c70fcf4d0afb42965b22d1",
+        "817953730e4a73a09008b010c4a42396cefe799616a22df2ac21d3927b3080cf",
+        "8cceae48ae7f94990c2f4e36291e9ec9868735e8b0f19e4489a17b0422338466",
+        "92f8f63df729061bb14558ed740e7a222f6e2aa6c2e6a5bcfb4e706676562049",
+        "94733cb447c37b0ce6f71b39ca1288d5f966a084023a5617b4cc35a852586859",
+        "a0c5210d038418a115e7cf8706bfa611bd14add2f5787274dba45aadca3155e0",
+        "a2f8716344bbbd10443391be0b1f2003b34949e3c4e6883005c2bc498ab6b64b",
+        "a4bb174bd65f795c39ad6642d9d5bdc43351b306b7d0a654ab0d0abb38be245f",
+        "a9ee990bf2cfbd81574c5d4f9f6c9d480a14b5b43d2c4f2ca13f4c6f48089394",
+        "ab2822bcdcefb54d1e8ca29f5e3ec3afe160fb794bb3a3a73b09d11ed2671104",
+        "ad92d255a165cde5f9882ff69699eaf5495e0a1f32e97566bbbb80f11e46781f",
+        "aeb2e123cbf978a905e9f55155c1b8316fbbfa7cf64d04521fe174bab302d100",
+        "b0cdb655fbd1562c2dfc9986f9103a106f7058cd0915afc6e656d4b1d73f3387",
+        "b26f39a5be3cd91a2035818be3d0ffdf5282c3e1f5f53d3b80b7024021acee52",
+        "b300a30304c4c6aeab03ed06809819d9eceacdd58441d3c7dffe41edfd006091",
+        "bee28aab5a580eec673f7b68dfa8dece3dd37bd207ef8d22fafe23a8e9837296",
+        "c04e9d920e2674f54651fd260a15c5d2843526c73d5242ee4311325ddc9573b3",
+        "c733087ecf7dde06b1d071679bfd5f3ba03266ba77814c1c7253bc48c9adedd9",
+        "c81d98e27d9d9261909dcccab1ba5d6ea1c98b0bb9470e368604614fd1d36ddd",
+        "c856e439a9d54d514e81a7131229ba151cdf81df7c408e0f6c89340e5003dfe2",
+        "c9e70012926e97069cdd09221861aff412aa94e4cac2e019055cdb79485b150c",
+        "ca83a32b2b41653d89f09a3d22b770bca96da72273bef8f7a68136bdd1e8b823",
+        "cbf0777d54672990b10cb8ca9b0523499e182d7e2ea39f86b138519a902aa601",
+        "d6e3485a5e5c01fb5339c1ee3d4b9e21e2135a2a9d44caafb71acd994487ee7c",
+        "df1c174796cd63eb6b139f7daf783affe1f3ed659605850e843b24764c21bfc5",
+        "e6da138a1ecc1341c8b788a5ee822670b03788e1f5decf7af9d461de6e508b8e",
+        "ea2f61b0bc12f3592288503961b764579dea0658852d96a0b3d823614d808821",
+        "edbca8789fd10f0de534b660a6b4c71f1fd18039679c918dad392ab044bb37e4",
+        "edc17549ab592e33cfcaf285f047bb75fcd98f608aa9309af1187fd736ce9641",
+        "ef8a9ddb2e2a4eae4abb72dc0710eca6c2726779b0664bd10c3ce9fcfaed8c4e",
+        "f1d62fb172db35c6478c9323da34ff37d1f3d37d7d44337a9d94ba8c583e5730",
+        "fb2bb5b557080da398b866408117d98fe9731a12334afd0cdff221b458cdc5dc",
+        "ffb616d8d55965839670301dc3bae3abacff560a7e137a89056058a8a9da4d96"
       ]
     },
     {
@@ -1989,18 +1992,18 @@
     },
     {
       "name": "pydantic-core",
-      "filename": "pydantic_core-2.50.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
-      "sha256": "9667637665acba166a7dbbc786f14c50512d3a01f7199e0e1a13b929e92d7c7a"
+      "filename": "pydantic_core-2.50.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "c81d98e27d9d9261909dcccab1ba5d6ea1c98b0bb9470e368604614fd1d36ddd"
     },
     {
       "name": "pydantic-core",
-      "filename": "pydantic_core-2.50.2-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
-      "sha256": "31a1fb3ffbd1195b24490f671d12623dd4c9bfa56d6af0a299fa43b516134f5b"
+      "filename": "pydantic_core-2.50.4-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "fb2bb5b557080da398b866408117d98fe9731a12334afd0cdff221b458cdc5dc"
     },
     {
       "name": "pydantic-core",
-      "filename": "pydantic_core-2.50.2-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
-      "sha256": "b29b7c5adf4b2be7c941f7f76432aa3269cd5052ff8610376b8ece24d7b02c51"
+      "filename": "pydantic_core-2.50.4-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "f1d62fb172db35c6478c9323da34ff37d1f3d37d7d44337a9d94ba8c583e5730"
     },
     {
       "name": "pyyaml",
@@ -2080,6 +2083,11 @@
     {
       "source_commit": "8602adb040cc2daf0baaebb07bb8382a930e2c42",
       "note": "CycloneDX8 development-tool-only lock successor. Complete lock comparison finds only cyclonedx-bom and the project development-group constraint changed; all runtime/retrieval package records and reviewed evidence are unchanged."
+    },
+    {
+      "source_commit": "a5a069a3d27a4a121e49678663c64b1c98cae732",
+      "receipt": "docs/testing/lock-maintenance-2026-11-05-pydantic.json",
+      "note": "Pydantic and pydantic-core exact locked wheel inspection; unchanged shipped licence texts and declarations; all three supported native ELF sets refreshed. Ruff development wheel inspected separately. Existing unresolved obligations remain."
     }
   ],
   "reviewed_archives": [
@@ -2315,23 +2323,23 @@
     },
     {
       "name": "pydantic",
-      "filename": "pydantic-2.14.2-py3-none-any.whl",
-      "sha256": "7efbf7507b937931cd32a5755acb00ea1cf5ccb1d4e8067a5850d5069e382118"
+      "filename": "pydantic-2.14.3-py3-none-any.whl",
+      "sha256": "3f7b347782ab7e4cf4c798496ae3a82787d9f21ec12676a9c564355eeef8daa8"
     },
     {
       "name": "pydantic-core",
-      "filename": "pydantic_core-2.50.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
-      "sha256": "9667637665acba166a7dbbc786f14c50512d3a01f7199e0e1a13b929e92d7c7a"
+      "filename": "pydantic_core-2.50.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "c81d98e27d9d9261909dcccab1ba5d6ea1c98b0bb9470e368604614fd1d36ddd"
     },
     {
       "name": "pydantic-core",
-      "filename": "pydantic_core-2.50.2-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
-      "sha256": "31a1fb3ffbd1195b24490f671d12623dd4c9bfa56d6af0a299fa43b516134f5b"
+      "filename": "pydantic_core-2.50.4-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "fb2bb5b557080da398b866408117d98fe9731a12334afd0cdff221b458cdc5dc"
     },
     {
       "name": "pydantic-core",
-      "filename": "pydantic_core-2.50.2-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
-      "sha256": "b29b7c5adf4b2be7c941f7f76432aa3269cd5052ff8610376b8ece24d7b02c51"
+      "filename": "pydantic_core-2.50.4-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "f1d62fb172db35c6478c9323da34ff37d1f3d37d7d44337a9d94ba8c583e5730"
     },
     {
       "name": "pyjwt",

@@ -1,0 +1,252 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-11-05",
+  "pull_request": 68,
+  "reviewed_bot_head": "a5a069a3d27a4a121e49678663c64b1c98cae732",
+  "lock_sha256": "b039032ac5aecf83933e710e1ca2ffc127d868e45e464aa47e3573dca676764b",
+  "scope": "2 changed runtime/retrieval distributions across 4 locked wheels, including 3 standard CPython3.12-3.14 Linux x86_64 native variants; one Ruff development-only wheel",
+  "verification": "Exact locked old/new wheel SHA-256 verified before complete ZIP member inspection. Complete shipped licence texts and publisher expressions unchanged. ELF headers and dynamic entries parsed without loading downloaded native code. Supported ELF metadata unchanged; hashes and versions refreshed. Compatibility requires separate installed/native CI. Existing native/notice/legal obligations remain unresolved.",
+  "reviews": [
+    {
+      "name": "pydantic",
+      "old_version": "2.14.2",
+      "version": "2.14.3",
+      "filename": "pydantic-2.14.3-py3-none-any.whl",
+      "sha256": "3f7b347782ab7e4cf4c798496ae3a82787d9f21ec12676a9c564355eeef8daa8",
+      "expression": "MIT",
+      "python": ">=3.10",
+      "requirements": [
+        "annotated-types>=0.6.0",
+        "pydantic-core==2.50.4",
+        "typing-extensions>=4.16.0",
+        "typing-inspection>=0.4.4",
+        "email-validator>=2.0.0; extra == 'email'",
+        "tzdata; (platform_system == 'Windows') and extra == 'timezone'"
+      ],
+      "old_requirements": [
+        "annotated-types>=0.6.0",
+        "pydantic-core==2.50.2",
+        "typing-extensions>=4.16.0",
+        "typing-inspection>=0.4.4",
+        "email-validator>=2.0.0; extra == 'email'",
+        "tzdata; (platform_system == 'Windows') and extra == 'timezone'"
+      ],
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "pydantic-2.14.3.dist-info/METADATA",
+          "bytes": 141528,
+          "sha256": "c3eb8984172bedc8e056655e1419351f4497374a91b7b709dbc4a1340f50e1e9",
+          "kind": "metadata"
+        },
+        {
+          "path": "pydantic-2.14.3.dist-info/licenses/LICENSE",
+          "bytes": 1129,
+          "sha256": "a9e186f3ca16b5eef84318e7a701721351a00cb7b8ae3a4394b67b49e3529ef3",
+          "kind": "licence-text"
+        }
+      ],
+      "files": []
+    },
+    {
+      "name": "pydantic-core",
+      "old_version": "2.50.2",
+      "version": "2.50.4",
+      "filename": "pydantic_core-2.50.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "c81d98e27d9d9261909dcccab1ba5d6ea1c98b0bb9470e368604614fd1d36ddd",
+      "expression": "MIT",
+      "python": ">=3.10",
+      "requirements": [
+        "typing-extensions>=4.16.0"
+      ],
+      "old_requirements": [
+        "typing-extensions>=4.16.0"
+      ],
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "pydantic_core-2.50.4.dist-info/METADATA",
+          "bytes": 6568,
+          "sha256": "bb1956097beb504f190f8ea20c859b5dfea567679a247ce252d7813dd73f361d",
+          "kind": "metadata"
+        },
+        {
+          "path": "pydantic_core-2.50.4.dist-info/licenses/LICENSE",
+          "bytes": 1080,
+          "sha256": "2afdd30d54b4d62b6f488a6bcc1546e84ec5061f13f4209c03d012348783795a",
+          "kind": "licence-text"
+        }
+      ],
+      "files": [
+        {
+          "path": "pydantic_core/_pydantic_core.cpython-312-x86_64-linux-gnu.so",
+          "bytes": 5038352,
+          "sha256": "61385e5d545d1ccd2a531453a1cbcd2670b4e931469cf0093ec9fda1853d1403",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "ld-linux-x86-64.so.2",
+              "libc.so.6",
+              "libdl.so.2",
+              "libgcc_s.so.1",
+              "libpthread.so.0",
+              "librt.so.1"
+            ],
+            "soname": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "pydantic-core",
+      "old_version": "2.50.2",
+      "version": "2.50.4",
+      "filename": "pydantic_core-2.50.4-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "fb2bb5b557080da398b866408117d98fe9731a12334afd0cdff221b458cdc5dc",
+      "expression": "MIT",
+      "python": ">=3.10",
+      "requirements": [
+        "typing-extensions>=4.16.0"
+      ],
+      "old_requirements": [
+        "typing-extensions>=4.16.0"
+      ],
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "pydantic_core-2.50.4.dist-info/METADATA",
+          "bytes": 6568,
+          "sha256": "bb1956097beb504f190f8ea20c859b5dfea567679a247ce252d7813dd73f361d",
+          "kind": "metadata"
+        },
+        {
+          "path": "pydantic_core-2.50.4.dist-info/licenses/LICENSE",
+          "bytes": 1080,
+          "sha256": "2afdd30d54b4d62b6f488a6bcc1546e84ec5061f13f4209c03d012348783795a",
+          "kind": "licence-text"
+        }
+      ],
+      "files": [
+        {
+          "path": "pydantic_core/_pydantic_core.cpython-313-x86_64-linux-gnu.so",
+          "bytes": 5038216,
+          "sha256": "409c007b2b6931519f4147e39d5d1e0c56246f982fb940d8cf7363565c55eb21",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "ld-linux-x86-64.so.2",
+              "libc.so.6",
+              "libdl.so.2",
+              "libgcc_s.so.1",
+              "libpthread.so.0",
+              "librt.so.1"
+            ],
+            "soname": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "pydantic-core",
+      "old_version": "2.50.2",
+      "version": "2.50.4",
+      "filename": "pydantic_core-2.50.4-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "f1d62fb172db35c6478c9323da34ff37d1f3d37d7d44337a9d94ba8c583e5730",
+      "expression": "MIT",
+      "python": ">=3.10",
+      "requirements": [
+        "typing-extensions>=4.16.0"
+      ],
+      "old_requirements": [
+        "typing-extensions>=4.16.0"
+      ],
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "pydantic_core-2.50.4.dist-info/METADATA",
+          "bytes": 6568,
+          "sha256": "bb1956097beb504f190f8ea20c859b5dfea567679a247ce252d7813dd73f361d",
+          "kind": "metadata"
+        },
+        {
+          "path": "pydantic_core-2.50.4.dist-info/licenses/LICENSE",
+          "bytes": 1080,
+          "sha256": "2afdd30d54b4d62b6f488a6bcc1546e84ec5061f13f4209c03d012348783795a",
+          "kind": "licence-text"
+        }
+      ],
+      "files": [
+        {
+          "path": "pydantic_core/_pydantic_core.cpython-314-x86_64-linux-gnu.so",
+          "bytes": 5057424,
+          "sha256": "7f01474c856cf04cff930947ec1698c28363f1756223fa60f7dd5f95e4a806fc",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "ld-linux-x86-64.so.2",
+              "libc.so.6",
+              "libdl.so.2",
+              "libgcc_s.so.1",
+              "libpthread.so.0",
+              "librt.so.1"
+            ],
+            "soname": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "ruff",
+      "old_version": "0.17.3",
+      "version": "0.17.4",
+      "filename": "ruff-0.17.4-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "sha256": "2cd025509b2e15721b426fc70fd946d71f43b3db3b08e946dfec2d696d911690",
+      "expression": "MIT",
+      "python": ">=3.7",
+      "requirements": [],
+      "old_requirements": [],
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "ruff-0.17.4.dist-info/METADATA",
+          "bytes": 20805,
+          "sha256": "012610932dce35ebd07b287a9a1e9032ab89a5025a41a2dbbc476c1ae2f9323f",
+          "kind": "metadata"
+        },
+        {
+          "path": "ruff-0.17.4.dist-info/licenses/LICENSE",
+          "bytes": 20731,
+          "sha256": "2597d854122b77ddc71971564ca2350a37608575ce324adc5650a2b2051c8f18",
+          "kind": "licence-text"
+        }
+      ],
+      "files": [
+        {
+          "path": "ruff-0.17.4.data/scripts/ruff",
+          "bytes": 24549376,
+          "sha256": "4ef33997b4bb7c5f141527e90b2da0abe918108362ca1b9825c4d13adce0e347",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libdl.so.2",
+              "libgcc_s.so.1",
+              "libm.so.6",
+              "libpthread.so.0",
+              "librt.so.1"
+            ],
+            "soname": null
+          }
+        }
+      ]
+    }
+  ]
+}
