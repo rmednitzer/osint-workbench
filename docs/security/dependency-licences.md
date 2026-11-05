@@ -258,3 +258,13 @@ native or certificate trust closure. Existing notice obligations remain.
 The advisory audit rejected 2026.10.18 and recommends 2026.10.19, while the
 upstream advisory lists 2026.10.18 as patched. This update follows the newer
 published release rather than suppressing the inconsistent advisory result.
+
+## 2026-11-05 scheduled lock refresh
+
+The [exact wheel review](../testing/lock-maintenance-2026-11-05.json) accounts for
+13 changed runtime/retrieval distributions across 17 locked archives, including
+all seven affected supported native variants. Complete shipped licence-text bytes
+and publisher licence expressions are unchanged. The policies record the new
+metadata, archive identities and complete ELF file sets; Python minima remain
+within the 3.12 baseline. Compatibility requires both installed/native CI profiles.
+Existing notice, native-closure and redistribution dispositions remain unresolved.
