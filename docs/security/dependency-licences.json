@@ -2,7 +2,7 @@
   "schema_version": 1,
   "scope": "runtime-plus-retrieval; CPython3.12 Linux x86_64 installed wheel evidence and reviewed supported archive variants; no legal approval",
   "review_date": "2026-11-05",
-  "lock_sha256": "0d01fddba5ed0e47510581c137087232deed503f16e66bc85807ed412ce40091",
+  "lock_sha256": "21d20207ea82d72726b4bbb3f04a25f16e4b59fa8f2cc54127c2af44c7ed002c",
   "distributions": [
     {
       "name": "annotated-types",
@@ -2071,6 +2071,10 @@
       "source_commit": "8e5e55350fbc5f65482a44b455136b1e24c3ae2f",
       "receipt": "docs/testing/lock-maintenance-2026-11-05.json",
       "note": "Exact locked wheel inspection for the scheduled refresh; unchanged shipped licence texts and declarations; complete supported native file sets refreshed. Existing unresolved obligations remain."
+    },
+    {
+      "source_commit": "8602adb040cc2daf0baaebb07bb8382a930e2c42",
+      "note": "CycloneDX8 development-tool-only lock successor. Complete lock comparison finds only cyclonedx-bom and the project development-group constraint changed; all runtime/retrieval package records and reviewed evidence are unchanged."
     }
   ],
   "reviewed_archives": [
