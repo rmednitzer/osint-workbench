@@ -35,7 +35,7 @@ staging roots:
 
 ```sh
 docker pull --platform linux/amd64 python:3.12.14-slim-trixie@sha256:44ff437bba879d4941b710a369a8f19266aea34b29002807f0c487fabc9eec9b
-docker pull --platform linux/amd64 pgvector/pgvector:pg18@sha256:2358fcba361ed2233a5ed81b5fe4ca779ccb304120ce531a3bf51c0ed7e2bc11
+docker pull --platform linux/amd64 pgvector/pgvector:pg18@sha256:c29f30688a9ad961691bdf0ec1650717cc132a5814619d80f80463d6e4c42e47
 uv export --locked --no-dev --no-emit-project --output-file /var/tmp/ow-test-inputs/core-requirements.txt > /dev/null
 ```
 
