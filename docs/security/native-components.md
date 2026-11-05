@@ -165,3 +165,15 @@ and publisher licence expressions are unchanged. The policies record the new
 metadata, archive identities and complete ELF file sets; Python minima remain
 within the 3.12 baseline. Compatibility requires both installed/native CI profiles.
 Existing notice, native-closure and redistribution dispositions remain unresolved.
+
+
+## 2026-11-05 Pydantic lock refresh
+
+The [exact wheel review](../testing/lock-maintenance-2026-11-05-pydantic.json) accounts for
+Pydantic 2.14.3 and pydantic-core 2.50.4 across four locked archives, including
+all three supported CPython 3.12-3.14 Linux x86_64 native variants. Complete shipped
+licence texts, publisher expressions and parsed ELF metadata are unchanged.
+Exact metadata, archive and native file identities are refreshed. Ruff 0.17.4 is
+development-only and its selected Linux wheel is reviewed separately in the same
+receipt. Required installed/native CI remains separate compatibility evidence.
+Existing notice, native-closure and redistribution dispositions remain unresolved.
