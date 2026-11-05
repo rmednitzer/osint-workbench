@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "review_date": "2026-10-21",
+  "review_date": "2026-11-05",
   "scope": "RECORD-listed ELF file-set identity; standard CPython3.12-3.14 manylinux x86_64 and compatible ABI3; no native dependency closure or legal approval",
-  "lock_sha256": "f038f383cca1658e9d4d2068146e363f3756a2ece4847a669984be49a26cba48",
+  "lock_sha256": "0d01fddba5ed0e47510581c137087232deed503f16e66bc85807ed412ce40091",
   "review_history": [
     {
       "source_commit": "331d597",
@@ -32,6 +32,11 @@
     {
       "source_commit": "b69d34de436887a0334508765afc66ed6f75388f",
       "note": "Reviewed httpcore2 and httpx2 2.16.0 lock refresh: verified exact PyPI wheel hashes and matching upstream v2.16.0 tag/release notes; BSD-3-Clause expressions and complete shipped licence files are unchanged; wheels contain no native libraries."
+    },
+    {
+      "source_commit": "8e5e55350fbc5f65482a44b455136b1e24c3ae2f",
+      "receipt": "docs/testing/lock-maintenance-2026-11-05.json",
+      "note": "Exact locked wheel inspection for the scheduled refresh; unchanged shipped licence texts and declarations; complete supported native file sets refreshed. Existing unresolved obligations remain."
     }
   ],
   "distributions": [
@@ -49,12 +54,12 @@
     },
     {
       "name": "anyio",
-      "version": "4.15.1",
+      "version": "4.16.0",
       "native_dependency_closure": "not-established-by-empty-ELF-set",
       "variants": [
         {
-          "wheel_filename": "anyio-4.15.1-py3-none-any.whl",
-          "wheel_sha256": "6152fdbbf9a77fdec97731721bebf7c4c44f7c29b424b0065826173efc7ed101",
+          "wheel_filename": "anyio-4.16.0-py3-none-any.whl",
+          "wheel_sha256": "c66ae634e0b8228396b801741beb3294326d4b6102f7bba4041c0dfb58c29026",
           "files": []
         }
       ]
@@ -73,12 +78,12 @@
     },
     {
       "name": "certifi",
-      "version": "2026.10.19",
+      "version": "2026.10.23",
       "native_dependency_closure": "not-established-by-empty-ELF-set",
       "variants": [
         {
-          "wheel_filename": "certifi-2026.10.19-py3-none-any.whl",
-          "wheel_sha256": "42d35340cc5b9ba78e818ddbff0c5b1c2b779de448a340fd1b989f5fa8670e1b",
+          "wheel_filename": "certifi-2026.10.23-py3-none-any.whl",
+          "wheel_sha256": "e9b54de76e530bb6cf0ccd036787103acb58fd42ba930ea8bf948ddbaa2f61d1",
           "files": []
         }
       ]
@@ -343,12 +348,12 @@
     },
     {
       "name": "filelock",
-      "version": "4.2.4",
+      "version": "4.2.6",
       "native_dependency_closure": "not-established-by-empty-ELF-set",
       "variants": [
         {
-          "wheel_filename": "filelock-4.2.4-py3-none-any.whl",
-          "wheel_sha256": "301241438c57936ef93f4243a94f2559022268bfcf9b375a9a72eb0f8db8358e",
+          "wheel_filename": "filelock-4.2.6-py3-none-any.whl",
+          "wheel_sha256": "fd7d4fca497bf3e3d0945a13261f8e684f2aef12ce7cf76aef26e13bf7388b88",
           "files": []
         }
       ]
@@ -391,17 +396,17 @@
     },
     {
       "name": "hf-xet",
-      "version": "1.7.0",
+      "version": "1.8.0",
       "native_dependency_closure": "unresolved",
       "variants": [
         {
-          "wheel_filename": "hf_xet-1.7.0-cp38-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
-          "wheel_sha256": "2814a6e999d13464c4d679b788cc5d784eb5a4edfc638a31f10e9a11ab531ef8",
+          "wheel_filename": "hf_xet-1.8.0-cp38-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+          "wheel_sha256": "29dab7c904cd1914a0439c6e1306c12c7497c8bd32290fbe563ebf51ca4b6d6d",
           "files": [
             {
               "path": "hf_xet/hf_xet.abi3.so",
-              "bytes": 11274016,
-              "sha256": "a4e40058860f3ad4ca9b0193d47b47e0e7bf8ca7e5ae0735696274c6c4c1706b",
+              "bytes": 11425664,
+              "sha256": "b370edad9e013363856697167609e0b6d43f509d79117b6ee4b4a0e192e6c56e",
               "elf": {
                 "type": "ET_DYN",
                 "machine": "EM_X86_64",
@@ -494,12 +499,12 @@
     },
     {
       "name": "huggingface-hub",
-      "version": "2.2.0",
+      "version": "2.4.0",
       "native_dependency_closure": "not-established-by-empty-ELF-set",
       "variants": [
         {
-          "wheel_filename": "huggingface_hub-2.2.0-py3-none-any.whl",
-          "wheel_sha256": "1667f145dc56dc210d60966069397df9ecfca9607a5d43db88b308c89dae56b3",
+          "wheel_filename": "huggingface_hub-2.4.0-py3-none-any.whl",
+          "wheel_sha256": "42ecfd93ede47bdd333daebbf66a32d7bfe2e18752754fe4d2d4f98a0179d801",
           "files": []
         }
       ]
@@ -1578,17 +1583,17 @@
     },
     {
       "name": "onnxruntime",
-      "version": "1.31.0",
+      "version": "1.31.1",
       "native_dependency_closure": "unresolved",
       "variants": [
         {
-          "wheel_filename": "onnxruntime-1.31.0-cp312-cp312-manylinux_2_28_x86_64.whl",
-          "wheel_sha256": "5e129d6c56abd53e659cb70f00a108d6824086470ff99c2e47a82e5786563db3",
+          "wheel_filename": "onnxruntime-1.31.1-cp312-cp312-manylinux_2_28_x86_64.whl",
+          "wheel_sha256": "1f3dea47f2f0e5117c2404cea7d21fd253ae7836a3bf167a501cdfbb2600d536",
           "files": [
             {
-              "path": "onnxruntime/capi/libonnxruntime.so.1.31.0",
+              "path": "onnxruntime/capi/libonnxruntime.so.1.31.1",
               "bytes": 29352200,
-              "sha256": "21901b1b02233484b80888c16f4f5473742f796bf5528d5d0c4073dbe9802001",
+              "sha256": "fc44112fbe06d7d689c57e11d3862031f64711007e4ee020f8eed5185fd2c1d3",
               "elf": {
                 "type": "ET_DYN",
                 "machine": "EM_X86_64",
@@ -1626,7 +1631,7 @@
             {
               "path": "onnxruntime/capi/onnxruntime_pybind11_state.cpython-312-x86_64-linux-gnu.so",
               "bytes": 30958696,
-              "sha256": "2377ce1c968f274da1e694680ea8dc19fdc619bd61c192d8b2dff3362710ec4e",
+              "sha256": "610a1f1700874da6b18c408888281ea75e03591f637ce0292f169c978ad46b15",
               "elf": {
                 "type": "ET_DYN",
                 "machine": "EM_X86_64",
@@ -1647,13 +1652,13 @@
           ]
         },
         {
-          "wheel_filename": "onnxruntime-1.31.0-cp313-cp313-manylinux_2_28_x86_64.whl",
-          "wheel_sha256": "37fd78cee5160c7a43a1730ccb3682ffd880af9c9e80385d625c0c2f8b125809",
+          "wheel_filename": "onnxruntime-1.31.1-cp313-cp313-manylinux_2_28_x86_64.whl",
+          "wheel_sha256": "74a6a52994616c4d18b33db1e13c226333a70a6ba07480a5cab9c2a50dff1430",
           "files": [
             {
-              "path": "onnxruntime/capi/libonnxruntime.so.1.31.0",
+              "path": "onnxruntime/capi/libonnxruntime.so.1.31.1",
               "bytes": 29352200,
-              "sha256": "21901b1b02233484b80888c16f4f5473742f796bf5528d5d0c4073dbe9802001",
+              "sha256": "fc44112fbe06d7d689c57e11d3862031f64711007e4ee020f8eed5185fd2c1d3",
               "elf": {
                 "type": "ET_DYN",
                 "machine": "EM_X86_64",
@@ -1691,7 +1696,7 @@
             {
               "path": "onnxruntime/capi/onnxruntime_pybind11_state.cpython-313-x86_64-linux-gnu.so",
               "bytes": 30958696,
-              "sha256": "c8f3c0f7b51e0d12563f77829fc2632daade3a7d09b3a17b6cf3a50d490f5b0b",
+              "sha256": "b4e25cb94903cf2c6f358775864ae40e995dddaac33aa59db7e223d11a26ef72",
               "elf": {
                 "type": "ET_DYN",
                 "machine": "EM_X86_64",
@@ -1712,13 +1717,13 @@
           ]
         },
         {
-          "wheel_filename": "onnxruntime-1.31.0-cp314-cp314-manylinux_2_28_x86_64.whl",
-          "wheel_sha256": "e4efa4a1a0bb0b5173c6a3292c181d518b8323f9d56e978635d0c09d38c94d1a",
+          "wheel_filename": "onnxruntime-1.31.1-cp314-cp314-manylinux_2_28_x86_64.whl",
+          "wheel_sha256": "c20d7f15d84427db070b163f78c2c7146cc93edd6113fa7327671259a24184fe",
           "files": [
             {
-              "path": "onnxruntime/capi/libonnxruntime.so.1.31.0",
+              "path": "onnxruntime/capi/libonnxruntime.so.1.31.1",
               "bytes": 29352200,
-              "sha256": "21901b1b02233484b80888c16f4f5473742f796bf5528d5d0c4073dbe9802001",
+              "sha256": "fc44112fbe06d7d689c57e11d3862031f64711007e4ee020f8eed5185fd2c1d3",
               "elf": {
                 "type": "ET_DYN",
                 "machine": "EM_X86_64",
@@ -1756,7 +1761,7 @@
             {
               "path": "onnxruntime/capi/onnxruntime_pybind11_state.cpython-314-x86_64-linux-gnu.so",
               "bytes": 30962792,
-              "sha256": "a58f427dfb2d8b31c20c8a3ab11ef40985688f9ae42a89c1664b1046e2f223c6",
+              "sha256": "c5eda75f1cf16093a785196fd3626ac4db7a0d3a7727ad851366716250e408b4",
               "elf": {
                 "type": "ET_DYN",
                 "machine": "EM_X86_64",
@@ -1780,12 +1785,12 @@
     },
     {
       "name": "opentelemetry-api",
-      "version": "1.45.1",
+      "version": "1.45.2",
       "native_dependency_closure": "not-established-by-empty-ELF-set",
       "variants": [
         {
-          "wheel_filename": "opentelemetry_api-1.45.1-py3-none-any.whl",
-          "wheel_sha256": "b31553efa588ae44bc306f863c785c5333a9ecc091248c6ee68b4b6c87fdedfb",
+          "wheel_filename": "opentelemetry_api-1.45.2-py3-none-any.whl",
+          "wheel_sha256": "2cbd737377e710ee740d261c94e93fa0f08e6d037c18f17513cc0a2d94479a34",
           "files": []
         }
       ]
@@ -2775,41 +2780,41 @@
     },
     {
       "name": "pycparser",
-      "version": "3.11",
+      "version": "3.12",
       "native_dependency_closure": "not-established-by-empty-ELF-set",
       "variants": [
         {
-          "wheel_filename": "pycparser-3.11-py3-none-any.whl",
-          "wheel_sha256": "51d5a8ba2be0bbe440b99d2112604c95bbbc3c2748a64260186c541e1729cd80",
+          "wheel_filename": "pycparser-3.12-py3-none-any.whl",
+          "wheel_sha256": "a076f3f489b39b43ed13563a1dafe42447445bec2e294154ec5c57fcdda4c85e",
           "files": []
         }
       ]
     },
     {
       "name": "pydantic",
-      "version": "2.14.1",
+      "version": "2.14.2",
       "native_dependency_closure": "not-established-by-empty-ELF-set",
       "variants": [
         {
-          "wheel_filename": "pydantic-2.14.1-py3-none-any.whl",
-          "wheel_sha256": "9195d967ec791692a04438115466764fb8b9a27b31f14a760437694f40d6b454",
+          "wheel_filename": "pydantic-2.14.2-py3-none-any.whl",
+          "wheel_sha256": "7efbf7507b937931cd32a5755acb00ea1cf5ccb1d4e8067a5850d5069e382118",
           "files": []
         }
       ]
     },
     {
       "name": "pydantic-core",
-      "version": "2.50.1",
+      "version": "2.50.2",
       "native_dependency_closure": "unresolved",
       "variants": [
         {
-          "wheel_filename": "pydantic_core-2.50.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
-          "wheel_sha256": "93ba4e9d8210d941c200431a56b2c0400b131865947903937ed3ec5404307d2e",
+          "wheel_filename": "pydantic_core-2.50.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+          "wheel_sha256": "9667637665acba166a7dbbc786f14c50512d3a01f7199e0e1a13b929e92d7c7a",
           "files": [
             {
               "path": "pydantic_core/_pydantic_core.cpython-312-x86_64-linux-gnu.so",
-              "bytes": 4843520,
-              "sha256": "e9bf4980b91a7d83aaab8369bc4b349a1ae035b1bce7adfaf8a0b6a5044f0f60",
+              "bytes": 5002784,
+              "sha256": "e78c853aa73cf86a175f142d37f9bdd29cf7ff8d948bf5270e288e6ede7ebb58",
               "elf": {
                 "type": "ET_DYN",
                 "machine": "EM_X86_64",
@@ -2828,13 +2833,13 @@
           ]
         },
         {
-          "wheel_filename": "pydantic_core-2.50.1-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
-          "wheel_sha256": "17e722e156d0444ecaefbe640bdb60928752bf2013e2b7a11cdb099aaae19bec",
+          "wheel_filename": "pydantic_core-2.50.2-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+          "wheel_sha256": "31a1fb3ffbd1195b24490f671d12623dd4c9bfa56d6af0a299fa43b516134f5b",
           "files": [
             {
               "path": "pydantic_core/_pydantic_core.cpython-313-x86_64-linux-gnu.so",
-              "bytes": 4842000,
-              "sha256": "47433ba05547232202c47b70a3de1b37bdb4d6efd624508f4d7a42ef5f4bc1eb",
+              "bytes": 5002792,
+              "sha256": "b50a4af7e9c722d907c5bcd683b6ce24d12b741289d9fb0cf9ec63ee78d5da68",
               "elf": {
                 "type": "ET_DYN",
                 "machine": "EM_X86_64",
@@ -2853,13 +2858,13 @@
           ]
         },
         {
-          "wheel_filename": "pydantic_core-2.50.1-cp314-cp314-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
-          "wheel_sha256": "42b54c2c90ad348b5e3a85e03e715d572c1fde357ef104cdfe3b03b697a404ea",
+          "wheel_filename": "pydantic_core-2.50.2-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+          "wheel_sha256": "b29b7c5adf4b2be7c941f7f76432aa3269cd5052ff8610376b8ece24d7b02c51",
           "files": [
             {
               "path": "pydantic_core/_pydantic_core.cpython-314-x86_64-linux-gnu.so",
-              "bytes": 4856000,
-              "sha256": "f1c6034d9d708521893241e1f597532aab8c334fddc10b8773f6a73e0503577b",
+              "bytes": 5019824,
+              "sha256": "16db4d0dd20e1547205a61afe6556b3b41120be752eaed997805fa5e8f45caa3",
               "elf": {
                 "type": "ET_DYN",
                 "machine": "EM_X86_64",
@@ -2893,12 +2898,12 @@
     },
     {
       "name": "python-multipart",
-      "version": "0.0.32",
+      "version": "0.0.33",
       "native_dependency_closure": "not-established-by-empty-ELF-set",
       "variants": [
         {
-          "wheel_filename": "python_multipart-0.0.32-py3-none-any.whl",
-          "wheel_sha256": "ff6d3f776f16878c894e52e107296ffc890e913c611b1a4ec6c44e2821fe2e23",
+          "wheel_filename": "python_multipart-0.0.33-py3-none-any.whl",
+          "wheel_sha256": "8f16c07b36add9da6b2ee87d3efcaf0a45a6de9c3d0a5dd94e9ccf7675a7bc45",
           "files": []
         }
       ]
@@ -3063,24 +3068,24 @@
     },
     {
       "name": "sse-starlette",
-      "version": "3.5.0",
+      "version": "3.6.0",
       "native_dependency_closure": "not-established-by-empty-ELF-set",
       "variants": [
         {
-          "wheel_filename": "sse_starlette-3.5.0-py3-none-any.whl",
-          "wheel_sha256": "3e6e1070df3f0f5d9cea81496de92dbb72f6721871d99748ece67441dd8b7997",
+          "wheel_filename": "sse_starlette-3.6.0-py3-none-any.whl",
+          "wheel_sha256": "e4dfa4d237d2712cb2b4d4918eda9b457cd6b44bbecdc838af75de836565bafd",
           "files": []
         }
       ]
     },
     {
       "name": "starlette",
-      "version": "1.9.0",
+      "version": "1.10.0",
       "native_dependency_closure": "not-established-by-empty-ELF-set",
       "variants": [
         {
-          "wheel_filename": "starlette-1.9.0-py3-none-any.whl",
-          "wheel_sha256": "fd3f159936e882d06c1108f84688f7cda2cf85fc6a592a50edbd175e882c2ddc",
+          "wheel_filename": "starlette-1.10.0-py3-none-any.whl",
+          "wheel_sha256": "478c0ab3b4ced6e82719849c118fa406f0278a3499c1a898cd15cd31bdc38ce4",
           "files": []
         }
       ]

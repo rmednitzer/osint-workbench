@@ -145,3 +145,13 @@ source and shipped licence bytes match. Every ZIP member was inspected for ELF
 magic; the application's explicit empty set and all 147 native proof entries
 remain unchanged. Dependency versions, lock identity and existing unresolved
 notice/native obligations are unchanged.
+
+## 2026-11-05 scheduled lock refresh
+
+The [exact wheel review](../testing/lock-maintenance-2026-11-05.json) accounts for
+13 changed runtime/retrieval distributions across 17 locked archives, including
+all seven affected supported native variants. Complete shipped licence-text bytes
+and publisher licence expressions are unchanged. The policies record the new
+metadata, archive identities and complete ELF file sets; Python minima remain
+within the 3.12 baseline. Compatibility requires both installed/native CI profiles.
+Existing notice, native-closure and redistribution dispositions remain unresolved.

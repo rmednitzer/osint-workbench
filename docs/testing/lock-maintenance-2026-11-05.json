@@ -1,0 +1,903 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-11-05",
+  "pull_request": 63,
+  "reviewed_bot_head": "8e5e55350fbc5f65482a44b455136b1e24c3ae2f",
+  "lock_sha256": "0d01fddba5ed0e47510581c137087232deed503f16e66bc85807ed412ce40091",
+  "scope": "13 changed runtime/retrieval distributions; 17 selected locked wheels, including 7 native standard-ABI/ABI3 Linux x86_64 variants for CPython 3.12-3.14",
+  "verification": "Downloaded each exact locked wheel URL, verified SHA-256, inspected complete METADATA and all previously reviewed shipped licence texts, scanned every archive member for ELF magic and parsed all ELF headers and dynamic names. No downloaded library was loaded by the inspector. Licence texts and declarations are unchanged. Native bytes and versions are refreshed; complete native closure and existing notice/legal obligations remain unresolved. Required installed/native CI establishes separate compatibility evidence.",
+  "reviews": [
+    {
+      "name": "anyio",
+      "old_version": "4.15.1",
+      "version": "4.16.0",
+      "filename": "anyio-4.16.0-py3-none-any.whl",
+      "sha256": "c66ae634e0b8228396b801741beb3294326d4b6102f7bba4041c0dfb58c29026",
+      "expression": "MIT",
+      "python": ">=3.10",
+      "requirements": [
+        "exceptiongroup>=1.0.2; python_version < \"3.11\"",
+        "idna>=2.8",
+        "typing_extensions>=4.16.0; python_version < \"3.15\"",
+        "trio>=0.32.0; extra == \"trio\""
+      ],
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "anyio-4.16.0.dist-info/METADATA",
+          "bytes": 4733,
+          "sha256": "b184ac9cd097e2bb7f90d42799346cc91c276095d000d95d7f7ddd407d0c887e",
+          "kind": "metadata"
+        },
+        {
+          "path": "anyio-4.16.0.dist-info/licenses/LICENSE",
+          "bytes": 1081,
+          "sha256": "5361ac9dc58f2ef5fd2e9b09c68297c17f04950909bbc8023bdb82eacf22c2b0",
+          "kind": "licence-text"
+        }
+      ],
+      "files": []
+    },
+    {
+      "name": "certifi",
+      "old_version": "2026.10.19",
+      "version": "2026.10.23",
+      "filename": "certifi-2026.10.23-py3-none-any.whl",
+      "sha256": "e9b54de76e530bb6cf0ccd036787103acb58fd42ba930ea8bf948ddbaa2f61d1",
+      "expression": null,
+      "python": ">=3.7",
+      "requirements": [],
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "certifi-2026.10.23.dist-info/METADATA",
+          "bytes": 2526,
+          "sha256": "e463e38f7fe7da36a11e6d3fecc5dfa5b97be8c8022620400750d79ae7d842bc",
+          "kind": "metadata"
+        },
+        {
+          "path": "certifi-2026.10.23.dist-info/licenses/LICENSE",
+          "bytes": 989,
+          "sha256": "e93716da6b9c0d5a4a1df60fe695b370f0695603d21f6f83f053e42cfc10caf7",
+          "kind": "licence-text"
+        }
+      ],
+      "files": []
+    },
+    {
+      "name": "filelock",
+      "old_version": "4.2.4",
+      "version": "4.2.6",
+      "filename": "filelock-4.2.6-py3-none-any.whl",
+      "sha256": "fd7d4fca497bf3e3d0945a13261f8e684f2aef12ce7cf76aef26e13bf7388b88",
+      "expression": "MIT",
+      "python": ">=3.11",
+      "requirements": [],
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "filelock-4.2.6.dist-info/METADATA",
+          "bytes": 1981,
+          "sha256": "036ae23e85e49ab4e72485ecd5b5647faa92194dce0867b4207eeb813fe0f4f5",
+          "kind": "metadata"
+        },
+        {
+          "path": "filelock-4.2.6.dist-info/licenses/LICENSE",
+          "bytes": 1088,
+          "sha256": "608c89d5060ae9921adccf3236695bc654a9946e12323ef6c021dfa04e294d48",
+          "kind": "licence-text"
+        }
+      ],
+      "files": []
+    },
+    {
+      "name": "hf-xet",
+      "old_version": "1.7.0",
+      "version": "1.8.0",
+      "filename": "hf_xet-1.8.0-cp38-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "29dab7c904cd1914a0439c6e1306c12c7497c8bd32290fbe563ebf51ca4b6d6d",
+      "expression": "Apache-2.0",
+      "python": ">=3.8",
+      "requirements": [
+        "pytest ; extra == 'tests'"
+      ],
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "hf_xet-1.8.0.dist-info/METADATA",
+          "bytes": 4882,
+          "sha256": "04d03dbf3d08734ec5a7cc8cfd7d93c05dda453a9ed0b20d83683ecdd64942e7",
+          "kind": "metadata"
+        },
+        {
+          "path": "hf_xet-1.8.0.dist-info/licenses/LICENSE",
+          "bytes": 11357,
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "kind": "licence-text"
+        }
+      ],
+      "files": [
+        {
+          "path": "hf_xet/hf_xet.abi3.so",
+          "bytes": 11425664,
+          "sha256": "b370edad9e013363856697167609e0b6d43f509d79117b6ee4b4a0e192e6c56e",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "ld-linux-x86-64.so.2",
+              "libc.so.6",
+              "libdl.so.2",
+              "libgcc_s.so.1",
+              "libm.so.6",
+              "libpthread.so.0",
+              "librt.so.1"
+            ],
+            "soname": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "huggingface-hub",
+      "old_version": "2.2.0",
+      "version": "2.4.0",
+      "filename": "huggingface_hub-2.4.0-py3-none-any.whl",
+      "sha256": "42ecfd93ede47bdd333daebbf66a32d7bfe2e18752754fe4d2d4f98a0179d801",
+      "expression": null,
+      "python": ">=3.10.0",
+      "requirements": [
+        "click<9.0.0,>=8.4.2",
+        "filelock>=3.10.0",
+        "fsspec>=2023.5.0",
+        "hf-xet<2.0.0,>=1.6.0; platform_machine == \"x86_64\" or platform_machine == \"amd64\" or platform_machine == \"AMD64\" or platform_machine == \"arm64\" or platform_machine == \"ARM64\" or platform_machine == \"aarch64\"",
+        "httpx2<3,>=2.0.0",
+        "packaging>=20.9",
+        "pyyaml>=5.1",
+        "tomli>=1.1.0; python_version < \"3.11\"",
+        "tqdm>=4.42.1",
+        "typing-extensions>=4.1.0",
+        "authlib>=1.8.0; extra == \"oauth\"",
+        "fastapi; extra == \"oauth\"",
+        "itsdangerous; extra == \"oauth\"",
+        "torch; extra == \"torch\"",
+        "safetensors[torch]; extra == \"torch\"",
+        "toml; extra == \"fastai\"",
+        "fastai>=2.4; extra == \"fastai\"",
+        "fastcore>=1.3.27; extra == \"fastai\"",
+        "hf-xet<2.0.0,>=1.6.0; extra == \"hf-xet\"",
+        "mcp<2.0.0,>=1.9.4; extra == \"mcp\"",
+        "authlib>=1.8.0; extra == \"testing\"",
+        "fastapi; extra == \"testing\"",
+        "itsdangerous; extra == \"testing\"",
+        "jedi; extra == \"testing\"",
+        "Jinja2; extra == \"testing\"",
+        "pytest>=8.4.2; extra == \"testing\"",
+        "pytest-cov; extra == \"testing\"",
+        "pytest-env; extra == \"testing\"",
+        "pytest-xdist; extra == \"testing\"",
+        "pytest-vcr; extra == \"testing\"",
+        "pytest-asyncio; extra == \"testing\"",
+        "pytest-rerunfailures>=16.2; extra == \"testing\"",
+        "pytest-mock; extra == \"testing\"",
+        "soundfile; extra == \"testing\"",
+        "Pillow; extra == \"testing\"",
+        "numpy; extra == \"testing\"",
+        "duckdb; python_version < \"3.15\" and extra == \"testing\"",
+        "fastapi; extra == \"testing\"",
+        "gradio>=5.0.0; extra == \"gradio\"",
+        "requests; extra == \"gradio\"",
+        "typing-extensions>=4.8.0; extra == \"typing\"",
+        "types-PyYAML; extra == \"typing\"",
+        "types-simplejson; extra == \"typing\"",
+        "types-toml; extra == \"typing\"",
+        "types-tqdm; extra == \"typing\"",
+        "types-urllib3; extra == \"typing\"",
+        "ruff>=0.9.0; extra == \"quality\"",
+        "mypy==1.15.0; extra == \"quality\"",
+        "libcst>=1.4.0; extra == \"quality\"",
+        "ty; extra == \"quality\"",
+        "authlib>=1.8.0; extra == \"all\"",
+        "fastapi; extra == \"all\"",
+        "itsdangerous; extra == \"all\"",
+        "jedi; extra == \"all\"",
+        "Jinja2; extra == \"all\"",
+        "pytest>=8.4.2; extra == \"all\"",
+        "pytest-cov; extra == \"all\"",
+        "pytest-env; extra == \"all\"",
+        "pytest-xdist; extra == \"all\"",
+        "pytest-vcr; extra == \"all\"",
+        "pytest-asyncio; extra == \"all\"",
+        "pytest-rerunfailures>=16.2; extra == \"all\"",
+        "pytest-mock; extra == \"all\"",
+        "soundfile; extra == \"all\"",
+        "Pillow; extra == \"all\"",
+        "numpy; extra == \"all\"",
+        "duckdb; python_version < \"3.15\" and extra == \"all\"",
+        "fastapi; extra == \"all\"",
+        "ruff>=0.9.0; extra == \"all\"",
+        "mypy==1.15.0; extra == \"all\"",
+        "libcst>=1.4.0; extra == \"all\"",
+        "ty; extra == \"all\"",
+        "typing-extensions>=4.8.0; extra == \"all\"",
+        "types-PyYAML; extra == \"all\"",
+        "types-simplejson; extra == \"all\"",
+        "types-toml; extra == \"all\"",
+        "types-tqdm; extra == \"all\"",
+        "types-urllib3; extra == \"all\"",
+        "authlib>=1.8.0; extra == \"dev\"",
+        "fastapi; extra == \"dev\"",
+        "itsdangerous; extra == \"dev\"",
+        "jedi; extra == \"dev\"",
+        "Jinja2; extra == \"dev\"",
+        "pytest>=8.4.2; extra == \"dev\"",
+        "pytest-cov; extra == \"dev\"",
+        "pytest-env; extra == \"dev\"",
+        "pytest-xdist; extra == \"dev\"",
+        "pytest-vcr; extra == \"dev\"",
+        "pytest-asyncio; extra == \"dev\"",
+        "pytest-rerunfailures>=16.2; extra == \"dev\"",
+        "pytest-mock; extra == \"dev\"",
+        "soundfile; extra == \"dev\"",
+        "Pillow; extra == \"dev\"",
+        "numpy; extra == \"dev\"",
+        "duckdb; python_version < \"3.15\" and extra == \"dev\"",
+        "fastapi; extra == \"dev\"",
+        "ruff>=0.9.0; extra == \"dev\"",
+        "mypy==1.15.0; extra == \"dev\"",
+        "libcst>=1.4.0; extra == \"dev\"",
+        "ty; extra == \"dev\"",
+        "typing-extensions>=4.8.0; extra == \"dev\"",
+        "types-PyYAML; extra == \"dev\"",
+        "types-simplejson; extra == \"dev\"",
+        "types-toml; extra == \"dev\"",
+        "types-tqdm; extra == \"dev\"",
+        "types-urllib3; extra == \"dev\""
+      ],
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "huggingface_hub-2.4.0.dist-info/METADATA",
+          "bytes": 16212,
+          "sha256": "b575d5eabe0b381489db2c163bb382f4ef44588ffbf468a4052719bf161b4211",
+          "kind": "metadata"
+        },
+        {
+          "path": "huggingface_hub-2.4.0.dist-info/licenses/LICENSE",
+          "bytes": 11357,
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "kind": "licence-text"
+        }
+      ],
+      "files": []
+    },
+    {
+      "name": "onnxruntime",
+      "old_version": "1.31.0",
+      "version": "1.31.1",
+      "filename": "onnxruntime-1.31.1-cp312-cp312-manylinux_2_28_x86_64.whl",
+      "sha256": "1f3dea47f2f0e5117c2404cea7d21fd253ae7836a3bf167a501cdfbb2600d536",
+      "expression": null,
+      "python": ">=3.11",
+      "requirements": [
+        "flatbuffers",
+        "numpy>=1.21.6",
+        "packaging",
+        "protobuf>=4.25.8",
+        "sympy; extra == \"symbolic\"",
+        "ml_dtypes; extra == \"quantization\""
+      ],
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "onnxruntime-1.31.1.dist-info/METADATA",
+          "bytes": 5839,
+          "sha256": "82f146c3aad08fd55eadf57e410022535697a858bd6bf760320b2328301d41cf",
+          "kind": "metadata"
+        },
+        {
+          "path": "onnxruntime/LICENSE",
+          "bytes": 1073,
+          "sha256": "2f07c72751aed99790b8a4869cf2311df85a860b22ded05fa22803587a48922c",
+          "kind": "licence-text"
+        },
+        {
+          "path": "onnxruntime/ThirdPartyNotices.txt",
+          "bytes": 338088,
+          "sha256": "143764b952fdb1a7c69ce653bfba74a7744d6a8a573bfb73e235fba356c83de3",
+          "kind": "licence-text"
+        }
+      ],
+      "files": [
+        {
+          "path": "onnxruntime/capi/libonnxruntime.so.1.31.1",
+          "bytes": 29352200,
+          "sha256": "fc44112fbe06d7d689c57e11d3862031f64711007e4ee020f8eed5185fd2c1d3",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "ld-linux-x86-64.so.2",
+              "libc.so.6",
+              "libdl.so.2",
+              "libgcc_s.so.1",
+              "libm.so.6",
+              "libpthread.so.0",
+              "librt.so.1",
+              "libstdc++.so.6"
+            ],
+            "soname": "libonnxruntime.so.1"
+          }
+        },
+        {
+          "path": "onnxruntime/capi/libonnxruntime_providers_shared.so",
+          "bytes": 14632,
+          "sha256": "086ec1d5388f64153d9c63470d126693db9a182c8ce236d3a1119068471b8a0d",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libgcc_s.so.1",
+              "libm.so.6",
+              "libstdc++.so.6"
+            ],
+            "soname": "libonnxruntime_providers_shared.so"
+          }
+        },
+        {
+          "path": "onnxruntime/capi/onnxruntime_pybind11_state.cpython-312-x86_64-linux-gnu.so",
+          "bytes": 30958696,
+          "sha256": "610a1f1700874da6b18c408888281ea75e03591f637ce0292f169c978ad46b15",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "ld-linux-x86-64.so.2",
+              "libc.so.6",
+              "libdl.so.2",
+              "libgcc_s.so.1",
+              "libm.so.6",
+              "libpthread.so.0",
+              "librt.so.1",
+              "libstdc++.so.6"
+            ],
+            "soname": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "onnxruntime",
+      "old_version": "1.31.0",
+      "version": "1.31.1",
+      "filename": "onnxruntime-1.31.1-cp313-cp313-manylinux_2_28_x86_64.whl",
+      "sha256": "74a6a52994616c4d18b33db1e13c226333a70a6ba07480a5cab9c2a50dff1430",
+      "expression": null,
+      "python": ">=3.11",
+      "requirements": [
+        "flatbuffers",
+        "numpy>=1.21.6",
+        "packaging",
+        "protobuf>=4.25.8",
+        "sympy; extra == \"symbolic\"",
+        "ml_dtypes; extra == \"quantization\""
+      ],
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "onnxruntime-1.31.1.dist-info/METADATA",
+          "bytes": 5839,
+          "sha256": "82f146c3aad08fd55eadf57e410022535697a858bd6bf760320b2328301d41cf",
+          "kind": "metadata"
+        },
+        {
+          "path": "onnxruntime/LICENSE",
+          "bytes": 1073,
+          "sha256": "2f07c72751aed99790b8a4869cf2311df85a860b22ded05fa22803587a48922c",
+          "kind": "licence-text"
+        },
+        {
+          "path": "onnxruntime/ThirdPartyNotices.txt",
+          "bytes": 338088,
+          "sha256": "143764b952fdb1a7c69ce653bfba74a7744d6a8a573bfb73e235fba356c83de3",
+          "kind": "licence-text"
+        }
+      ],
+      "files": [
+        {
+          "path": "onnxruntime/capi/libonnxruntime.so.1.31.1",
+          "bytes": 29352200,
+          "sha256": "fc44112fbe06d7d689c57e11d3862031f64711007e4ee020f8eed5185fd2c1d3",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "ld-linux-x86-64.so.2",
+              "libc.so.6",
+              "libdl.so.2",
+              "libgcc_s.so.1",
+              "libm.so.6",
+              "libpthread.so.0",
+              "librt.so.1",
+              "libstdc++.so.6"
+            ],
+            "soname": "libonnxruntime.so.1"
+          }
+        },
+        {
+          "path": "onnxruntime/capi/libonnxruntime_providers_shared.so",
+          "bytes": 14632,
+          "sha256": "086ec1d5388f64153d9c63470d126693db9a182c8ce236d3a1119068471b8a0d",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libgcc_s.so.1",
+              "libm.so.6",
+              "libstdc++.so.6"
+            ],
+            "soname": "libonnxruntime_providers_shared.so"
+          }
+        },
+        {
+          "path": "onnxruntime/capi/onnxruntime_pybind11_state.cpython-313-x86_64-linux-gnu.so",
+          "bytes": 30958696,
+          "sha256": "b4e25cb94903cf2c6f358775864ae40e995dddaac33aa59db7e223d11a26ef72",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "ld-linux-x86-64.so.2",
+              "libc.so.6",
+              "libdl.so.2",
+              "libgcc_s.so.1",
+              "libm.so.6",
+              "libpthread.so.0",
+              "librt.so.1",
+              "libstdc++.so.6"
+            ],
+            "soname": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "onnxruntime",
+      "old_version": "1.31.0",
+      "version": "1.31.1",
+      "filename": "onnxruntime-1.31.1-cp314-cp314-manylinux_2_28_x86_64.whl",
+      "sha256": "c20d7f15d84427db070b163f78c2c7146cc93edd6113fa7327671259a24184fe",
+      "expression": null,
+      "python": ">=3.11",
+      "requirements": [
+        "flatbuffers",
+        "numpy>=1.21.6",
+        "packaging",
+        "protobuf>=4.25.8",
+        "sympy; extra == \"symbolic\"",
+        "ml_dtypes; extra == \"quantization\""
+      ],
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "onnxruntime-1.31.1.dist-info/METADATA",
+          "bytes": 5839,
+          "sha256": "82f146c3aad08fd55eadf57e410022535697a858bd6bf760320b2328301d41cf",
+          "kind": "metadata"
+        },
+        {
+          "path": "onnxruntime/LICENSE",
+          "bytes": 1073,
+          "sha256": "2f07c72751aed99790b8a4869cf2311df85a860b22ded05fa22803587a48922c",
+          "kind": "licence-text"
+        },
+        {
+          "path": "onnxruntime/ThirdPartyNotices.txt",
+          "bytes": 338088,
+          "sha256": "143764b952fdb1a7c69ce653bfba74a7744d6a8a573bfb73e235fba356c83de3",
+          "kind": "licence-text"
+        }
+      ],
+      "files": [
+        {
+          "path": "onnxruntime/capi/libonnxruntime.so.1.31.1",
+          "bytes": 29352200,
+          "sha256": "fc44112fbe06d7d689c57e11d3862031f64711007e4ee020f8eed5185fd2c1d3",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "ld-linux-x86-64.so.2",
+              "libc.so.6",
+              "libdl.so.2",
+              "libgcc_s.so.1",
+              "libm.so.6",
+              "libpthread.so.0",
+              "librt.so.1",
+              "libstdc++.so.6"
+            ],
+            "soname": "libonnxruntime.so.1"
+          }
+        },
+        {
+          "path": "onnxruntime/capi/libonnxruntime_providers_shared.so",
+          "bytes": 14632,
+          "sha256": "086ec1d5388f64153d9c63470d126693db9a182c8ce236d3a1119068471b8a0d",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libgcc_s.so.1",
+              "libm.so.6",
+              "libstdc++.so.6"
+            ],
+            "soname": "libonnxruntime_providers_shared.so"
+          }
+        },
+        {
+          "path": "onnxruntime/capi/onnxruntime_pybind11_state.cpython-314-x86_64-linux-gnu.so",
+          "bytes": 30962792,
+          "sha256": "c5eda75f1cf16093a785196fd3626ac4db7a0d3a7727ad851366716250e408b4",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "ld-linux-x86-64.so.2",
+              "libc.so.6",
+              "libdl.so.2",
+              "libgcc_s.so.1",
+              "libm.so.6",
+              "libpthread.so.0",
+              "librt.so.1",
+              "libstdc++.so.6"
+            ],
+            "soname": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "opentelemetry-api",
+      "old_version": "1.45.1",
+      "version": "1.45.2",
+      "filename": "opentelemetry_api-1.45.2-py3-none-any.whl",
+      "sha256": "2cbd737377e710ee740d261c94e93fa0f08e6d037c18f17513cc0a2d94479a34",
+      "expression": "Apache-2.0",
+      "python": ">=3.10",
+      "requirements": [
+        "typing-extensions>=4.5.0"
+      ],
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "opentelemetry_api-1.45.2.dist-info/METADATA",
+          "bytes": 1411,
+          "sha256": "aa93f63be0d6d1f662966e67b22a77c0d9966752e3a32ad87c1347f595cea7cb",
+          "kind": "metadata"
+        },
+        {
+          "path": "opentelemetry_api-1.45.2.dist-info/licenses/LICENSE",
+          "bytes": 11357,
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "kind": "licence-text"
+        }
+      ],
+      "files": []
+    },
+    {
+      "name": "pycparser",
+      "old_version": "3.11",
+      "version": "3.12",
+      "filename": "pycparser-3.12-py3-none-any.whl",
+      "sha256": "a076f3f489b39b43ed13563a1dafe42447445bec2e294154ec5c57fcdda4c85e",
+      "expression": "BSD-3-Clause",
+      "python": ">=3.11",
+      "requirements": [],
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "pycparser-3.12.dist-info/METADATA",
+          "bytes": 9709,
+          "sha256": "ad8db5fe2b0e0a3b0e8419fe5041b80be92470a40b06bd9c1462a0a8bb637c92",
+          "kind": "metadata"
+        },
+        {
+          "path": "pycparser-3.12.dist-info/licenses/LICENSE",
+          "bytes": 1543,
+          "sha256": "0a9e78156ae8b96caf1b4f11ac2df424b83de29736f9e757630548a6272fdf90",
+          "kind": "licence-text"
+        }
+      ],
+      "files": []
+    },
+    {
+      "name": "pydantic",
+      "old_version": "2.14.1",
+      "version": "2.14.2",
+      "filename": "pydantic-2.14.2-py3-none-any.whl",
+      "sha256": "7efbf7507b937931cd32a5755acb00ea1cf5ccb1d4e8067a5850d5069e382118",
+      "expression": "MIT",
+      "python": ">=3.10",
+      "requirements": [
+        "annotated-types>=0.6.0",
+        "pydantic-core==2.50.2",
+        "typing-extensions>=4.16.0",
+        "typing-inspection>=0.4.4",
+        "email-validator>=2.0.0; extra == 'email'",
+        "tzdata; (platform_system == 'Windows') and extra == 'timezone'"
+      ],
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "pydantic-2.14.2.dist-info/METADATA",
+          "bytes": 137593,
+          "sha256": "5e27715d350cc99bc33877404deba2a9491221ae972db8f8c79f64032bee3a01",
+          "kind": "metadata"
+        },
+        {
+          "path": "pydantic-2.14.2.dist-info/licenses/LICENSE",
+          "bytes": 1129,
+          "sha256": "a9e186f3ca16b5eef84318e7a701721351a00cb7b8ae3a4394b67b49e3529ef3",
+          "kind": "licence-text"
+        }
+      ],
+      "files": []
+    },
+    {
+      "name": "pydantic-core",
+      "old_version": "2.50.1",
+      "version": "2.50.2",
+      "filename": "pydantic_core-2.50.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "9667637665acba166a7dbbc786f14c50512d3a01f7199e0e1a13b929e92d7c7a",
+      "expression": "MIT",
+      "python": ">=3.10",
+      "requirements": [
+        "typing-extensions>=4.16.0"
+      ],
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "pydantic_core-2.50.2.dist-info/METADATA",
+          "bytes": 6515,
+          "sha256": "ca680c6a06d7e24685a8c13f47c56af9f4deaba25272412f8688459cd6dd2dd1",
+          "kind": "metadata"
+        },
+        {
+          "path": "pydantic_core-2.50.2.dist-info/licenses/LICENSE",
+          "bytes": 1080,
+          "sha256": "2afdd30d54b4d62b6f488a6bcc1546e84ec5061f13f4209c03d012348783795a",
+          "kind": "licence-text"
+        }
+      ],
+      "files": [
+        {
+          "path": "pydantic_core/_pydantic_core.cpython-312-x86_64-linux-gnu.so",
+          "bytes": 5002784,
+          "sha256": "e78c853aa73cf86a175f142d37f9bdd29cf7ff8d948bf5270e288e6ede7ebb58",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "ld-linux-x86-64.so.2",
+              "libc.so.6",
+              "libdl.so.2",
+              "libgcc_s.so.1",
+              "libpthread.so.0",
+              "librt.so.1"
+            ],
+            "soname": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "pydantic-core",
+      "old_version": "2.50.1",
+      "version": "2.50.2",
+      "filename": "pydantic_core-2.50.2-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "31a1fb3ffbd1195b24490f671d12623dd4c9bfa56d6af0a299fa43b516134f5b",
+      "expression": "MIT",
+      "python": ">=3.10",
+      "requirements": [
+        "typing-extensions>=4.16.0"
+      ],
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "pydantic_core-2.50.2.dist-info/METADATA",
+          "bytes": 6515,
+          "sha256": "ca680c6a06d7e24685a8c13f47c56af9f4deaba25272412f8688459cd6dd2dd1",
+          "kind": "metadata"
+        },
+        {
+          "path": "pydantic_core-2.50.2.dist-info/licenses/LICENSE",
+          "bytes": 1080,
+          "sha256": "2afdd30d54b4d62b6f488a6bcc1546e84ec5061f13f4209c03d012348783795a",
+          "kind": "licence-text"
+        }
+      ],
+      "files": [
+        {
+          "path": "pydantic_core/_pydantic_core.cpython-313-x86_64-linux-gnu.so",
+          "bytes": 5002792,
+          "sha256": "b50a4af7e9c722d907c5bcd683b6ce24d12b741289d9fb0cf9ec63ee78d5da68",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "ld-linux-x86-64.so.2",
+              "libc.so.6",
+              "libdl.so.2",
+              "libgcc_s.so.1",
+              "libpthread.so.0",
+              "librt.so.1"
+            ],
+            "soname": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "pydantic-core",
+      "old_version": "2.50.1",
+      "version": "2.50.2",
+      "filename": "pydantic_core-2.50.2-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "b29b7c5adf4b2be7c941f7f76432aa3269cd5052ff8610376b8ece24d7b02c51",
+      "expression": "MIT",
+      "python": ">=3.10",
+      "requirements": [
+        "typing-extensions>=4.16.0"
+      ],
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "pydantic_core-2.50.2.dist-info/METADATA",
+          "bytes": 6515,
+          "sha256": "ca680c6a06d7e24685a8c13f47c56af9f4deaba25272412f8688459cd6dd2dd1",
+          "kind": "metadata"
+        },
+        {
+          "path": "pydantic_core-2.50.2.dist-info/licenses/LICENSE",
+          "bytes": 1080,
+          "sha256": "2afdd30d54b4d62b6f488a6bcc1546e84ec5061f13f4209c03d012348783795a",
+          "kind": "licence-text"
+        }
+      ],
+      "files": [
+        {
+          "path": "pydantic_core/_pydantic_core.cpython-314-x86_64-linux-gnu.so",
+          "bytes": 5019824,
+          "sha256": "16db4d0dd20e1547205a61afe6556b3b41120be752eaed997805fa5e8f45caa3",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "ld-linux-x86-64.so.2",
+              "libc.so.6",
+              "libdl.so.2",
+              "libgcc_s.so.1",
+              "libpthread.so.0",
+              "librt.so.1"
+            ],
+            "soname": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "python-multipart",
+      "old_version": "0.0.32",
+      "version": "0.0.33",
+      "filename": "python_multipart-0.0.33-py3-none-any.whl",
+      "sha256": "8f16c07b36add9da6b2ee87d3efcaf0a45a6de9c3d0a5dd94e9ccf7675a7bc45",
+      "expression": "Apache-2.0",
+      "python": ">=3.11",
+      "requirements": [],
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "python_multipart-0.0.33.dist-info/METADATA",
+          "bytes": 6300,
+          "sha256": "6b72c8aa930ab581069b93fdc2f7fb9dbede0051a73a699fbba5532b07fe133e",
+          "kind": "metadata"
+        },
+        {
+          "path": "python_multipart-0.0.33.dist-info/licenses/LICENSE.txt",
+          "bytes": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "kind": "licence-text"
+        }
+      ],
+      "files": []
+    },
+    {
+      "name": "sse-starlette",
+      "old_version": "3.5.0",
+      "version": "3.6.0",
+      "filename": "sse_starlette-3.6.0-py3-none-any.whl",
+      "sha256": "e4dfa4d237d2712cb2b4d4918eda9b457cd6b44bbecdc838af75de836565bafd",
+      "expression": "BSD-3-Clause",
+      "python": ">=3.11",
+      "requirements": [
+        "starlette>=0.49.1",
+        "anyio>=4.7.0",
+        "uvicorn>=0.34.0; extra == \"examples\"",
+        "fastapi>=0.115.12; extra == \"examples\"",
+        "pydantic>=2; extra == \"examples\"",
+        "sqlalchemy[asyncio]>=2.0.41; extra == \"examples-db\"",
+        "aiosqlite>=0.21.0; extra == \"examples-db\"",
+        "uvicorn>=0.34.0; extra == \"uvicorn\"",
+        "granian>=2.3.1; extra == \"granian\"",
+        "daphne>=4.2.0; extra == \"daphne\""
+      ],
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "sse_starlette-3.6.0.dist-info/METADATA",
+          "bytes": 15704,
+          "sha256": "fd6db17b500d90b9f336b57088e0b0f2d122c0473b542dfe4bf4cc4f720d9797",
+          "kind": "metadata"
+        },
+        {
+          "path": "sse_starlette-3.6.0.dist-info/licenses/LICENSE",
+          "bytes": 1511,
+          "sha256": "80af6bfccbebd2c14d4aab96695cab9950e177190cc80f5ef819e99996883e8e",
+          "kind": "licence-text"
+        }
+      ],
+      "files": []
+    },
+    {
+      "name": "starlette",
+      "old_version": "1.9.0",
+      "version": "1.10.0",
+      "filename": "starlette-1.10.0-py3-none-any.whl",
+      "sha256": "478c0ab3b4ced6e82719849c118fa406f0278a3499c1a898cd15cd31bdc38ce4",
+      "expression": "BSD-3-Clause",
+      "python": ">=3.11",
+      "requirements": [
+        "anyio<5,>=4.0.0",
+        "typing-extensions>=4.10.0; python_version < '3.13'",
+        "httpx2>=2.0.0; extra == 'full'",
+        "httpx<0.29.0,>=0.27.0; extra == 'full'",
+        "itsdangerous; extra == 'full'",
+        "jinja2; extra == 'full'",
+        "opentelemetry-api; extra == 'full'",
+        "python-multipart>=0.0.18; extra == 'full'",
+        "pyyaml; extra == 'full'"
+      ],
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "starlette-1.10.0.dist-info/METADATA",
+          "bytes": 6560,
+          "sha256": "82f72dde2c5c3c55d45d9461adce5e30973481f7f3e10b59e497bbc5b8abf598",
+          "kind": "metadata"
+        },
+        {
+          "path": "starlette-1.10.0.dist-info/licenses/LICENSE.md",
+          "bytes": 1518,
+          "sha256": "dcb95677a02240243187e964f941847d19b17821cf99e5afae684fab328c19bf",
+          "kind": "licence-text"
+        }
+      ],
+      "files": []
+    }
+  ]
+}
