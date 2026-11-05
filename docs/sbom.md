@@ -118,3 +118,12 @@ composition. The v3 build receipt binds that report and the
 [two-package notice supplement](security/supplementary-notices.md) alongside the
 Python SBOM and licence review. Their presence does not change the graph's
 marker/extra limitations or clear native/OS/model redistribution obligations.
+
+## CycloneDX Python 8 tooling
+
+The v8 environment-command change affects omitted interpreter selection with
+`-E`/`-S`. This repository supplies the target interpreter explicitly, keeps
+CycloneDX1.7 output explicit and validates the emitted inventory and dependency
+graph. The development-tool upgrade leaves the runtime/retrieval package records
+and their licence/native evidence unchanged; only the enclosing lock identity
+is refreshed. Installed/native CI remains required on both supported profiles.

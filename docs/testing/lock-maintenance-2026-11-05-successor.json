@@ -3,7 +3,7 @@
   "review_date": "2026-11-05",
   "pull_request": 66,
   "reviewed_bot_head": "a9781030b8b302172e9f40eae8271287777627cb",
-  "lock_sha256": "1f7f8106c8a6f907da421b73ae85630806fb5a8917c9a14b2c3f6dc6ddda56df",
+  "lock_sha256": "9d9533f7c4b9a73f61790cc33a8b70ca050ee48608da244bbbbd8ded36bfacc6",
   "scope": "4 changed runtime/retrieval distributions; 6 selected locked wheels, including 3 native standard-ABI/ABI3 Linux x86_64 variants for CPython 3.12-3.14",
   "verification": "Downloaded each exact locked wheel URL, verified SHA-256, inspected complete METADATA and all previously reviewed shipped licence texts, scanned every archive member for ELF magic and parsed all ELF headers and dynamic names. No downloaded library was loaded by the inspector. Licence texts and declarations are unchanged. Native bytes and versions are refreshed; complete native closure and existing notice/legal obligations remain unresolved. Required installed/native CI establishes separate compatibility evidence.",
   "reviews": [
@@ -1085,5 +1085,7 @@
       ],
       "files": []
     }
-  ]
+  ],
+  "reviewed_bot_lock_sha256": "1f7f8106c8a6f907da421b73ae85630806fb5a8917c9a14b2c3f6dc6ddda56df",
+  "integration_note": "Includes the separately reviewed CycloneDX8 development-only update and pinned Renovate validator update. The runtime/retrieval wheel records inspected here are unchanged by those integrations."
 }
