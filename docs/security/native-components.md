@@ -155,3 +155,13 @@ and publisher licence expressions are unchanged. The policies record the new
 metadata, archive identities and complete ELF file sets; Python minima remain
 within the 3.12 baseline. Compatibility requires both installed/native CI profiles.
 Existing notice, native-closure and redistribution dispositions remain unresolved.
+
+## 2026-11-05 lock refresh successor
+
+The [exact wheel review](../testing/lock-maintenance-2026-11-05-successor.json) accounts for
+4 changed runtime/retrieval distributions across 6 locked archives, including
+all three affected supported native variants. Complete shipped licence-text bytes
+and publisher licence expressions are unchanged. The policies record the new
+metadata, archive identities and complete ELF file sets; Python minima remain
+within the 3.12 baseline. Compatibility requires both installed/native CI profiles.
+Existing notice, native-closure and redistribution dispositions remain unresolved.
