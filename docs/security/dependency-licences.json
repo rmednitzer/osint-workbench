@@ -2,7 +2,7 @@
   "schema_version": 1,
   "scope": "runtime-plus-retrieval; CPython3.12 Linux x86_64 installed wheel evidence and reviewed supported archive variants; no legal approval",
   "review_date": "2026-11-05",
-  "lock_sha256": "0d01fddba5ed0e47510581c137087232deed503f16e66bc85807ed412ce40091",
+  "lock_sha256": "9d9533f7c4b9a73f61790cc33a8b70ca050ee48608da244bbbbd8ded36bfacc6",
   "distributions": [
     {
       "name": "annotated-types",
@@ -372,7 +372,7 @@
     },
     {
       "name": "filelock",
-      "version": "4.2.6",
+      "version": "4.2.9",
       "declared_expression": "MIT",
       "reviewed_text_summary": "MIT",
       "outcome": "declared-and-shipped-text",
@@ -382,20 +382,20 @@
       ],
       "evidence": [
         {
-          "path": "filelock-4.2.6.dist-info/METADATA",
-          "bytes": 1981,
-          "sha256": "036ae23e85e49ab4e72485ecd5b5647faa92194dce0867b4207eeb813fe0f4f5",
+          "path": "filelock-4.2.9.dist-info/METADATA",
+          "bytes": 2263,
+          "sha256": "53f9b39c11e83c1d6283f2150eb08dd66b9389921c664de90c185d20adfb5438",
           "kind": "metadata"
         },
         {
-          "path": "filelock-4.2.6.dist-info/licenses/LICENSE",
+          "path": "filelock-4.2.9.dist-info/licenses/LICENSE",
           "bytes": 1088,
           "sha256": "608c89d5060ae9921adccf3236695bc654a9946e12323ef6c021dfa04e294d48",
           "kind": "licence-text"
         }
       ],
       "locked_wheel_sha256": [
-        "fd7d4fca497bf3e3d0945a13261f8e684f2aef12ce7cf76aef26e13bf7388b88"
+        "a379c50a729e5b68c8519a4d26489f755d9769960a236ecd838190e2a78db2e9"
       ]
     },
     {
@@ -1149,7 +1149,7 @@
     },
     {
       "name": "psycopg",
-      "version": "3.3.6",
+      "version": "3.3.8",
       "declared_expression": "LGPL-3.0-only",
       "reviewed_text_summary": "LGPL-3.0-only",
       "outcome": "declared-and-shipped-text",
@@ -1160,25 +1160,25 @@
       ],
       "evidence": [
         {
-          "path": "psycopg-3.3.6.dist-info/METADATA",
-          "sha256": "351960397d6b386beae931f5bfd945e8c1212e9505017d1b15c72d4c33bb00af",
+          "path": "psycopg-3.3.8.dist-info/METADATA",
           "bytes": 4369,
+          "sha256": "c5038f79287c501d7d074b521ddfa71202461ab1bd8ade0f5dcb088ef17e76eb",
           "kind": "metadata"
         },
         {
-          "path": "psycopg-3.3.6.dist-info/licenses/LICENSE.txt",
-          "sha256": "e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118",
+          "path": "psycopg-3.3.8.dist-info/licenses/LICENSE.txt",
           "bytes": 7652,
+          "sha256": "e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118",
           "kind": "licence-text"
         }
       ],
       "locked_wheel_sha256": [
-        "a1db9f7148b06a28606767efaca51fa6f9398c5c0a3810519be69d7000bdb631"
+        "ca50af6072ba9ea6866f33021975230c2555d7bfdb9d8f94ca3af5c3d1bf2167"
       ]
     },
     {
       "name": "psycopg-binary",
-      "version": "3.3.6",
+      "version": "3.3.8",
       "declared_expression": "LGPL-3.0-only",
       "reviewed_text_summary": "LGPL-3.0-only",
       "outcome": "declared-and-shipped-text",
@@ -1189,52 +1189,52 @@
       ],
       "evidence": [
         {
-          "path": "psycopg_binary-3.3.6.dist-info/METADATA",
-          "sha256": "0a1fb529c1e27ca41655413e669c964bd0d7069e8cc2ab32b192fc98baf37fd5",
+          "path": "psycopg_binary-3.3.8.dist-info/METADATA",
           "bytes": 2709,
+          "sha256": "25ec19bb0edee3b2916a327944d3522db55b74d9ae551edb929c4ac886b65064",
           "kind": "metadata"
         },
         {
-          "path": "psycopg_binary-3.3.6.dist-info/licenses/LICENSE.txt",
-          "sha256": "e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118",
+          "path": "psycopg_binary-3.3.8.dist-info/licenses/LICENSE.txt",
           "bytes": 7652,
+          "sha256": "e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118",
           "kind": "licence-text"
         }
       ],
       "locked_wheel_sha256": [
-        "05a83ac9fd52b9bca7cb5ab04b3691163170bd16f53defa27216ea3aa07ee781",
-        "0bf08b749cc144f33b44a91b78e3f71c60eb07963746a0df5a100b36ce3d7475",
-        "0ebfad5d131de9f892ae9e70cc7616207768b6714b66a52d4612b8ceaf78b372",
-        "1679a1cb93fbe5a6d1fd58d82cbddcc6fcb8c61446ba7cae6eb2a7b19bc585de",
-        "1fbd30e537dab22cafdf080608f10148fe2a5f3a61294ddb5113caac8a623840",
-        "289aadd6a00e151203c081f708348ec89f1e483c9b510ef4ac3981f847f01f79",
-        "31cd942c23f613276b81a6e6598cefa12960058b0f46e1e874b540c793f6aca5",
-        "366db6e97e66b37211475f20c4c1324a2dc0dd825e46d4e87f9d599304d276f9",
-        "373704aea331d3f3e3402c125a1543f5875e2986ebb54f97d1647942161f803f",
-        "37d40450659401600e6d043ff586c89a71a69f33cbb8bcdba6cdb2569beecdbe",
-        "3af90f92769d8cc10f94515ee7a0aef36ea85ca733a0ce22858f6e0953f41138",
-        "3f84dab25e0385692ee13274c68678377e0b1a70ab9d14e56264cbf61f60c62d",
-        "4690cf67738f0e0e49a32aeec99bf0e4595cc2b4f1af984a4345394b1dcff91a",
-        "5927b7ba63153cd8e9862987290a2b783a5c590daf2a4ef981700cc3569166d4",
-        "5ad8f35e67cc16d1fad1fa8c88972dc9b3a3141ea67897399904edab96a301b6",
-        "612382ac3ed13651c7fa44b5fee9fbf7baaa2ddbc6f500391672682c5f1df9e0",
-        "7308c93cf0b19bbaf8e6ff0a6ad50d3c442385739245fe15a8d593bf841734a6",
-        "79a2a1c3449f6c3409427078ed1cec10de79f3023cb5f2504f0597d350ad46c7",
-        "86147cb5d140341c3363fb5bacce31f8d5543902a46699d3c536b101bbceaf9e",
-        "9892188bb15e5803beb51afe8a25add6b56be391a53058e8bca03b74e1e6bf22",
-        "98c02090d88f2ebc0ec1e8da538f77d225ce0fffecf372aa39262e62a1b054ef",
-        "a4ee3bdd5468a725f2a4d9aab8a74b6d0279f768c8b5d3aeb102c5307ff3d59c",
-        "a5165300324efd5a772c48a88ab3a928513ab3979fca76553e62ee815f7b2b9c",
-        "ad1c785e784cfd87e8436c6b7702f2d321fc39601bbaf29bc63a41a867091638",
-        "b3f75dee0f9afafabe4edc52c4842f1e1878ed2069bd05b22d6fe961e97e4dba",
-        "b82491019b884d62318b5f30706c3d7e6d4e5a6cb7eabcb3edc0c1b0fdaceae9",
-        "cec5ea900390897d0b46130f60bc2883bf19c314f9044235217c8be88b0ef269",
-        "d636338c8f21b0df2f84657b00bc34f9313f826ef93f1155bc743607e4a0c5eb",
-        "e23a66a763fbe83fcc210bc77c27e5a5ea380ebf091c06f34d8561b695e5a40f",
-        "ee2c4728c691245e24501fcd7a97b5b381236b9985bc445bba88cdce7d1b5784",
-        "f19cc87343eaa55255e76b31259a570072ac95d6ae82c92dd34b97691f5e49dc",
-        "f21d057f3e5f5491067e5b292498073b73847d48799b099803fef100775fcc52",
-        "fdccb3a0e184b03e9baa673b15a809cf36c339c85dbda0ebc25a698846dfbee8"
+        "00c226f718901ce022bcee2e0779dc2f0a6d8bcedd5a3818e21ff25564efaa97",
+        "0d483014dde0bd5404801aa91ebbd7912006065dd8d244a962f228fe44bfc08b",
+        "0fd106e47b7d1f82744b23b6dd31856435e46c3d1b3d4972325d76f2e7a3d771",
+        "2f72c18d75d16500fe2f7f300945d68fba9dbb883aef20ba4be0c386afbbf2e9",
+        "31dd2597df303d22a2cabf73c40bb05afaf4ca1394e22935b97f627d4968c87d",
+        "41c31b175084a85232b6ea5f8eb474491b6c963302c69b46fa2ed60afb888b62",
+        "522acdc8a71a042b407851658eb1da85fe09c78b222b2233faef7da3385a757b",
+        "5deec7746acf1c742572b8bf8599f2f61a38c9925015d77254d87d3781169b3f",
+        "5f51d97b67276e90cda022ad363eca61dbe855dbb5342e358469006d4b5254df",
+        "6891b6d9d25103c31411b50f83f9a8aba63f4cbcc63b009f461c115bfaf7b78d",
+        "6d899f361effad9a23d90940b6b55683bc87ed2d457ef64a7fa76fee7c3b9dfc",
+        "6ff02f23b7d95de68f42d5ebe91374540d3d31851d83d9cd37e6e71a5dbd0bcd",
+        "710183a2e29c72050c3a447f9f566de27c6efea9da40bf7b800381ac57026204",
+        "78f92c5c9c9177b247b0f72f03412bc829185786525a8cf8742460066762a7d1",
+        "7d2b484e8ced7c3292e811d28087814467aecd3ef19badb64ed45a0f5fd78bf8",
+        "804041b79916b0e8021a1130650d724741eff1e81ccec8133abf357b4d284a24",
+        "9daff4d6257969b02678943d62bfd83b971004f6efef68d5b767ac69c2222751",
+        "a09aa2ba7927e9b11bd5bddb6d33cec274235d6f54f1ab777ed71c932cfc8d72",
+        "a565d8446b59d26dcf75b08d3ccd4e85b750edba9e53a396cb7a4652d7cbc9e8",
+        "a63be4f745b778654e3c438d1b0e31bcf5ce265151c6982d5c6d5d286bae84c0",
+        "a7cdba018e4decf3837793c1e18dbe3dd71709adef54892ab83d81c00e866dc3",
+        "aa7af0d2d1194b65b8c4d0056c5607de6c38fb6a295f04087d17e1c9d2d11fba",
+        "bf9388216da2069ca0dbad58479bb83e4b979ed35c4a80d247399ac93361417c",
+        "bf96efb4530605813b30d664f5d3b510540d89434a8e89dd7c62fb2d4fa4278f",
+        "c3a8420317a3b3910a08b77a952ef8f8051da61622c6a2e03fc51b75761c6acf",
+        "ced3499d480a979b956536b3f71a4736451bf3a976e4e400fc5c4b8dd3f43b23",
+        "df35063b88af16c08bb8960aac9882cce620aea478dfec5a67cff397b575b97d",
+        "e0972d8de5a0d855d76624f559a6ce5dd068fb4bbfa01e1d7cf929e6800dc4f0",
+        "e09cc11a367cbb147bacec0a41d748d22245e322827911d9c82b6066a8ba2059",
+        "e42c0e37eaed1ff03c24008561bca218eae8ec5ca4405a37897c6245ead8d612",
+        "e8f1addbaec62c9e2bf5b3ae4b32a20c793c06de7d57471f6509a127f1c902f4",
+        "ec6773395189417c92102b34c77ed299f6111fbbc37d50d4fa12ab819f763669",
+        "f09cb4e7744522d71048a8998ff841c7af942a61ffbd4142a140b42d89b950fe"
       ]
     },
     {
@@ -1831,7 +1831,7 @@
     },
     {
       "name": "typing-inspection",
-      "version": "0.4.4",
+      "version": "0.4.5",
       "declared_expression": "MIT",
       "reviewed_text_summary": "MIT",
       "outcome": "declared-and-shipped-text",
@@ -1841,20 +1841,20 @@
       ],
       "evidence": [
         {
-          "path": "typing_inspection-0.4.4.dist-info/METADATA",
-          "sha256": "bad3d9e6342ef6750cf5128ec942327b8bebdce0b6e4d6f67cb15b27ae5118da",
+          "path": "typing_inspection-0.4.5.dist-info/METADATA",
           "bytes": 2554,
+          "sha256": "7306933907768b0098784e56dfd678242f52383ff3e35c10a4c150539393d6ec",
           "kind": "metadata"
         },
         {
-          "path": "typing_inspection-0.4.4.dist-info/licenses/LICENSE",
-          "sha256": "804b59b25f2c31bd278f9202a19ae49a3945aa2664387e2d0a128c7cacc61ec3",
+          "path": "typing_inspection-0.4.5.dist-info/licenses/LICENSE",
           "bytes": 1090,
+          "sha256": "804b59b25f2c31bd278f9202a19ae49a3945aa2664387e2d0a128c7cacc61ec3",
           "kind": "licence-text"
         }
       ],
       "locked_wheel_sha256": [
-        "65b8397ba37ccbce054456aaccddfc91e6e3083c92824df348d96ca832f3f147"
+        "bc210535442b39e1bf2805e0c7a17dfd6a4ace760c84c7f7d16245d23a6b1c39"
       ]
     },
     {
@@ -1974,18 +1974,18 @@
     },
     {
       "name": "psycopg-binary",
-      "filename": "psycopg_binary-3.3.6-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
-      "sha256": "1679a1cb93fbe5a6d1fd58d82cbddcc6fcb8c61446ba7cae6eb2a7b19bc585de"
+      "filename": "psycopg_binary-3.3.8-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "a7cdba018e4decf3837793c1e18dbe3dd71709adef54892ab83d81c00e866dc3"
     },
     {
       "name": "psycopg-binary",
-      "filename": "psycopg_binary-3.3.6-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
-      "sha256": "cec5ea900390897d0b46130f60bc2883bf19c314f9044235217c8be88b0ef269"
+      "filename": "psycopg_binary-3.3.8-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "2f72c18d75d16500fe2f7f300945d68fba9dbb883aef20ba4be0c386afbbf2e9"
     },
     {
       "name": "psycopg-binary",
-      "filename": "psycopg_binary-3.3.6-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
-      "sha256": "31cd942c23f613276b81a6e6598cefa12960058b0f46e1e874b540c793f6aca5"
+      "filename": "psycopg_binary-3.3.8-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "710183a2e29c72050c3a447f9f566de27c6efea9da40bf7b800381ac57026204"
     },
     {
       "name": "pydantic-core",
@@ -2071,6 +2071,15 @@
       "source_commit": "8e5e55350fbc5f65482a44b455136b1e24c3ae2f",
       "receipt": "docs/testing/lock-maintenance-2026-11-05.json",
       "note": "Exact locked wheel inspection for the scheduled refresh; unchanged shipped licence texts and declarations; complete supported native file sets refreshed. Existing unresolved obligations remain."
+    },
+    {
+      "source_commit": "a9781030b8b302172e9f40eae8271287777627cb",
+      "receipt": "docs/testing/lock-maintenance-2026-11-05-successor.json",
+      "note": "Exact locked wheel inspection for the scheduled refresh; unchanged shipped licence texts and declarations; complete supported native file sets refreshed. Existing unresolved obligations remain."
+    },
+    {
+      "source_commit": "8602adb040cc2daf0baaebb07bb8382a930e2c42",
+      "note": "CycloneDX8 development-tool-only lock successor. Complete lock comparison finds only cyclonedx-bom and the project development-group constraint changed; all runtime/retrieval package records and reviewed evidence are unchanged."
     }
   ],
   "reviewed_archives": [
@@ -2156,8 +2165,8 @@
     },
     {
       "name": "filelock",
-      "filename": "filelock-4.2.6-py3-none-any.whl",
-      "sha256": "fd7d4fca497bf3e3d0945a13261f8e684f2aef12ce7cf76aef26e13bf7388b88"
+      "filename": "filelock-4.2.9-py3-none-any.whl",
+      "sha256": "a379c50a729e5b68c8519a4d26489f755d9769960a236ecd838190e2a78db2e9"
     },
     {
       "name": "flatbuffers",
@@ -2281,23 +2290,23 @@
     },
     {
       "name": "psycopg",
-      "filename": "psycopg-3.3.6-py3-none-any.whl",
-      "sha256": "a1db9f7148b06a28606767efaca51fa6f9398c5c0a3810519be69d7000bdb631"
+      "filename": "psycopg-3.3.8-py3-none-any.whl",
+      "sha256": "ca50af6072ba9ea6866f33021975230c2555d7bfdb9d8f94ca3af5c3d1bf2167"
     },
     {
       "name": "psycopg-binary",
-      "filename": "psycopg_binary-3.3.6-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
-      "sha256": "1679a1cb93fbe5a6d1fd58d82cbddcc6fcb8c61446ba7cae6eb2a7b19bc585de"
+      "filename": "psycopg_binary-3.3.8-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "a7cdba018e4decf3837793c1e18dbe3dd71709adef54892ab83d81c00e866dc3"
     },
     {
       "name": "psycopg-binary",
-      "filename": "psycopg_binary-3.3.6-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
-      "sha256": "cec5ea900390897d0b46130f60bc2883bf19c314f9044235217c8be88b0ef269"
+      "filename": "psycopg_binary-3.3.8-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "2f72c18d75d16500fe2f7f300945d68fba9dbb883aef20ba4be0c386afbbf2e9"
     },
     {
       "name": "psycopg-binary",
-      "filename": "psycopg_binary-3.3.6-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
-      "sha256": "31cd942c23f613276b81a6e6598cefa12960058b0f46e1e874b540c793f6aca5"
+      "filename": "psycopg_binary-3.3.8-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "710183a2e29c72050c3a447f9f566de27c6efea9da40bf7b800381ac57026204"
     },
     {
       "name": "pycparser",
@@ -2401,8 +2410,8 @@
     },
     {
       "name": "typing-inspection",
-      "filename": "typing_inspection-0.4.4-py3-none-any.whl",
-      "sha256": "65b8397ba37ccbce054456aaccddfc91e6e3083c92824df348d96ca832f3f147"
+      "filename": "typing_inspection-0.4.5-py3-none-any.whl",
+      "sha256": "bc210535442b39e1bf2805e0c7a17dfd6a4ace760c84c7f7d16245d23a6b1c39"
     },
     {
       "name": "uvicorn",

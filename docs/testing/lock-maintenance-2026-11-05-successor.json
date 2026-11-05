@@ -1,0 +1,1091 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-11-05",
+  "pull_request": 66,
+  "reviewed_bot_head": "a9781030b8b302172e9f40eae8271287777627cb",
+  "lock_sha256": "9d9533f7c4b9a73f61790cc33a8b70ca050ee48608da244bbbbd8ded36bfacc6",
+  "scope": "4 changed runtime/retrieval distributions; 6 selected locked wheels, including 3 native standard-ABI/ABI3 Linux x86_64 variants for CPython 3.12-3.14",
+  "verification": "Downloaded each exact locked wheel URL, verified SHA-256, inspected complete METADATA and all previously reviewed shipped licence texts, scanned every archive member for ELF magic and parsed all ELF headers and dynamic names. No downloaded library was loaded by the inspector. Licence texts and declarations are unchanged. Native bytes and versions are refreshed; complete native closure and existing notice/legal obligations remain unresolved. Required installed/native CI establishes separate compatibility evidence.",
+  "reviews": [
+    {
+      "name": "filelock",
+      "old_version": "4.2.6",
+      "version": "4.2.9",
+      "filename": "filelock-4.2.9-py3-none-any.whl",
+      "sha256": "a379c50a729e5b68c8519a4d26489f755d9769960a236ecd838190e2a78db2e9",
+      "expression": "MIT",
+      "python": ">=3.11",
+      "requirements": [],
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "filelock-4.2.9.dist-info/METADATA",
+          "bytes": 2263,
+          "sha256": "53f9b39c11e83c1d6283f2150eb08dd66b9389921c664de90c185d20adfb5438",
+          "kind": "metadata"
+        },
+        {
+          "path": "filelock-4.2.9.dist-info/licenses/LICENSE",
+          "bytes": 1088,
+          "sha256": "608c89d5060ae9921adccf3236695bc654a9946e12323ef6c021dfa04e294d48",
+          "kind": "licence-text"
+        }
+      ],
+      "files": []
+    },
+    {
+      "name": "psycopg",
+      "old_version": "3.3.6",
+      "version": "3.3.8",
+      "filename": "psycopg-3.3.8-py3-none-any.whl",
+      "sha256": "ca50af6072ba9ea6866f33021975230c2555d7bfdb9d8f94ca3af5c3d1bf2167",
+      "expression": "LGPL-3.0-only",
+      "python": ">=3.10",
+      "requirements": [
+        "typing-extensions>=4.6; python_version < \"3.13\"",
+        "tzdata; sys_platform == \"win32\"",
+        "psycopg-c==3.3.8; implementation_name != \"pypy\" and extra == \"c\"",
+        "psycopg-binary==3.3.8; implementation_name != \"pypy\" and extra == \"binary\"",
+        "psycopg-pool; extra == \"pool\"",
+        "anyio>=4.0; extra == \"test\"",
+        "mypy>=2.1.0; implementation_name != \"pypy\" and extra == \"test\"",
+        "pproxy>=2.7; extra == \"test\"",
+        "pytest>=6.2.5; extra == \"test\"",
+        "pytest-cov>=3.0; extra == \"test\"",
+        "pytest-randomly>=3.5; extra == \"test\"",
+        "ast-comments>=1.1.2; extra == \"dev\"",
+        "black>=26.1.0; extra == \"dev\"",
+        "codespell>=2.2; extra == \"dev\"",
+        "cython-lint>=0.21; extra == \"dev\"",
+        "dnspython>=2.1; extra == \"dev\"",
+        "flake8>=4.0; extra == \"dev\"",
+        "isort[colors]>=6.0; extra == \"dev\"",
+        "isort-psycopg>=0.0.3; extra == \"dev\"",
+        "mypy>=2.1.0; extra == \"dev\"",
+        "pre-commit>=4.0.1; extra == \"dev\"",
+        "types-setuptools>=57.4; extra == \"dev\"",
+        "types-shapely>=2.0; extra == \"dev\"",
+        "wheel>=0.37; extra == \"dev\"",
+        "Sphinx>=9.1; extra == \"docs\"",
+        "furo==2025.12.19; extra == \"docs\"",
+        "sphinx-autobuild>=2025.8.25; extra == \"docs\"",
+        "sphinx-autodoc-typehints>=3.10.2; extra == \"docs\""
+      ],
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "psycopg-3.3.8.dist-info/METADATA",
+          "bytes": 4369,
+          "sha256": "c5038f79287c501d7d074b521ddfa71202461ab1bd8ade0f5dcb088ef17e76eb",
+          "kind": "metadata"
+        },
+        {
+          "path": "psycopg-3.3.8.dist-info/licenses/LICENSE.txt",
+          "bytes": 7652,
+          "sha256": "e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118",
+          "kind": "licence-text"
+        }
+      ],
+      "files": []
+    },
+    {
+      "name": "psycopg-binary",
+      "old_version": "3.3.6",
+      "version": "3.3.8",
+      "filename": "psycopg_binary-3.3.8-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "a7cdba018e4decf3837793c1e18dbe3dd71709adef54892ab83d81c00e866dc3",
+      "expression": "LGPL-3.0-only",
+      "python": ">=3.10",
+      "requirements": [],
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "psycopg_binary-3.3.8.dist-info/METADATA",
+          "bytes": 2709,
+          "sha256": "25ec19bb0edee3b2916a327944d3522db55b74d9ae551edb929c4ac886b65064",
+          "kind": "metadata"
+        },
+        {
+          "path": "psycopg_binary-3.3.8.dist-info/licenses/LICENSE.txt",
+          "bytes": 7652,
+          "sha256": "e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118",
+          "kind": "licence-text"
+        }
+      ],
+      "files": [
+        {
+          "path": "psycopg_binary.libs/libcom_err-2abe824b.so.2.1",
+          "bytes": 17497,
+          "sha256": "5426dcb54dd01c9eedda05e2179f0e47114e8b48a534ffe9e94916e79471b257",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "ld-linux-x86-64.so.2",
+              "libc.so.6",
+              "libpthread.so.0"
+            ],
+            "soname": "libcom_err-2abe824b.so.2.1"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libcrypt-bc2db45e.so.1",
+          "bytes": 221657,
+          "sha256": "e2a6f6ff300e287a60dfc0c6fdb76ee01e333068df7c60b4e87453d942ccda65",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6"
+            ],
+            "soname": "libcrypt-bc2db45e.so.1"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libcrypto-e1ce7bf2.so.3",
+          "bytes": 6502249,
+          "sha256": "298b2a993ce4486459bcb758d78e5a7b950372f94bbc3e7defcd46e7ce4b7681",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libdl.so.2",
+              "libpthread.so.0",
+              "libz.so.1"
+            ],
+            "soname": "libcrypto-e1ce7bf2.so.3"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libgssapi_krb5-497db0c6.so.2.2",
+          "bytes": 357505,
+          "sha256": "ef73998b86c24e54667a843be6d589442dd082e1b9fc605aa15bcc2293858806",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libcom_err-2abe824b.so.2.1",
+              "libdl.so.2",
+              "libk5crypto-b1f99d5c.so.3.1",
+              "libkeyutils-dfe70bd6.so.1.5",
+              "libkrb5-fcafa220.so.3.3",
+              "libkrb5support-d0bcff84.so.0.1",
+              "libresolv.so.2"
+            ],
+            "soname": "libgssapi_krb5-497db0c6.so.2.2"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libk5crypto-b1f99d5c.so.3.1",
+          "bytes": 224057,
+          "sha256": "bf04d7ebe3937aba3855c15acbd991482286a484aeea38bb9ced85e772ea2fb0",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libkeyutils-dfe70bd6.so.1.5",
+              "libkrb5support-d0bcff84.so.0.1",
+              "libresolv.so.2"
+            ],
+            "soname": "libk5crypto-b1f99d5c.so.3.1"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libkeyutils-dfe70bd6.so.1.5",
+          "bytes": 17913,
+          "sha256": "c29e41b03cf4b2dffbfb4960946e2b42f82c0ca5d53d231d3f0fc597ba274488",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libdl.so.2"
+            ],
+            "soname": "libkeyutils-dfe70bd6.so.1.5"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libkrb5-fcafa220.so.3.3",
+          "bytes": 1039441,
+          "sha256": "94dc6413050486a6c8de4b6f3bfdd288390892b72bc68580c6c53929721fa07b",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libcom_err-2abe824b.so.2.1",
+              "libk5crypto-b1f99d5c.so.3.1",
+              "libkeyutils-dfe70bd6.so.1.5",
+              "libkrb5support-d0bcff84.so.0.1",
+              "libresolv.so.2"
+            ],
+            "soname": "libkrb5-fcafa220.so.3.3"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libkrb5support-d0bcff84.so.0.1",
+          "bytes": 80977,
+          "sha256": "0eb5322b05ac46e4db7ddb779ee0269006dd01801aaa67b84f8e7f753bfdddf2",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libdl.so.2",
+              "libkeyutils-dfe70bd6.so.1.5",
+              "libresolv.so.2",
+              "libselinux-0922c95c.so.1"
+            ],
+            "soname": "libkrb5support-d0bcff84.so.0.1"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/liblber-84b19c6b.so.2.0.200",
+          "bytes": 60977,
+          "sha256": "58ac3832eb8da3026accddd536b438599f47272cbcf21d916f5aacafe017e3ec",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libresolv.so.2"
+            ],
+            "soname": "liblber-84b19c6b.so.2.0.200"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libldap-e4c00d62.so.2.0.200",
+          "bytes": 447321,
+          "sha256": "2416c22943d8cdc0b0580cc981abae699e01c44739d1a3398337b01086ed8eec",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libcrypto-e1ce7bf2.so.3",
+              "liblber-84b19c6b.so.2.0.200",
+              "libpthread.so.0",
+              "libresolv.so.2",
+              "libsasl2-84219a89.so.3.0.0",
+              "libssl-8bd944e8.so.3"
+            ],
+            "soname": "libldap-e4c00d62.so.2.0.200"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libpcre-9513aab5.so.1.2.0",
+          "bytes": 406817,
+          "sha256": "02eda850e04931656d8af81f5171bff74d8bec1553d3d85c3d32d7fc5efe8864",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libpthread.so.0"
+            ],
+            "soname": "libpcre-9513aab5.so.1.2.0"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libpq-e9b5c9ac.so.5.18",
+          "bytes": 420153,
+          "sha256": "c18e0848d39ac40fa70395c52f07792660cfca23ced0c7e448e8d32beb186c14",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libcrypto-e1ce7bf2.so.3",
+              "libgssapi_krb5-497db0c6.so.2.2",
+              "libldap-e4c00d62.so.2.0.200",
+              "libm.so.6",
+              "libpthread.so.0",
+              "libssl-8bd944e8.so.3"
+            ],
+            "soname": "libpq-e9b5c9ac.so.5.18"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libsasl2-84219a89.so.3.0.0",
+          "bytes": 142953,
+          "sha256": "e84be55110f16f7ca930af373e9f41fa7f4ec60733c013d933d1443ae5056a98",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libcom_err-2abe824b.so.2.1",
+              "libcrypt-bc2db45e.so.1",
+              "libdl.so.2",
+              "libgssapi_krb5-497db0c6.so.2.2",
+              "libk5crypto-b1f99d5c.so.3.1",
+              "libkrb5-fcafa220.so.3.3",
+              "libkrb5support-d0bcff84.so.0.1",
+              "libresolv.so.2"
+            ],
+            "soname": "libsasl2-84219a89.so.3.0.0"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libselinux-0922c95c.so.1",
+          "bytes": 186537,
+          "sha256": "99e60178aed625f6d2e2af58bccf605b13619b1544058e9f985a2772affb4a88",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "ld-linux-x86-64.so.2",
+              "libc.so.6",
+              "libdl.so.2",
+              "libpcre-9513aab5.so.1.2.0"
+            ],
+            "soname": "libselinux-0922c95c.so.1"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libssl-8bd944e8.so.3",
+          "bytes": 1180057,
+          "sha256": "bc5d065b34f8ae624c6b12224d7f8dd9cb40074be9b379a622f0fb73b4cab4b0",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libcrypto-e1ce7bf2.so.3",
+              "libdl.so.2",
+              "libpthread.so.0",
+              "libz.so.1"
+            ],
+            "soname": "libssl-8bd944e8.so.3"
+          }
+        },
+        {
+          "path": "psycopg_binary/_psycopg.cpython-312-x86_64-linux-gnu.so",
+          "bytes": 812681,
+          "sha256": "d3dd5eccc9d72daac39d19fa56348973a0e2b41ecee9ef7384ac874801f491ee",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libpq-e9b5c9ac.so.5.18",
+              "libpthread.so.0"
+            ],
+            "soname": null
+          }
+        },
+        {
+          "path": "psycopg_binary/pq.cpython-312-x86_64-linux-gnu.so",
+          "bytes": 353985,
+          "sha256": "16468c67fd85b13951d1b95ea0207ba693ec485bd840f67c200051fd8bd13882",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libpq-e9b5c9ac.so.5.18",
+              "libpthread.so.0"
+            ],
+            "soname": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "psycopg-binary",
+      "old_version": "3.3.6",
+      "version": "3.3.8",
+      "filename": "psycopg_binary-3.3.8-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "2f72c18d75d16500fe2f7f300945d68fba9dbb883aef20ba4be0c386afbbf2e9",
+      "expression": "LGPL-3.0-only",
+      "python": ">=3.10",
+      "requirements": [],
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "psycopg_binary-3.3.8.dist-info/METADATA",
+          "bytes": 2709,
+          "sha256": "25ec19bb0edee3b2916a327944d3522db55b74d9ae551edb929c4ac886b65064",
+          "kind": "metadata"
+        },
+        {
+          "path": "psycopg_binary-3.3.8.dist-info/licenses/LICENSE.txt",
+          "bytes": 7652,
+          "sha256": "e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118",
+          "kind": "licence-text"
+        }
+      ],
+      "files": [
+        {
+          "path": "psycopg_binary.libs/libcom_err-2abe824b.so.2.1",
+          "bytes": 17497,
+          "sha256": "5426dcb54dd01c9eedda05e2179f0e47114e8b48a534ffe9e94916e79471b257",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "ld-linux-x86-64.so.2",
+              "libc.so.6",
+              "libpthread.so.0"
+            ],
+            "soname": "libcom_err-2abe824b.so.2.1"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libcrypt-bc2db45e.so.1",
+          "bytes": 221657,
+          "sha256": "e2a6f6ff300e287a60dfc0c6fdb76ee01e333068df7c60b4e87453d942ccda65",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6"
+            ],
+            "soname": "libcrypt-bc2db45e.so.1"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libcrypto-e1ce7bf2.so.3",
+          "bytes": 6502249,
+          "sha256": "298b2a993ce4486459bcb758d78e5a7b950372f94bbc3e7defcd46e7ce4b7681",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libdl.so.2",
+              "libpthread.so.0",
+              "libz.so.1"
+            ],
+            "soname": "libcrypto-e1ce7bf2.so.3"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libgssapi_krb5-497db0c6.so.2.2",
+          "bytes": 357505,
+          "sha256": "ef73998b86c24e54667a843be6d589442dd082e1b9fc605aa15bcc2293858806",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libcom_err-2abe824b.so.2.1",
+              "libdl.so.2",
+              "libk5crypto-b1f99d5c.so.3.1",
+              "libkeyutils-dfe70bd6.so.1.5",
+              "libkrb5-fcafa220.so.3.3",
+              "libkrb5support-d0bcff84.so.0.1",
+              "libresolv.so.2"
+            ],
+            "soname": "libgssapi_krb5-497db0c6.so.2.2"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libk5crypto-b1f99d5c.so.3.1",
+          "bytes": 224057,
+          "sha256": "bf04d7ebe3937aba3855c15acbd991482286a484aeea38bb9ced85e772ea2fb0",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libkeyutils-dfe70bd6.so.1.5",
+              "libkrb5support-d0bcff84.so.0.1",
+              "libresolv.so.2"
+            ],
+            "soname": "libk5crypto-b1f99d5c.so.3.1"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libkeyutils-dfe70bd6.so.1.5",
+          "bytes": 17913,
+          "sha256": "c29e41b03cf4b2dffbfb4960946e2b42f82c0ca5d53d231d3f0fc597ba274488",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libdl.so.2"
+            ],
+            "soname": "libkeyutils-dfe70bd6.so.1.5"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libkrb5-fcafa220.so.3.3",
+          "bytes": 1039441,
+          "sha256": "94dc6413050486a6c8de4b6f3bfdd288390892b72bc68580c6c53929721fa07b",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libcom_err-2abe824b.so.2.1",
+              "libk5crypto-b1f99d5c.so.3.1",
+              "libkeyutils-dfe70bd6.so.1.5",
+              "libkrb5support-d0bcff84.so.0.1",
+              "libresolv.so.2"
+            ],
+            "soname": "libkrb5-fcafa220.so.3.3"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libkrb5support-d0bcff84.so.0.1",
+          "bytes": 80977,
+          "sha256": "0eb5322b05ac46e4db7ddb779ee0269006dd01801aaa67b84f8e7f753bfdddf2",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libdl.so.2",
+              "libkeyutils-dfe70bd6.so.1.5",
+              "libresolv.so.2",
+              "libselinux-0922c95c.so.1"
+            ],
+            "soname": "libkrb5support-d0bcff84.so.0.1"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/liblber-84b19c6b.so.2.0.200",
+          "bytes": 60977,
+          "sha256": "58ac3832eb8da3026accddd536b438599f47272cbcf21d916f5aacafe017e3ec",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libresolv.so.2"
+            ],
+            "soname": "liblber-84b19c6b.so.2.0.200"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libldap-e4c00d62.so.2.0.200",
+          "bytes": 447321,
+          "sha256": "2416c22943d8cdc0b0580cc981abae699e01c44739d1a3398337b01086ed8eec",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libcrypto-e1ce7bf2.so.3",
+              "liblber-84b19c6b.so.2.0.200",
+              "libpthread.so.0",
+              "libresolv.so.2",
+              "libsasl2-84219a89.so.3.0.0",
+              "libssl-8bd944e8.so.3"
+            ],
+            "soname": "libldap-e4c00d62.so.2.0.200"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libpcre-9513aab5.so.1.2.0",
+          "bytes": 406817,
+          "sha256": "02eda850e04931656d8af81f5171bff74d8bec1553d3d85c3d32d7fc5efe8864",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libpthread.so.0"
+            ],
+            "soname": "libpcre-9513aab5.so.1.2.0"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libpq-e9b5c9ac.so.5.18",
+          "bytes": 420153,
+          "sha256": "c18e0848d39ac40fa70395c52f07792660cfca23ced0c7e448e8d32beb186c14",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libcrypto-e1ce7bf2.so.3",
+              "libgssapi_krb5-497db0c6.so.2.2",
+              "libldap-e4c00d62.so.2.0.200",
+              "libm.so.6",
+              "libpthread.so.0",
+              "libssl-8bd944e8.so.3"
+            ],
+            "soname": "libpq-e9b5c9ac.so.5.18"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libsasl2-84219a89.so.3.0.0",
+          "bytes": 142953,
+          "sha256": "e84be55110f16f7ca930af373e9f41fa7f4ec60733c013d933d1443ae5056a98",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libcom_err-2abe824b.so.2.1",
+              "libcrypt-bc2db45e.so.1",
+              "libdl.so.2",
+              "libgssapi_krb5-497db0c6.so.2.2",
+              "libk5crypto-b1f99d5c.so.3.1",
+              "libkrb5-fcafa220.so.3.3",
+              "libkrb5support-d0bcff84.so.0.1",
+              "libresolv.so.2"
+            ],
+            "soname": "libsasl2-84219a89.so.3.0.0"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libselinux-0922c95c.so.1",
+          "bytes": 186537,
+          "sha256": "99e60178aed625f6d2e2af58bccf605b13619b1544058e9f985a2772affb4a88",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "ld-linux-x86-64.so.2",
+              "libc.so.6",
+              "libdl.so.2",
+              "libpcre-9513aab5.so.1.2.0"
+            ],
+            "soname": "libselinux-0922c95c.so.1"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libssl-8bd944e8.so.3",
+          "bytes": 1180057,
+          "sha256": "bc5d065b34f8ae624c6b12224d7f8dd9cb40074be9b379a622f0fb73b4cab4b0",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libcrypto-e1ce7bf2.so.3",
+              "libdl.so.2",
+              "libpthread.so.0",
+              "libz.so.1"
+            ],
+            "soname": "libssl-8bd944e8.so.3"
+          }
+        },
+        {
+          "path": "psycopg_binary/_psycopg.cpython-313-x86_64-linux-gnu.so",
+          "bytes": 820897,
+          "sha256": "a85fa897842863756603805d7497417ac5708c21028fb2b9e05cb7e8e4f51573",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libpq-e9b5c9ac.so.5.18",
+              "libpthread.so.0"
+            ],
+            "soname": null
+          }
+        },
+        {
+          "path": "psycopg_binary/pq.cpython-313-x86_64-linux-gnu.so",
+          "bytes": 353969,
+          "sha256": "571093052c62400b8706bb836f7c9552a91a50ace2d21c3d589bc836bcfec369",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libpq-e9b5c9ac.so.5.18",
+              "libpthread.so.0"
+            ],
+            "soname": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "psycopg-binary",
+      "old_version": "3.3.6",
+      "version": "3.3.8",
+      "filename": "psycopg_binary-3.3.8-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "710183a2e29c72050c3a447f9f566de27c6efea9da40bf7b800381ac57026204",
+      "expression": "LGPL-3.0-only",
+      "python": ">=3.10",
+      "requirements": [],
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "psycopg_binary-3.3.8.dist-info/METADATA",
+          "bytes": 2709,
+          "sha256": "25ec19bb0edee3b2916a327944d3522db55b74d9ae551edb929c4ac886b65064",
+          "kind": "metadata"
+        },
+        {
+          "path": "psycopg_binary-3.3.8.dist-info/licenses/LICENSE.txt",
+          "bytes": 7652,
+          "sha256": "e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118",
+          "kind": "licence-text"
+        }
+      ],
+      "files": [
+        {
+          "path": "psycopg_binary.libs/libcom_err-2abe824b.so.2.1",
+          "bytes": 17497,
+          "sha256": "5426dcb54dd01c9eedda05e2179f0e47114e8b48a534ffe9e94916e79471b257",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "ld-linux-x86-64.so.2",
+              "libc.so.6",
+              "libpthread.so.0"
+            ],
+            "soname": "libcom_err-2abe824b.so.2.1"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libcrypt-bc2db45e.so.1",
+          "bytes": 221657,
+          "sha256": "e2a6f6ff300e287a60dfc0c6fdb76ee01e333068df7c60b4e87453d942ccda65",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6"
+            ],
+            "soname": "libcrypt-bc2db45e.so.1"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libcrypto-e1ce7bf2.so.3",
+          "bytes": 6502249,
+          "sha256": "298b2a993ce4486459bcb758d78e5a7b950372f94bbc3e7defcd46e7ce4b7681",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libdl.so.2",
+              "libpthread.so.0",
+              "libz.so.1"
+            ],
+            "soname": "libcrypto-e1ce7bf2.so.3"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libgssapi_krb5-497db0c6.so.2.2",
+          "bytes": 357505,
+          "sha256": "ef73998b86c24e54667a843be6d589442dd082e1b9fc605aa15bcc2293858806",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libcom_err-2abe824b.so.2.1",
+              "libdl.so.2",
+              "libk5crypto-b1f99d5c.so.3.1",
+              "libkeyutils-dfe70bd6.so.1.5",
+              "libkrb5-fcafa220.so.3.3",
+              "libkrb5support-d0bcff84.so.0.1",
+              "libresolv.so.2"
+            ],
+            "soname": "libgssapi_krb5-497db0c6.so.2.2"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libk5crypto-b1f99d5c.so.3.1",
+          "bytes": 224057,
+          "sha256": "bf04d7ebe3937aba3855c15acbd991482286a484aeea38bb9ced85e772ea2fb0",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libkeyutils-dfe70bd6.so.1.5",
+              "libkrb5support-d0bcff84.so.0.1",
+              "libresolv.so.2"
+            ],
+            "soname": "libk5crypto-b1f99d5c.so.3.1"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libkeyutils-dfe70bd6.so.1.5",
+          "bytes": 17913,
+          "sha256": "c29e41b03cf4b2dffbfb4960946e2b42f82c0ca5d53d231d3f0fc597ba274488",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libdl.so.2"
+            ],
+            "soname": "libkeyutils-dfe70bd6.so.1.5"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libkrb5-fcafa220.so.3.3",
+          "bytes": 1039441,
+          "sha256": "94dc6413050486a6c8de4b6f3bfdd288390892b72bc68580c6c53929721fa07b",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libcom_err-2abe824b.so.2.1",
+              "libk5crypto-b1f99d5c.so.3.1",
+              "libkeyutils-dfe70bd6.so.1.5",
+              "libkrb5support-d0bcff84.so.0.1",
+              "libresolv.so.2"
+            ],
+            "soname": "libkrb5-fcafa220.so.3.3"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libkrb5support-d0bcff84.so.0.1",
+          "bytes": 80977,
+          "sha256": "0eb5322b05ac46e4db7ddb779ee0269006dd01801aaa67b84f8e7f753bfdddf2",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libdl.so.2",
+              "libkeyutils-dfe70bd6.so.1.5",
+              "libresolv.so.2",
+              "libselinux-0922c95c.so.1"
+            ],
+            "soname": "libkrb5support-d0bcff84.so.0.1"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/liblber-84b19c6b.so.2.0.200",
+          "bytes": 60977,
+          "sha256": "58ac3832eb8da3026accddd536b438599f47272cbcf21d916f5aacafe017e3ec",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libresolv.so.2"
+            ],
+            "soname": "liblber-84b19c6b.so.2.0.200"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libldap-e4c00d62.so.2.0.200",
+          "bytes": 447321,
+          "sha256": "2416c22943d8cdc0b0580cc981abae699e01c44739d1a3398337b01086ed8eec",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libcrypto-e1ce7bf2.so.3",
+              "liblber-84b19c6b.so.2.0.200",
+              "libpthread.so.0",
+              "libresolv.so.2",
+              "libsasl2-84219a89.so.3.0.0",
+              "libssl-8bd944e8.so.3"
+            ],
+            "soname": "libldap-e4c00d62.so.2.0.200"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libpcre-9513aab5.so.1.2.0",
+          "bytes": 406817,
+          "sha256": "02eda850e04931656d8af81f5171bff74d8bec1553d3d85c3d32d7fc5efe8864",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libpthread.so.0"
+            ],
+            "soname": "libpcre-9513aab5.so.1.2.0"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libpq-e9b5c9ac.so.5.18",
+          "bytes": 420153,
+          "sha256": "c18e0848d39ac40fa70395c52f07792660cfca23ced0c7e448e8d32beb186c14",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libcrypto-e1ce7bf2.so.3",
+              "libgssapi_krb5-497db0c6.so.2.2",
+              "libldap-e4c00d62.so.2.0.200",
+              "libm.so.6",
+              "libpthread.so.0",
+              "libssl-8bd944e8.so.3"
+            ],
+            "soname": "libpq-e9b5c9ac.so.5.18"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libsasl2-84219a89.so.3.0.0",
+          "bytes": 142953,
+          "sha256": "e84be55110f16f7ca930af373e9f41fa7f4ec60733c013d933d1443ae5056a98",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libcom_err-2abe824b.so.2.1",
+              "libcrypt-bc2db45e.so.1",
+              "libdl.so.2",
+              "libgssapi_krb5-497db0c6.so.2.2",
+              "libk5crypto-b1f99d5c.so.3.1",
+              "libkrb5-fcafa220.so.3.3",
+              "libkrb5support-d0bcff84.so.0.1",
+              "libresolv.so.2"
+            ],
+            "soname": "libsasl2-84219a89.so.3.0.0"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libselinux-0922c95c.so.1",
+          "bytes": 186537,
+          "sha256": "99e60178aed625f6d2e2af58bccf605b13619b1544058e9f985a2772affb4a88",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "ld-linux-x86-64.so.2",
+              "libc.so.6",
+              "libdl.so.2",
+              "libpcre-9513aab5.so.1.2.0"
+            ],
+            "soname": "libselinux-0922c95c.so.1"
+          }
+        },
+        {
+          "path": "psycopg_binary.libs/libssl-8bd944e8.so.3",
+          "bytes": 1180057,
+          "sha256": "bc5d065b34f8ae624c6b12224d7f8dd9cb40074be9b379a622f0fb73b4cab4b0",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libcrypto-e1ce7bf2.so.3",
+              "libdl.so.2",
+              "libpthread.so.0",
+              "libz.so.1"
+            ],
+            "soname": "libssl-8bd944e8.so.3"
+          }
+        },
+        {
+          "path": "psycopg_binary/_psycopg.cpython-314-x86_64-linux-gnu.so",
+          "bytes": 825049,
+          "sha256": "b096fcfc1db3e27c475398309ddc649f66e24085e0fb9e074fe07fc313a8b542",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libpq-e9b5c9ac.so.5.18",
+              "libpthread.so.0"
+            ],
+            "soname": null
+          }
+        },
+        {
+          "path": "psycopg_binary/pq.cpython-314-x86_64-linux-gnu.so",
+          "bytes": 354009,
+          "sha256": "0ff188f70e7050e21e6eb4e4f1932473994c6314efb96f8a21645f9d0d80ed40",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libpq-e9b5c9ac.so.5.18",
+              "libpthread.so.0"
+            ],
+            "soname": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "typing-inspection",
+      "old_version": "0.4.4",
+      "version": "0.4.5",
+      "filename": "typing_inspection-0.4.5-py3-none-any.whl",
+      "sha256": "bc210535442b39e1bf2805e0c7a17dfd6a4ace760c84c7f7d16245d23a6b1c39",
+      "expression": "MIT",
+      "python": ">=3.10",
+      "requirements": [
+        "typing-extensions>=4.15.0"
+      ],
+      "licence_bytes_unchanged": true,
+      "evidence": [
+        {
+          "path": "typing_inspection-0.4.5.dist-info/METADATA",
+          "bytes": 2554,
+          "sha256": "7306933907768b0098784e56dfd678242f52383ff3e35c10a4c150539393d6ec",
+          "kind": "metadata"
+        },
+        {
+          "path": "typing_inspection-0.4.5.dist-info/licenses/LICENSE",
+          "bytes": 1090,
+          "sha256": "804b59b25f2c31bd278f9202a19ae49a3945aa2664387e2d0a128c7cacc61ec3",
+          "kind": "licence-text"
+        }
+      ],
+      "files": []
+    }
+  ],
+  "reviewed_bot_lock_sha256": "1f7f8106c8a6f907da421b73ae85630806fb5a8917c9a14b2c3f6dc6ddda56df",
+  "integration_note": "Includes the separately reviewed CycloneDX8 development-only update and pinned Renovate validator update. The runtime/retrieval wheel records inspected here are unchanged by those integrations."
+}
