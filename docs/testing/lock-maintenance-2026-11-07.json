@@ -29,13 +29,6 @@
       "expression": "BSD-3-Clause",
       "requires_python": ">=3.10",
       "requires_dist": null,
-      "project_urls": [
-        "Changes, https://click.palletsprojects.com/page/changes/",
-        "Chat, https://discord.gg/pallets",
-        "Documentation, https://click.palletsprojects.com/",
-        "Donate, https://palletsprojects.com/donate",
-        "Source, https://github.com/pallets/click/"
-      ],
       "native": false,
       "old_version": "8.5.0",
       "licence_bytes_unchanged": true
@@ -62,7 +55,6 @@
       "expression": null,
       "requires_python": ">=3.10",
       "requires_dist": null,
-      "project_urls": null,
       "native": false,
       "old_version": "3.8",
       "licence_bytes_unchanged": true
@@ -90,13 +82,6 @@
       "requires_python": ">=3.8,<4.0",
       "requires_dist": [
         "defusedxml (>=0.7.1,<0.8.0)"
-      ],
-      "project_urls": [
-        "Bug Tracker, https://github.com/madpah/serializable/issues",
-        "Changelog, https://github.com/madpah/serializable/releases",
-        "Documentation, https://py-serializable.readthedocs.io/",
-        "Homepage, https://github.com/madpah/serializable#readme",
-        "Repository, https://github.com/madpah/serializable"
       ],
       "native": false,
       "old_version": "2.1.0",
