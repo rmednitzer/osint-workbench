@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-11-07",
+  "pull_request": 70,
+  "reviewed_bot_head": "ebd0622cbd398c3da618f8c1fe71bd11d9795334",
+  "lock_sha256": "3c3e27ba8e00c79b0a2e70483dcd398e70129810271c7ef0e5f915566de7e8a1",
+  "scope": "Three changed universal registry wheels: Click runtime, jsonpointer and py-serializable development/SBOM tools.",
+  "verification": "Exact old/new PyPI archive SHA-256 verified; new wheels match uv.lock. Complete shipped licence texts are byte-identical. Python minima and dependency requirements are unchanged. Every ZIP member was checked for ELF magic; none found in these wheels. Complete package-record comparison finds only the three listed changes, preserving all recorded native package inputs. Compatibility remains subject to required installed/native CI; existing notice, native-closure and legal dispositions remain unresolved.",
+  "reviews": [
+    {
+      "name": "click",
+      "version": "8.5.1",
+      "filename": "click-8.5.1-py3-none-any.whl",
+      "sha256": "8bb5376d2006950386f8c6427613334a2acadc5f559cb80e638d00b4df957e37",
+      "evidence": [
+        {
+          "path": "click-8.5.1.dist-info/licenses/LICENSE.txt",
+          "sha256": "9a8ad106a394e853bfe21f42f4e72d592819a22805d991b5f3275029292b658d",
+          "bytes": 1475,
+          "kind": "licence-text"
+        },
+        {
+          "path": "click-8.5.1.dist-info/METADATA",
+          "sha256": "63d23e734a4c63191d956c85a399291729141377c9af847dcd2b4b450e0b81cc",
+          "bytes": 2567,
+          "kind": "metadata"
+        }
+      ],
+      "expression": "BSD-3-Clause",
+      "requires_python": ">=3.10",
+      "requires_dist": null,
+      "project_urls": [
+        "Changes, https://click.palletsprojects.com/page/changes/",
+        "Chat, https://discord.gg/pallets",
+        "Documentation, https://click.palletsprojects.com/",
+        "Donate, https://palletsprojects.com/donate",
+        "Source, https://github.com/pallets/click/"
+      ],
+      "native": false,
+      "old_version": "8.5.0",
+      "licence_bytes_unchanged": true
+    },
+    {
+      "name": "jsonpointer",
+      "version": "3.10",
+      "filename": "jsonpointer-3.10-py3-none-any.whl",
+      "sha256": "3b08b9e5239f1b683e31c9561c350d75ce3fa8cdd407130ca8491fdb0c9e56f3",
+      "evidence": [
+        {
+          "path": "jsonpointer-3.10.dist-info/licenses/LICENSE.txt",
+          "sha256": "d8b24f15d472885f788a2d6e985850f264627b86012a17bb242c83f310d907e5",
+          "bytes": 1413,
+          "kind": "licence-text"
+        },
+        {
+          "path": "jsonpointer-3.10.dist-info/METADATA",
+          "sha256": "e9cca1e03d6a183a0b35535f965cc32e7da1e9ce35c3b0fc1697371a16d11627",
+          "bytes": 2667,
+          "kind": "metadata"
+        }
+      ],
+      "expression": null,
+      "requires_python": ">=3.10",
+      "requires_dist": null,
+      "project_urls": null,
+      "native": false,
+      "old_version": "3.8",
+      "licence_bytes_unchanged": true
+    },
+    {
+      "name": "py-serializable",
+      "version": "2.2.0",
+      "filename": "py_serializable-2.2.0-py3-none-any.whl",
+      "sha256": "2cce775abc5aac12115f9ff572a145c7276d04a770090334bd4e51ed9c782415",
+      "evidence": [
+        {
+          "path": "py_serializable-2.2.0.dist-info/METADATA",
+          "sha256": "8f99629ce4dbc99038550aa00d568a129c3db2f7b9c06ab3b588b2aafff6cc94",
+          "bytes": 4467,
+          "kind": "metadata"
+        },
+        {
+          "path": "py_serializable-2.2.0.dist-info/licenses/LICENSE",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "bytes": 11357,
+          "kind": "licence-text"
+        }
+      ],
+      "expression": null,
+      "requires_python": ">=3.8,<4.0",
+      "requires_dist": [
+        "defusedxml (>=0.7.1,<0.8.0)"
+      ],
+      "project_urls": [
+        "Bug Tracker, https://github.com/madpah/serializable/issues",
+        "Changelog, https://github.com/madpah/serializable/releases",
+        "Documentation, https://py-serializable.readthedocs.io/",
+        "Homepage, https://github.com/madpah/serializable#readme",
+        "Repository, https://github.com/madpah/serializable"
+      ],
+      "native": false,
+      "old_version": "2.1.0",
+      "licence_bytes_unchanged": true
+    }
+  ]
+}

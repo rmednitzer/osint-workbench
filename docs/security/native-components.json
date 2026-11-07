@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "review_date": "2026-11-05",
+  "review_date": "2026-11-07",
   "scope": "RECORD-listed ELF file-set identity; standard CPython3.12-3.14 manylinux x86_64 and compatible ABI3; no native dependency closure or legal approval",
-  "lock_sha256": "b039032ac5aecf83933e710e1ca2ffc127d868e45e464aa47e3573dca676764b",
+  "lock_sha256": "3c3e27ba8e00c79b0a2e70483dcd398e70129810271c7ef0e5f915566de7e8a1",
   "review_history": [
     {
       "source_commit": "331d597",
@@ -51,6 +51,11 @@
       "source_commit": "a5a069a3d27a4a121e49678663c64b1c98cae732",
       "receipt": "docs/testing/lock-maintenance-2026-11-05-pydantic.json",
       "note": "Pydantic and pydantic-core exact locked wheel inspection; unchanged shipped licence texts and declarations; all three supported native ELF sets refreshed. Ruff development wheel inspected separately. Existing unresolved obligations remain."
+    },
+    {
+      "source_commit": "ebd0622cbd398c3da618f8c1fe71bd11d9795334",
+      "receipt": "docs/testing/lock-maintenance-2026-11-07.json",
+      "note": "Complete lock package-record comparison changes only three universal wheels, all inspected without ELF members. All recorded native package inputs and ELF evidence are unchanged."
     }
   ],
   "distributions": [
