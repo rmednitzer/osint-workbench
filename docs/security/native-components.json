@@ -55,7 +55,7 @@
     {
       "source_commit": "ebd0622cbd398c3da618f8c1fe71bd11d9795334",
       "receipt": "docs/testing/lock-maintenance-2026-11-07.json",
-      "note": "Complete lock package-record comparison changes only three universal wheels, all inspected without ELF members. All recorded native package inputs and ELF evidence are unchanged."
+      "note": "Three universal-wheel lock changes; all inspected without ELF members. Refresh the Click empty-ELF proof identity; all ELF-bearing package inputs and file evidence are unchanged."
     }
   ],
   "distributions": [
@@ -182,12 +182,12 @@
     },
     {
       "name": "click",
-      "version": "8.5.0",
+      "version": "8.5.1",
       "native_dependency_closure": "not-established-by-empty-ELF-set",
       "variants": [
         {
-          "wheel_filename": "click-8.5.0-py3-none-any.whl",
-          "wheel_sha256": "255bc9599cf7748b4b1a446ccc735421bd08a2ae529a8b88597d3de5664ee360",
+          "wheel_filename": "click-8.5.1-py3-none-any.whl",
+          "wheel_sha256": "8bb5376d2006950386f8c6427613334a2acadc5f559cb80e638d00b4df957e37",
           "files": []
         }
       ]

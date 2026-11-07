@@ -5,7 +5,7 @@
   "reviewed_bot_head": "ebd0622cbd398c3da618f8c1fe71bd11d9795334",
   "lock_sha256": "3c3e27ba8e00c79b0a2e70483dcd398e70129810271c7ef0e5f915566de7e8a1",
   "scope": "Three changed universal registry wheels: Click runtime, jsonpointer and py-serializable development/SBOM tools.",
-  "verification": "Exact old/new PyPI archive SHA-256 verified; new wheels match uv.lock. Complete shipped licence texts are byte-identical. Python minima and dependency requirements are unchanged. Every ZIP member was checked for ELF magic; none found in these wheels. Complete package-record comparison finds only the three listed changes, preserving all recorded native package inputs. Compatibility remains subject to required installed/native CI; existing notice, native-closure and legal dispositions remain unresolved.",
+  "verification": "Exact old/new PyPI archive SHA-256 verified; new wheels match uv.lock. Complete shipped licence texts are byte-identical. Python minima and dependency requirements are unchanged. Every ZIP member was checked for ELF magic; none found in these wheels. Complete package-record comparison finds only the three listed changes, preserving all ELF-bearing package inputs; the Click empty-ELF proof identity is refreshed. Compatibility remains subject to required installed/native CI; existing notice, native-closure and legal dispositions remain unresolved.",
   "reviews": [
     {
       "name": "click",
