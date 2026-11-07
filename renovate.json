@@ -105,6 +105,22 @@
         "python"
       ],
       "allowedVersions": "/^3\\.12\\./"
+    },
+    {
+      "description": "Organize the dashboard without changing PR grouping or update eligibility.",
+      "matchManagers": [
+        "pep621"
+      ],
+      "dependencyDashboardCategory": "Python dependencies"
+    },
+    {
+      "description": "Organize the dashboard without changing PR grouping or update eligibility.",
+      "matchManagers": [
+        "github-actions",
+        "dockerfile",
+        "custom.regex"
+      ],
+      "dependencyDashboardCategory": "CI actions and images"
     }
   ],
   "vulnerabilityAlerts": {
@@ -136,5 +152,6 @@
       "datasourceTemplate": "docker",
       "versioningTemplate": "docker"
     }
-  ]
+  ],
+  "dependencyDashboardHeader": "Renovate dependency maintenance.\n\nRoutine updates and uv lock refreshes run Monday before 06:00 Europe/Vienna. Non-major Python manifest updates have a three-day release-age hold; a complete lock refresh does not independently age-gate every transitive version. All updates require review and current installed/native checks on both supported LTS profiles.\n\n- **Awaiting Schedule** lists work queued for its next eligible window. Recurring lock maintenance reappears for the next scheduled refresh.\n- **Pending Status Checks** can include release-age holds. Inspect the PR checks and any Renovate stability status; green CI alone does not clear the age policy.\n- Checkboxes request bot work, such as creation or rebasing; they do not approve a merge. Required checks and review still apply."
 }
