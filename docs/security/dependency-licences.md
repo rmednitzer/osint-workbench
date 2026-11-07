@@ -290,3 +290,13 @@ Exact metadata, archive and native file identities are refreshed. Ruff 0.17.4 is
 development-only and its selected Linux wheel is reviewed separately in the same
 receipt. Required installed/native CI remains separate compatibility evidence.
 Existing notice, native-closure and redistribution dispositions remain unresolved.
+
+The [2026-11-07 lock-maintenance review](../testing/lock-maintenance-2026-11-07.json)
+verifies the exact old/new Click 8.5.1, jsonpointer 3.10 and py-serializable 2.2.0
+universal wheels against PyPI and the current lock. Complete shipped licence
+texts, Python minima and dependency requirements are unchanged. Only Click is
+in the runtime/retrieval licence policy; its version-bearing metadata and archive
+evidence are refreshed. The other two remain development/SBOM tools. All native
+package records are unchanged; the three inspected wheels contain no ELF members.
+Required installed/native CI remains separate from this evidence review. Existing
+notice, native-closure and legal dispositions remain unresolved.

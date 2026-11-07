@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "scope": "runtime-plus-retrieval; CPython3.12 Linux x86_64 installed wheel evidence and reviewed supported archive variants; no legal approval",
-  "review_date": "2026-11-05",
-  "lock_sha256": "b039032ac5aecf83933e710e1ca2ffc127d868e45e464aa47e3573dca676764b",
+  "review_date": "2026-11-07",
+  "lock_sha256": "3c3e27ba8e00c79b0a2e70483dcd398e70129810271c7ef0e5f915566de7e8a1",
   "distributions": [
     {
       "name": "annotated-types",
@@ -196,7 +196,7 @@
     },
     {
       "name": "click",
-      "version": "8.5.0",
+      "version": "8.5.1",
       "declared_expression": "BSD-3-Clause",
       "reviewed_text_summary": "BSD-3-Clause",
       "outcome": "declared-and-shipped-text",
@@ -206,20 +206,20 @@
       ],
       "evidence": [
         {
-          "path": "click-8.5.0.dist-info/METADATA",
-          "sha256": "e87bce0bd194de70dfb8e708e0a6b0483009f25611804eaf87bfeb63e6c20501",
+          "path": "click-8.5.1.dist-info/METADATA",
+          "sha256": "63d23e734a4c63191d956c85a399291729141377c9af847dcd2b4b450e0b81cc",
           "bytes": 2567,
           "kind": "metadata"
         },
         {
-          "path": "click-8.5.0.dist-info/licenses/LICENSE.txt",
+          "path": "click-8.5.1.dist-info/licenses/LICENSE.txt",
           "sha256": "9a8ad106a394e853bfe21f42f4e72d592819a22805d991b5f3275029292b658d",
           "bytes": 1475,
           "kind": "licence-text"
         }
       ],
       "locked_wheel_sha256": [
-        "255bc9599cf7748b4b1a446ccc735421bd08a2ae529a8b88597d3de5664ee360"
+        "8bb5376d2006950386f8c6427613334a2acadc5f559cb80e638d00b4df957e37"
       ]
     },
     {
@@ -2088,6 +2088,11 @@
       "source_commit": "a5a069a3d27a4a121e49678663c64b1c98cae732",
       "receipt": "docs/testing/lock-maintenance-2026-11-05-pydantic.json",
       "note": "Pydantic and pydantic-core exact locked wheel inspection; unchanged shipped licence texts and declarations; all three supported native ELF sets refreshed. Ruff development wheel inspected separately. Existing unresolved obligations remain."
+    },
+    {
+      "source_commit": "ebd0622cbd398c3da618f8c1fe71bd11d9795334",
+      "receipt": "docs/testing/lock-maintenance-2026-11-07.json",
+      "note": "Exact universal-wheel review for Click runtime and jsonpointer/py-serializable development changes; unchanged shipped licence texts, Python minima and dependency requirements. Native package records unchanged. Existing unresolved obligations remain."
     }
   ],
   "reviewed_archives": [
@@ -2128,8 +2133,8 @@
     },
     {
       "name": "click",
-      "filename": "click-8.5.0-py3-none-any.whl",
-      "sha256": "255bc9599cf7748b4b1a446ccc735421bd08a2ae529a8b88597d3de5664ee360"
+      "filename": "click-8.5.1-py3-none-any.whl",
+      "sha256": "8bb5376d2006950386f8c6427613334a2acadc5f559cb80e638d00b4df957e37"
     },
     {
       "name": "cryptography",
