@@ -29,7 +29,8 @@ dependency dashboard is distinct from a mergeable update PR.
 - Enable PEP621/uv.lock, GitHub Actions and Dockerfile management. These cover
   action/service images and the separately pinned validation-tool Dockerfile.
   The custom regex manager also extracts Compose image tags and digests from
-  workflow environment variables; extraction validation must find both images.
+  workflow environment variables, the synthetic verifier and the Compose service;
+  extraction validation must find all five image references.
 - Group routine non-major Python updates and non-major CI action/image updates.
   Use a three-day release-age gate for manifest-level routine Python updates.
   The weekly uv lock maintenance is a separate complete resolution and must be
