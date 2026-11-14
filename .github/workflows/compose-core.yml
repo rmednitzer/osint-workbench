@@ -28,8 +28,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
-      OW_COMPOSE_BASE: python:3.12.16-slim-trixie@sha256:4840d514c583a4d3d8cad3940e68dee6f0f6f3635c12fcd0a3d74c21a5b93a54
-      OW_COMPOSE_POSTGRES: pgvector/pgvector:pg18@sha256:c29f30688a9ad961691bdf0ec1650717cc132a5814619d80f80463d6e4c42e47
+      OW_COMPOSE_BASE: python:3.12.16-slim-trixie@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
+      OW_COMPOSE_POSTGRES: pgvector/pgvector:pg18@sha256:38681dc6eaf55308e2a4c6de392d131652dcfac70e1263e35cd9b5ea3fe39782
     steps:
       - name: Require disposable hosted execution
         env:
@@ -47,7 +47,7 @@ jobs:
           persist-credentials: false
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          version: "0.13.7"
+          version: "0.13.8"
       - name: Build reviewed inputs and acquire pinned prerequisites
         run: |
           mkdir -m 700 "/tmp/ow-compose-inputs"

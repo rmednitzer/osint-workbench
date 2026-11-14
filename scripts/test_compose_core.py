@@ -19,9 +19,9 @@ from contextlib import contextmanager
 from pathlib import Path
 
 LABEL = "org.osint-workbench.synthetic-run"
-BASE = "python:3.12.16-slim-trixie@sha256:4840d514c583a4d3d8cad3940e68dee6f0f6f3635c12fcd0a3d74c21a5b93a54"  # noqa: E501
+BASE = "python:3.12.16-slim-trixie@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b"  # noqa: E501
 POSTGRES = (
-    "pgvector/pgvector:pg18@sha256:c29f30688a9ad961691bdf0ec1650717cc132a5814619d80f80463d6e4c42e47"
+    "pgvector/pgvector:pg18@sha256:38681dc6eaf55308e2a4c6de392d131652dcfac70e1263e35cd9b5ea3fe39782"
 )
 WHEEL = "osint_workbench-0.1.0.dev1-py3-none-any.whl"
 ROLES = ("writer", "worker", "reader", "lifecycle", "recovery", "migration")

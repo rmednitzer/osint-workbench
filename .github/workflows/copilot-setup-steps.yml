@@ -23,7 +23,7 @@ jobs:
     timeout-minutes: 10
     services:
       postgres:
-        image: pgvector/pgvector:pg18@sha256:c29f30688a9ad961691bdf0ec1650717cc132a5814619d80f80463d6e4c42e47
+        image: pgvector/pgvector:pg18@sha256:38681dc6eaf55308e2a4c6de392d131652dcfac70e1263e35cd9b5ea3fe39782
         env:
           POSTGRES_DB: ow_test
           POSTGRES_USER: postgres
@@ -39,7 +39,7 @@ jobs:
           persist-credentials: false
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          version: "0.13.7"
+          version: "0.13.8"
           prune-cache: true
       - name: Prepare the locked development environment
         run: |

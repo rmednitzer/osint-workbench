@@ -15,8 +15,11 @@
     "dockerfile",
     "custom.regex"
   ],
-  "dependencyDashboard": true,
-  "dependencyDashboardTitle": "Dependency maintenance",
+  "dependencyDashboard": {
+    "enabled": true,
+    "title": "Dependency maintenance",
+    "header": "Renovate dependency maintenance.\n\nRoutine updates and uv lock refreshes run Monday before 06:00 Europe/Vienna. Non-major Python manifest updates have a three-day release-age hold; a complete lock refresh does not independently age-gate every transitive version. All updates require review and current installed/native checks on both supported LTS profiles.\n\n- **Awaiting Schedule** lists work queued for its next eligible window. Recurring lock maintenance reappears for the next scheduled refresh.\n- **Pending Status Checks** can include release-age holds. Inspect the PR checks and any Renovate stability status; green CI alone does not clear the age policy.\n- Checkboxes request bot work, such as creation or rebasing; they do not approve a merge. Required checks and review still apply."
+  },
   "prConcurrentLimit": 3,
   "prHourlyLimit": 1,
   "rebaseWhen": "behind-base-branch",
@@ -142,16 +145,27 @@
     },
     {
       "customType": "regex",
-      "description": "Keep the synthetic Compose verifier's Python image pin aligned with the workflow image.",
+      "description": "Keep both synthetic Compose verifier image pins aligned with the workflow.",
       "managerFilePatterns": [
         "/^scripts/test_compose_core\\.py$/"
       ],
       "matchStrings": [
-        "BASE = \"(?<depName>[^:]+):(?<currentValue>[^@]+)@(?<currentDigest>sha256:[a-f0-9]{64})\""
+        "(?:BASE|POSTGRES) =\\s*(?:\\(\\s*)?\"(?<depName>[^\"\\s:]+):(?<currentValue>[^\"\\s@]+)@(?<currentDigest>sha256:[a-f0-9]{64})\""
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "Keep the Compose service image aligned with acceptance inputs.",
+      "managerFilePatterns": [
+        "/^containers/core/compose\\.json$/"
+      ],
+      "matchStrings": [
+        "\"image\":\\s*\"(?<depName>pgvector/pgvector):(?<currentValue>[^\"\\s@]+)@(?<currentDigest>sha256:[a-f0-9]{64})\""
       ],
       "datasourceTemplate": "docker",
       "versioningTemplate": "docker"
     }
-  ],
-  "dependencyDashboardHeader": "Renovate dependency maintenance.\n\nRoutine updates and uv lock refreshes run Monday before 06:00 Europe/Vienna. Non-major Python manifest updates have a three-day release-age hold; a complete lock refresh does not independently age-gate every transitive version. All updates require review and current installed/native checks on both supported LTS profiles.\n\n- **Awaiting Schedule** lists work queued for its next eligible window. Recurring lock maintenance reappears for the next scheduled refresh.\n- **Pending Status Checks** can include release-age holds. Inspect the PR checks and any Renovate stability status; green CI alone does not clear the age policy.\n- Checkboxes request bot work, such as creation or rebasing; they do not approve a merge. Required checks and review still apply."
+  ]
 }
