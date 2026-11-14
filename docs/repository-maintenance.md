@@ -79,6 +79,27 @@ Renovate and GitHub are external control-plane dependencies for this public code
 the JSON config, locked build and test commands remain portable to self-hosted
 Renovate/CI. Do not send operational data through these services.
 
+## Hosted Renovate schema compatibility
+
+On 2026-11-14, the pinned 44.239.1 validator required migration of the
+flat dashboard options to an object, while hosted Renovate rejected that object
+and stopped processing the repository (issue #73). Passing the local validator
+did not establish hosted compatibility.
+
+Keep the flat dashboard options and the previously passing immutable 44.222.0
+validator under an exact-version compatibility hold. This is a validation-tool
+exception, not a hold on application dependencies or a claim about the hosted
+service's exact version. Strict schema validation, offline preset/extraction
+checks and the invalid-preset negative control remain mandatory.
+
+Before lifting the hold, verify that the hosted service accepts the proposed
+configuration as well as the pinned validator. Update the validator, schema and
+exception together; verify dashboard refresh and absence of configuration-error
+issues after merge. Review this exception on the next dependency-maintenance
+pass; do not migrate the repository schema solely to satisfy a newer validator.
+Reverting this compatibility repair would restore the known hosted processing
+failure until the service supports the nested format.
+
 ## Coupled build and runtime updates
 
 `pyproject.toml`, `uv.lock` and `build-constraints.txt` serve different purposes.

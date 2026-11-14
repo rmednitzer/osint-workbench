@@ -15,11 +15,7 @@
     "dockerfile",
     "custom.regex"
   ],
-  "dependencyDashboard": {
-    "enabled": true,
-    "title": "Dependency maintenance",
-    "header": "Renovate dependency maintenance.\n\nRoutine updates and uv lock refreshes run Monday before 06:00 Europe/Vienna. Non-major Python manifest updates have a three-day release-age hold; a complete lock refresh does not independently age-gate every transitive version. All updates require review and current installed/native checks on both supported LTS profiles.\n\n- **Awaiting Schedule** lists work queued for its next eligible window. Recurring lock maintenance reappears for the next scheduled refresh.\n- **Pending Status Checks** can include release-age holds. Inspect the PR checks and any Renovate stability status; green CI alone does not clear the age policy.\n- Checkboxes request bot work, such as creation or rebasing; they do not approve a merge. Required checks and review still apply."
-  },
+  "dependencyDashboard": true,
   "prConcurrentLimit": 3,
   "prHourlyLimit": 1,
   "rebaseWhen": "behind-base-branch",
@@ -124,6 +120,13 @@
         "custom.regex"
       ],
       "dependencyDashboardCategory": "CI actions and images"
+    },
+    {
+      "description": "Hosted Renovate rejects the nested dashboard schema accepted by 44.239.1. Hold the validator at the last compatible tested version until hosted compatibility is verified; see repository-maintenance.md.",
+      "matchPackageNames": [
+        "ghcr.io/renovatebot/renovate"
+      ],
+      "allowedVersions": "44.222.0"
     }
   ],
   "vulnerabilityAlerts": {
@@ -167,5 +170,7 @@
       "datasourceTemplate": "docker",
       "versioningTemplate": "docker"
     }
-  ]
+  ],
+  "dependencyDashboardTitle": "Dependency maintenance",
+  "dependencyDashboardHeader": "Renovate dependency maintenance.\n\nRoutine updates and uv lock refreshes run Monday before 06:00 Europe/Vienna. Non-major Python manifest updates have a three-day release-age hold; a complete lock refresh does not independently age-gate every transitive version. All updates require review and current installed/native checks on both supported LTS profiles.\n\n- **Awaiting Schedule** lists work queued for its next eligible window. Recurring lock maintenance reappears for the next scheduled refresh.\n- **Pending Status Checks** can include release-age holds. Inspect the PR checks and any Renovate stability status; green CI alone does not clear the age policy.\n- Checkboxes request bot work, such as creation or rebasing; they do not approve a merge. Required checks and review still apply."
 }
