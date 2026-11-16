@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "scope": "runtime-plus-retrieval; CPython3.12 Linux x86_64 installed wheel evidence and reviewed supported archive variants; no legal approval",
-  "review_date": "2026-11-07",
-  "lock_sha256": "3c3e27ba8e00c79b0a2e70483dcd398e70129810271c7ef0e5f915566de7e8a1",
+  "review_date": "2026-11-16",
+  "lock_sha256": "5ebfb83e89226be1e3c66ed804fef7756bf2be309c0c65c2100733d95ffe99e4",
   "distributions": [
     {
       "name": "annotated-types",
@@ -372,7 +372,7 @@
     },
     {
       "name": "filelock",
-      "version": "4.2.9",
+      "version": "4.2.10",
       "declared_expression": "MIT",
       "reviewed_text_summary": "MIT",
       "outcome": "declared-and-shipped-text",
@@ -382,20 +382,20 @@
       ],
       "evidence": [
         {
-          "path": "filelock-4.2.9.dist-info/METADATA",
-          "bytes": 2263,
-          "sha256": "53f9b39c11e83c1d6283f2150eb08dd66b9389921c664de90c185d20adfb5438",
+          "path": "filelock-4.2.10.dist-info/METADATA",
+          "bytes": 2264,
+          "sha256": "25f914c3860cb8434342d9c17e8d9d28277ddc166ac9047ce26ab6d38fd901eb",
           "kind": "metadata"
         },
         {
-          "path": "filelock-4.2.9.dist-info/licenses/LICENSE",
+          "path": "filelock-4.2.10.dist-info/licenses/LICENSE",
           "bytes": 1088,
           "sha256": "608c89d5060ae9921adccf3236695bc654a9946e12323ef6c021dfa04e294d48",
           "kind": "licence-text"
         }
       ],
       "locked_wheel_sha256": [
-        "a379c50a729e5b68c8519a4d26489f755d9769960a236ecd838190e2a78db2e9"
+        "9479aaeb4db20b5a53e3da28493edd24720b66b8a0b84030aa56ccdf243d6857"
       ]
     },
     {
@@ -559,7 +559,7 @@
     },
     {
       "name": "httpcore2",
-      "version": "2.16.0",
+      "version": "2.16.2",
       "declared_expression": "BSD-3-Clause",
       "reviewed_text_summary": "BSD-3-Clause",
       "outcome": "declared-and-shipped-text",
@@ -569,25 +569,25 @@
       ],
       "evidence": [
         {
-          "path": "httpcore2-2.16.0.dist-info/METADATA",
-          "bytes": 27552,
-          "sha256": "c073bd68b2bd543fbc2bab3763b42ed1e70666536d32c1bf39ef2764fd50b0a4",
+          "path": "httpcore2-2.16.2.dist-info/METADATA",
+          "bytes": 28127,
+          "sha256": "e4d540d65e346c24d66fb268a60ac769260667aca77f0261a5e8dd864ac3a51d",
           "kind": "metadata"
         },
         {
-          "path": "httpcore2-2.16.0.dist-info/licenses/LICENSE.md",
+          "path": "httpcore2-2.16.2.dist-info/licenses/LICENSE.md",
           "bytes": 1599,
           "sha256": "c4df125c807b0613501e943a5c92496dd11d2c16604ce396097a8dde396304d9",
           "kind": "licence-text"
         }
       ],
       "locked_wheel_sha256": [
-        "5c4358319f2602d984ad93182c9fee5160f22e9da7babdda870a5e7c4e2dc34f"
+        "16051ae2a42f776007543f32de9349a317b23d2cbb4e1456b4bac0e88b87419a"
       ]
     },
     {
       "name": "httpx2",
-      "version": "2.16.0",
+      "version": "2.16.2",
       "declared_expression": "BSD-3-Clause",
       "reviewed_text_summary": "BSD-3-Clause",
       "outcome": "declared-and-shipped-text",
@@ -597,20 +597,20 @@
       ],
       "evidence": [
         {
-          "path": "httpx2-2.16.0.dist-info/METADATA",
-          "bytes": 10019,
-          "sha256": "192f20046200ff50911a7278c21dfbee1e1a4c6fa7943227afe9231d28defc3f",
+          "path": "httpx2-2.16.2.dist-info/METADATA",
+          "bytes": 9970,
+          "sha256": "5d8b261ace858b47c77fa37baaa8a9c3e75ea58e1eb7a5cc08947c95218fa221",
           "kind": "metadata"
         },
         {
-          "path": "httpx2-2.16.0.dist-info/licenses/LICENSE.md",
+          "path": "httpx2-2.16.2.dist-info/licenses/LICENSE.md",
           "bytes": 1589,
           "sha256": "7e7d6dbaf7fe160d39fd6e84fd02c33cab96bcbea34d36998d545bceb4a19c30",
           "kind": "licence-text"
         }
       ],
       "locked_wheel_sha256": [
-        "fd2c5d7909e8d86fe92d53020c310ca0e4e431b838c207c5754b9bbf0308d49a"
+        "f05c13aade4c45dbf1c9060647a1058f0acad62398fad96e741269edb33d46f5"
       ]
     },
     {
@@ -783,7 +783,7 @@
     },
     {
       "name": "numpy",
-      "version": "2.5.4",
+      "version": "2.5.5",
       "declared_expression": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
       "reviewed_text_summary": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
       "outcome": "declared-and-shipped-text",
@@ -794,181 +794,181 @@
       ],
       "evidence": [
         {
-          "path": "numpy-2.5.4.dist-info/METADATA",
-          "sha256": "e2b909d6a37d76c2bc130f528d7fed0c517322bce16dc7846b6a6df30e200403",
+          "path": "numpy-2.5.5.dist-info/METADATA",
           "bytes": 6635,
+          "sha256": "b184c8d5951f32a8b8b080ff80744e0b80523783061402446a5dcaf52dc40bff",
           "kind": "metadata"
         },
         {
-          "path": "numpy-2.5.4.dist-info/licenses/LICENSE.txt",
-          "sha256": "4860083caa0de2ac3292ca98bd074bd8f45d8b32624e37b1e70a240bff61e488",
-          "bytes": 46794,
+          "path": "numpy-2.5.5.dist-info/licenses/LICENSE.txt",
+          "bytes": 45809,
+          "sha256": "8c3433f4b8b93e30a2b54a376ef8d0576a3e1e8d14b14eb288da0a75e0c99627",
           "kind": "licence-text"
         },
         {
-          "path": "numpy-2.5.4.dist-info/licenses/numpy/_core/include/numpy/libdivide/LICENSE.txt",
-          "sha256": "fbc539f47d0cf83bc61378080fb873d5c14630126cacbfe754035c3926daa5ec",
+          "path": "numpy-2.5.5.dist-info/licenses/numpy/_core/include/numpy/libdivide/LICENSE.txt",
           "bytes": 1018,
+          "sha256": "fbc539f47d0cf83bc61378080fb873d5c14630126cacbfe754035c3926daa5ec",
           "kind": "licence-text"
         },
         {
-          "path": "numpy-2.5.4.dist-info/licenses/numpy/_core/src/common/pythoncapi-compat/COPYING",
-          "sha256": "3f2c1ffa76383a55ae0aac01c9737cd70050dff63e1f026694fbe9d662573c98",
+          "path": "numpy-2.5.5.dist-info/licenses/numpy/_core/src/common/pythoncapi-compat/COPYING",
           "bytes": 690,
+          "sha256": "3f2c1ffa76383a55ae0aac01c9737cd70050dff63e1f026694fbe9d662573c98",
           "kind": "licence-text"
         },
         {
-          "path": "numpy-2.5.4.dist-info/licenses/numpy/_core/src/highway/LICENSE",
-          "sha256": "e340270d4f64384569a91d546acb5b094d69ce47f0c015db77abb74dc6f815af",
+          "path": "numpy-2.5.5.dist-info/licenses/numpy/_core/src/highway/LICENSE",
           "bytes": 20785,
+          "sha256": "e340270d4f64384569a91d546acb5b094d69ce47f0c015db77abb74dc6f815af",
           "kind": "licence-text"
         },
         {
-          "path": "numpy-2.5.4.dist-info/licenses/numpy/_core/src/multiarray/dragon4_LICENSE.txt",
-          "sha256": "f7b14309e5f54e5022b26448eefd419988ada2aec01d3c1162d84a0ea8f21f2c",
+          "path": "numpy-2.5.5.dist-info/licenses/numpy/_core/src/multiarray/dragon4_LICENSE.txt",
           "bytes": 1414,
+          "sha256": "f7b14309e5f54e5022b26448eefd419988ada2aec01d3c1162d84a0ea8f21f2c",
           "kind": "licence-text"
         },
         {
-          "path": "numpy-2.5.4.dist-info/licenses/numpy/_core/src/npysort/x86-simd-sort/LICENSE.md",
-          "sha256": "211e7d737d6179a08f791ebb0a99897ce7cd2457410c542876d125576edfe910",
+          "path": "numpy-2.5.5.dist-info/licenses/numpy/_core/src/npysort/x86-simd-sort/LICENSE.md",
           "bytes": 1514,
+          "sha256": "211e7d737d6179a08f791ebb0a99897ce7cd2457410c542876d125576edfe910",
           "kind": "licence-text"
         },
         {
-          "path": "numpy-2.5.4.dist-info/licenses/numpy/_core/src/umath/svml/LICENSE",
-          "sha256": "c17011467b4fe6e20fbfbeda4df09e58c2bca5480a063e55735a4000a379aad9",
+          "path": "numpy-2.5.5.dist-info/licenses/numpy/_core/src/umath/svml/LICENSE",
           "bytes": 1543,
+          "sha256": "c17011467b4fe6e20fbfbeda4df09e58c2bca5480a063e55735a4000a379aad9",
           "kind": "licence-text"
         },
         {
-          "path": "numpy-2.5.4.dist-info/licenses/numpy/fft/pocketfft/LICENSE.md",
-          "sha256": "a85ca13fdf90160b64a0698215868c13b74d835ad0a4e2ba44713b8c5058a056",
+          "path": "numpy-2.5.5.dist-info/licenses/numpy/fft/pocketfft/LICENSE.md",
           "bytes": 1498,
+          "sha256": "a85ca13fdf90160b64a0698215868c13b74d835ad0a4e2ba44713b8c5058a056",
           "kind": "licence-text"
         },
         {
-          "path": "numpy-2.5.4.dist-info/licenses/numpy/linalg/lapack_lite/LICENSE.txt",
-          "sha256": "a14cc25e10d40a3aa705b7de2fb764a6535d8ee9b2db4e1724900585457dfd55",
+          "path": "numpy-2.5.5.dist-info/licenses/numpy/linalg/lapack_lite/LICENSE.txt",
           "bytes": 2266,
+          "sha256": "a14cc25e10d40a3aa705b7de2fb764a6535d8ee9b2db4e1724900585457dfd55",
           "kind": "licence-text"
         },
         {
-          "path": "numpy-2.5.4.dist-info/licenses/numpy/ma/LICENSE",
-          "sha256": "05f3b88351988ecfad10abe92c0c50e5875c6452d5009a0084cc291551ffcca6",
+          "path": "numpy-2.5.5.dist-info/licenses/numpy/ma/LICENSE",
           "bytes": 1593,
+          "sha256": "05f3b88351988ecfad10abe92c0c50e5875c6452d5009a0084cc291551ffcca6",
           "kind": "licence-text"
         },
         {
-          "path": "numpy-2.5.4.dist-info/licenses/numpy/random/LICENSE.md",
-          "sha256": "103166b62b80443afb9eb3488e052ea06be0cff566b908f199e561fde49af19f",
+          "path": "numpy-2.5.5.dist-info/licenses/numpy/random/LICENSE.md",
           "bytes": 3511,
+          "sha256": "103166b62b80443afb9eb3488e052ea06be0cff566b908f199e561fde49af19f",
           "kind": "licence-text"
         },
         {
-          "path": "numpy-2.5.4.dist-info/licenses/numpy/random/src/distributions/LICENSE.md",
-          "sha256": "469778be8f33d54e1bcaab28c281cc472916d2d273f835e55bc487d30503face",
+          "path": "numpy-2.5.5.dist-info/licenses/numpy/random/src/distributions/LICENSE.md",
           "bytes": 2745,
+          "sha256": "469778be8f33d54e1bcaab28c281cc472916d2d273f835e55bc487d30503face",
           "kind": "licence-text"
         },
         {
-          "path": "numpy-2.5.4.dist-info/licenses/numpy/random/src/mt19937/LICENSE.md",
-          "sha256": "0e111337b25494a773106695f0e799f642b8567aaacca4f116a74a8177179156",
+          "path": "numpy-2.5.5.dist-info/licenses/numpy/random/src/mt19937/LICENSE.md",
           "bytes": 2926,
+          "sha256": "0e111337b25494a773106695f0e799f642b8567aaacca4f116a74a8177179156",
           "kind": "licence-text"
         },
         {
-          "path": "numpy-2.5.4.dist-info/licenses/numpy/random/src/pcg64/LICENSE.md",
-          "sha256": "e7d4f4fb20358f314210a892ae17351e04993813646f697ec387385ca2a36918",
+          "path": "numpy-2.5.5.dist-info/licenses/numpy/random/src/pcg64/LICENSE.md",
           "bytes": 1154,
+          "sha256": "e7d4f4fb20358f314210a892ae17351e04993813646f697ec387385ca2a36918",
           "kind": "licence-text"
         },
         {
-          "path": "numpy-2.5.4.dist-info/licenses/numpy/random/src/philox/LICENSE.md",
-          "sha256": "6f5828a57223d4cc7f8ea505a2623e7b978b242752c1515e355f46ba2cec1800",
+          "path": "numpy-2.5.5.dist-info/licenses/numpy/random/src/philox/LICENSE.md",
           "bytes": 1509,
+          "sha256": "6f5828a57223d4cc7f8ea505a2623e7b978b242752c1515e355f46ba2cec1800",
           "kind": "licence-text"
         },
         {
-          "path": "numpy-2.5.4.dist-info/licenses/numpy/random/src/sfc64/LICENSE.md",
-          "sha256": "9d4098846018319cd68e228ee6220361787f73bccbf00237a85e4fc9621b998f",
+          "path": "numpy-2.5.5.dist-info/licenses/numpy/random/src/sfc64/LICENSE.md",
           "bytes": 1226,
+          "sha256": "9d4098846018319cd68e228ee6220361787f73bccbf00237a85e4fc9621b998f",
           "kind": "licence-text"
         },
         {
-          "path": "numpy-2.5.4.dist-info/licenses/numpy/random/src/splitmix64/LICENSE.md",
-          "sha256": "268b0ca06759d31ea3ca68dd35f20e877916e927b1c2a835e4592a3c4354b1f9",
+          "path": "numpy-2.5.5.dist-info/licenses/numpy/random/src/splitmix64/LICENSE.md",
           "bytes": 332,
+          "sha256": "268b0ca06759d31ea3ca68dd35f20e877916e927b1c2a835e4592a3c4354b1f9",
           "kind": "licence-text"
         },
         {
           "path": "numpy/_core/include/numpy/random/LICENSE.txt",
-          "sha256": "fbc539f47d0cf83bc61378080fb873d5c14630126cacbfe754035c3926daa5ec",
           "bytes": 1018,
+          "sha256": "fbc539f47d0cf83bc61378080fb873d5c14630126cacbfe754035c3926daa5ec",
           "kind": "licence-text"
         },
         {
           "path": "numpy/ma/LICENSE",
-          "sha256": "05f3b88351988ecfad10abe92c0c50e5875c6452d5009a0084cc291551ffcca6",
           "bytes": 1593,
+          "sha256": "05f3b88351988ecfad10abe92c0c50e5875c6452d5009a0084cc291551ffcca6",
           "kind": "licence-text"
         },
         {
           "path": "numpy/random/LICENSE.md",
-          "sha256": "103166b62b80443afb9eb3488e052ea06be0cff566b908f199e561fde49af19f",
           "bytes": 3511,
+          "sha256": "103166b62b80443afb9eb3488e052ea06be0cff566b908f199e561fde49af19f",
           "kind": "licence-text"
         }
       ],
       "locked_wheel_sha256": [
-        "067374eb538c34c745436365cf7b0112595c1d326f21ce4ff340f61230239fbb",
-        "1c2e71b04c6cad90026e544501bbe0ab9290fa8a4d845e7e8c0d124fb429c988",
-        "1ef3aa6d7e29bb13677323114280b05acc57607fa2300e66432d665d5418a162",
-        "2199ed071f460487c8db2c0e5c0b564494190edb4772fe80f9aad88b2604def5",
-        "2377da2dd3ba2c1200956acbab2a358c83b8e1f8531191672d1cd6ad83250d53",
-        "2c2c4afffdeb7920e445028dd71eb932cac3e704792e964bc2a232426d4f1255",
-        "2ca144f15135b6212a5c47b1e2aeca6e412f102f95a2d5d88d8aec77eb255de3",
-        "2fa3328f784fc8277fc48026f6cad516f5c561c5d8e2e39b3c9e0c8f23223b34",
-        "381a7a3d2e65e64c0ec302795ab9dc12bb1e73f150904699c153716177eebdaf",
-        "4054173604cd8658796053f1f3bc0befb68ec1c0762c57fdad61e199256a8617",
-        "468397ba3c64427474706e5c9123fe266395496714dc684294eac75cd4930d1e",
-        "4e263278bfb5ee6409db8aedbc4cc32973b1b82bc1e8d3c668551d04d83a7e37",
-        "5258bc06526964be5face2fc6f756857a3f24f21ec3e72ca131337a75b165d6c",
-        "64d1c8ac28a4077cf987e0a71a7a0ef7e2df70722f07f0baa42dbb7eb6938647",
-        "64f9c9878c1938476365e11ccfb6b770f3b9e5f045ccddc514235041e6959365",
-        "6d6a71b9d9a97c03633aa12565ef2825ffa036cc1d99cfd50dacf0f128af4fe2",
-        "6ffa07666f8da0eef81d149934a626d0d95fbd6838432a33e66245423a9062c0",
-        "7415db95818b39ec475a5eea54d9e3b6bc83e3912158e46da3438cdce399804d",
-        "823874a507a84af050493b622affde94b6f7c3a0dc22cb2801381bc03b871c00",
-        "8b4d2fd2d34e5f8c9235ee787de5631a37a28402b15cb80814df973d2be54129",
-        "956555e0603a4d38019ae6925711cb9dc43195c076a928accf7ea5d50bddfe53",
-        "98b053943e5a0474ec0da309d2cb9d3f18ea57f8a2067c2ab7b5f763d1068380",
-        "9968ab7e49b93ac6e1c3b2239732183152c9150f16308d30b66a372cffe3483c",
-        "9cb18a327b49c5c337f972b03682f6a49855525faaf3c0d3e9c96cd0fd8880a8",
-        "a7b1b6353e36a7e50de2973a38d705c88ee93adcf120673cee7f45a4a3fa223a",
-        "a813ed7719bf45463c51779e6a98d0385fe905e48447526938a4b8337333d551",
-        "aa1cce2ff3f8d953de38b76bf44602caeb69f101430208f64a10067f7cb4b1d3",
-        "aec3fc4b32ff82421274f5d205c559c51c840c8df66a78efd7f3612dd005a26a",
-        "b11e8fda06a7d69f15ebf542660b74466c2e51094800c1fb794f47ad4faeef17",
-        "b64a85f40e154983960a4167d4c1d57a50c7f109b3d3264a3a984154e90a8454",
-        "b86966fbe4ad7de710422175572bcdc75fdedadfb54bc6fab7deabccddd7780b",
-        "b89d0aaae2fe498c648f4c4795c084db535af5bd98ef942b2a3681fb74ce8645",
-        "bc39ac66a7a9a3fbd6134fda43136b60ffde99c8f4501e64e0d2b24da137babf",
-        "c6342f54c67093cae5c0227eb0eb772fdb79f2a2c37a6eb278b9909ee06aa356",
-        "c668b2f0d651605b58892644b0e302c7157f7159544227758c896982ef384b18",
-        "c9b80cdf5cedba0e90d93fa5f9a333c4d65bd545cd669b71bb97ce2b703c9d73",
-        "cfd73180400042a7c532d30c5e287bdd03c59ff9ee1b4c0316af0539e29dfe23",
-        "d549420b8858885cea8838a727842249218b9c1da24dd517e25c9c7a948310a3",
-        "d8200f16437b289a5bb927c6e184eccc3e8389bc0070fea4cd5b9e13c1757959",
-        "e94aef2c639da4a960ad0db8e06471208d8589974953d78b61d345b4eb99e394",
-        "fbde6962867ee75b48b0ee29b2b9372ec5d617799dbaf38e82dc0596f2f7738a",
-        "fe4d21ab149f15e4e6043dfb0de87e6e5f34ac176cde83060e9802981fca2ac2",
-        "ffa6ce09a1c6a08e9667dd9c97aa0b14184e8d18f2a14b78b2a2328c9147f076"
+        "10396f7c5ebc37d8f3cbdec44e3313912ccc2dc5841cc905de5de54ebbe8e2d3",
+        "1c24be6a82f5f257afc4dbefde4c3b56dee02146dfed2be2811940e79576b237",
+        "20145b11776d2f7570cd61351b156a51d3a341822282095baa819d87272bc710",
+        "228e3d90e967495d61ddc79dd64e95267aae3bcf1b1c516a6186429106a0b444",
+        "229743571f901a082f031f511dc4f926b4b4a714075d98b1ff2af62d836365ac",
+        "263b2aa236d752b18f90c5107137d24b2e3856d7db37725609f0ab5bcdb58881",
+        "2a9c502cdb9a3050ac1686774624cc278658b11f72e11b971a3a8542d6ded357",
+        "2abd39cfbb3d2af11e9bc8cc92b08cd089b0975fe9b1a30c8b7c740c67d397ce",
+        "31e5be6cd4b896004cb9e416741612ade530fc9a04bceca5219cf66a675113b4",
+        "3cedc2980b45794a6a2cfee9c8c3a80f04517082cc1d387e4cc895506c481696",
+        "4302902ebf82d37f446664757be59db53587822c8b35f16368ca69fe66ec4315",
+        "479e43c183049ec1a820eeb36549e493924f56b3e893a1d5865d0fff12abad47",
+        "567994389edd2963b643d63d826138402a63401176f1daf84dbb3204eb838b39",
+        "5e202d5facc9c0681834018062466d0b3eabd48c540c3570f72905c97f641a90",
+        "704d819265e5d1064d932968e9ee85fff2103ccc78c05b878c06943ba27b8507",
+        "7ca51125c76817de53473dae31ddc17213776472761bea9cca68a1a0037a4827",
+        "7da9a248f149cfbb220c6da964a59c8d051d516704f7758acfb81eb382a05d97",
+        "7e71ac4284c700afa654e2d15b1b174166710dca932f24045e5dc92001b5bda0",
+        "7fb87c4bcc73850ef433a0c42f096b010d3d3d284e9d00028bb030b43df3d078",
+        "824025655df929268bfe6b47ed91a00d14209a6f760847cf150be446829e1ce4",
+        "84dfb1611993a3525b250c955b1e2ebab6ce0ed36e4ab4dd5746432dd362fb5d",
+        "86868185bf4b6c4e5a8628ac42cfa165cd9530266c731f7dd1d11b4ad7e7cd1c",
+        "919eb420662b0b4ba34889df503f3d5329775b0c1d5f7e5f5af4fba8315b1e30",
+        "9f44875964889bd9088cf838d191b58c04088d10b4dc9b140e9da2431ecfbb60",
+        "a0750f2156d53446caca85663d0b65d67214e1664b9050454a731ea1418d176a",
+        "a3856a97e48ed8371c680fb04120b99fbcc29f2076ebe6dc3deb34f77947c5ca",
+        "ab3ff087826c49d07953d0219eb00663ce5b1a0ef0a6b757e1ac041b09387428",
+        "ac910558645a4b006f70596b450712b8564730c1b2ac10291fcedd656d321ec0",
+        "ae2b8285d0b4eed24739c3ca9ec0fa424a0247489c01e1d5fe2815a599e11d33",
+        "b3d328eebe0056c634878c251131d73d74e0c4af317a3aea718816d6fa0bb963",
+        "b96e9ee49ccbdb5676359f852a4497f7a9c5df6c377d8877f5330d6fd3ff42e4",
+        "c48960d420e90cf305cb1fde0d4e6082cc90512cda87a9acf0b6e04e91cf4abe",
+        "cc6eb7502facce90349b4097a26821af224aaa0ab36e78304711cdb544352882",
+        "dec156cda7322bcb1479ca992794705fe226a911b0ffebe13bff97fa1f3be63c",
+        "e0608d1585557b68dcb6a70a41654f7536567960afad79d91752d2863b242b68",
+        "e0b87886bb45621d9279dad4ab9f2d154b5db0b019d378c107b8f71527b06a4a",
+        "e0cf407a83118faf0463ade48a4533982f1737c7c58aac29e08855f7d9ad2977",
+        "e10e81d1db6c8fa507f61bebfd1ea383971dbc40c2005ed4db88fac5538b1ef6",
+        "e99bf8a3d54693f2063fa6c7d13955d460a9f543d9dbc80e69a92da288259b28",
+        "ef2a874cc70e2132c1c499268bdc34e211a715e481bc33c97b8a0190f2559295",
+        "f5e8603f0892d1b848e12124863b5b29af72383ee9b25ddc6fe4967d4c1ee6ef",
+        "f6622e32cb46c60bee3b2c7dd7f5c22bdc86fcb8630336b4822ec81c3986111a",
+        "f82a7567c590ff266f8c18fd527a0662edde074de11be256541a656e274f2b05"
       ]
     },
     {
       "name": "onnxruntime",
-      "version": "1.31.1",
+      "version": "1.32.0",
       "declared_expression": null,
       "reviewed_text_summary": "MIT; separate third-party notices",
       "outcome": "reviewed-shipped-text",
@@ -979,9 +979,9 @@
       ],
       "evidence": [
         {
-          "path": "onnxruntime-1.31.1.dist-info/METADATA",
+          "path": "onnxruntime-1.32.0.dist-info/METADATA",
           "bytes": 5839,
-          "sha256": "82f146c3aad08fd55eadf57e410022535697a858bd6bf760320b2328301d41cf",
+          "sha256": "91d44cf95f14be08c76b2a4b1014e10f7776a2a2f0fd0c6e6c12a2c77b13cb25",
           "kind": "metadata"
         },
         {
@@ -992,31 +992,31 @@
         },
         {
           "path": "onnxruntime/ThirdPartyNotices.txt",
-          "bytes": 338088,
-          "sha256": "143764b952fdb1a7c69ce653bfba74a7744d6a8a573bfb73e235fba356c83de3",
+          "bytes": 334795,
+          "sha256": "d8696258afcf9df7827a5e01d6b6d55ee9b461b4e82020f5f48242deb9cc2270",
           "kind": "licence-text"
         }
       ],
       "locked_wheel_sha256": [
-        "0558f29d5f6ac09957390c9c5495931485ee8ae7f0ce781ccee86a0ae5c2348b",
-        "075147c2e2430b4b29c436bffa78537b902a6ed58ed66f99ae3c6795e2081cb5",
-        "0a3998e18cb667ef54287556bd62291a788ed235723dd90c83b2294b24e71d81",
-        "0b9a492176886992e0e875f06bc0367e333f5fff11711a2d642e18b02f3009cc",
-        "1f3dea47f2f0e5117c2404cea7d21fd253ae7836a3bf167a501cdfbb2600d536",
-        "4d5f5fcc01f0c334d282a8991eab44e7752ad01c47b336d848ba43eb38084958",
-        "564d7b83fb3e94fb3d18629c6b339e9bce10966dd29a8442c433175aac3d60fd",
-        "6711108bcddf8b401145fb31ac93776b8ca6e7e7e56acdfa9d478575b8df9a2f",
-        "74a6a52994616c4d18b33db1e13c226333a70a6ba07480a5cab9c2a50dff1430",
-        "8536ac43682caa7492c46d6cfd4c3c8db288dcf0619508431a22170b670ee1d0",
-        "96dd2564b10ea7153ad9c207e7cd8e5917cb3ba521e0e0a62ac03486fdc8d56c",
-        "ae0987aedb9ae589f3395615c58b22aad2eae6657b14508cec70c24b367cfad1",
-        "ae8a9a351efda685cc59a66226cdefaa37a126c1d66872ca23a2de9425326130",
-        "c20d7f15d84427db070b163f78c2c7146cc93edd6113fa7327671259a24184fe",
-        "c878686b75cade1ed59131aa018ab004b1e64368b0d54041912450b9642cf04f",
-        "dcaedc50333876f3829ab966b242147f0e548229e29c36fe44622ecf748c25ee",
-        "e4ad067d36e2220218e085d7223283b2ee1bc73d887e811fd14d21cf901a11ee",
-        "fc01b4e7c0a81778fb741bcf5c16b7871d196275f6240720a8b8bfd9f0c0af14",
-        "fe8b9ac1ae8e894e12c47ee82e4f6dfc1835768133687257866469fda80d0bf1"
+        "02ea12a28c069ea8510093d95a7f6ff8126bfd9fc5c0d3381c03b80fb2b424ba",
+        "27bf5dad46355a8a435c9c4e1556464d99ca834ea44e0f452909712068b8821b",
+        "29e4b0fdd3bea834ace358bd8c48641266ec327f730363ab0ab5d0ca574d38fe",
+        "2b08ee990d00ab2ee129c5e039f7339963335a4d76f5bd22bfb4f896ae1cec0a",
+        "2c4338c899144fd055a86c1d89424001db60e48a474e198c0fd0d1d577e4b663",
+        "4135431395c1f37de0811f452c20a8b774f51812fda6c49611ed9899bbdbeeb4",
+        "48b878f9551d465aa79ee94ecaf49a1f6b5d27f2975efa775ded374db14d0af1",
+        "54d02baff2df38777b4c3cc7af326406fe8b8a48f54720f4c446d2d327920a79",
+        "64d394c69d561af3efd4d4f49dcac8f11d0ce135a20701c16d53b74056cd4cf8",
+        "926b6a87ffdcef56805b213807c28b97ae53763a630795baee1dfb420c2a5b68",
+        "99e1074c4b2197accd5073052a465361be17b89c093b8ffb6e6bd8f986c52df8",
+        "ab327b736552324af8d2a38bef5a65ed773f67184a36ff642beec7f5b4e9b03f",
+        "b01314ab8aa8176919818b19b899cd1cd72b5e4fc33e1127396f043206b6ceed",
+        "b224d11cfaecc95b85bdbd69f1673a984c7879af5823bb3ff377b9cb90b176fc",
+        "b33d822c19d036944bd969491d20095fc8def8ad0f32a969f6376df7568c0344",
+        "c7f9aa98036ba2a47aa041a4a8c6d0a1f7bfe1bde44c131dcd15ce334f2f148d",
+        "d52510bbbcc880c13b826f7d75cdf33ac5cf0bb864d960000fc29ce73f0cb83e",
+        "e36c187006e7a7c8b8d6d57f1a209dd63f52430dca6c282b177718ad6b841054",
+        "efe7456952c243a05a53d5b8732953625144642c2f3989094277f6217f0c0c40"
       ]
     },
     {
@@ -1149,7 +1149,7 @@
     },
     {
       "name": "psycopg",
-      "version": "3.3.8",
+      "version": "3.3.9",
       "declared_expression": "LGPL-3.0-only",
       "reviewed_text_summary": "LGPL-3.0-only",
       "outcome": "declared-and-shipped-text",
@@ -1160,25 +1160,25 @@
       ],
       "evidence": [
         {
-          "path": "psycopg-3.3.8.dist-info/METADATA",
+          "path": "psycopg-3.3.9.dist-info/METADATA",
           "bytes": 4369,
-          "sha256": "c5038f79287c501d7d074b521ddfa71202461ab1bd8ade0f5dcb088ef17e76eb",
+          "sha256": "0040aa49bcf8c2531bbc024d4aa8ad1bbd6ef5b7baff1ee9cbb82540f2086612",
           "kind": "metadata"
         },
         {
-          "path": "psycopg-3.3.8.dist-info/licenses/LICENSE.txt",
+          "path": "psycopg-3.3.9.dist-info/licenses/LICENSE.txt",
           "bytes": 7652,
           "sha256": "e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118",
           "kind": "licence-text"
         }
       ],
       "locked_wheel_sha256": [
-        "ca50af6072ba9ea6866f33021975230c2555d7bfdb9d8f94ca3af5c3d1bf2167"
+        "d2d7d04a1ce6dab4f5b27316bea3b52585cafa2f2d631e5b09dd69823f5c26f6"
       ]
     },
     {
       "name": "psycopg-binary",
-      "version": "3.3.8",
+      "version": "3.3.9",
       "declared_expression": "LGPL-3.0-only",
       "reviewed_text_summary": "LGPL-3.0-only",
       "outcome": "declared-and-shipped-text",
@@ -1189,52 +1189,52 @@
       ],
       "evidence": [
         {
-          "path": "psycopg_binary-3.3.8.dist-info/METADATA",
+          "path": "psycopg_binary-3.3.9.dist-info/METADATA",
           "bytes": 2709,
-          "sha256": "25ec19bb0edee3b2916a327944d3522db55b74d9ae551edb929c4ac886b65064",
+          "sha256": "5629904f63468f67eb828f3119d0436948015e96d924d18a5a800ed33b902a83",
           "kind": "metadata"
         },
         {
-          "path": "psycopg_binary-3.3.8.dist-info/licenses/LICENSE.txt",
+          "path": "psycopg_binary-3.3.9.dist-info/licenses/LICENSE.txt",
           "bytes": 7652,
           "sha256": "e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118",
           "kind": "licence-text"
         }
       ],
       "locked_wheel_sha256": [
-        "00c226f718901ce022bcee2e0779dc2f0a6d8bcedd5a3818e21ff25564efaa97",
-        "0d483014dde0bd5404801aa91ebbd7912006065dd8d244a962f228fe44bfc08b",
-        "0fd106e47b7d1f82744b23b6dd31856435e46c3d1b3d4972325d76f2e7a3d771",
-        "2f72c18d75d16500fe2f7f300945d68fba9dbb883aef20ba4be0c386afbbf2e9",
-        "31dd2597df303d22a2cabf73c40bb05afaf4ca1394e22935b97f627d4968c87d",
-        "41c31b175084a85232b6ea5f8eb474491b6c963302c69b46fa2ed60afb888b62",
-        "522acdc8a71a042b407851658eb1da85fe09c78b222b2233faef7da3385a757b",
-        "5deec7746acf1c742572b8bf8599f2f61a38c9925015d77254d87d3781169b3f",
-        "5f51d97b67276e90cda022ad363eca61dbe855dbb5342e358469006d4b5254df",
-        "6891b6d9d25103c31411b50f83f9a8aba63f4cbcc63b009f461c115bfaf7b78d",
-        "6d899f361effad9a23d90940b6b55683bc87ed2d457ef64a7fa76fee7c3b9dfc",
-        "6ff02f23b7d95de68f42d5ebe91374540d3d31851d83d9cd37e6e71a5dbd0bcd",
-        "710183a2e29c72050c3a447f9f566de27c6efea9da40bf7b800381ac57026204",
-        "78f92c5c9c9177b247b0f72f03412bc829185786525a8cf8742460066762a7d1",
-        "7d2b484e8ced7c3292e811d28087814467aecd3ef19badb64ed45a0f5fd78bf8",
-        "804041b79916b0e8021a1130650d724741eff1e81ccec8133abf357b4d284a24",
-        "9daff4d6257969b02678943d62bfd83b971004f6efef68d5b767ac69c2222751",
-        "a09aa2ba7927e9b11bd5bddb6d33cec274235d6f54f1ab777ed71c932cfc8d72",
-        "a565d8446b59d26dcf75b08d3ccd4e85b750edba9e53a396cb7a4652d7cbc9e8",
-        "a63be4f745b778654e3c438d1b0e31bcf5ce265151c6982d5c6d5d286bae84c0",
-        "a7cdba018e4decf3837793c1e18dbe3dd71709adef54892ab83d81c00e866dc3",
-        "aa7af0d2d1194b65b8c4d0056c5607de6c38fb6a295f04087d17e1c9d2d11fba",
-        "bf9388216da2069ca0dbad58479bb83e4b979ed35c4a80d247399ac93361417c",
-        "bf96efb4530605813b30d664f5d3b510540d89434a8e89dd7c62fb2d4fa4278f",
-        "c3a8420317a3b3910a08b77a952ef8f8051da61622c6a2e03fc51b75761c6acf",
-        "ced3499d480a979b956536b3f71a4736451bf3a976e4e400fc5c4b8dd3f43b23",
-        "df35063b88af16c08bb8960aac9882cce620aea478dfec5a67cff397b575b97d",
-        "e0972d8de5a0d855d76624f559a6ce5dd068fb4bbfa01e1d7cf929e6800dc4f0",
-        "e09cc11a367cbb147bacec0a41d748d22245e322827911d9c82b6066a8ba2059",
-        "e42c0e37eaed1ff03c24008561bca218eae8ec5ca4405a37897c6245ead8d612",
-        "e8f1addbaec62c9e2bf5b3ae4b32a20c793c06de7d57471f6509a127f1c902f4",
-        "ec6773395189417c92102b34c77ed299f6111fbbc37d50d4fa12ab819f763669",
-        "f09cb4e7744522d71048a8998ff841c7af942a61ffbd4142a140b42d89b950fe"
+        "08689018e9169ca8e6769f5b3f2ce748442bda95b5f1ec260995a8ff63e6d6a4",
+        "109c5df5b0e5117e01a42d3b56a2f4ccd5431bd54d25efdfc89df095ac9f9605",
+        "13bfe814718c8a1b9b656c0d754962e0027cc3e43630661825fe197babc99320",
+        "14666a85aa330058929e4abedd940f754f0e5589efae6366d95c513288856fb5",
+        "180e4a99904d7a77f826fbb6dd16834bb3313675d8a6f055e39742fda00c33dc",
+        "1ce1a6f04211626ca1a3deadee560235e8686e3888fb18f78d2be3e83bceabc4",
+        "300bd86d4b81d297e204a8ba223f54ec09a4b54fd069c32a74bf75b42860703f",
+        "30a95cb2b00b94b4ec4fd5d41de047598c60e0db26fd43bd9154152cc380b282",
+        "366e2021a785afed9154f83f64793f662348a9ef244fef9779175c0906e8aacc",
+        "3efe96cd98081b755ee3b0a50f2d35d9af55cb1ba462440a41048b9e7c6b9caa",
+        "417c3fe0ac2079a82a8c72ba214a65c66c22036a5d2d8c24c77c5708a58938b9",
+        "4992acd5a7479013d52615b8c23fdce9bc22f3cacbfb1007fa474e6b5ebe94c7",
+        "4b44a09bb7c92666aec8a00d5d390ff6f4e573d345ccde0f71b45597511449fb",
+        "4ba688a9402e3cc9d425e6ad20f97b96698f59f867279c265c1d0ca6df9dad57",
+        "5117a4745b3b850872140d3a66a8d83c55801916ae6e3cf502af0a794f64f9b7",
+        "66b20619acbd434e4e46d734a915768a1192db09754c2ad041d391d72f30e5eb",
+        "6bc7e10d05f236f53b184d9592e8f3d22587bc2e7b964fea9f5d0de2b1142fe5",
+        "80ce081d2512ced75f1ca08ff80257a1288a3555079c5fa622164a0f9ed6533a",
+        "85b3892dbc4f5fb21880f82e3aed7329be6bee39fb58a0f059cbb1d0a382e98b",
+        "a0ed63b05046bc40d76109d95c757d3eac38488b17c68ae9e8160040d0ed0f89",
+        "a99f0b9a19ed7a56bf5d6776456b8f15f5364db8853b0f5d184db394a45c391d",
+        "b081348d8992af26e9b252f04876c286428418a6b7845d8d4caae2044b259668",
+        "b7c4b2039d82f635311e41e7d392ff1bddd94a2447f9668c6531489cc86a8ce2",
+        "b98ecad106cd48998517e03aaee56f9d88f8857e043b8e3dbc2aa7facd475db6",
+        "c25fa1ee28f8fd73aecc5e8612ab9e5700682e8e23f9422437a1617016029934",
+        "e01a4f4fd0e4beee23af30517123bdde838d53c3ac0ae594da019e36b3adabda",
+        "e7e2e3543ac17cf5bb3eaf738606fc52bcedf993500b9fc8c55a4475a3731ef9",
+        "e835af41e74176041d2290b167af92b74793b916ca3413598c39b535dd3674a5",
+        "e853041acf10de2dcb595167138dc9fc27de293d67caa1d80ed282ec27a28e87",
+        "eb74f5299501f83f3ad7b8e99405ca451b77c74d65767bac7f46d22c4e9411ae",
+        "eed1ac135d652e4454777afb4e4bb52cf88520bbfa2f30ae83066cd4df656697",
+        "f85821eba1f8c27e080eba955eb9dddaa638f61e363b4f3b2266bd9ec4ff73bd",
+        "fcdb76adaab57fdd5b789b13b20699bffaf17000a4bbc0527327581cfdd55e3d"
       ]
     },
     {
@@ -1419,7 +1419,7 @@
     },
     {
       "name": "python-multipart",
-      "version": "0.0.33",
+      "version": "0.0.34",
       "declared_expression": "Apache-2.0",
       "reviewed_text_summary": "Apache-2.0",
       "outcome": "declared-and-shipped-text",
@@ -1429,20 +1429,20 @@
       ],
       "evidence": [
         {
-          "path": "python_multipart-0.0.33.dist-info/METADATA",
+          "path": "python_multipart-0.0.34.dist-info/METADATA",
           "bytes": 6300,
-          "sha256": "6b72c8aa930ab581069b93fdc2f7fb9dbede0051a73a699fbba5532b07fe133e",
+          "sha256": "7ae5098b90f36f21872617324c84a25d7d8b44426810d0e3edcd16bea35bff31",
           "kind": "metadata"
         },
         {
-          "path": "python_multipart-0.0.33.dist-info/licenses/LICENSE.txt",
+          "path": "python_multipart-0.0.34.dist-info/licenses/LICENSE.txt",
           "bytes": 11358,
           "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
           "kind": "licence-text"
         }
       ],
       "locked_wheel_sha256": [
-        "8f16c07b36add9da6b2ee87d3efcaf0a45a6de9c3d0a5dd94e9ccf7675a7bc45"
+        "ebacd224bd686eee2f9aa1066a657affe07435a185834e05e5235e2e59173e91"
       ]
     },
     {
@@ -1640,7 +1640,7 @@
     },
     {
       "name": "sse-starlette",
-      "version": "3.6.0",
+      "version": "3.7.0",
       "declared_expression": "BSD-3-Clause",
       "reviewed_text_summary": "BSD-3-Clause",
       "outcome": "declared-and-shipped-text",
@@ -1650,20 +1650,20 @@
       ],
       "evidence": [
         {
-          "path": "sse_starlette-3.6.0.dist-info/METADATA",
-          "bytes": 15704,
-          "sha256": "fd6db17b500d90b9f336b57088e0b0f2d122c0473b542dfe4bf4cc4f720d9797",
+          "path": "sse_starlette-3.7.0.dist-info/METADATA",
+          "bytes": 15789,
+          "sha256": "234e15fc214a5648b4848c03be3226365c1d712c8471261227d04beb4cf392ac",
           "kind": "metadata"
         },
         {
-          "path": "sse_starlette-3.6.0.dist-info/licenses/LICENSE",
+          "path": "sse_starlette-3.7.0.dist-info/licenses/LICENSE",
           "bytes": 1511,
           "sha256": "80af6bfccbebd2c14d4aab96695cab9950e177190cc80f5ef819e99996883e8e",
           "kind": "licence-text"
         }
       ],
       "locked_wheel_sha256": [
-        "e4dfa4d237d2712cb2b4d4918eda9b457cd6b44bbecdc838af75de836565bafd"
+        "f1d3136caa12d129284fca3d2ded79bc9af943320b6472712955fea52a6d3eea"
       ]
     },
     {
@@ -1942,33 +1942,33 @@
     },
     {
       "name": "numpy",
-      "filename": "numpy-2.5.4-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
-      "sha256": "fbde6962867ee75b48b0ee29b2b9372ec5d617799dbaf38e82dc0596f2f7738a"
+      "filename": "numpy-2.5.5-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "sha256": "704d819265e5d1064d932968e9ee85fff2103ccc78c05b878c06943ba27b8507"
     },
     {
       "name": "numpy",
-      "filename": "numpy-2.5.4-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
-      "sha256": "6ffa07666f8da0eef81d149934a626d0d95fbd6838432a33e66245423a9062c0"
+      "filename": "numpy-2.5.5-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "sha256": "824025655df929268bfe6b47ed91a00d14209a6f760847cf150be446829e1ce4"
     },
     {
       "name": "numpy",
-      "filename": "numpy-2.5.4-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
-      "sha256": "d549420b8858885cea8838a727842249218b9c1da24dd517e25c9c7a948310a3"
+      "filename": "numpy-2.5.5-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "sha256": "c48960d420e90cf305cb1fde0d4e6082cc90512cda87a9acf0b6e04e91cf4abe"
     },
     {
       "name": "onnxruntime",
-      "filename": "onnxruntime-1.31.1-cp312-cp312-manylinux_2_28_x86_64.whl",
-      "sha256": "1f3dea47f2f0e5117c2404cea7d21fd253ae7836a3bf167a501cdfbb2600d536"
+      "filename": "onnxruntime-1.32.0-cp312-cp312-manylinux_2_28_x86_64.whl",
+      "sha256": "99e1074c4b2197accd5073052a465361be17b89c093b8ffb6e6bd8f986c52df8"
     },
     {
       "name": "onnxruntime",
-      "filename": "onnxruntime-1.31.1-cp313-cp313-manylinux_2_28_x86_64.whl",
-      "sha256": "74a6a52994616c4d18b33db1e13c226333a70a6ba07480a5cab9c2a50dff1430"
+      "filename": "onnxruntime-1.32.0-cp313-cp313-manylinux_2_28_x86_64.whl",
+      "sha256": "02ea12a28c069ea8510093d95a7f6ff8126bfd9fc5c0d3381c03b80fb2b424ba"
     },
     {
       "name": "onnxruntime",
-      "filename": "onnxruntime-1.31.1-cp314-cp314-manylinux_2_28_x86_64.whl",
-      "sha256": "c20d7f15d84427db070b163f78c2c7146cc93edd6113fa7327671259a24184fe"
+      "filename": "onnxruntime-1.32.0-cp314-cp314-manylinux_2_28_x86_64.whl",
+      "sha256": "48b878f9551d465aa79ee94ecaf49a1f6b5d27f2975efa775ded374db14d0af1"
     },
     {
       "name": "protobuf",
@@ -1977,18 +1977,18 @@
     },
     {
       "name": "psycopg-binary",
-      "filename": "psycopg_binary-3.3.8-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
-      "sha256": "a7cdba018e4decf3837793c1e18dbe3dd71709adef54892ab83d81c00e866dc3"
+      "filename": "psycopg_binary-3.3.9-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "a99f0b9a19ed7a56bf5d6776456b8f15f5364db8853b0f5d184db394a45c391d"
     },
     {
       "name": "psycopg-binary",
-      "filename": "psycopg_binary-3.3.8-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
-      "sha256": "2f72c18d75d16500fe2f7f300945d68fba9dbb883aef20ba4be0c386afbbf2e9"
+      "filename": "psycopg_binary-3.3.9-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "180e4a99904d7a77f826fbb6dd16834bb3313675d8a6f055e39742fda00c33dc"
     },
     {
       "name": "psycopg-binary",
-      "filename": "psycopg_binary-3.3.8-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
-      "sha256": "710183a2e29c72050c3a447f9f566de27c6efea9da40bf7b800381ac57026204"
+      "filename": "psycopg_binary-3.3.9-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "4992acd5a7479013d52615b8c23fdce9bc22f3cacbfb1007fa474e6b5ebe94c7"
     },
     {
       "name": "pydantic-core",
@@ -2093,6 +2093,11 @@
       "source_commit": "ebd0622cbd398c3da618f8c1fe71bd11d9795334",
       "receipt": "docs/testing/lock-maintenance-2026-11-07.json",
       "note": "Exact universal-wheel review for Click runtime and jsonpointer/py-serializable development changes; unchanged shipped licence texts, Python minima and dependency requirements. Native package records unchanged. Existing unresolved obligations remain."
+    },
+    {
+      "source_commit": "44cb387a8c2cb2d80dc271ac02608c565758888d",
+      "receipt": "docs/testing/lock-maintenance-2026-11-16.json",
+      "note": "Reviewed changed locked wheels, complete shipped licence texts and supported ELF variants. NumPy and ONNX Runtime notice changes are recorded explicitly; unresolved legal/native outcomes are preserved."
     }
   ],
   "reviewed_archives": [
@@ -2178,8 +2183,8 @@
     },
     {
       "name": "filelock",
-      "filename": "filelock-4.2.9-py3-none-any.whl",
-      "sha256": "a379c50a729e5b68c8519a4d26489f755d9769960a236ecd838190e2a78db2e9"
+      "filename": "filelock-4.2.10-py3-none-any.whl",
+      "sha256": "9479aaeb4db20b5a53e3da28493edd24720b66b8a0b84030aa56ccdf243d6857"
     },
     {
       "name": "flatbuffers",
@@ -2208,13 +2213,13 @@
     },
     {
       "name": "httpcore2",
-      "filename": "httpcore2-2.15.1-py3-none-any.whl",
-      "sha256": "730f603058c260a3288378217b464713350c23e3b8fe8bba753701054032d98a"
+      "filename": "httpcore2-2.16.2-py3-none-any.whl",
+      "sha256": "16051ae2a42f776007543f32de9349a317b23d2cbb4e1456b4bac0e88b87419a"
     },
     {
       "name": "httpx2",
-      "filename": "httpx2-2.15.1-py3-none-any.whl",
-      "sha256": "75841cd83d16b417f7d6da8f2089ce8120806efdbf96af37d46c5129c49015be"
+      "filename": "httpx2-2.16.2-py3-none-any.whl",
+      "sha256": "f05c13aade4c45dbf1c9060647a1058f0acad62398fad96e741269edb33d46f5"
     },
     {
       "name": "huggingface-hub",
@@ -2248,33 +2253,33 @@
     },
     {
       "name": "numpy",
-      "filename": "numpy-2.5.4-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
-      "sha256": "fbde6962867ee75b48b0ee29b2b9372ec5d617799dbaf38e82dc0596f2f7738a"
+      "filename": "numpy-2.5.5-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "sha256": "704d819265e5d1064d932968e9ee85fff2103ccc78c05b878c06943ba27b8507"
     },
     {
       "name": "numpy",
-      "filename": "numpy-2.5.4-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
-      "sha256": "6ffa07666f8da0eef81d149934a626d0d95fbd6838432a33e66245423a9062c0"
+      "filename": "numpy-2.5.5-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "sha256": "824025655df929268bfe6b47ed91a00d14209a6f760847cf150be446829e1ce4"
     },
     {
       "name": "numpy",
-      "filename": "numpy-2.5.4-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
-      "sha256": "d549420b8858885cea8838a727842249218b9c1da24dd517e25c9c7a948310a3"
+      "filename": "numpy-2.5.5-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "sha256": "c48960d420e90cf305cb1fde0d4e6082cc90512cda87a9acf0b6e04e91cf4abe"
     },
     {
       "name": "onnxruntime",
-      "filename": "onnxruntime-1.31.1-cp312-cp312-manylinux_2_28_x86_64.whl",
-      "sha256": "1f3dea47f2f0e5117c2404cea7d21fd253ae7836a3bf167a501cdfbb2600d536"
+      "filename": "onnxruntime-1.32.0-cp312-cp312-manylinux_2_28_x86_64.whl",
+      "sha256": "99e1074c4b2197accd5073052a465361be17b89c093b8ffb6e6bd8f986c52df8"
     },
     {
       "name": "onnxruntime",
-      "filename": "onnxruntime-1.31.1-cp313-cp313-manylinux_2_28_x86_64.whl",
-      "sha256": "74a6a52994616c4d18b33db1e13c226333a70a6ba07480a5cab9c2a50dff1430"
+      "filename": "onnxruntime-1.32.0-cp313-cp313-manylinux_2_28_x86_64.whl",
+      "sha256": "02ea12a28c069ea8510093d95a7f6ff8126bfd9fc5c0d3381c03b80fb2b424ba"
     },
     {
       "name": "onnxruntime",
-      "filename": "onnxruntime-1.31.1-cp314-cp314-manylinux_2_28_x86_64.whl",
-      "sha256": "c20d7f15d84427db070b163f78c2c7146cc93edd6113fa7327671259a24184fe"
+      "filename": "onnxruntime-1.32.0-cp314-cp314-manylinux_2_28_x86_64.whl",
+      "sha256": "48b878f9551d465aa79ee94ecaf49a1f6b5d27f2975efa775ded374db14d0af1"
     },
     {
       "name": "opentelemetry-api",
@@ -2303,23 +2308,23 @@
     },
     {
       "name": "psycopg",
-      "filename": "psycopg-3.3.8-py3-none-any.whl",
-      "sha256": "ca50af6072ba9ea6866f33021975230c2555d7bfdb9d8f94ca3af5c3d1bf2167"
+      "filename": "psycopg-3.3.9-py3-none-any.whl",
+      "sha256": "d2d7d04a1ce6dab4f5b27316bea3b52585cafa2f2d631e5b09dd69823f5c26f6"
     },
     {
       "name": "psycopg-binary",
-      "filename": "psycopg_binary-3.3.8-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
-      "sha256": "a7cdba018e4decf3837793c1e18dbe3dd71709adef54892ab83d81c00e866dc3"
+      "filename": "psycopg_binary-3.3.9-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "a99f0b9a19ed7a56bf5d6776456b8f15f5364db8853b0f5d184db394a45c391d"
     },
     {
       "name": "psycopg-binary",
-      "filename": "psycopg_binary-3.3.8-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
-      "sha256": "2f72c18d75d16500fe2f7f300945d68fba9dbb883aef20ba4be0c386afbbf2e9"
+      "filename": "psycopg_binary-3.3.9-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "180e4a99904d7a77f826fbb6dd16834bb3313675d8a6f055e39742fda00c33dc"
     },
     {
       "name": "psycopg-binary",
-      "filename": "psycopg_binary-3.3.8-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
-      "sha256": "710183a2e29c72050c3a447f9f566de27c6efea9da40bf7b800381ac57026204"
+      "filename": "psycopg_binary-3.3.9-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "4992acd5a7479013d52615b8c23fdce9bc22f3cacbfb1007fa474e6b5ebe94c7"
     },
     {
       "name": "pycparser",
@@ -2353,8 +2358,8 @@
     },
     {
       "name": "python-multipart",
-      "filename": "python_multipart-0.0.33-py3-none-any.whl",
-      "sha256": "8f16c07b36add9da6b2ee87d3efcaf0a45a6de9c3d0a5dd94e9ccf7675a7bc45"
+      "filename": "python_multipart-0.0.34-py3-none-any.whl",
+      "sha256": "ebacd224bd686eee2f9aa1066a657affe07435a185834e05e5235e2e59173e91"
     },
     {
       "name": "pyyaml",
@@ -2393,8 +2398,8 @@
     },
     {
       "name": "sse-starlette",
-      "filename": "sse_starlette-3.6.0-py3-none-any.whl",
-      "sha256": "e4dfa4d237d2712cb2b4d4918eda9b457cd6b44bbecdc838af75de836565bafd"
+      "filename": "sse_starlette-3.7.0-py3-none-any.whl",
+      "sha256": "f1d3136caa12d129284fca3d2ded79bc9af943320b6472712955fea52a6d3eea"
     },
     {
       "name": "starlette",
