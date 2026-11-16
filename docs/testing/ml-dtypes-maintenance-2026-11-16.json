@@ -1,0 +1,235 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-11-16",
+  "pull_request": 77,
+  "reviewed_bot_head": "3662c8e4b18fb81fb3fc12fbb8bcbf062bbe00aa",
+  "lock_sha256": "8ae3517879213892563ba51501a0cd2293003096fb74387378912454f0a98620",
+  "scope": "Development-only ONNX fixture dependency. Core and retrieval runtime distributions and native variants are unchanged.",
+  "verification": "Old and new CPython 3.12-3.14 manylinux x86_64 wheels match locked SHA-256 values. Complete shipped licence texts and METADATA compared; all ZIP members scanned for ELF magic and full ELF declarations parsed without loading libraries.",
+  "notice_changes": "The Apache-2.0 licence gains a BSD-3-Clause notice for the NumPy compatibility header npy_2_compat_new_dtypes.h. The Eigen licence text is unchanged. This records publisher notices, not full redistribution clearance.",
+  "compatibility": "Upstream 0.7.0 moves types to the NumPy 2 DType API and changes scalar promotion/casting semantics. The lock selects NumPy 2.5.5. Required installed/native CI exercises generated ONNX fixtures on both supported LTS profiles.",
+  "reviews": [
+    {
+      "filename": "ml_dtypes-0.7.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "sha256": "3c4e47f553a04d33886160a9600e2313e5bee8c1c3da997baa23c8fecbfab189",
+      "evidence": [
+        {
+          "path": "ml_dtypes-0.7.0.dist-info/METADATA",
+          "bytes": 11189,
+          "sha256": "21fb1b684e5ce89bb14d38db92bf38d3438d8ff55fa483ce8f3f14233dd04f10",
+          "kind": "metadata"
+        },
+        {
+          "path": "ml_dtypes-0.7.0.dist-info/licenses/LICENSE",
+          "bytes": 13078,
+          "sha256": "de744f9027b165db1f266656266b030191a8fb135ffb8615c60021bb37030351",
+          "kind": "licence-text"
+        },
+        {
+          "path": "ml_dtypes-0.7.0.dist-info/licenses/LICENSE.eigen",
+          "bytes": 16726,
+          "sha256": "3f3d9e0024b1921b067d6f7f88deb4a60cbe7a78e76c64e3f1d7fc3b779b9d04",
+          "kind": "licence-text"
+        }
+      ],
+      "expression": "Apache-2.0",
+      "requires_python": ">=3.10",
+      "requires_dist": [
+        "numpy>=2.0.0",
+        "numpy>=2.1.0; python_version >= \"3.13\"",
+        "numpy>=2.3.0; python_version >= \"3.14\"",
+        "absl-py; extra == \"dev\"",
+        "pytest; extra == \"dev\"",
+        "pytest-xdist; extra == \"dev\"",
+        "pylint>=2.6.0; extra == \"dev\"",
+        "pyink; extra == \"dev\""
+      ],
+      "elf_paths": [
+        "ml_dtypes/_ml_dtypes_ext.cpython-312-x86_64-linux-gnu.so"
+      ],
+      "name": "ml-dtypes",
+      "version": "0.7.0",
+      "old_version": "0.6.0",
+      "runtime": false,
+      "licence_bytes_unchanged": false,
+      "old_expression": "Apache-2.0",
+      "old_requires_python": ">=3.10",
+      "old_requires_dist": [
+        "numpy>=2.0.0",
+        "numpy>=2.1.0; python_version >= \"3.13\"",
+        "numpy>=2.3.0; python_version >= \"3.14\"",
+        "absl-py; extra == \"dev\"",
+        "pytest; extra == \"dev\"",
+        "pytest-xdist; extra == \"dev\"",
+        "pylint>=2.6.0; extra == \"dev\"",
+        "pyink; extra == \"dev\""
+      ],
+      "elf_files": [
+        {
+          "path": "ml_dtypes/_ml_dtypes_ext.cpython-312-x86_64-linux-gnu.so",
+          "sha256": "99d98d972f53cd52f8f6b558b4134c644b678e03593033302996cef3da3416e9",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libgcc_s.so.1",
+              "libm.so.6",
+              "libstdc++.so.6"
+            ],
+            "soname": null
+          }
+        }
+      ]
+    },
+    {
+      "filename": "ml_dtypes-0.7.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "sha256": "5fb56999e1a03f47af5583af4089e00d04b68f87d4fadd659a5927ecd7687c3d",
+      "evidence": [
+        {
+          "path": "ml_dtypes-0.7.0.dist-info/METADATA",
+          "bytes": 11189,
+          "sha256": "21fb1b684e5ce89bb14d38db92bf38d3438d8ff55fa483ce8f3f14233dd04f10",
+          "kind": "metadata"
+        },
+        {
+          "path": "ml_dtypes-0.7.0.dist-info/licenses/LICENSE",
+          "bytes": 13078,
+          "sha256": "de744f9027b165db1f266656266b030191a8fb135ffb8615c60021bb37030351",
+          "kind": "licence-text"
+        },
+        {
+          "path": "ml_dtypes-0.7.0.dist-info/licenses/LICENSE.eigen",
+          "bytes": 16726,
+          "sha256": "3f3d9e0024b1921b067d6f7f88deb4a60cbe7a78e76c64e3f1d7fc3b779b9d04",
+          "kind": "licence-text"
+        }
+      ],
+      "expression": "Apache-2.0",
+      "requires_python": ">=3.10",
+      "requires_dist": [
+        "numpy>=2.0.0",
+        "numpy>=2.1.0; python_version >= \"3.13\"",
+        "numpy>=2.3.0; python_version >= \"3.14\"",
+        "absl-py; extra == \"dev\"",
+        "pytest; extra == \"dev\"",
+        "pytest-xdist; extra == \"dev\"",
+        "pylint>=2.6.0; extra == \"dev\"",
+        "pyink; extra == \"dev\""
+      ],
+      "elf_paths": [
+        "ml_dtypes/_ml_dtypes_ext.cpython-313-x86_64-linux-gnu.so"
+      ],
+      "name": "ml-dtypes",
+      "version": "0.7.0",
+      "old_version": "0.6.0",
+      "runtime": false,
+      "licence_bytes_unchanged": false,
+      "old_expression": "Apache-2.0",
+      "old_requires_python": ">=3.10",
+      "old_requires_dist": [
+        "numpy>=2.0.0",
+        "numpy>=2.1.0; python_version >= \"3.13\"",
+        "numpy>=2.3.0; python_version >= \"3.14\"",
+        "absl-py; extra == \"dev\"",
+        "pytest; extra == \"dev\"",
+        "pytest-xdist; extra == \"dev\"",
+        "pylint>=2.6.0; extra == \"dev\"",
+        "pyink; extra == \"dev\""
+      ],
+      "elf_files": [
+        {
+          "path": "ml_dtypes/_ml_dtypes_ext.cpython-313-x86_64-linux-gnu.so",
+          "sha256": "8bb656c0703ee4d2381d8f4b3b6e6bb3a87a04ca9daf124c9f4d10709de1ec2b",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libgcc_s.so.1",
+              "libm.so.6",
+              "libstdc++.so.6"
+            ],
+            "soname": null
+          }
+        }
+      ]
+    },
+    {
+      "filename": "ml_dtypes-0.7.0-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "sha256": "d0e87fdd2d380fa32f45e117687070b0e312b9f9a431bb0555edcd3a7821cb1d",
+      "evidence": [
+        {
+          "path": "ml_dtypes-0.7.0.dist-info/METADATA",
+          "bytes": 11189,
+          "sha256": "21fb1b684e5ce89bb14d38db92bf38d3438d8ff55fa483ce8f3f14233dd04f10",
+          "kind": "metadata"
+        },
+        {
+          "path": "ml_dtypes-0.7.0.dist-info/licenses/LICENSE",
+          "bytes": 13078,
+          "sha256": "de744f9027b165db1f266656266b030191a8fb135ffb8615c60021bb37030351",
+          "kind": "licence-text"
+        },
+        {
+          "path": "ml_dtypes-0.7.0.dist-info/licenses/LICENSE.eigen",
+          "bytes": 16726,
+          "sha256": "3f3d9e0024b1921b067d6f7f88deb4a60cbe7a78e76c64e3f1d7fc3b779b9d04",
+          "kind": "licence-text"
+        }
+      ],
+      "expression": "Apache-2.0",
+      "requires_python": ">=3.10",
+      "requires_dist": [
+        "numpy>=2.0.0",
+        "numpy>=2.1.0; python_version >= \"3.13\"",
+        "numpy>=2.3.0; python_version >= \"3.14\"",
+        "absl-py; extra == \"dev\"",
+        "pytest; extra == \"dev\"",
+        "pytest-xdist; extra == \"dev\"",
+        "pylint>=2.6.0; extra == \"dev\"",
+        "pyink; extra == \"dev\""
+      ],
+      "elf_paths": [
+        "ml_dtypes/_ml_dtypes_ext.cpython-314-x86_64-linux-gnu.so"
+      ],
+      "name": "ml-dtypes",
+      "version": "0.7.0",
+      "old_version": "0.6.0",
+      "runtime": false,
+      "licence_bytes_unchanged": false,
+      "old_expression": "Apache-2.0",
+      "old_requires_python": ">=3.10",
+      "old_requires_dist": [
+        "numpy>=2.0.0",
+        "numpy>=2.1.0; python_version >= \"3.13\"",
+        "numpy>=2.3.0; python_version >= \"3.14\"",
+        "absl-py; extra == \"dev\"",
+        "pytest; extra == \"dev\"",
+        "pytest-xdist; extra == \"dev\"",
+        "pylint>=2.6.0; extra == \"dev\"",
+        "pyink; extra == \"dev\""
+      ],
+      "elf_files": [
+        {
+          "path": "ml_dtypes/_ml_dtypes_ext.cpython-314-x86_64-linux-gnu.so",
+          "sha256": "a9be02ffa4e26eaa45ee73d694d266f4851dcb168ce60c76f6e0bd7ecbc2ddb0",
+          "elf": {
+            "type": "ET_DYN",
+            "machine": "EM_X86_64",
+            "bits": 64,
+            "needed": [
+              "libc.so.6",
+              "libgcc_s.so.1",
+              "libm.so.6",
+              "libstdc++.so.6"
+            ],
+            "soname": null
+          }
+        }
+      ]
+    }
+  ]
+}
