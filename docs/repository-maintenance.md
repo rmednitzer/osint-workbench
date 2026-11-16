@@ -86,19 +86,24 @@ flat dashboard options to an object, while hosted Renovate rejected that object
 and stopped processing the repository (issue #73). Passing the local validator
 did not establish hosted compatibility.
 
-Keep the flat dashboard options and the previously passing immutable 44.222.0
-validator under an exact-version compatibility hold. This is a validation-tool
-exception, not a hold on application dependencies or a claim about the hosted
-service's exact version. Strict schema validation, offline preset/extraction
-checks and the invalid-preset negative control remain mandatory.
+The compatibility hold used the previously passing immutable 44.222.0 validator
+and flat dashboard options. It did not hold application dependencies or establish
+the hosted service's exact version.
 
-Before lifting the hold, verify that the hosted service accepts the proposed
-configuration as well as the pinned validator. Update the validator, schema and
-exception together; verify dashboard refresh and absence of configuration-error
-issues after merge. Review this exception on the next dependency-maintenance
-pass; do not migrate the repository schema solely to satisfy a newer validator.
-Reverting this compatibility repair would restore the known hosted processing
-failure until the service supports the nested format.
+On 2026-11-16, the hosted service processed the nested dashboard configuration
+in [the website migration](https://github.com/rmednitzer/rmednitzer.github.io/pull/126):
+its requested rerun was consumed, the migration warning cleared and no open
+configuration-error issue remained. Relay-shell's corresponding migration also
+passed its required CI and merged. This provides hosted compatibility evidence
+separate from the current official JSON schema.
+
+This maintenance change migrates this repository's dashboard options, pins
+validator 44.246.3 by its registry digest and removes the exact-version hold.
+Strict repository-mode schema validation, offline preset/extraction and the
+invalid-preset negative control remain mandatory. Verify this repository's own
+dashboard refresh and absence of configuration-error issues after merge; sibling
+repository evidence does not establish that postcondition. Rollback restores the
+validator, flat dashboard options and compatibility hold together through a PR.
 
 ## Coupled build and runtime updates
 
