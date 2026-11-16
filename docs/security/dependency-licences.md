@@ -20,6 +20,21 @@ evidence nor classifiers/legacy declarations resolve missing wheel notices.
 
 ## Evidence and verification
 
+The [2026-11-16 lock-maintenance review](../testing/lock-maintenance-2026-11-16.json)
+inspects 19 changed locked wheels across 13 packages, including nine runtime or
+retrieval packages. Every old/new archive digest was checked against its lock.
+The supported CPython 3.12–3.14 manylinux x86_64 variants were inspected for
+complete shipped licence evidence and ELF file sets. Python minima remain
+compatible with 3.12; installed/native CI must independently establish behavior.
+
+NumPy 2.5.5 changes its aggregate notice to describe libgfortran as statically
+linked into OpenBLAS and removes the separate libquadmath notice. ONNX Runtime
+1.32.0 replaces its Intel MKL notice with a ggml MIT notice; its main MIT text is
+unchanged. These are observations of shipped publisher notices, not proof of
+complete static composition or redistribution clearance. Psycopg-binary 3.3.9
+also changes its bundled ELF set; the exact complete variants are refreshed.
+All existing unresolved legal, native-closure and notice obligations remain.
+
 The runtime-diagnostics change adds operator guidance to the README embedded in
 the application's wheel METADATA. Replacing only that new README payload with
 the preceding README reproduces the recorded baseline METADATA hash exactly;
