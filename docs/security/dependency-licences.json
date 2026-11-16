@@ -2,7 +2,7 @@
   "schema_version": 1,
   "scope": "runtime-plus-retrieval; CPython3.12 Linux x86_64 installed wheel evidence and reviewed supported archive variants; no legal approval",
   "review_date": "2026-11-16",
-  "lock_sha256": "5ebfb83e89226be1e3c66ed804fef7756bf2be309c0c65c2100733d95ffe99e4",
+  "lock_sha256": "8ae3517879213892563ba51501a0cd2293003096fb74387378912454f0a98620",
   "distributions": [
     {
       "name": "annotated-types",
@@ -2098,6 +2098,11 @@
       "source_commit": "44cb387a8c2cb2d80dc271ac02608c565758888d",
       "receipt": "docs/testing/lock-maintenance-2026-11-16.json",
       "note": "Reviewed changed locked wheels, complete shipped licence texts and supported ELF variants. NumPy and ONNX Runtime notice changes are recorded explicitly; unresolved legal/native outcomes are preserved."
+    },
+    {
+      "source_commit": "3662c8e4b18fb81fb3fc12fbb8bcbf062bbe00aa",
+      "receipt": "docs/testing/ml-dtypes-maintenance-2026-11-16.json",
+      "note": "Reviewed development-only ml-dtypes 0.7.0 wheels and new NumPy BSD notice. Runtime inventory, exact native variants and unresolved dispositions are unchanged."
     }
   ],
   "reviewed_archives": [
