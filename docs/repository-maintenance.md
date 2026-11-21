@@ -129,6 +129,10 @@ not update one identity without the other. No runtime auto-download is authorize
 
 Main/PR/manual foundation CI has bounded timeouts and cancels superseded runs for
 the same PR/ref. Branch pushes without a PR do not run a duplicate native build.
+Before starting the two installed builds, `repository-policy` compares the SHA-256
+of `uv.lock` with the recorded hash in both the licence and native-component
+policies. A stale binding identifies the policy file that needs review. Review
+the selected wheels before updating either hash.
 Required checks are `repository-policy`, `renovate-policy` and
 `installed-artifact`, plus the `acceptance` aggregate for advisory auditing and
 disposable Compose execution. The installed-artifact check aggregates all required Ubuntu/Python native

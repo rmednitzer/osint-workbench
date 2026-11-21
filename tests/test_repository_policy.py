@@ -1,4 +1,6 @@
+import hashlib
 import importlib.util
+import json
 from pathlib import Path
 
 import pytest
@@ -48,6 +50,24 @@ def test_dockerfile_and_workflow_images_require_content_identity():
     assert check("FROM example.invalid/fixture:latest\n") == ["image-not-immutable"]
     image = "example.invalid/fixture:1@sha256:" + "a" * 64
     assert check("FROM " + image + "\n  image: " + image) == []
+
+
+@pytest.mark.parametrize("stale", ["dependency-licences.json", "native-components.json"])
+def test_policy_lock_check_identifies_each_stale_review(tmp_path, monkeypatch, stale):
+    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1] / "scripts"))
+    security = tmp_path / "docs/security"
+    security.mkdir(parents=True)
+    lock = tmp_path / "uv.lock"
+    lock.write_bytes(b"reviewed lock\n")
+    binding = json.dumps({"lock_sha256": hashlib.sha256(lock.read_bytes()).hexdigest()})
+    for name in ("dependency-licences.json", "native-components.json"):
+        (security / name).write_text(binding)
+    check = policy().policy_lock_findings
+    assert check(tmp_path) == []
+    (security / stale).write_text(json.dumps({"lock_sha256": "0" * 64}))
+    assert check(tmp_path) == [
+        {"path": f"docs/security/{stale}", "category": "policy-lock-mismatch"}
+    ]
 
 
 @pytest.fixture
