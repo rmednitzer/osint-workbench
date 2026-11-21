@@ -315,3 +315,23 @@ evidence are refreshed. The other two remain development/SBOM tools. All native
 package records are unchanged; the three inspected wheels contain no ELF members.
 Required installed/native CI remains separate from this evidence review. Existing
 notice, native-closure and legal dispositions remain unresolved.
+
+## 2026-11-21 CycloneDX generator wheel review
+
+The development group moves `cyclonedx-bom` from 8.0.1 to 9.0.0. Both universal
+Python wheels matched their respective `uv.lock` archive hashes. The new wheel
+requires `cyclonedx-python-lib[validation]>=11.12,<12`. The lock already selects
+11.12.0. The runtime and retrieval package selections are identical across the
+two locks.
+
+| Generator version | Wheel SHA-256 | METADATA SHA-256 |
+| --- | --- | --- |
+| 8.0.1 | `b91ac00e0d031aaee0bc69fd3851384b2c36e569859df13b2a564b5d2d67aab3` | `e82d7c0b92e58263d1f803e05fa4fe8ef8f159de819ba461331d3776cf2ab97f` |
+| 9.0.0 | `15ccb78616831688cab1d1ddd5e0ba2e7886cd83462f63d11d1b922f43a294c0` | `65f20c754bd5a8269c85a0e87f5fd378baf1e5bd8b5459ada89deab8fcdaa83b` |
+
+Both wheels ship identical Apache-2.0 licence text and OWASP Foundation notice
+under their respective `.dist-info/licenses/` directories. The SHA-256 digest
+of `LICENSE` is `8d774b8e55770e19ccdbebe68a10c7505efaa6988257e87bfc58bf0c6675817b`, and the digest
+of `NOTICE` is `22cfe3d5461b54aafdbcd4138f0f2d9dd16bbf70251901e22a0e5766f8c63599`.
+Both omit the `License-Expression` metadata field. Inspection of every archive
+member found zero ELF files in either wheel.
