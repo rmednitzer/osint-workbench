@@ -227,6 +227,7 @@ def test_runtime_workflow_wiring_preserves_lts_qualification_and_optional_author
     optional = yaml.safe_load((root / "python-compatibility.yml").read_text())
     shared = yaml.safe_load((root / "installed-profile.yml").read_text())
     matrix = required["jobs"]["installed-artifact-matrix"]
+    assert matrix["needs"] == "repository-policy"
     profiles = matrix["strategy"]["matrix"]["include"]
     assert {(p["runner"], p["ubuntu"], p["python"]) for p in profiles} == {
         ("ubuntu-24.04", "24.04", "3.12"),

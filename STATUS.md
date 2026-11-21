@@ -40,8 +40,9 @@ Its bounded sanitized report distinguishes changed/missing/unsafe files and inva
 reference reads. It does not inspect effective systemd settings, ownership, running
 services or private configuration and does not establish deployment qualification.
 
-Required foundation and signed build evidence covers Ubuntu 24.04/CPython 3.12
-and Ubuntu 26.04/CPython 3.14. Python 3.13 remains permitted with optional
+Foundation CI checks the licence and native policies against the lockfile before
+starting the required installed builds. Signed build evidence covers Ubuntu
+24.04/CPython 3.12 and Ubuntu 26.04/CPython 3.14. Python 3.13 remains permitted with optional
 weekly/manual compatibility coverage. The manual Python 3.15 probe covers locked
 dependency wheels only; the application bound remains `>=3.12,<3.15`.
 [ADR-0050](docs/adr/0050-required-lts-and-optional-python-profiles.md) supersedes

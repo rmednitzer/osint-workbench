@@ -39,6 +39,7 @@ jobs:
         run: bash scripts/check_renovate.sh
   installed-artifact-matrix:
     name: Ubuntu ${{ matrix.ubuntu }} / Python ${{ matrix.python }}
+    needs: repository-policy
     strategy:
       fail-fast: false
       matrix:

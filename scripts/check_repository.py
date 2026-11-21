@@ -1,4 +1,4 @@
-"""Offline checks: Markdown links, agent bridges, pins and canonical STATUS facts.
+"""Offline checks for Markdown links, agent bridges, pins, lock bindings and STATUS facts.
 
 This intentionally checks a bounded Markdown subset, not remote link availability,
 rendering, general prose truth or the complete security semantics of a workflow.
@@ -85,6 +85,27 @@ def image_pins(text):
         for image in re.findall(r"^\s*(?:FROM|image:)\s+([^\s#]+)", text, flags=re.MULTILINE)
         if not re.fullmatch(r"[^\s@]+@sha256:[0-9a-f]{64}", image)
     ]
+
+
+def policy_lock_findings(root):
+    from build_evidence import MAX_MANIFEST, read_regular
+
+    try:
+        _, digest, _ = read_regular(root / "uv.lock", MAX_MANIFEST)
+    except (OSError, ValueError):
+        return [{"path": "uv.lock", "category": "lock-unreadable"}]
+
+    findings = []
+    for path in ("docs/security/dependency-licences.json", "docs/security/native-components.json"):
+        try:
+            _, _, data = read_regular(root / path, MAX_MANIFEST, collect=True)
+            policy = json.loads(data)
+        except (OSError, ValueError, RecursionError):
+            findings.append({"path": path, "category": "policy-unreadable"})
+            continue
+        if not isinstance(policy, dict) or policy.get("lock_sha256") != digest:
+            findings.append({"path": path, "category": "policy-lock-mismatch"})
+    return findings
 
 
 def _assignment(scope, name):
@@ -199,7 +220,7 @@ def main():
         .decode()
         .split("\0")
     )
-    findings = []
+    findings = policy_lock_findings(ROOT)
     findings.extend({"path": "STATUS.md", "category": category} for category in current_facts(ROOT))
     markdown = [name for name in selected if name.endswith(".md")]
     for name in markdown:
