@@ -8,7 +8,7 @@ trap 'rm -rf -- "$check_dir"' EXIT
 mkdir -p "$check_dir/repo/.github/workflows" "$check_dir/repo/scripts" "$check_dir/repo/containers/core"
 cp renovate.json pyproject.toml uv.lock "$check_dir/repo/"
 cp scripts/test_compose_core.py "$check_dir/repo/scripts/"
-cp containers/core/compose.json "$check_dir/repo/containers/core/"
+cp containers/core/Dockerfile containers/core/compose.json "$check_dir/repo/containers/core/"
 cp .github/renovate.Dockerfile "$check_dir/repo/.github/"
 cp .github/workflows/*.yml "$check_dir/repo/.github/workflows/"
 
@@ -50,6 +50,8 @@ managers = extractions[0]["stats"]["managers"]
 for name in ("pep621", "github-actions", "dockerfile", "regex"):
     if managers.get(name, {}).get("depCount", 0) < 1:
         raise SystemExit("Expected dependency extraction from manager: " + name)
+if managers["dockerfile"]["fileCount"] != 2:
+    raise SystemExit("Expected image extraction from both the core and validator Dockerfiles")
 if managers["regex"]["depCount"] != 5:
     raise SystemExit("Expected all five pinned Compose image references")
 print("All four configured dependency managers extracted real dependencies")
