@@ -42,7 +42,7 @@ dev = [
     "gguf>=0.17,<1",
     "cmake>=3.31,<5",
     "mypy>=2.4,<3",
-    "cyclonedx-bom>=8,<9",
+    "cyclonedx-bom>=9,<10",
     "pyelftools>=0.33,<0.34",
 ]
 
