@@ -27,7 +27,8 @@ configuration is not a dependency compatibility assessment. The recurring
 dependency dashboard is distinct from a mergeable update PR.
 
 - Enable PEP621/uv.lock, GitHub Actions and Dockerfile management. These cover
-  action/service images and the separately pinned validation-tool Dockerfile.
+  action/service images, the core container base and the pinned validator image.
+  The offline extraction check must find both Dockerfiles.
   The custom regex manager also extracts Compose image tags and digests from
   workflow environment variables, the synthetic verifier and the Compose service;
   extraction validation must find all five image references.
