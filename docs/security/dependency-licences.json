@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "scope": "runtime-plus-retrieval; CPython3.12 Linux x86_64 installed wheel evidence and reviewed supported archive variants; no legal approval",
-  "review_date": "2026-11-16",
-  "lock_sha256": "8ae3517879213892563ba51501a0cd2293003096fb74387378912454f0a98620",
+  "review_date": "2026-11-21",
+  "lock_sha256": "9163cc0b36c57484749900ced4761c7ed32f3f93a7fcaa5a20f87feeee96fee5",
   "distributions": [
     {
       "name": "annotated-types",
@@ -2103,6 +2103,11 @@
       "source_commit": "3662c8e4b18fb81fb3fc12fbb8bcbf062bbe00aa",
       "receipt": "docs/testing/ml-dtypes-maintenance-2026-11-16.json",
       "note": "Reviewed development-only ml-dtypes 0.7.0 wheels and new NumPy BSD notice. Runtime inventory, exact native variants and unresolved dispositions are unchanged."
+    },
+    {
+      "source_commit": "ac6aa653e10c80be408394e7cadbea463d183080",
+      "receipt": "docs/security/dependency-licences.md",
+      "note": "Reviewed the development-only CycloneDX 9.0.0 wheel and its notices. All runtime package selections and reviewed ELF variants match the previous lock."
     }
   ],
   "reviewed_archives": [
